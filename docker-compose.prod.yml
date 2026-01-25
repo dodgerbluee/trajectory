@@ -1,9 +1,6 @@
-version: '3.8'
-
 services:
   database:
     image: postgres:16-alpine
-    container_name: trajectory-db
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -11,86 +8,26 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-trajectory}
       POSTGRES_USER: ${POSTGRES_USER:-trajectory_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      PGDATA: /var/lib/postgresql/data/pgdata
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-trajectory_user} -d ${POSTGRES_DB:-trajectory}"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
-    networks:
-      - trajectory-network
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    labels:
-      - "com.trajectory.service=database"
-      - "com.trajectory.environment=production"
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        VITE_API_URL: ${VITE_API_URL:-}
-        VITE_BASE_PATH: ${VITE_BASE_PATH:-}
-    container_name: trajectory-app
+    # Set IMAGE in .env file (e.g., IMAGE=ghcr.io/your-org/trajectory:latest)
+    image: ${IMAGE:-ghcr.io/your-org/trajectory:latest}
     volumes:
       - uploads_data:/app/uploads
       - avatars_data:/app/avatars
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-trajectory_user}:${DB_PASSWORD}@database:5432/${POSTGRES_DB:-trajectory}
-      NODE_ENV: production
       PORT: ${PORT:-3001}
-      UPLOAD_DIR: /app/uploads
-      AVATAR_DIR: /app/avatars
-      FRONTEND_DIR: public
     depends_on:
       database:
         condition: service_healthy
-    networks:
-      - trajectory-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:${PORT:-3001}/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 256M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    labels:
-      - "com.trajectory.service=app"
-      - "com.trajectory.environment=production"
-
-networks:
-  trajectory-network:
-    name: trajectory-network
-    driver: bridge
-    ipam:
-      driver: default
 
 volumes:
   postgres_data:
