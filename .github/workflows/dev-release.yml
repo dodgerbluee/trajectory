@@ -1,0 +1,46 @@
+name: Dev Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  create-dev-release:
+    name: Create Dev Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Generate version
+        id: version
+        shell: bash
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          DATE=$(date +'%Y%m%d')
+          VERSION="dev-${DATE}-${SHORT_SHA}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Generated version: ${VERSION}"
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Development Release ${{ steps.version.outputs.version }}
+          body: |
+            Development release automatically created from merge to main.
+            
+            **Commit:** ${{ github.sha }}
+            **Branch:** ${{ github.ref_name }}
+            **Author:** ${{ github.actor }}
+            
+            ## Changes
+            ${{ github.event.head_commit.message || 'See commit history for details' }}
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

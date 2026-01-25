@@ -1,0 +1,69 @@
+services:
+  database:
+    image: postgres:16-alpine
+    container_name: trajectory-db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    environment:
+      POSTGRES_DB: growth_tracker
+      POSTGRES_USER: growth_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-development_password}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U growth_user -d growth_tracker"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - trajectory-network
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: trajectory-backend
+    volumes:
+      - uploads_data:/app/uploads
+      - avatars_data:/app/avatars
+    environment:
+      DATABASE_URL: postgresql://growth_user:${DB_PASSWORD:-development_password}@database:5432/growth_tracker
+      NODE_ENV: production
+      PORT: 3001
+      UPLOAD_DIR: /app/uploads
+      AVATAR_DIR: /app/avatars
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - trajectory-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Use empty string to make API calls relative (proxied by Nginx)
+        VITE_API_URL: ""
+    container_name: trajectory-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - trajectory-network
+    restart: unless-stopped
+
+networks:
+  trajectory-network:
+    name: trajectory-network
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: trajectory_data
+  uploads_data:
+    name: trajectory_uploads
+  avatars_data:
+    name: trajectory_avatars
