@@ -5,6 +5,7 @@
 import dotenv from 'dotenv';
 import { createApp } from './app.js';
 import { testConnection, closePool } from './db/connection.js';
+import { runMigrations } from './db/migrations.js';
 
 // Load environment variables
 dotenv.config();
@@ -17,7 +18,21 @@ async function main() {
   try {
     // Test database connectivity
     await testConnection();
-    console.log('');
+    
+    // Run database migrations before starting server
+    // 
+    // First-run initialization:
+    // - On first run against an empty database, creates the migrations table
+    // - Applies all migration files from backend/migrations/ in alphabetical order
+    // - Records each applied migration to prevent re-running
+    // - All migrations are idempotent (safe to run multiple times)
+    // - If migrations fail, the application exits with an error (fail-fast)
+    //
+    // Subsequent runs:
+    // - Checks which migrations have been applied
+    // - Only applies new migrations that haven't been run yet
+    // - Ensures schema is always up-to-date
+    await runMigrations();
 
     // Create and start Express server
     const app = createApp();

@@ -3,7 +3,6 @@ services:
     image: postgres:16-alpine
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-trajectory}
       POSTGRES_USER: ${POSTGRES_USER:-trajectory_user}
