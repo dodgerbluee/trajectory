@@ -1,8 +1,23 @@
 services:
-  database:
+  trajectory:
+    container_name: trajectory
+    image: ghcr.io/dodgerbluee/trajectory:dev-20260125-b938b59
+    volumes:
+      - /docked/trajectory/uploads_data:/app/uploads
+      - /docked/trajectory/avatars_data:/app/avatars
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-trajectory_user}:${DB_PASSWORD}@trajectory-db:5432/${POSTGRES_DB:-trajectory}
+      PORT: 3001:3001
+    depends_on:
+      trajectory-db:
+        condition: service_healthy
+    restart: unless-stopped
+    
+  trajectory-db:
+    container_name: trajectory-db
     image: postgres:16-alpine
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - /docked/trajectory/data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-trajectory}
       POSTGRES_USER: ${POSTGRES_USER:-trajectory_user}
@@ -12,20 +27,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
-
-  app:
-    # Set IMAGE in .env file (e.g., IMAGE=ghcr.io/your-org/trajectory:latest)
-    image: ${IMAGE:-ghcr.io/your-org/trajectory:latest}
-    volumes:
-      - uploads_data:/app/uploads
-      - avatars_data:/app/avatars
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-trajectory_user}:${DB_PASSWORD}@database:5432/${POSTGRES_DB:-trajectory}
-      PORT: ${PORT:-3001}
-    depends_on:
-      database:
-        condition: service_healthy
     restart: unless-stopped
 
 volumes:

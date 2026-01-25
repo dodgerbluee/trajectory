@@ -60,6 +60,7 @@ async function getAppliedMigrations(): Promise<string[]> {
 
 /**
  * Execute a migration SQL file
+ * Wrapped in a transaction for atomicity - if migration fails, it's rolled back
  */
 async function executeMigration(name: string, sql: string): Promise<void> {
   console.log(`  Applying migration: ${name}`);
@@ -77,9 +78,11 @@ async function executeMigration(name: string, sql: string): Promise<void> {
     
     await client.query('COMMIT');
     console.log(`  ✓ Migration ${name} applied successfully`);
-  } catch (error) {
+  } catch (error: any) {
     await client.query('ROLLBACK');
-    console.error(`  ✗ Migration ${name} failed:`, error);
+    // Log concise error message instead of full stack trace
+    const errorMessage = error?.message || error?.toString() || 'Unknown error';
+    console.error(`  ✗ Migration ${name} failed: ${errorMessage}`);
     throw error;
   } finally {
     client.release();
@@ -175,8 +178,10 @@ export async function runMigrations(): Promise<void> {
     }
     
     console.log(`\n✓ All migrations applied successfully\n`);
-  } catch (error) {
-    console.error('\n✗ Migration failed:', error);
+  } catch (error: any) {
+    // Log concise error message instead of full stack trace
+    const errorMessage = error?.message || error?.toString() || 'Unknown error';
+    console.error(`\n✗ Migration failed: ${errorMessage}`);
     throw error;
   }
 }

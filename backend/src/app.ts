@@ -29,8 +29,10 @@ export function createApp(): express.Application {
   });
 
   // Health check endpoint
+  // Simple endpoint that always returns 200 once the app is running
+  // Used by Docker healthchecks and load balancers to verify the service is ready
   app.get('/health', (_req, res) => {
-    res.json({
+    res.status(200).json({
       status: 'ok',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),

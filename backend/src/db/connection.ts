@@ -24,26 +24,68 @@ const dbConfig = {
 export const pool = new Pool(dbConfig);
 
 // Error handler for pool
+// Handles errors on idle database clients gracefully
+// Only logs the error message (not full stack trace) to reduce noise
 pool.on('error', (err: Error) => {
-  console.error('Unexpected error on idle database client', err);
-  process.exit(-1);
+  console.error('Database pool error:', err.message || err);
+  // Don't exit immediately - let the application handle it
+  // The connection retry logic will handle reconnection attempts
 });
 
 /**
- * Test database connectivity
- * Call this during application startup to verify connection
+ * Test database connectivity with retry logic
+ * 
+ * Startup flow:
+ * 1. Attempts to connect to the database with exponential backoff retries
+ * 2. Logs concise, friendly error messages instead of full stack traces
+ * 3. Only throws after all retries are exhausted
+ * 
+ * This prevents noisy ECONNREFUSED errors during container startup when
+ * the database container may not be ready yet.
  */
 export async function testConnection(): Promise<void> {
-  try {
-    const client = await pool.connect();
-    const result = await client.query('SELECT NOW() as current_time, current_database() as database');
-    console.log('✓ Database connected successfully');
-    console.log(`  Database: ${result.rows[0].database}`);
-    console.log(`  Server time: ${result.rows[0].current_time}`);
-    client.release();
-  } catch (error) {
-    console.error('✗ Database connection failed:', error);
-    throw error;
+  const maxRetries = 10;
+  const initialDelay = 1000; // Start with 1 second
+  const maxDelay = 10000; // Cap at 10 seconds
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const client = await pool.connect();
+      const result = await client.query('SELECT NOW() as current_time, current_database() as database');
+      console.log('✓ Database connected successfully');
+      console.log(`  Database: ${result.rows[0].database}`);
+      console.log(`  Server time: ${result.rows[0].current_time}`);
+      client.release();
+      return; // Success - exit retry loop
+    } catch (error: any) {
+      // Check if this is a connection error (database not ready yet)
+      const isConnectionError = 
+        error.code === 'ECONNREFUSED' || 
+        error.code === 'ENOTFOUND' ||
+        error.code === 'ETIMEDOUT' ||
+        error.message?.includes('connect') ||
+        error.message?.includes('timeout');
+      
+      if (isConnectionError && attempt < maxRetries) {
+        // Calculate exponential backoff delay (with jitter to prevent thundering herd)
+        const baseDelay = Math.min(initialDelay * Math.pow(2, attempt - 1), maxDelay);
+        const jitter = Math.random() * 1000; // Add up to 1 second of jitter
+        const delay = Math.floor(baseDelay + jitter);
+        
+        console.log(`  Database not ready yet (attempt ${attempt}/${maxRetries}), retrying in ${Math.round(delay/1000)}s...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue; // Retry
+      }
+      
+      // If it's not a connection error, or we've exhausted retries, throw
+      if (isConnectionError) {
+        console.error(`✗ Database connection failed after ${maxRetries} attempts`);
+        console.error(`  Make sure the database is running and accessible at: ${process.env.DATABASE_URL?.replace(/:[^:@]+@/, ':****@') || 'DATABASE_URL not set'}`);
+      } else {
+        console.error('✗ Database connection failed:', error.message || error);
+      }
+      throw error;
+    }
   }
 }
 
@@ -75,8 +117,10 @@ export async function query<T extends pg.QueryResultRow = any>(
     }
     
     return result;
-  } catch (error) {
-    console.error('Query error:', error);
+  } catch (error: any) {
+    // Log concise error message instead of full stack trace
+    const errorMessage = error?.message || error?.toString() || 'Unknown error';
+    console.error('Query error:', errorMessage);
     throw error;
   }
 }
