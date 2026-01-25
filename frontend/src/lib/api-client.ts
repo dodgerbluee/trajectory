@@ -33,7 +33,7 @@ import type {
   HeatmapData,
 } from '../types/api';
 
-// Base API URL - use relative URL in production (proxied by Nginx), absolute for development
+// Base API URL - use relative URL in production (served by unified app), absolute for development
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 /**

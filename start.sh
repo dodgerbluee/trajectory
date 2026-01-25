@@ -36,7 +36,7 @@ for i in {1..30}; do
         echo ""
         echo "Trajectory is running."
         echo "  Frontend: http://localhost:3000"
-        echo "  Backend:  http://localhost:3001/api"
+        echo "  Backend:  http://localhost:3000/api"
         echo "  Logs:     docker-compose logs -f"
         exit 0
     fi

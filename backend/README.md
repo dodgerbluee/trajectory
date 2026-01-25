@@ -22,7 +22,7 @@ Express API for Trajectory. TypeScript, `pg` for Postgres.
 
 Create a `.env` (or copy from `.env.example`). Used by both Docker and local dev:
 
-- `DATABASE_URL` — Postgres connection string (e.g. `postgresql://growth_user:password@localhost:5432/growth_tracker`)
+- `DATABASE_URL` — Postgres connection string (e.g. `postgresql://trajectory_user:password@localhost:5432/trajectory`)
 - `PORT` — API port (default 3001)
 - `UPLOAD_DIR` — Directory for attachment files
 - `AVATAR_DIR` — Directory for avatar images

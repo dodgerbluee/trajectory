@@ -4,6 +4,7 @@
 
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import { childrenRouter } from './routes/children.js';
 import { measurementsRouter } from './routes/measurements.js';
 import { medicalEventsRouter } from './routes/medical-events.js';
@@ -45,7 +46,29 @@ export function createApp(): express.Application {
   app.use('/api', attachmentsRouter);
   app.use('/api', avatarsRouter);
 
-  // 404 handler
+  // Serve static files from frontend build (if FRONTEND_DIR is set)
+  const FRONTEND_DIR = process.env.FRONTEND_DIR;
+  if (FRONTEND_DIR) {
+    const frontendPath = path.resolve(process.cwd(), FRONTEND_DIR);
+    
+    // Serve static assets with caching
+    app.use(express.static(frontendPath, {
+      maxAge: '1y', // Cache static assets for 1 year
+      etag: true,
+      lastModified: true,
+    }));
+
+    // Serve index.html for all non-API routes (React Router support)
+    app.get('*', (req, res, next) => {
+      // Skip if it's an API route or health check
+      if (req.path.startsWith('/api') || req.path === '/health') {
+        return next();
+      }
+      res.sendFile(path.join(frontendPath, 'index.html'));
+    });
+  }
+
+  // 404 handler (only for API routes if frontend is not served)
   app.use((_req, res) => {
     res.status(404).json({ error: 'Not found' });
   });
