@@ -12,7 +12,7 @@ import AllVisitsView from '../components/AllVisitsView';
 import MetricsView from '../components/MetricsView';
 
 function HomePage() {
-  const [activeTab, setActiveTab] = useState<'family' | 'illnesses' | 'visits' | 'metrics'>('family');
+  const [activeTab, setActiveTab] = useState<'family' | 'illnesses' | 'visits' | 'trends'>('family');
   const [children, setChildren] = useState<Child[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -124,8 +124,8 @@ function HomePage() {
       content: <AllIllnessesView />,
     },
     {
-      id: 'metrics',
-      label: 'Metrics',
+      id: 'trends',
+      label: 'Trends',
       content: <MetricsView />,
     },
   ];
@@ -136,7 +136,7 @@ function HomePage() {
         <Tabs
           tabs={tabs}
           activeTab={activeTab}
-          onTabChange={(tabId) => setActiveTab(tabId as 'family' | 'visits' | 'illnesses' | 'metrics')}
+          onTabChange={(tabId) => setActiveTab(tabId as 'family' | 'visits' | 'illnesses' | 'trends')}
         />
       </Card>
       <div className="version-footer">

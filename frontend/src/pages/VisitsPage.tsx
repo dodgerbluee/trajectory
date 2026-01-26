@@ -124,9 +124,9 @@ function VisitsPage() {
                   <span className="visit-arrow">→</span>
                 </div>
                 
-                {visit.illness_type && (
+                {visit.illnesses && visit.illnesses.length > 0 && (
                   <div className="visit-illness">
-                    <strong>Illness:</strong> {visit.illness_type.replace('_', ' ')}
+                    <strong>Illness:</strong> {visit.illnesses.map(i => i.replace('_', ' ')).join(', ')}
                   </div>
                 )}
                 

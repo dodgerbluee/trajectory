@@ -9,21 +9,8 @@ import Button from '../components/Button';
 import Notification from '../components/Notification';
 import LoadingSpinner from '../components/LoadingSpinner';
 import SeveritySelector from '../components/SeveritySelector';
+import IllnessesInput from '../components/IllnessesInput';
 import Checkbox from '../components/Checkbox';
-
-const ILLNESS_TYPES: { value: IllnessType; label: string }[] = [
-  { value: 'flu', label: 'Flu' },
-  { value: 'strep', label: 'Strep Throat' },
-  { value: 'rsv', label: 'RSV' },
-  { value: 'covid', label: 'COVID-19' },
-  { value: 'cold', label: 'Cold' },
-  { value: 'stomach_bug', label: 'Stomach Bug' },
-  { value: 'ear_infection', label: 'Ear Infection' },
-  { value: 'hand_foot_mouth', label: 'Hand, Foot & Mouth' },
-  { value: 'croup', label: 'Croup' },
-  { value: 'pink_eye', label: 'Pink Eye' },
-  { value: 'other', label: 'Other' },
-];
 
 function AddIllnessPage() {
   const navigate = useNavigate();
@@ -50,6 +37,12 @@ function AddIllnessPage() {
     visit_id: null,
     notes: null,
   });
+
+  const [selectedIllnesses, setSelectedIllnesses] = useState<IllnessType[]>([formData.illness_type]);
+
+  useEffect(() => {
+    setSelectedIllnesses(formData.illness_type ? [formData.illness_type] : []);
+  }, [formData.illness_type]);
 
   useEffect(() => {
     loadData();
@@ -166,15 +159,17 @@ function AddIllnessPage() {
             />
           )}
 
-          <FormField
-            label="Illness Type"
-            type="select"
-            value={formData.illness_type || ''}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, illness_type: e.target.value as IllnessType })}
-            required
-            disabled={submitting}
-            options={ILLNESS_TYPES}
-          />
+          <div className="form-field">
+            <label className="form-label">Illness Type</label>
+            <IllnessesInput
+              value={selectedIllnesses}
+              onChange={(ills) => {
+                setSelectedIllnesses(ills);
+                setFormData({ ...formData, illness_type: ills && ills.length > 0 ? ills[0] : ('' as IllnessType) });
+              }}
+              disabled={submitting}
+            />
+          </div>
 
           <FormField
             label="Start Date"

@@ -235,10 +235,10 @@ function VisitDetailPage() {
                     {/* Illness/Injury/Vision Information */}
                     {visit.visit_type === 'sick' && (
                       <div className="visit-info-stacked">
-                        {visit.illness_type && (
+                        {visit.illnesses && visit.illnesses.length > 0 && (
                           <div className="visit-info-item">
-                            <span className="visit-info-label">Illness Type:</span>
-                            <span className="visit-info-value">{visit.illness_type.replace('_', ' ')}</span>
+                            <span className="visit-info-label">Illnesses:</span>
+                            <span className="visit-info-value">{visit.illnesses.map(i => i.replace('_', ' ')).join(', ')}</span>
                           </div>
                         )}
                         {visit.temperature && (

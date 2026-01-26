@@ -213,6 +213,9 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
                           {doc.visit.visit_type === 'wellness' && doc.visit.title && (
                             <span className="wellness-title-badge">{doc.visit.title}</span>
                           )}
+                          {/* {doc.visit.visit_type === 'wellness' && doc.visit.title && (
+                            <span className="wellness-title-badge">{doc.visit.title}</span>
+                          )} */}
                         </>
                       ) : (
                         <span className="timeline-badge">Vaccine Report</span>

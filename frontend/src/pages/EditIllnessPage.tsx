@@ -9,20 +9,7 @@ import Button from '../components/Button';
 import Notification from '../components/Notification';
 import LoadingSpinner from '../components/LoadingSpinner';
 import SeveritySelector from '../components/SeveritySelector';
-
-const ILLNESS_TYPES: { value: IllnessType; label: string }[] = [
-  { value: 'flu', label: 'Flu' },
-  { value: 'strep', label: 'Strep Throat' },
-  { value: 'rsv', label: 'RSV' },
-  { value: 'covid', label: 'COVID-19' },
-  { value: 'cold', label: 'Cold' },
-  { value: 'stomach_bug', label: 'Stomach Bug' },
-  { value: 'ear_infection', label: 'Ear Infection' },
-  { value: 'hand_foot_mouth', label: 'Hand, Foot & Mouth' },
-  { value: 'croup', label: 'Croup' },
-  { value: 'pink_eye', label: 'Pink Eye' },
-  { value: 'other', label: 'Other' },
-];
+import IllnessesInput from '../components/IllnessesInput';
 
 function EditIllnessPage() {
   const { id } = useParams<{ id: string }>();
@@ -37,6 +24,7 @@ function EditIllnessPage() {
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   
   const [formData, setFormData] = useState<UpdateIllnessInput>({});
+  const [selectedIllnesses, setSelectedIllnesses] = useState<IllnessType[]>([]);
 
   useEffect(() => {
     if (id) {
@@ -69,6 +57,7 @@ function EditIllnessPage() {
         visit_id: fetchedIllness.visit_id,
         notes: fetchedIllness.notes,
       });
+      setSelectedIllnesses(fetchedIllness.illness_type ? [fetchedIllness.illness_type] : []);
     } catch (error) {
       if (error instanceof ApiClientError) {
         setNotification({ message: error.message, type: 'error' });
@@ -160,15 +149,17 @@ function EditIllnessPage() {
             <div className="form-readonly">{child?.name || `Child #${illness.child_id}`}</div>
           </div>
 
-          <FormField
-            label="Illness Type"
-            type="select"
-            value={formData.illness_type || illness.illness_type}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, illness_type: e.target.value as IllnessType })}
-            required
-            disabled={submitting}
-            options={ILLNESS_TYPES}
-          />
+          <div className="form-field">
+            <label className="form-label">Illness Type</label>
+            <IllnessesInput
+              value={selectedIllnesses}
+              onChange={(ills) => {
+                setSelectedIllnesses(ills);
+                setFormData({ ...formData, illness_type: ills && ills.length > 0 ? ills[0] : ('' as IllnessType) });
+              }}
+              disabled={submitting}
+            />
+          </div>
 
           <FormField
             label="Start Date"

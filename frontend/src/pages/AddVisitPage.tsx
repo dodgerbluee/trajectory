@@ -10,24 +10,13 @@ import Notification from '../components/Notification';
 import LoadingSpinner from '../components/LoadingSpinner';
 import PrescriptionInput from '../components/PrescriptionInput';
 import VaccineInput from '../components/VaccineInput';
+import IllnessesInput from '../components/IllnessesInput';
 import VisitTypeModal from '../components/VisitTypeModal';
 import TagInput from '../components/TagInput';
 import FileUpload from '../components/FileUpload';
 import Checkbox from '../components/Checkbox';
 
-const ILLNESS_TYPES: { value: IllnessType; label: string }[] = [
-  { value: 'flu', label: 'Flu' },
-  { value: 'strep', label: 'Strep Throat' },
-  { value: 'rsv', label: 'RSV' },
-  { value: 'covid', label: 'COVID-19' },
-  { value: 'cold', label: 'Cold' },
-  { value: 'stomach_bug', label: 'Stomach Bug' },
-  { value: 'ear_infection', label: 'Ear Infection' },
-  { value: 'hand_foot_mouth', label: 'Hand, Foot & Mouth' },
-  { value: 'croup', label: 'Croup' },
-  { value: 'pink_eye', label: 'Pink Eye' },
-  { value: 'other', label: 'Other' },
-];
+
 
 function AddVisitPage() {
   const { childId: childIdFromUrl } = useParams<{ childId?: string }>();
@@ -63,7 +52,6 @@ function AddVisitPage() {
     bmi_percentile: null,
     blood_pressure: null,
     heart_rate: null,
-    illness_type: null,
     symptoms: null,
     temperature: null,
     end_date: null,
@@ -79,6 +67,9 @@ function AddVisitPage() {
     notes: null,
     create_illness: false,
   });
+
+  // Support multiple illnesses client-side (kept simple and compatible)
+  const [selectedIllnesses, setSelectedIllnesses] = useState<IllnessType[]>([]);
 
   const [recentLocations, setRecentLocations] = useState<string[]>([]);
   const [recentDoctors, setRecentDoctors] = useState<string[]>([]);
@@ -153,8 +144,8 @@ function AddVisitPage() {
     e.preventDefault();
 
     // Validation
-    if (formData.visit_type === 'sick' && !formData.illness_type) {
-      setNotification({ message: 'Please select an illness type for sick visits', type: 'error' });
+    if (formData.visit_type === 'sick' && selectedIllnesses.length === 0) {
+      setNotification({ message: 'Please select at least one illness for sick visits', type: 'error' });
       return;
     }
 
@@ -166,6 +157,11 @@ function AddVisitPage() {
     setSubmitting(true);
 
     try {
+      // ensure formData.illness_type remains compatible with API (use first selected illness)
+      if (formData.visit_type === 'sick') {
+        // send full illnesses array (no legacy `illness_type`)
+        (formData as any).illnesses = selectedIllnesses.length > 0 ? selectedIllnesses : null;
+      }
       // Create the visit first
       const response = await visitsApi.create(formData);
       const visitId = response.data.id;
@@ -312,14 +308,9 @@ function AddVisitPage() {
             {formData.visit_type === 'sick' && (
               <div className="visit-detail-section">
                 <h3 className="visit-detail-section-title">Illness Information</h3>
-                <FormField
-                  label="Illness Type"
-                  type="select"
-                  value={formData.illness_type || ''}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, illness_type: e.target.value as IllnessType })}
-                  required
-                  disabled={submitting}
-                  options={[{ value: '', label: 'Select illness type...' }, ...ILLNESS_TYPES]}
+                <IllnessesInput
+                  value={selectedIllnesses}
+                  onChange={(ills) => setSelectedIllnesses(ills)}
                 />
 
                 <FormField
@@ -353,7 +344,7 @@ function AddVisitPage() {
                   min={formData.visit_date}
                 />
 
-                {formData.illness_type && (
+                {selectedIllnesses.length > 0 && (
                   <div className="form-field">
                     <label className="form-field-label">
                       <input

@@ -72,7 +72,7 @@ export interface CreateChildInput {
   name: string;
   date_of_birth: string;
   gender: Gender;
-  avatar?: string;
+  // `illnesses` is the canonical list of illnesses; legacy single `illness_type` removed
   notes?: string;
   due_date?: string | null;
   birth_weight?: number | null;
@@ -182,6 +182,8 @@ export interface Visit {
   
   // Sick visit
   illness_type: IllnessType | null;
+  // New: multiple illnesses associated with this visit
+  illnesses?: IllnessType[] | null;
   symptoms: string | null;
   temperature: number | null;
   end_date: string | null;
@@ -226,7 +228,8 @@ export interface CreateVisitInput {
   blood_pressure?: string | null;
   heart_rate?: number | null;
   
-  illness_type?: IllnessType | null;
+  // illnesses array is used instead of single illness_type
+  illnesses?: IllnessType[] | null;
   symptoms?: string | null;
   temperature?: number | null;
   end_date?: string | null;
@@ -269,6 +272,7 @@ export interface UpdateVisitInput {
   heart_rate?: number | null;
   
   illness_type?: IllnessType | null;
+  illnesses?: IllnessType[] | null;
   symptoms?: string | null;
   temperature?: number | null;
   end_date?: string | null;

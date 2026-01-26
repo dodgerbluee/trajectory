@@ -35,6 +35,23 @@ function validateIllnessType(value: any): IllnessType | null {
   return value as IllnessType;
 }
 
+function validateIllnessesArray(value: any): IllnessType[] | null {
+  if (value === undefined || value === null) return null;
+  if (!Array.isArray(value)) {
+    throw new BadRequestError('illnesses must be an array of strings');
+  }
+  const arr: IllnessType[] = value.map((v: any, idx: number) => {
+    try {
+      const validated = validateIllnessType(v);
+      if (!validated) throw new Error('invalid');
+      return validated;
+    } catch (err) {
+      throw new BadRequestError(`illnesses[${idx}] is invalid`);
+    }
+  });
+  return arr;
+}
+
 function validateDate(value: any, fieldName: string): string {
   if (!value) {
     throw new BadRequestError(`${fieldName} is required`);
@@ -349,7 +366,26 @@ router.get('/', async (req: ExpressRequest, res: Response, next: NextFunction) =
     queryParams.push(limit, offset);
 
     const result = await query<VisitRow>(queryText, queryParams);
-    const visits = result.rows.map(convertVisitRow);
+    const visitRows = result.rows;
+    const visits = visitRows.map(convertVisitRow);
+
+    // Attach illnesses for each visit (if any)
+    if (visitRows.length > 0) {
+      const visitIds = visitRows.map((r: any) => r.id);
+      const illRes = await query(
+        `SELECT visit_id, illness_type FROM visit_illnesses WHERE visit_id = ANY($1)`,
+        [visitIds]
+      );
+      const map = new Map<number, string[]>();
+      illRes.rows.forEach((row: any) => {
+        const arr = map.get(row.visit_id) || [];
+        arr.push(row.illness_type);
+        map.set(row.visit_id, arr);
+      });
+      visits.forEach(v => {
+        (v as any).illnesses = map.get(v.id) || null;
+      });
+    }
 
     res.json(createResponse(visits));
   } catch (error) {
@@ -377,7 +413,12 @@ router.get('/:id', async (req: ExpressRequest, res: Response, next: NextFunction
       throw new NotFoundError('Visit');
     }
 
-    res.json(createResponse(convertVisitRow(result.rows[0])));
+    const visit = convertVisitRow(result.rows[0]);
+
+    // Attach illnesses
+    const illRes = await query(`SELECT illness_type FROM visit_illnesses WHERE visit_id = $1`, [visit.id]);
+    (visit as any).illnesses = illRes.rows.length > 0 ? illRes.rows.map((r: any) => r.illness_type) : null;
+    res.json(createResponse(visit));
   } catch (error) {
     next(error);
   }
@@ -406,8 +447,6 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
       head_circumference_percentile: validateOptionalNumber(req.body.head_circumference_percentile, 0, 100),
       bmi_value: validateOptionalNumber(req.body.bmi_value),
       bmi_percentile: validateOptionalNumber(req.body.bmi_percentile, 0, 100),
-      
-      illness_type: validateIllnessType(req.body.illness_type),
       symptoms: validateOptionalString(req.body.symptoms),
       temperature: validateOptionalNumber(req.body.temperature, 95, 110),
       end_date: validateOptionalDate(req.body.end_date),
@@ -424,9 +463,11 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
       notes: validateOptionalString(req.body.notes),
     };
 
-    // Validate: sick visits must have illness_type
-    if (input.visit_type === 'sick' && !input.illness_type) {
-      throw new BadRequestError('illness_type is required for sick visits');
+    // Support illnesses array (multiple illnesses)
+    const illnesses = validateIllnessesArray(req.body.illnesses);
+    // Validate: sick visits must provide at least one illness in the illnesses array
+    if (input.visit_type === 'sick' && (!illnesses || illnesses.length === 0)) {
+      throw new BadRequestError('At least one illness is required for sick visits');
     }
 
     // Validate: injury visits should have injury_type
@@ -451,7 +492,7 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
         head_circumference_value, head_circumference_percentile,
         bmi_value, bmi_percentile,
         blood_pressure, heart_rate,
-        illness_type, symptoms, temperature, end_date,
+          symptoms, temperature, end_date,
         injury_type, injury_location, treatment, follow_up_date,
         vision_prescription, needs_glasses,
         vaccines_administered, prescriptions, tags, notes
@@ -474,7 +515,7 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
         input.head_circumference_value, input.head_circumference_percentile,
         input.bmi_value, input.bmi_percentile,
         input.blood_pressure, input.heart_rate,
-        input.illness_type, input.symptoms, input.temperature, input.end_date,
+        input.symptoms, input.temperature, input.end_date,
         input.injury_type, input.injury_location, input.treatment, input.follow_up_date,
         input.vision_prescription, input.needs_glasses,
         vaccines, prescriptions ? JSON.stringify(prescriptions) : null, tagsJson, input.notes,
@@ -482,6 +523,15 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
     );
 
     const visit = convertVisitRow(result.rows[0]);
+
+    // Persist illnesses into join table if provided
+    if (illnesses && illnesses.length > 0) {
+      const insertPromises = illnesses.map(ill => query(`INSERT INTO visit_illnesses (visit_id, illness_type) VALUES ($1, $2)`, [visit.id, ill]));
+      await Promise.all(insertPromises);
+      (visit as any).illnesses = illnesses;
+    } else {
+      (visit as any).illnesses = null;
+    }
 
     // Insert history entry for visit creation
     await query(
@@ -491,23 +541,27 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
     );
 
     // Auto-create illness entry if requested and visit is sick
-    if (input.create_illness && input.visit_type === 'sick' && input.illness_type) {
+    if (input.create_illness && input.visit_type === 'sick' && (Array.isArray(illnesses) && illnesses.length > 0)) {
       try {
-        await query(
-          `INSERT INTO illnesses (
-            child_id, illness_type, start_date, end_date, symptoms, temperature, visit_id, notes
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-          [
-            input.child_id,
-            input.illness_type,
-            input.visit_date,
-            input.end_date,
-            input.symptoms,
-            input.temperature,
-            visit.id,
-            input.notes,
-          ]
-        );
+        // Create illness entries for each illness selected (if multiple)
+        const toCreate = illnesses && illnesses.length > 0 ? illnesses : [];
+        for (const ill of toCreate) {
+          await query(
+            `INSERT INTO illnesses (
+              child_id, illness_type, start_date, end_date, symptoms, temperature, visit_id, notes
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [
+              input.child_id,
+              ill,
+              input.visit_date,
+              input.end_date,
+              input.symptoms,
+              input.temperature,
+              visit.id,
+              input.notes,
+            ]
+          );
+        }
       } catch (illnessError) {
         // Log error but don't fail the visit creation
         console.error('Failed to create illness from visit:', illnessError);
@@ -616,9 +670,10 @@ router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
       values.push(validateOptionalNumber(req.body.heart_rate, 40, 250));
     }
 
-    if (req.body.illness_type !== undefined) {
-      updates.push(`illness_type = $${paramCount++}`);
-      values.push(validateIllnessType(req.body.illness_type));
+    // If illnesses array is provided, we'll update the join table after the main update completes
+    let illnessesToSet: IllnessType[] | null = null;
+    if (req.body.illnesses !== undefined) {
+      illnessesToSet = validateIllnessesArray(req.body.illnesses);
     }
 
     if (req.body.symptoms !== undefined) {
@@ -709,6 +764,21 @@ router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
     }
 
     const visit = convertVisitRow(result.rows[0]);
+
+    // If illnesses array provided, sync the join table to match the provided list
+    if (illnessesToSet !== null) {
+      await query(`DELETE FROM visit_illnesses WHERE visit_id = $1`, [id]);
+      if (illnessesToSet.length > 0) {
+        const insertPromises = illnessesToSet.map((ill: IllnessType) => query(`INSERT INTO visit_illnesses (visit_id, illness_type) VALUES ($1, $2)`, [id, ill]));
+        await Promise.all(insertPromises);
+        (visit as any).illnesses = illnessesToSet;
+      } else {
+        (visit as any).illnesses = null;
+      }
+    } else {
+      const existing = await query(`SELECT illness_type FROM visit_illnesses WHERE visit_id = $1`, [id]);
+      (visit as any).illnesses = existing.rows.length > 0 ? existing.rows.map((r: any) => r.illness_type) : null;
+    }
 
     // Insert history entry for visit update
     await query(

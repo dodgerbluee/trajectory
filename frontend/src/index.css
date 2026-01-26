@@ -4933,7 +4933,6 @@ select.form-input:disabled {
 
 .vaccine-input-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   margin-bottom: var(--spacing-sm);
 }
@@ -4977,6 +4976,7 @@ select.form-input:disabled {
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-xs);
+  padding-bottom: var(--spacing-lg);
 }
 
 .vaccine-badge-item {

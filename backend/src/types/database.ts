@@ -225,7 +225,7 @@ export interface Visit {
   heart_rate: number | null;
   
   // Sick visit fields
-  illness_type: IllnessType | null;
+  // illnesses are stored in `visit_illnesses` join table; no single `illness_type` on visits
   symptoms: string | null;
   temperature: number | null;
   end_date: string | null; // ISO date string
@@ -270,7 +270,6 @@ export interface CreateVisitInput {
   blood_pressure?: string | null;
   heart_rate?: number | null;
   
-  illness_type?: IllnessType | null;
   symptoms?: string | null;
   temperature?: number | null;
   end_date?: string | null;
@@ -310,7 +309,6 @@ export interface UpdateVisitInput {
   bmi_value?: number | null;
   bmi_percentile?: number | null;
   
-  illness_type?: IllnessType | null;
   symptoms?: string | null;
   temperature?: number | null;
   end_date?: string | null;
@@ -349,7 +347,6 @@ export interface VisitRow {
   blood_pressure: string | null;
   heart_rate: number | null;
   
-  illness_type: IllnessType | null;
   symptoms: string | null;
   temperature: string | null; // Decimal comes as string
   end_date: Date | null;
@@ -398,7 +395,7 @@ export function visitRowToVisit(row: VisitRow): Visit {
     blood_pressure: row.blood_pressure,
     heart_rate: row.heart_rate,
     
-    illness_type: row.illness_type,
+    // visit-level illness_type removed; illnesses are returned separately from visit_illnesses
     symptoms: row.symptoms,
     temperature: row.temperature ? parseFloat(row.temperature) : null,
     end_date: row.end_date ? row.end_date.toISOString().split('T')[0] : null,
