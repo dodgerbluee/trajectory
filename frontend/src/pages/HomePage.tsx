@@ -114,14 +114,14 @@ function HomePage() {
       content: familyContent,
     },
     {
-      id: 'illnesses',
-      label: 'Illness',
-      content: <AllIllnessesView />,
-    },
-    {
       id: 'visits',
       label: 'Visits',
       content: <AllVisitsView />,
+    },
+    {
+      id: 'illnesses',
+      label: 'Illness',
+      content: <AllIllnessesView />,
     },
     {
       id: 'metrics',

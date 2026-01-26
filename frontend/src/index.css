@@ -331,7 +331,6 @@ body {
 .settings-page-grid {
   max-width: 1200px; /* match header/content width */
   margin: 0 auto;
-  padding: var(--spacing-lg) 0;
 }
 
 
@@ -348,6 +347,22 @@ body {
   gap: var(--spacing-lg);
   align-items: start;
   padding: var(--spacing-md);
+}
+
+.settings-card-header {
+  grid-column: 1 / -1;
+  padding: 0 var(--spacing-md) 0 var(--spacing-md); /* remove top padding to align with other pages */
+}
+
+.settings-title {
+  margin: 0;
+  font-size: var(--font-size-2xl);
+}
+
+.settings-save-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--spacing-md) 0 0 0;
 }
 
 .settings-sidebar {

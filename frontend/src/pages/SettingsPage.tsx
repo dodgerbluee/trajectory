@@ -17,7 +17,7 @@ type DateFormat = 'MM/DD/YYYY' | 'DD/MM/YYYY' | 'YYYY-MM-DD';
 function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const { user, updateUsername, updatePassword, checkAuth } = useAuth();
-  const [activeTab, setActiveTab] = useState<'general' | 'user'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'user' | 'data'>('general');
   const [dateFormat, setDateFormat] = useState<DateFormat>(() => {
     return (localStorage.getItem('dateFormat') as DateFormat) || 'MM/DD/YYYY';
   });
@@ -242,8 +242,31 @@ function SettingsPage() {
             ]}
           />
         </div>
-      </Card>
 
+        <Card title="About">
+          <div className="settings-section">
+            <div className="about-item">
+              <span className="about-label">Version:</span>
+              <span className="about-value">1.0.0</span>
+            </div>
+            <div className="about-item">
+              <span className="about-label">License:</span>
+              <span className="about-value">Private</span>
+            </div>
+          </div>
+        </Card>
+
+        <div className="settings-save-row">
+          <Button variant="primary" onClick={() => { setNotification({ message: 'Settings saved', type: 'success' }); setTimeout(() => setNotification(null), 3000); }}>
+            <LuSave style={{ marginRight: 8 }} /> Save
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
+
+  const dataContent = (
+    <div className="settings-layout">
       <Card title="Data Management">
         <div className="settings-section">
           <label className="settings-label">Export Data</label>
@@ -251,19 +274,6 @@ function SettingsPage() {
           <Button variant="secondary" onClick={handleExportData}>
             <LuDownload style={{ marginRight: 8 }} /> Export Data
           </Button>
-        </div>
-      </Card>
-
-      <Card title="About">
-        <div className="settings-section">
-          <div className="about-item">
-            <span className="about-label">Version:</span>
-            <span className="about-value">1.0.0</span>
-          </div>
-          <div className="about-item">
-            <span className="about-label">License:</span>
-            <span className="about-value">Private</span>
-          </div>
         </div>
       </Card>
     </div>
@@ -508,12 +518,6 @@ function SettingsPage() {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <div>
-          <h1>Settings</h1>
-        </div>
-      </div>
-
       {notification && (
         <Notification
           message={notification.message}
@@ -525,6 +529,9 @@ function SettingsPage() {
       <div className="settings-page-grid">
         <Card className="settings-card">
           <div className="settings-card-grid">
+            <div className="settings-card-header">
+              <h1 className="settings-title">Settings</h1>
+            </div>
             <aside className="settings-sidebar">
               <button className={`sidebar-item ${activeTab === 'general' ? 'active' : ''}`} onClick={() => setActiveTab('general')}>
                 <LuSettings className="sidebar-icon" />
@@ -534,18 +541,18 @@ function SettingsPage() {
                 <LuUser className="sidebar-icon" />
                 <span>User</span>
               </button>
+              <button className={`sidebar-item ${activeTab === 'data' ? 'active' : ''}`} onClick={() => setActiveTab('data')}>
+                <LuDownload className="sidebar-icon" />
+                <span>Data</span>
+              </button>
             </aside>
 
-            <main className="settings-main">
-              {activeTab === 'general' ? generalContent : userContent}
-            </main>
+                <main className="settings-main">
+                  {activeTab === 'general' ? generalContent : activeTab === 'user' ? userContent : dataContent}
+                </main>
           </div>
 
-          <div className="settings-card-footer">
-            <Button variant="primary" onClick={() => { setNotification({ message: 'Settings saved', type: 'success' }); setTimeout(() => setNotification(null), 3000); }}>
-              <LuSave style={{ marginRight: 8 }} /> Save
-            </Button>
-          </div>
+          {/* footer removed - Save moved into General preferences */}
         </Card>
       </div>
     </div>
