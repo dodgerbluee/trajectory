@@ -53,12 +53,12 @@ function TimelineItem({ type, data, childName, childId, hasAttachments }: Timeli
       if (visit.illness_type) return visit.illness_type.replace('_', ' ');
       if (visit.injury_type) return visit.injury_type;
       if (visit.vision_prescription) return visit.vision_prescription;
-      if (visit.location) return visit.location;
+      // For wellness visits, skip location (it's shown in badges with pin icon)
+      // Only show location as primary if it's not a wellness visit
+      if (visit.location && visit.visit_type !== 'wellness') return visit.location;
       if (visit.doctor_name) return visit.doctor_name;
     }
-    if (illness) {
-      return illness.illness_type.replace('_', ' ');
-    }
+    // For illnesses, don't show illness_type as primary (it's shown in badges)
     return null;
   };
 
@@ -87,6 +87,7 @@ function TimelineItem({ type, data, childName, childId, hasAttachments }: Timeli
     }
     
     if (illness) {
+      // Illness type is now shown in the header badge, not here
       if (illness.end_date) {
         items.push({ text: `Ended: ${formatDate(illness.end_date)}` });
       }
@@ -115,43 +116,87 @@ function TimelineItem({ type, data, childName, childId, hasAttachments }: Timeli
         <div className="timeline-item-content">
           <div className="timeline-item-header-compact">
             <div className="timeline-item-main">
-              <div className="timeline-item-label-row">
-                <span className="timeline-item-label-compact">{getLabel()}</span>
-                {childName && (
-                  <Link 
-                    to={childId ? `/children/${childId}` : '#'} 
-                    className="child-name-badge"
-                    onClick={(e) => {
-                      if (childId) {
-                        e.stopPropagation();
-                      } else {
-                        e.preventDefault();
-                      }
-                    }}
-                  >
-                    {childName}
-                  </Link>
-                )}
-                {isVisit && visit?.visit_type === 'wellness' && visit.title && (
-                  <span className="wellness-title-badge">{visit.title}</span>
-                )}
-                {isVisit && hasAttachments && (
-                  <span className="attachment-indicator" title="Has attachments">📎</span>
-                )}
-              </div>
-              <div className="timeline-item-date-row">
-                <span className="timeline-item-date-compact">{formatDate(getDate())}</span>
-                {!isVisit && illness && !illness.end_date && (
-                  <span className="timeline-badge timeline-badge-ongoing timeline-badge-ongoing-standalone">Ongoing</span>
-                )}
-              </div>
+              {isVisit && visit?.visit_type === 'wellness' ? (
+                // Wellness visits: everything on one line
+                <div className="timeline-item-label-row timeline-item-wellness-single-line">
+                  <span className="timeline-item-label-compact">{getLabel()}</span>
+                  <div className="wellness-badges-group">
+                    {visit.tags && visit.tags.length > 0 && (
+                      <>
+                        {visit.tags.map((tag, idx) => (
+                          <span key={idx} className="timeline-badge">{tag}</span>
+                        ))}
+                      </>
+                    )}
+                    {visit.title && (
+                      <span className="timeline-badge">{visit.title}</span>
+                    )}
+                    {visit.location && (
+                      <span className="timeline-badge">📍 {visit.location}</span>
+                    )}
+                    {visit.doctor_name && (
+                      <span className="timeline-badge">👨‍⚕️ {visit.doctor_name}</span>
+                    )}
+                    {visit.weight_value && (
+                      <span className="timeline-badge">⚖️ {visit.weight_value} lbs</span>
+                    )}
+                    {visit.height_value && (
+                      <span className="timeline-badge">📏 {visit.height_value}"</span>
+                    )}
+                    {visit.vaccines_administered && visit.vaccines_administered.length > 0 && (
+                      <span className="timeline-badge">💉 {visit.vaccines_administered.length}</span>
+                    )}
+                    {visit.prescriptions && visit.prescriptions.length > 0 && (
+                      <span className="timeline-badge">💊 {visit.prescriptions.length}</span>
+                    )}
+                  </div>
+                  <span className="timeline-item-date-compact wellness-date-spaced">{formatDate(getDate())}</span>
+                  {hasAttachments && (
+                    <span className="attachment-indicator" title="Has attachments">📎</span>
+                  )}
+                </div>
+              ) : (
+                // Other visits and illnesses: two-line layout
+                <>
+                  <div className="timeline-item-label-row">
+                    <span className="timeline-item-label-compact">{getLabel()}</span>
+                    {childName && (
+                      <Link 
+                        to={childId ? `/children/${childId}` : '#'} 
+                        className="child-name-badge"
+                        onClick={(e) => {
+                          if (childId) {
+                            e.stopPropagation();
+                          } else {
+                            e.preventDefault();
+                          }
+                        }}
+                      >
+                        {childName}
+                      </Link>
+                    )}
+                    {isVisit && hasAttachments && (
+                      <span className="attachment-indicator" title="Has attachments">📎</span>
+                    )}
+                  </div>
+                  <div className="timeline-item-date-row">
+                    {!isVisit && illness && illness.illness_type && (
+                      <span className="illness-type-badge">🌡️ {illness.illness_type.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}</span>
+                    )}
+                    <span className="timeline-item-date-compact">{formatDate(getDate())}</span>
+                    {!isVisit && illness && !illness.end_date && (
+                      <span className="timeline-badge timeline-badge-ongoing timeline-badge-ongoing-standalone">Ongoing</span>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
             <span className="timeline-item-arrow-compact">→</span>
           </div>
-          {primaryInfo && (
+          {primaryInfo && !(isVisit && visit?.visit_type === 'wellness') && (
             <div className="timeline-item-primary">{primaryInfo}</div>
           )}
-          {secondaryInfo.length > 0 && (
+          {secondaryInfo.length > 0 && !(isVisit && visit?.visit_type === 'wellness') && (
             <div className="timeline-item-badges">
               {secondaryInfo.map((item, idx) => (
                 <span key={idx} className={`timeline-badge ${item.isOngoing ? 'timeline-badge-ongoing' : ''}`}>

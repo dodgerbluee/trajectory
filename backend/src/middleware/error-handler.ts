@@ -45,6 +45,13 @@ export class BadRequestError extends AppError {
   }
 }
 
+export class UnauthorizedError extends AppError {
+  constructor(message: string = 'Unauthorized') {
+    super(401, message);
+    this.name = 'UnauthorizedError';
+  }
+}
+
 /**
  * Standard error response format
  */

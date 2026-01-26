@@ -267,21 +267,10 @@ function ChildDetailPage() {
     return <ErrorMessage message="Child not found" onRetry={loadChild} />;
   }
 
-  // Safely calculate age with error handling
-  let age;
-  try {
-    age = calculateAge(child.date_of_birth);
-  } catch (err) {
-    console.error('Error calculating age:', err);
-    age = { years: 0, months: 0 };
-  }
+  const age = calculateAge(child.date_of_birth);
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <Link to="/" className="breadcrumb">← Back to Children</Link>
-      </div>
-
       {notification && (
         <Notification
           message={notification.message}
@@ -293,9 +282,9 @@ function ChildDetailPage() {
       {/* Unified Overview and Tabs Section */}
       <Card>
         <div className="child-detail-body">
-          {/* Overview Section */}
+          {/* Overview Section - without header title */}
           <div className="child-detail-section">
-            <h3 className="child-detail-section-title">Overview</h3>
+            <Link to="/" className="breadcrumb">← Back to Children</Link>
             <div className="overview-header">
               <div className="overview-main">
                 <div className="overview-avatar">

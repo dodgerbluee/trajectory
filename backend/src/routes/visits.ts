@@ -2,10 +2,12 @@
  * Visit Routes - Unified wellness and sick visits
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Response, NextFunction } from 'express';
+import type { Request as ExpressRequest } from 'express';
 import { query } from '../db/connection.js';
 import { createResponse } from '../types/api.js';
 import { BadRequestError, NotFoundError } from '../middleware/error-handler.js';
+import type { AuthRequest } from '../middleware/auth.js';
 import type { VisitRow, CreateVisitInput, VisitType, IllnessType } from '../types/database.js';
 import { visitRowToVisit as convertVisitRow } from '../types/database.js';
 
@@ -125,7 +127,7 @@ function validatePrescriptions(value: any): any {
 // GET /api/visits/growth-data - Get growth data for charts (age-based)
 // ============================================================================
 
-router.get('/growth-data', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/growth-data', async (req: ExpressRequest, res: Response, next: NextFunction) => {
   try {
     const childId = req.query.child_id ? parseInt(req.query.child_id as string) : undefined;
     const startDate = req.query.start_date as string | undefined;
@@ -322,7 +324,7 @@ router.get('/growth-data', async (req: Request, res: Response, next: NextFunctio
   }
 });
 
-router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', async (req: ExpressRequest, res: Response, next: NextFunction) => {
   try {
     const childId = req.query.child_id ? parseInt(req.query.child_id as string) : undefined;
     const visitType = req.query.visit_type as VisitType | undefined;
@@ -359,7 +361,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 // GET /api/visits/:id - Get single visit
 // ============================================================================
 
-router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/:id', async (req: ExpressRequest, res: Response, next: NextFunction) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -385,7 +387,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 // POST /api/visits - Create new visit
 // ============================================================================
 
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const input: CreateVisitInput = {
       child_id: parseInt(req.body.child_id),
@@ -481,6 +483,13 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 
     const visit = convertVisitRow(result.rows[0]);
 
+    // Insert history entry for visit creation
+    await query(
+      `INSERT INTO visit_history (visit_id, user_id, action, description)
+       VALUES ($1, $2, 'created', 'Visit created')`,
+      [visit.id, req.userId || null]
+    );
+
     // Auto-create illness entry if requested and visit is sick
     if (input.create_illness && input.visit_type === 'sick' && input.illness_type) {
       try {
@@ -515,7 +524,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 // PUT /api/visits/:id - Update visit
 // ============================================================================
 
-router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -699,7 +708,65 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
       throw new NotFoundError('Visit');
     }
 
-    res.json(createResponse(convertVisitRow(result.rows[0])));
+    const visit = convertVisitRow(result.rows[0]);
+
+    // Insert history entry for visit update
+    await query(
+      `INSERT INTO visit_history (visit_id, user_id, action, description)
+       VALUES ($1, $2, 'updated', 'Visit updated')`,
+      [id, req.userId || null]
+    );
+
+    res.json(createResponse(visit));
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ============================================================================
+// GET /api/visits/:id/history - Get visit history
+// ============================================================================
+
+router.get('/:id/history', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new BadRequestError('Invalid visit ID');
+    }
+
+    const result = await query<{
+      id: number;
+      visit_id: number;
+      user_id: number | null;
+      action: string;
+      description: string;
+      created_at: Date;
+      user_name: string | null;
+    }>(
+      `SELECT 
+        vh.id,
+        vh.visit_id,
+        vh.user_id,
+        vh.action,
+        vh.description,
+        vh.created_at,
+        u.name as user_name
+       FROM visit_history vh
+       LEFT JOIN users u ON vh.user_id = u.id
+       WHERE vh.visit_id = $1
+       ORDER BY vh.created_at DESC`,
+      [id]
+    );
+
+    res.json(createResponse(result.rows.map(row => ({
+      id: row.id,
+      visit_id: row.visit_id,
+      user_id: row.user_id,
+      action: row.action,
+      description: row.description,
+      created_at: row.created_at.toISOString(),
+      user_name: row.user_name,
+    }))));
   } catch (error) {
     next(error);
   }
@@ -709,7 +776,7 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
 // DELETE /api/visits/:id - Delete visit
 // ============================================================================
 
-router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', async (req: ExpressRequest, res: Response, next: NextFunction) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
