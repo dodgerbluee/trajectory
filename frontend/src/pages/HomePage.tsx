@@ -136,7 +136,7 @@ function HomePage() {
         <Tabs
           tabs={tabs}
           activeTab={activeTab}
-          onTabChange={(tabId) => setActiveTab(tabId as 'family' | 'illnesses' | 'visits' | 'metrics')}
+          onTabChange={(tabId) => setActiveTab(tabId as 'family' | 'visits' | 'illnesses' | 'metrics')}
         />
       </Card>
       <div className="version-footer">

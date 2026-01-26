@@ -41,6 +41,8 @@ function ChildDetailPage() {
     message: string;
     type: 'success' | 'error';
   } | null>(null);
+  // Track which visits have attachments (visit ID set)
+  const [visitsWithAttachments, setVisitsWithAttachments] = useState<Set<number>>(new Set());
 
   const loadChild = useCallback(async () => {
     if (!id) {
@@ -71,6 +73,28 @@ function ChildDetailPage() {
       setChild(childResponse.data);
       setVisits(allVisitsResponse.data);
       setIllnesses(illnessesResponse.data);
+      // Determine which visits have attachments so the timeline can show an indicator
+      try {
+        const visitAttachmentChecks = await Promise.all(
+          allVisitsResponse.data.map(async (visit) => {
+            try {
+              const attachmentsResp = await visitsApi.getAttachments(visit.id);
+              return (attachmentsResp.data && attachmentsResp.data.length > 0) ? visit.id : null;
+            } catch (err) {
+              // On error, treat as no attachments for that visit
+              return null;
+            }
+          })
+        );
+
+        const visitIdsWithAttachments = new Set<number>();
+        visitAttachmentChecks.forEach(id => {
+          if (id !== null) visitIdsWithAttachments.add(id as number);
+        });
+        setVisitsWithAttachments(visitIdsWithAttachments);
+      } catch (err) {
+        // ignore attachment population errors
+      }
       
       // Get most recent wellness visit (visits are sorted by date DESC)
       if (wellnessVisitsResponse.data.length > 0) {
@@ -191,16 +215,10 @@ function ChildDetailPage() {
     }
   };
 
-  // Track which visits have attachments
-  const visitsWithAttachments = useMemo(() => {
-    const visitIds = new Set<number>();
-    documents.forEach(doc => {
-      if (doc.type === 'visit') {
-        visitIds.add(doc.visit.id);
-      }
-    });
-    return visitIds;
-  }, [documents]);
+  // When loading child data, also fetch attachments for each visit to determine
+  // which visits have attachments so the visits timeline can show an indicator.
+  // This runs as part of `loadChild` (below) and is kept here as a safety fallback
+  // in case documents are loaded separately.
 
   // Filter visits - MUST be called before early returns (Rules of Hooks)
   const visitItems = useMemo(() => {
@@ -414,91 +432,104 @@ function ChildDetailPage() {
 
           {/* Tabs Section */}
           <div className="child-detail-section">
-            <Tabs
-              activeTab={activeTab}
-              onTabChange={(tabId) => setActiveTab(tabId as 'visits' | 'illnesses' | 'documents' | 'vaccines')}
-              tabs={[
-                {
-                  id: 'visits',
-                  label: 'Visits',
-                  content: (
-                    <div>
-                      <div className="timeline-filters">
-                        <div className="filter-group">
-                          <label htmlFor="visit-type-filter">Visit Type:</label>
-                          <Select
-                            id="visit-type-filter"
-                            value={visitTypeFilter}
-                            onChange={(value) => setVisitTypeFilter(value as 'all' | 'wellness' | 'sick' | 'injury' | 'vision')}
-                            options={[
-                              { value: 'all', label: 'All Visits' },
-                              { value: 'wellness', label: 'Wellness' },
-                              { value: 'sick', label: 'Sick' },
-                              { value: 'injury', label: 'Injury' },
-                              { value: 'vision', label: 'Vision' },
-                            ]}
-                          />
-                        </div>
-                      </div>
+            {(() => {
+              const tabsArray: any[] = [];
 
-                      {visitItems.length === 0 ? (
-                        <div className="empty-state">
-                          <p>No visits recorded yet. Click "Add Visit" to get started.</p>
-                        </div>
-                      ) : (
-                        <div className="timeline-list-modern">
-                          {visitItems.map((item) => (
-                            <TimelineItem
-                              key={item.id}
-                              type="visit"
-                              data={item.data}
-                              hasAttachments={visitsWithAttachments.has(item.data.id)}
-                            />
-                          ))}
-                        </div>
-                      )}
+              tabsArray.push({
+                id: 'visits',
+                label: 'Visits',
+                content: (
+                  <div>
+                    <div className="timeline-filters">
+                      <div className="filter-group">
+                        <label htmlFor="visit-type-filter">Visit Type:</label>
+                        <Select
+                          id="visit-type-filter"
+                          value={visitTypeFilter}
+                          onChange={(value) => setVisitTypeFilter(value as 'all' | 'wellness' | 'sick' | 'injury' | 'vision')}
+                          options={[
+                            { value: 'all', label: 'All Visits' },
+                            { value: 'wellness', label: 'Wellness' },
+                            { value: 'sick', label: 'Sick' },
+                            { value: 'injury', label: 'Injury' },
+                            { value: 'vision', label: 'Vision' },
+                          ]}
+                        />
+                      </div>
                     </div>
-                  ),
-                },
-                {
-                  id: 'illnesses',
-                  label: 'Illnesses',
-                  content: (
-                    <div>
-                      {illnessItems.length === 0 ? (
-                        <div className="empty-state">
-                          <p>No illnesses recorded yet. Click "Add Illness" to get started.</p>
-                        </div>
-                      ) : (
-                        <div className="timeline-list-modern">
-                          {illnessItems.map((item) => (
-                            <TimelineItem
-                              key={item.id}
-                              type="illness"
-                              data={item.data}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  id: 'documents',
-                  label: 'Documents',
-                  content: loadingDocuments ? (
-                    <LoadingSpinner message="Loading documents..." />
-                  ) : (
-                    <DocumentsList documents={documents} onUpdate={loadDocuments} showHeader={true} />
-                  ),
-                },
-                {
+
+                    {visitItems.length === 0 ? (
+                      <div className="empty-state">
+                        <p>No visits recorded yet. Click "Add Visit" to get started.</p>
+                      </div>
+                    ) : (
+                      <div className="timeline-list-modern">
+                        {visitItems.map((item) => (
+                          <TimelineItem
+                            key={item.id}
+                            type="visit"
+                            data={item.data}
+                            hasAttachments={visitsWithAttachments.has(item.data.id)}
+                            childName={undefined} // Child detail page: don't show child badge here
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ),
+              });
+
+              tabsArray.push({
+                id: 'illnesses',
+                label: 'Illnesses',
+                content: (
+                  <div>
+                    {illnessItems.length === 0 ? (
+                      <div className="empty-state">
+                        <p>No illnesses recorded yet. Click "Add Illness" to get started.</p>
+                      </div>
+                    ) : (
+                      <div className="timeline-list-modern">
+                        {illnessItems.map((item) => (
+                          <TimelineItem
+                            key={item.id}
+                            type="illness"
+                            data={item.data}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ),
+              });
+
+              tabsArray.push({
+                id: 'documents',
+                label: 'Documents',
+                content: loadingDocuments ? (
+                  <LoadingSpinner message="Loading documents..." />
+                ) : (
+                  <DocumentsList documents={documents} onUpdate={loadDocuments} showHeader={true} />
+                ),
+              });
+
+              // Only include the Vaccines tab when there are visits with vaccines
+              if (visitsWithVaccines.length > 0) {
+                tabsArray.push({
                   id: 'vaccines',
-                  label: 'Vaccine History',
+                  label: 'Vaccines',
                   content: <VaccineHistory visits={visitsWithVaccines} childId={parseInt(id!)} onUploadSuccess={loadDocuments} />,
-                },
-              ]}
-            />
+                });
+              }
+
+              return (
+                <Tabs
+                  activeTab={activeTab}
+                  onTabChange={(tabId) => setActiveTab(tabId as 'visits' | 'illnesses' | 'documents' | 'vaccines')}
+                  tabs={tabsArray}
+                />
+              );
+            })()}
           </div>
         </div>
       </Card>

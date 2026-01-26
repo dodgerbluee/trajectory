@@ -1,6 +1,9 @@
 import type { VisitType } from '../types/api';
 import Button from './Button';
 import Card from './Card';
+import { LuClipboard, LuEye } from 'react-icons/lu';
+import { MdOutlinePersonalInjury } from 'react-icons/md';
+import { Pill } from 'phosphor-react';
 
 interface VisitTypeModalProps {
   isOpen: boolean;
@@ -23,7 +26,11 @@ function VisitTypeModal({ isOpen, onSelect, onClose }: VisitTypeModalProps) {
               className="visit-type-button wellness"
               onClick={() => onSelect('wellness')}
             >
-              <div className="visit-type-icon">📋</div>
+              <div className="visit-type-icon">
+                <div className="visit-icon-outline visit-icon--wellness">
+                  <LuClipboard className="visit-type-svg" />
+                </div>
+              </div>
               <div className="visit-type-label">Wellness Visit</div>
               <div className="visit-type-description">Routine checkup with measurements</div>
             </button>
@@ -32,7 +39,11 @@ function VisitTypeModal({ isOpen, onSelect, onClose }: VisitTypeModalProps) {
               className="visit-type-button sick"
               onClick={() => onSelect('sick')}
             >
-              <div className="visit-type-icon">🤒</div>
+              <div className="visit-type-icon">
+                <div className="visit-icon-outline visit-icon--sick">
+                  <Pill className="visit-type-svg" weight="light" />
+                </div>
+              </div>
               <div className="visit-type-label">Sick Visit</div>
               <div className="visit-type-description">Illness with symptoms and prescriptions</div>
             </button>
@@ -41,7 +52,11 @@ function VisitTypeModal({ isOpen, onSelect, onClose }: VisitTypeModalProps) {
               className="visit-type-button injury"
               onClick={() => onSelect('injury')}
             >
-              <div className="visit-type-icon">🩹</div>
+              <div className="visit-type-icon">
+                <div className="visit-icon-outline visit-icon--injury">
+                  <MdOutlinePersonalInjury className="visit-type-svg visit-type-svg--filled" />
+                </div>
+              </div>
               <div className="visit-type-label">Injury Visit</div>
               <div className="visit-type-description">Sprains, cuts, fractures, and other injuries</div>
             </button>
@@ -50,7 +65,11 @@ function VisitTypeModal({ isOpen, onSelect, onClose }: VisitTypeModalProps) {
               className="visit-type-button vision"
               onClick={() => onSelect('vision')}
             >
-              <div className="visit-type-icon">👁️</div>
+              <div className="visit-type-icon">
+                <div className="visit-icon-outline visit-icon--vision">
+                  <LuEye className="visit-type-svg" />
+                </div>
+              </div>
               <div className="visit-type-label">Vision Visit</div>
               <div className="visit-type-description">Eye exams, prescriptions, and vision care</div>
             </button>

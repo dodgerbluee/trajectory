@@ -37,6 +37,25 @@ function AllVisitsView() {
 
       setVisits(visitsResponse.data);
       setChildren(childrenResponse.data);
+      // Determine which visits have attachments for the timeline indicator
+      try {
+        const checks = await Promise.all(
+          visitsResponse.data.map(async (visit) => {
+            try {
+              const resp = await visitsApi.getAttachments(visit.id);
+              return (resp.data && resp.data.length > 0) ? visit.id : null;
+            } catch (err) {
+              return null;
+            }
+          })
+        );
+
+        const ids = new Set<number>();
+        checks.forEach(id => { if (id !== null) ids.add(id as number); });
+        setVisitsWithAttachments(ids);
+      } catch (err) {
+        // ignore
+      }
     } catch (err) {
       if (err instanceof ApiClientError) {
         setError(err.message);
@@ -47,6 +66,9 @@ function AllVisitsView() {
       setLoading(false);
     }
   };
+
+  // Track which visits have attachments (visit ID set)
+  const [visitsWithAttachments, setVisitsWithAttachments] = useState<Set<number>>(new Set());
 
   // Create a map for quick child lookup
   const childMap = useMemo(() => {
@@ -142,6 +164,7 @@ function AllVisitsView() {
                   data={visit}
                   childName={child?.name || `Child #${visit.child_id}`}
                   childId={visit.child_id}
+                  hasAttachments={visitsWithAttachments.has(visit.id)}
                 />
               );
             })}

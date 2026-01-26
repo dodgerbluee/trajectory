@@ -4,11 +4,11 @@
  */
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { HiPencil, HiTrash, HiDownload } from 'react-icons/hi';
+import { LuFileText, LuImage } from 'react-icons/lu';
 import type { VisitAttachment, ChildAttachment, Visit } from '../types/api';
 import { visitsApi, childrenApi, ApiClientError } from '../lib/api-client';
-import { formatDate } from '../lib/date-utils';
+// formatDate not needed here; document entries show visit type and title instead of date
 import LoadingSpinner from './LoadingSpinner';
 
 interface DocumentWithVisit extends VisitAttachment {
@@ -98,10 +98,10 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
     return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   };
 
-  const getFileIcon = (fileType: string): string => {
-    if (fileType.startsWith('image/')) return '🖼️';
-    if (fileType === 'application/pdf') return '📄';
-    return '📎';
+  const getFileIcon = (fileType: string) => {
+    if (fileType.startsWith('image/')) return <LuImage className="document-file-icon" />;
+    if (fileType === 'application/pdf') return <LuFileText className="document-file-icon" />;
+    return <LuFileText className="document-file-icon" />;
   };
 
   const handleClick = (attachmentId: number, docType: 'visit' | 'child') => {
@@ -154,10 +154,10 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
         </div>
       )}
       {documents.map((doc) => (
-        <div key={`${doc.type}-${doc.id}`} className="document-item">
-          <div className="document-icon">{getFileIcon(doc.file_type)}</div>
-          
-          <div className="document-info">
+        <div key={`${doc.type}-${doc.id}`} className="document-item timeline-item-modern">
+          <div className="document-icon timeline-item-icon">{getFileIcon(doc.file_type)}</div>
+
+          <div className="document-info timeline-item-content">
             {editingId === doc.id ? (
               <div className="document-edit-form">
                 <input
@@ -194,45 +194,35 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
                 </div>
               </div>
             ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => handleClick(doc.id, doc.type)}
-                  className="document-filename-link"
-                  title="Click to open document"
-                >
-                  {doc.original_filename}
-                </button>
-                <div className="document-meta">
-                  <span className="document-meta-item">{formatFileSize(doc.file_size)}</span>
-                  <span className="document-meta-separator">•</span>
-                  {doc.type === 'visit' ? (
-                    <>
-                      <Link 
-                        to={`/visits/${doc.visit.id}`}
-                        className="document-visit-link"
-                      >
-                        {formatDate(doc.visit.visit_date)}
-                      </Link>
-                      <span className="document-meta-separator">•</span>
-                      <span className="document-meta-item">
-                        {doc.visit.visit_type === 'wellness' ? 'Wellness Visit' : 
-                         doc.visit.visit_type === 'sick' ? 'Sick Visit' : 
-                         doc.visit.visit_type === 'vision' ? 'Vision Visit' :
-                         'Injury Visit'}
-                      </span>
-                      {doc.visit.visit_type === 'wellness' && doc.visit.title && (
+              <div className="timeline-item-header-compact">
+                <div className="timeline-item-main">
+                  <div className="timeline-item-label-row timeline-item-wellness-single-line">
+                    <button
+                      type="button"
+                      onClick={() => handleClick(doc.id, doc.type)}
+                      className="document-filename-link"
+                      title="Click to open document"
+                    >
+                      {doc.original_filename}
+                    </button>
+
+                    <div className="document-badges-group wellness-badges-group">
+                      {doc.type === 'visit' ? (
                         <>
-                          <span className="document-meta-separator">•</span>
-                          <span className="wellness-title-badge">{doc.visit.title}</span>
+                          <span className="timeline-badge">{doc.visit.visit_type === 'wellness' ? 'Wellness' : doc.visit.visit_type === 'sick' ? 'Sick' : doc.visit.visit_type === 'vision' ? 'Vision' : 'Injury'}</span>
+                          {doc.visit.visit_type === 'wellness' && doc.visit.title && (
+                            <span className="wellness-title-badge">{doc.visit.title}</span>
+                          )}
                         </>
+                      ) : (
+                        <span className="timeline-badge">Vaccine Report</span>
                       )}
-                    </>
-                  ) : (
-                    <span className="document-meta-item">Vaccine Report</span>
-                  )}
+
+                      <span className="timeline-badge file-size-badge">{formatFileSize(doc.file_size)}</span>
+                    </div>
+                  </div>
                 </div>
-              </>
+              </div>
             )}
           </div>
 

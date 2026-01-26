@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { illnessesApi, childrenApi, ApiClientError } from '../lib/api-client';
 import type { Illness, Child, IllnessType } from '../types/api';
-import { formatDate } from '../lib/date-utils';
+import TimelineItem from '../components/TimelineItem';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import Card from '../components/Card';
 import Button from '../components/Button';
-import { HiPlus, HiPencilAlt, HiTrash } from 'react-icons/hi';
+import { HiPlus } from 'react-icons/hi';
 
 const ILLNESS_TYPES: { value: IllnessType; label: string }[] = [
   { value: 'flu', label: 'Flu' },
@@ -24,7 +24,6 @@ const ILLNESS_TYPES: { value: IllnessType; label: string }[] = [
 ];
 
 function IllnessesPage() {
-  const navigate = useNavigate();
   const [illnesses, setIllnesses] = useState<Illness[]>([]);
   const [children, setChildren] = useState<Child[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,25 +88,7 @@ function IllnessesPage() {
     return child?.name || `Child #${childId}`;
   };
 
-  const getIllnessTypeLabel = (type: IllnessType): string => {
-    return ILLNESS_TYPES.find(t => t.value === type)?.label || type;
-  };
 
-  const getSeverityEmoji = (severity: number): string => {
-    const emojis: { [key: number]: string } = {
-      1: '😊',
-      2: '🙂',
-      3: '😐',
-      4: '😕',
-      5: '😟',
-      6: '😣',
-      7: '😖',
-      8: '😫',
-      9: '😩',
-      10: '🤢',
-    };
-    return emojis[severity] || '😐';
-  };
 
   if (loading) {
     return <LoadingSpinner message="Loading illnesses..." />;
@@ -198,72 +179,13 @@ function IllnessesPage() {
         <Card>
           <div className="illnesses-list">
             {illnesses.map((illness) => (
-              <div key={illness.id} className="illness-item">
-                <div className="illness-item-content">
-                  <div className="illness-item-header">
-                    <h3>{getChildName(illness.child_id)}</h3>
-                    <span className={`illness-type-badge ${illness.illness_type}`}>
-                      {getIllnessTypeLabel(illness.illness_type)}
-                    </span>
-                  </div>
-                  <div className="illness-item-details">
-                    <div className="illness-detail-row">
-                      <strong>Start Date:</strong> {formatDate(illness.start_date)}
-                    </div>
-                    {illness.end_date && (
-                      <div className="illness-detail-row">
-                        <strong>End Date:</strong> {formatDate(illness.end_date)}
-                      </div>
-                    )}
-                    {!illness.end_date && (
-                      <div className="illness-detail-row">
-                        <strong>Status:</strong> <span className="ongoing-badge">Ongoing</span>
-                      </div>
-                    )}
-                    {illness.temperature && (
-                      <div className="illness-detail-row">
-                        <strong>Temperature:</strong> {illness.temperature}°F
-                      </div>
-                    )}
-                    {illness.severity && (
-                      <div className="illness-detail-row">
-                        <strong>Severity:</strong> 
-                        <span className="severity-display">
-                          {getSeverityEmoji(illness.severity)} {illness.severity}/10
-                        </span>
-                      </div>
-                    )}
-                    {illness.symptoms && (
-                      <div className="illness-detail-row">
-                        <strong>Symptoms:</strong> {illness.symptoms}
-                      </div>
-                    )}
-                    {illness.visit_id && (
-                      <div className="illness-detail-row">
-                        <Link to={`/visits/${illness.visit_id}`} className="visit-link">
-                          View Related Visit →
-                        </Link>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="illness-item-actions">
-                  <Button 
-                    variant="secondary" 
-                    size="sm"
-                    onClick={() => navigate(`/illnesses/${illness.id}/edit`)}
-                  >
-                    <HiPencilAlt className="btn-icon" /> Edit
-                  </Button>
-                  <Button 
-                    variant="danger" 
-                    size="sm"
-                    onClick={() => setChildToDelete(illness)}
-                  >
-                    <HiTrash className="btn-icon" /> Delete
-                  </Button>
-                </div>
-              </div>
+              <TimelineItem
+                key={illness.id}
+                type="illness"
+                data={illness}
+                childName={getChildName(illness.child_id)}
+                childId={illness.child_id}
+              />
             ))}
           </div>
         </Card>

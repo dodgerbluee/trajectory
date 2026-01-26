@@ -20,6 +20,9 @@
   --color-primary-600: #2563eb;
   --color-primary-700: #1d4ed8;
   --color-primary-900: #1e3a8a;
+  /* Accent for visit pills (navy) */
+  --color-visit-accent: #0b3d91;
+  --color-visit-accent-2: #0f4bb3;
   
   /* Secondary Colors */
   --color-secondary: #64748b;
@@ -49,8 +52,8 @@
   --color-gray-900: #111827;
   
   /* Background Colors (Light Mode) */
-  --color-background: #ffffff;
-  --color-background-card: #f5f5f5;
+  --color-background: #f5f5f5;
+  --color-background-card: #ffffff;
   --color-surface: #f8fafc;
   --color-border: #e2e8f0;
   
@@ -322,6 +325,75 @@ body {
   gap: var(--spacing-md);
 }
 
+/* Settings page layout - left sidebar */
+
+/* Page-level wrapper that centers content like HomePage */
+.settings-page-grid {
+  max-width: 1200px; /* match header/content width */
+  margin: 0 auto;
+  padding: var(--spacing-lg) 0;
+}
+
+
+.settings-card {
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0; /* inner grid controls padding */
+}
+
+.settings-card-grid {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: var(--spacing-lg);
+  align-items: start;
+  padding: var(--spacing-md);
+}
+
+.settings-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.sidebar-item.active,
+.sidebar-item:hover {
+  background: var(--color-primary-light);
+}
+
+.sidebar-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.settings-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.settings-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+  background: transparent;
+}
+
 /* Illness Notification */
 .illness-notification {
   position: relative;
@@ -502,7 +574,7 @@ body {
 
 .timeline-item-modern {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);
   background: var(--color-background-card);
@@ -529,8 +601,41 @@ body {
   justify-content: center;
   font-size: 1.125rem;
   line-height: 1;
-  background: var(--color-surface);
+  /* background: var(--color-surface); */
   border-radius: var(--radius-sm);
+}
+
+/* Ensure timeline rows are vertically centered: icon, label and badges */
+.timeline-item-main,
+.timeline-item-label-row,
+.timeline-item-wellness-single-line,
+.timeline-item-header-compact {
+  align-items: center;
+}
+
+/* Keep timeline-item-content using its column layout's default (stretch)
+   so children aren't horizontally centered. We only want header rows
+   vertically centered. */
+.timeline-item-content {
+  align-items: stretch;
+}
+
+/* Make inline text and filename links align center with icons */
+.timeline-item-label-compact,
+.document-filename-link {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+/* Prevent SVG baseline shifts: render as block and center */
+.timeline-item-icon svg,
+.visit-type-svg,
+.document-file-icon,
+.timeline-item-icon > * {
+  display: block;
+  vertical-align: middle;
+  line-height: 1;
 }
 
 
@@ -571,6 +676,11 @@ body {
   gap: var(--spacing-xs);
 }
 
+/* Center wellness text vertically so the label aligns in the box */
+.timeline-item-wellness-single-line {
+  align-items: center;
+}
+
 .timeline-item-wellness-single-line .timeline-item-label-compact {
   flex-shrink: 0;
   margin-right: 0;
@@ -602,11 +712,180 @@ body {
   margin-right: 0;
 }
 
-.timeline-item-label-compact {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
-  white-space: nowrap;
+/* Accent pill used for Wellness and Injury icons */
+.visit-pill {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(11, 61, 145, 0.14);
+  transition: transform 160ms var(--transition-base), box-shadow 160ms var(--transition-base);
+}
+.visit-pill:hover {
+  transform: translateY(-3px);
+}
+.visit-pill .visit-type-svg {
+  width: 20px;
+  height: 20px;
+}
+.visit-pill--accent {
+  background: linear-gradient(180deg, var(--color-visit-accent-2), var(--color-visit-accent));
+}
+
+[data-theme="dark"] .visit-pill {
+  box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+}
+
+/* Outline icon wrapper: no filled badge, icon color is the accent */
+.visit-icon-outline {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-visit-accent);
+  background: transparent;
+}
+.visit-icon-outline .visit-type-svg {
+  width: 20px;
+  height: 20px;
+}
+
+[data-theme="dark"] .visit-icon-outline {
+  color: var(--color-visit-accent-2);
+}
+
+/* Make icons in the VisitTypeModal larger and color-coded per type */
+.visit-type-icon .visit-icon-outline {
+  /* Reduced from +50% to +25% overall: wrapper 96px -> 120px */
+  width: 120px;
+  height: 120px;
+  transform: translateY(-10px); /* smaller upward nudge for visual center */
+}
+.visit-type-icon .visit-icon-outline .visit-type-svg {
+  /* SVG scaled proportionally (48px -> 60px for +25%) */
+  width: 60px;
+  height: 60px;
+}
+
+/* Increase injury icon size slightly in the Visit Type modal to visually
+   match the clipboard and pill icons (some icon sets have different
+   viewBox scaling which makes them appear smaller). */
+.visit-type-icon .visit-icon-outline.visit-icon--injury .visit-type-svg,
+.visit-type-icon .visit-icon-outline.visit-icon--injury .visit-type-svg svg {
+  width: 68px;
+  height: 68px;
+  display: inline-block;
+  transform: scale(0.92);
+}
+
+/* Specific adjustment for the sick (pill) icon to align its visual center
+   with the other icons — a slightly larger nudge than the default wrapper. */
+.visit-type-icon .visit-icon-outline.visit-icon--sick {
+  transform: translateY(-15px);
+}
+.visit-icon--wellness { color: var(--color-success); }
+.visit-icon--sick { color: var(--color-danger); }
+.visit-icon--injury { color: var(--color-visit-accent); }
+.visit-icon--vision { color: var(--color-warning); }
+.visit-type-button .visit-icon-outline:hover {
+  transform: translateY(-15px); /* hover lift scaled to new sizing */
+}
+
+/* Hover lift for sick icon is slightly larger to maintain perceived center */
+.visit-type-button .visit-icon-outline.visit-icon--sick:hover {
+  transform: translateY(-20px);
+}
+
+/* Ensure SVG icons explicitly pick up currentColor for fill/stroke
+   and force per-type colors to match light mode when in dark mode. */
+.visit-icon-outline .visit-type-svg,
+.visit-icon-outline .visit-type-svg svg {
+  color: inherit;
+  /* Default to outline icons: use stroke only and do not fill shapes. */
+  stroke: currentColor;
+  fill: none;
+}
+
+/* Some icon libraries/components expect to be filled; add an explicit
+   helper class when you want a filled icon: `visit-type-svg--filled`. */
+.visit-type-svg--filled,
+.visit-type-svg--filled svg {
+  fill: currentColor;
+  stroke: none;
+}
+
+[data-theme="dark"] .visit-icon--wellness { color: var(--color-success); }
+[data-theme="dark"] .visit-icon--sick { color: var(--color-danger); }
+[data-theme="dark"] .visit-icon--injury { color: var(--color-visit-accent); }
+[data-theme="dark"] .visit-icon--vision { color: var(--color-warning); }
+
+/* Per-type overrides: some icon libraries are filled by default
+   (Material / Phosphor). Ensure those icons render as intended
+   instead of getting outline-only (or accidental colored rects). */
+.visit-icon--sick .visit-type-svg,
+.visit-icon--sick .visit-type-svg svg {
+  fill: currentColor;   /* show filled shapes */
+  stroke: none;         /* remove any stroke that creates undesired borders */
+  vector-effect: non-scaling-stroke;
+}
+
+/* For lucide / stroke-based icons (wellness, vision) keep stroke-only */
+
+.visit-icon--wellness .visit-type-svg,
+.visit-icon--wellness .visit-type-svg svg,
+.visit-icon--vision .visit-type-svg,
+.visit-icon--vision .visit-type-svg svg,
+.visit-icon--injury .visit-type-svg,
+.visit-icon--injury .visit-type-svg svg {
+  stroke: currentColor;
+  fill: none;
+}
+
+/* Reduce stroke thickness for outline icons to half their default
+   to match design request. Use non-scaling stroke so the width is
+   consistent regardless of transforms. */
+.visit-icon--wellness .visit-type-svg,
+.visit-icon--wellness .visit-type-svg svg,
+.visit-icon--vision .visit-type-svg,
+.visit-icon--vision .visit-type-svg svg,
+.visit-icon--injury .visit-type-svg,
+.visit-icon--injury .visit-type-svg svg {
+  vector-effect: non-scaling-stroke;
+  /* medium stroke for a happy visual balance */
+  stroke-width: 1px;
+}
+
+/* Slightly larger for injury icons in compact timeline so they match the
+   perceived weight of LuClipboard / Pill icons used elsewhere. */
+.visit-icon--injury .visit-type-svg,
+.visit-icon--injury .visit-type-svg svg {
+  width: 22px;
+  height: 22px;
+  transform: scale(0.95);
+}
+
+/* Make sure any filled paths in the Material injury icon render as filled
+   and are visually bolder to match line weight of other icons. Use
+   a slightly thicker appearance by ensuring fill is applied and stroke
+   removed for filled variants. */
+.visit-icon--injury .visit-type-svg.visit-type-svg--filled svg path,
+.visit-icon--injury .visit-type-svg.visit-type-svg--filled svg g {
+  fill: currentColor !important;
+  stroke: none !important;
+}
+
+/* If an injury icon is explicitly marked as "filled" use the filled style
+   This overrides the generic injury outline rule above for icons that need
+   to render filled shapes (Material / Phosphor filled variants). */
+.visit-icon--injury .visit-type-svg.visit-type-svg--filled,
+.visit-icon--injury .visit-type-svg.visit-type-svg--filled svg {
+  fill: currentColor;
+  stroke: none;
+  vector-effect: none;
 }
 
 .timeline-item-date-row {
@@ -685,13 +964,17 @@ body {
 }
 
 .wellness-title-badge {
-  display: inline-block;
-  padding: 4px 12px;
+  /* Match timeline badge sizing/shape but keep primary (blue) color */
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px var(--spacing-xs);
   background: var(--color-primary-light);
   color: var(--color-primary);
-  border-radius: var(--radius-md);
-  font-size: 0.875rem;
-  font-weight: 500;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
   white-space: nowrap;
 }
 
@@ -703,12 +986,55 @@ body {
   padding-left: var(--spacing-md);
 }
 
+/* Injury badge should have same left padding as wellness badges */
+.injury-badge {
+  /* moved left padding to the wrapper `.injury-content` so badges
+     themselves don't carry additional left margin */
+  margin-left: 0;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Wrapper for injury visit details. Adds left padding so the injury
+   content lines up with wellness entries' badges. */
+.injury-content {
+  padding-left: var(--spacing-md);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+/* Make primary info render inline within injury content to match wellness layout */
+.injury-content .timeline-item-primary {
+  display: inline-block;
+  margin-left: var(--spacing-xs);
+}
+
+/* Align injury date to the right and give it the same left spacing */
+.injury-date-spaced {
+  margin-left: auto;
+  padding-left: var(--spacing-md);
+}
+
 .attachment-indicator {
   display: inline-flex;
   align-items: center;
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   margin-left: var(--spacing-xs);
+}
+
+.attachment-indicator .attachment-icon,
+.attachment-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  color: inherit;
+}
+.attachment-indicator .attachment-icon svg,
+.attachment-icon svg {
+  stroke: currentColor;
+  fill: none;
 }
 
 .child-name-badge {
@@ -4931,18 +5257,20 @@ select.form-input:disabled {
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: var(--spacing-lg);
+  /* reduce outer padding so modal can use more vertical space */
+  padding: var(--spacing-md);
 }
 
 .modal-content {
-  max-width: 800px;
+  /* Increase modal width and height allowance so content fits without scrolling */
+  max-width: 1000px;
   width: 100%;
-  max-height: 90vh;
+  max-height: 98vh;
   overflow-y: auto;
 }
 
 .modal-content-large {
-  max-width: 800px;
+  max-width: 1000px;
 }
 
 .modal-header {
@@ -5043,7 +5371,8 @@ select.form-input:disabled {
   cursor: pointer;
   transition: all 0.2s;
   text-align: center;
-  min-height: 180px;
+  /* slightly reduce min-height to fit more comfortably in the modal */
+  min-height: 160px;
 }
 
 .visit-type-button:hover {
@@ -5054,22 +5383,22 @@ select.form-input:disabled {
 
 .visit-type-button.wellness:hover {
   background: var(--color-surface);
-  border-color: #10b981;
+  border-color: var(--color-success);
 }
 
 .visit-type-button.sick:hover {
   background: var(--color-surface);
-  border-color: #ef4444;
+  border-color: var(--color-danger);
 }
 
 .visit-type-button.injury:hover {
   background: var(--color-surface);
-  border-color: #f59e0b;
+  border-color: var(--color-visit-accent);
 }
 
 .visit-type-button.vision:hover {
   background: var(--color-surface);
-  border-color: var(--color-primary);
+  border-color: var(--color-warning);
 }
 
 /* Dark mode specific hover adjustments */
@@ -5082,11 +5411,11 @@ select.form-input:disabled {
 }
 
 [data-theme="dark"] .visit-type-button.injury:hover {
-  background: rgba(245, 158, 11, 0.1);
+  background: rgba(11, 61, 145, 0.12);
 }
 
 [data-theme="dark"] .visit-type-button.vision:hover {
-  background: rgba(59, 130, 246, 0.1);
+  background: rgba(245, 158, 11, 0.1);
 }
 
 .visit-type-icon {
@@ -5247,7 +5576,6 @@ select.form-input:disabled {
 }
 
 .tabs-content {
-  min-height: 200px;
 }
 
 /* ============================================================================
@@ -5275,7 +5603,6 @@ select.form-input:disabled {
   background: var(--color-surface);
   border-color: var(--color-primary);
 }
-
 .document-icon {
   font-size: 1.25rem;
   flex-shrink: 0;
@@ -5286,11 +5613,29 @@ select.form-input:disabled {
   min-width: 0;
 }
 
+/* File icon sizing for documents list (Lucide svgs) */
+.document-file-icon {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  color: var(--color-text-secondary);
+  opacity: 0.95;
+}
+
+/* Ensure document badges follow the same compact single-line layout as visits/illnesses */
+.document-item.timeline-item-modern .timeline-item-label-row .document-filename-link {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+.file-size-badge {
+  opacity: 0.9;
+}
+
 .document-filename-link {
   display: block;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  color: var(--color-primary);
+  color: var(--color-text-secondary);
   text-decoration: none;
   cursor: pointer;
   background: none;
@@ -5302,6 +5647,18 @@ select.form-input:disabled {
 
 .document-filename-link:hover {
   color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+/* Ensure document filename appears as a blue inline hyperlink inside timeline rows */
+.timeline-item-label-row .document-filename-link {
+  display: inline;
+  color: var(--color-text-secondary) !important;
+  text-decoration: none;
+}
+.timeline-item-label-row .document-filename-link:hover {
+  /* keep hover underline but keep text color as grey */
+  color: var(--color-text-secondary) !important;
   text-decoration: underline;
 }
 
@@ -5751,14 +6108,13 @@ select.form-input:disabled {
 .vaccine-history-container {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-sm);
 }
 
 .vaccine-history-summary {
   display: flex;
   gap: var(--spacing-lg);
   padding: var(--spacing-md);
-  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
@@ -5784,7 +6140,7 @@ select.form-input:disabled {
 .vaccine-history-list {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
 }
 
 .vaccine-history-item {
@@ -5883,9 +6239,8 @@ select.form-input:disabled {
   color: var(--color-primary);
 }
 
-/* Vaccine Reports Section */
 .vaccine-reports-section {
-  margin-bottom: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
 }
 
 .vaccine-reports-title {
@@ -6194,7 +6549,6 @@ select.form-input:disabled {
   display: flex;
   gap: var(--spacing-lg);
   padding: var(--spacing-md);
-  background: var(--color-surface);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
   flex-wrap: wrap;
