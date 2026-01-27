@@ -40,7 +40,7 @@ function IllnessCard({ illness, childName, childId, hasAttachments }: IllnessCar
       <div className="timeline-item-modern">
         <div className="timeline-item-icon">
           <div className="visit-icon-outline visit-icon--sick" aria-hidden="true">
-            <Icon path={mdiFaceMaskOutline} size={0.8} className="visit-type-svg" style={{ color: 'var(--illness-icon, #ff8c00)', transform: 'scale(0.85)' }} />
+            <Icon path={mdiFaceMaskOutline} size={0.8} className="visit-type-svg" style={{ color: 'var(--illness-icon, #ff8c00)', transform: 'scale(1.15)' }} />
           </div>
         </div>
         <div className="timeline-item-content">

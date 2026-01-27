@@ -80,12 +80,75 @@ function KidsManagementPage() {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <div>
-          <Link to="/" className="breadcrumb">← Back to Children</Link>
-          <h1>Children</h1>
+      <Card>
+        <div className="page-body">
+          <div className="body-header">
+            <h1>Family</h1>
+          </div>
+          <div className="family-list">
+            {children.map((child) => {
+              const avatarUrl = child.avatar
+                ? childrenApi.getAvatarUrl(child.avatar)
+                : childrenApi.getDefaultAvatarUrl(child.gender);
+
+              const age = calculateAge(child.date_of_birth);
+              const ageText = formatAge(age.years, age.months);
+
+              return (
+                <Card key={child.id} className="family-card">
+                  <div className="family-content">
+                    <div className="family-avatar">
+                      <img
+                        src={avatarUrl}
+                        alt={`${child.name}'s avatar`}
+                        className="family-avatar-img"
+                      />
+                    </div>
+                    <div className="family-info">
+                      <h2 className="family-name">{child.name}</h2>
+                      <div className="family-details">
+                        <span>{ageText}</span>
+                        <span>•</span>
+                        <span>{formatDate(child.date_of_birth)}</span>
+                      </div>
+                    </div>
+                    <div className="family-actions">
+                      <Link to={`/children/${child.id}/edit`}>
+                        <Button variant="secondary" size="sm">Edit</Button>
+                      </Link>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleDelete(child)}
+                        disabled={deletingId === child.id}
+                      >
+                        {deletingId === child.id ? 'Deleting...' : 'Delete'}
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+
+            {/* Add Child Card */}
+            <Link to="/children/new" className="family-add-link">
+              <Card className="family-card family-add-card">
+                <div className="family-content">
+                  <div className="family-avatar">
+                    <div className="family-add-avatar">+</div>
+                  </div>
+                  <div className="family-info">
+                    <h2 className="family-name">Add Child</h2>
+                    <div className="family-details">
+                      <span>Click to add a new child</span>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </Link>
+          </div>
         </div>
-      </div>
+      </Card>
 
       {notification && (
         <Notification
@@ -94,69 +157,6 @@ function KidsManagementPage() {
           onClose={() => setNotification(null)}
         />
       )}
-
-      <div className="kids-management-list">
-        {children.map((child) => {
-          const avatarUrl = child.avatar
-            ? childrenApi.getAvatarUrl(child.avatar)
-            : childrenApi.getDefaultAvatarUrl(child.gender);
-          
-          const age = calculateAge(child.date_of_birth);
-          const ageText = formatAge(age.years, age.months);
-
-          return (
-            <Card key={child.id} className="kid-management-card">
-              <div className="kid-management-content">
-                <div className="kid-management-avatar">
-                  <img
-                    src={avatarUrl}
-                    alt={`${child.name}'s avatar`}
-                    className="kid-management-avatar-img"
-                  />
-                </div>
-                <div className="kid-management-info">
-                  <h2 className="kid-management-name">{child.name}</h2>
-                  <div className="kid-management-details">
-                    <span>{ageText}</span>
-                    <span>•</span>
-                    <span>{formatDate(child.date_of_birth)}</span>
-                  </div>
-                </div>
-                <div className="kid-management-actions">
-                  <Link to={`/children/${child.id}/edit`}>
-                    <Button variant="secondary" size="sm">Edit</Button>
-                  </Link>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => handleDelete(child)}
-                    disabled={deletingId === child.id}
-                  >
-                    {deletingId === child.id ? 'Deleting...' : 'Delete'}
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          );
-        })}
-        
-        {/* Add Child Card */}
-        <Link to="/children/new" className="kid-management-add-link">
-          <Card className="kid-management-card kid-management-add-card">
-            <div className="kid-management-content">
-              <div className="kid-management-avatar">
-                <div className="kid-management-add-avatar">+</div>
-              </div>
-              <div className="kid-management-info">
-                <h2 className="kid-management-name">Add Child</h2>
-                <div className="kid-management-details">
-                  <span>Click to add a new child</span>
-                </div>
-              </div>
-            </div>
-          </Card>
-        </Link>
-      </div>
     </div>
   );
 }

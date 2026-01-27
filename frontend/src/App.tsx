@@ -56,7 +56,7 @@ function App() {
                   <Route path="/metrics" element={<MetricsPage />} />
                   
                   {/* Management & Settings */}
-                  <Route path="/kids-management" element={<KidsManagementPage />} />
+                  <Route path="/family" element={<KidsManagementPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   
                   <Route path="*" element={<NotFoundPage />} />

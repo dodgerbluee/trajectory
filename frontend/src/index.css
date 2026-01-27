@@ -274,7 +274,7 @@ body {
 }
 
 .header-content {
-  max-width: 1200px;
+  max-width: 1600px;
   width: 100%;
   background-color: var(--color-background-card);
   border-radius: var(--radius-lg);
@@ -329,8 +329,12 @@ body {
 
 /* Page-level wrapper that centers content like HomePage */
 .settings-page-grid {
-  max-width: 1200px; /* match header/content width */
+  max-width: 1600px; /* match header/content width */
   margin: 0 auto;
+}
+
+.body-header {
+  padding-bottom: var(--spacing-md);
 }
 
 
@@ -344,7 +348,7 @@ body {
 .settings-card-grid {
   display: grid;
   grid-template-columns: 220px 1fr;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-md);
   align-items: start;
   padding: var(--spacing-md);
 }
@@ -352,6 +356,10 @@ body {
 .settings-card-header {
   grid-column: 1 / -1;
   padding: 0 var(--spacing-md) 0 var(--spacing-md); /* remove top padding to align with other pages */
+  /* Separator under header to visually divide title from content */
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
 }
 
 .settings-title {
@@ -370,6 +378,9 @@ body {
   flex-direction: column;
   gap: var(--spacing-xs);
 }
+
+/* Metrics (Trends) page two-column layout aligning subheadings on left */
+/* Metrics (Trends) page styles removed (restored to previous state) */
 
 .sidebar-item {
   display: flex;
@@ -1291,7 +1302,7 @@ body {
 }
 
 .content-wrapper {
-  max-width: 1200px;
+  max-width: 1600px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -1520,27 +1531,27 @@ body {
    Kids Management Page
    ============================================================================ */
 
-.kids-management-list {
+.family-list {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
 }
 
-.kid-management-card {
+.family-card {
   padding: var(--spacing-lg);
 }
 
-.kid-management-content {
+.family-content {
   display: flex;
   align-items: center;
   gap: var(--spacing-lg);
 }
 
-.kid-management-avatar {
+.family-avatar {
   flex-shrink: 0;
 }
 
-.kid-management-avatar-img {
+.family-avatar-img {
   width: 60px;
   height: 60px;
   border-radius: 50%;
@@ -1548,19 +1559,19 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
-.kid-management-info {
+.family-info {
   flex: 1;
   min-width: 0;
 }
 
-.kid-management-name {
+.family-name {
   margin: 0 0 var(--spacing-xs) 0;
   font-size: 1.25rem;
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
 }
 
-.kid-management-details {
+.family-details {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
@@ -1568,32 +1579,32 @@ body {
   color: var(--color-text-secondary);
 }
 
-.kid-management-actions {
+.family-actions {
   display: flex;
   gap: var(--spacing-sm);
   flex-shrink: 0;
 }
 
-.kid-management-add-link {
+.family-add-link {
   text-decoration: none;
   color: inherit;
 }
 
-.kid-management-add-card {
+.family-add-card {
   border: 2px dashed var(--color-border);
   background-color: transparent;
   transition: all 0.2s;
   cursor: pointer;
 }
 
-.kid-management-add-card:hover {
+.family-add-card:hover {
   border-color: var(--color-primary);
   background-color: var(--color-surface);
   transform: translateY(-2px);
   box-shadow: var(--elevation-2);
 }
 
-.kid-management-add-avatar {
+.family-add-avatar {
   width: 60px;
   height: 60px;
   border-radius: 50%;
@@ -1607,7 +1618,7 @@ body {
   transition: all 0.2s;
 }
 
-.kid-management-add-card:hover .kid-management-add-avatar {
+.family-add-card:hover .family-add-avatar {
   border-color: var(--color-primary);
   color: var(--color-primary);
   background-color: var(--color-primary-light);
@@ -3523,7 +3534,7 @@ select.form-input:disabled {
   overflow-x: auto;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1600px) {
   .metrics-summary {
     grid-template-columns: auto repeat(auto-fit, minmax(140px, 1fr));
   }
@@ -5869,7 +5880,7 @@ select.form-input:disabled {
   }
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1600px) {
   .growth-charts-grid {
     grid-template-columns: repeat(2, 1fr);
   }
