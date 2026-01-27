@@ -10,7 +10,8 @@ import Button from './Button';
 import { HiPlus } from 'react-icons/hi';
 import VisitsSummary from './VisitsSummary';
 import ChildPills from './ChildPills';
-import { LuActivity, LuHeart, LuThermometer, LuBandage, LuEye } from 'react-icons/lu';
+import { LuActivity, LuHeart, LuPill, LuEye } from 'react-icons/lu';
+import { MdOutlinePersonalInjury } from 'react-icons/md';
 
 function AllVisitsView() {
   // `allVisits` holds visits for the current child (if selected) but without a visit_type filter.
@@ -113,10 +114,10 @@ function AllVisitsView() {
     <div className="all-visits-view">
       <VisitsSummary
         stats={[
-          { label: 'Total Visits', value: statsSource.length, icon: LuActivity, color: 'blue', onClick: () => setFilterVisitType(undefined), active: !filterVisitType },
+          { label: 'Total Visits', value: statsSource.length, icon: LuActivity, color: 'gray', onClick: () => setFilterVisitType(undefined), active: !filterVisitType },
           { label: 'Wellness', value: statsSource.filter(v => v.visit_type === 'wellness').length, icon: LuHeart, color: 'emerald', onClick: () => setFilterVisitType('wellness'), active: filterVisitType === 'wellness' },
-          { label: 'Sick', value: statsSource.filter(v => v.visit_type === 'sick').length, icon: LuThermometer, color: 'red', onClick: () => setFilterVisitType('sick'), active: filterVisitType === 'sick' },
-          { label: 'Injury', value: statsSource.filter(v => v.visit_type === 'injury').length, icon: LuBandage, color: 'yellow', onClick: () => setFilterVisitType('injury'), active: filterVisitType === 'injury' },
+          { label: 'Sick', value: statsSource.filter(v => v.visit_type === 'sick').length, icon: LuPill, color: 'red', onClick: () => setFilterVisitType('sick'), active: filterVisitType === 'sick' },
+          { label: 'Injury', value: statsSource.filter(v => v.visit_type === 'injury').length, icon: MdOutlinePersonalInjury, color: 'blue', onClick: () => setFilterVisitType('injury'), active: filterVisitType === 'injury' },
           { label: 'Vision', value: statsSource.filter(v => v.visit_type === 'vision').length, icon: LuEye, color: 'purple', onClick: () => setFilterVisitType('vision'), active: filterVisitType === 'vision' },
         ]}
       >

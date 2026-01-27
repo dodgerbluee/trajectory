@@ -91,30 +91,34 @@ function MetricsView() {
     <>
       <Card className="metrics-controls">
         <div className="metrics-controls-inline">
-          <div className="metrics-year-section">
-            <span className="metrics-control-label">Year</span>
-            <div className="year-selector">
-              <Button 
-                variant="secondary" 
-                size="sm"
-                onClick={() => handleYearChange(-1)}
-                disabled={selectedYear <= 2020}
-              >
-                <HiChevronLeft className="btn-icon" />
-              </Button>
-              <span className="year-display">{selectedYear}</span>
-              <Button 
-                variant="secondary" 
-                size="sm"
-                onClick={() => handleYearChange(1)}
-                disabled={selectedYear >= new Date().getFullYear()}
-              >
-                <HiChevronRight className="btn-icon" />
-              </Button>
-            </div>
-          </div>
+          {activeTab !== 'growth' && (
+            <>
+              <div className="metrics-year-section">
+                <span className="metrics-control-label">Year</span>
+                <div className="year-selector">
+                  <Button 
+                    variant="secondary" 
+                    size="sm"
+                    onClick={() => handleYearChange(-1)}
+                    disabled={selectedYear <= 2020}
+                  >
+                    <HiChevronLeft className="btn-icon" />
+                  </Button>
+                  <span className="year-display">{selectedYear}</span>
+                  <Button 
+                    variant="secondary" 
+                    size="sm"
+                    onClick={() => handleYearChange(1)}
+                    disabled={selectedYear >= new Date().getFullYear()}
+                  >
+                    <HiChevronRight className="btn-icon" />
+                  </Button>
+                </div>
+              </div>
 
-          <div className="metrics-controls-divider"></div>
+              <div className="metrics-controls-divider"></div>
+            </>
+          )}
           
           <div className="metrics-filter-section">
             <span className="metrics-control-label">Filter</span>
@@ -145,8 +149,9 @@ function MetricsView() {
         </div>
       </Card>
 
-      {/* Summary Stats */}
-      <div className="metrics-summary">
+      {/* Summary Stats (only for Illness view) */}
+      {activeTab !== 'growth' && (
+        <div className="metrics-summary">
         <Card className="summary-card summary-card-avatars">
           <div className="summary-avatars">
             {filterChildId ? (
@@ -214,7 +219,8 @@ function MetricsView() {
             <div className="summary-label">Peak Illness Date</div>
           </Card>
         )}
-      </div>
+        </div>
+      )}
 
       {/* Content area */}
       {activeTab === 'illness' ? (

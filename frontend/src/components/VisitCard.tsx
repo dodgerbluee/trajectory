@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
-import { LuClipboard, LuEye, LuPaperclip } from 'react-icons/lu';
+import { LuPaperclip, LuActivity, LuHeart, LuPill, LuEye } from 'react-icons/lu';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
-import { LuPill } from 'react-icons/lu';
 import type { Visit } from '../types/api';
 import { formatDate } from '../lib/date-utils';
 
@@ -27,10 +26,11 @@ function VisitCard({ visit, childName, childId, hasAttachments }: VisitCardProps
     })();
 
     const Icon = () => {
-        if (visit.visit_type === 'wellness') return <LuClipboard className="visit-type-svg" />;
+        if (visit.visit_type === 'wellness') return <LuHeart className="visit-type-svg" />;
+        if (visit.visit_type === 'sick') return <LuPill className="visit-type-svg" />;
         if (visit.visit_type === 'injury') return <MdOutlinePersonalInjury className="visit-type-svg visit-type-svg--filled" />;
         if (visit.visit_type === 'vision') return <LuEye className="visit-type-svg" />;
-        return <LuPill className="visit-type-svg" />;
+        return <LuActivity className="visit-type-svg" />;
     };
 
     const badges: Array<{ key: string; label: string }> = [];

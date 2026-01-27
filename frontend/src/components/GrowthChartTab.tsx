@@ -55,6 +55,8 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
 
   const isMultiChild = !filterChildId && growthData.length > 0;
 
+  const filteredGrowthData = growthData;
+
   return (
     <Card>
       <div className="growth-chart-body">
@@ -71,7 +73,7 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                       : 'Weight for all children plotted by age. Each child is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
-                    data={growthData}
+                    data={filteredGrowthData}
                     metric="weight"
                     mode="value"
                     isMultiChild={isMultiChild}
@@ -86,7 +88,7 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                       : 'Weight percentiles for all children plotted by age. Each child is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
-                    data={growthData}
+                    data={filteredGrowthData}
                     metric="weight"
                     mode="percentile"
                     isMultiChild={isMultiChild}
@@ -106,7 +108,7 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                       : 'Height for all children plotted by age. Each child is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
-                    data={growthData}
+                    data={filteredGrowthData}
                     metric="height"
                     mode="value"
                     isMultiChild={isMultiChild}
@@ -121,7 +123,7 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                       : 'Height percentiles for all children plotted by age. Each child is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
-                    data={growthData}
+                    data={filteredGrowthData}
                     metric="height"
                     mode="percentile"
                     isMultiChild={isMultiChild}
@@ -141,7 +143,7 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                       : 'Head circumference for all children plotted by age. Each child is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
-                    data={growthData}
+                    data={filteredGrowthData}
                     metric="head_circumference"
                     mode="value"
                     isMultiChild={isMultiChild}
@@ -156,7 +158,7 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                       : 'Head circumference percentiles for all children plotted by age. Each child is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
-                    data={growthData}
+                    data={filteredGrowthData}
                     metric="head_circumference"
                     mode="percentile"
                     isMultiChild={isMultiChild}
@@ -176,7 +178,7 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                       : 'BMI for all children plotted by age. Each child is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
-                    data={growthData}
+                    data={filteredGrowthData}
                     metric="bmi"
                     mode="value"
                     isMultiChild={isMultiChild}
@@ -191,7 +193,7 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                       : 'BMI percentiles for all children plotted by age. Each child is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
-                    data={growthData}
+                    data={filteredGrowthData}
                     metric="bmi"
                     mode="percentile"
                     isMultiChild={isMultiChild}
