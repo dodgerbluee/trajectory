@@ -1,7 +1,5 @@
 import { Link } from 'react-router-dom';
-import { LuPaperclip } from 'react-icons/lu';
-import Icon from '@mdi/react';
-import { mdiFaceMaskOutline } from '@mdi/js';
+import { LuPaperclip, LuThermometer } from 'react-icons/lu';
 import type { Illness } from '../types/api';
 import { formatDate } from '../lib/date-utils';
 
@@ -39,8 +37,8 @@ function IllnessCard({ illness, childName, childId, hasAttachments }: IllnessCar
     <Link to={url} state={linkState} className="timeline-item-link">
       <div className="timeline-item-modern">
         <div className="timeline-item-icon">
-          <div className="visit-icon-outline visit-icon--sick" aria-hidden="true">
-            <Icon path={mdiFaceMaskOutline} size={0.8} className="visit-type-svg" style={{ color: 'var(--illness-icon, #ff8c00)', transform: 'scale(1.15)' }} />
+            <div className="visit-icon-outline visit-icon--illness" aria-hidden="true">
+            <LuThermometer className="visit-type-svg" />
           </div>
         </div>
         <div className="timeline-item-content">

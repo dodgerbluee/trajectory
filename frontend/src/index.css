@@ -8,6 +8,389 @@
   box-sizing: border-box;
 }
 
+/* Shared summary section used across vaccines, documents, visits, illnesses */
+.summary-section {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+}
+.summary-section .summary-items {
+  display: flex;
+  gap: var(--spacing-lg);
+  align-items: center;
+}
+.summary-section .summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.summary-section .summary-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+.summary-section .summary-value {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+.summary-section .summary-children {
+  margin-left: auto;
+}
+/* Modern summary card used for documents and vaccines */
+.summary-card-modern {
+  display: flex;
+  align-items: center;
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  box-shadow: var(--shadow-sm);
+  gap: 16px;
+}
+.summary-card-modern .summary-card-content {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 16px;
+  align-items: center;
+}
+.summary-card-title {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+.summary-card-stats {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+.summary-card-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(80px, 1fr);
+  gap: 20px;
+  align-items: center;
+}
+.summary-card-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.summary-card-stat .summary-card-stat-value {
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Visit stat cards grid */
+.visit-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.visit-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  cursor: pointer;
+  text-align: left;
+}
+.visit-stat-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+}
+.visit-stat-card.active {
+  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+}
+
+.visit-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.visit-stat-icon-svg {
+  width: 20px;
+  height: 20px;
+  color: white;
+}
+
+.visit-stat-body {
+  display: flex;
+  flex-direction: column;
+}
+.visit-stat-value {
+  font-size: 1.125rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+.visit-stat-label {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+/* Color accents */
+.visit-stat-card[data-color="blue"] .visit-stat-icon { background: linear-gradient(135deg, #60a5fa, #3b82f6); }
+.visit-stat-card[data-color="emerald"] .visit-stat-icon { background: linear-gradient(135deg, #34d399, #10b981); }
+.visit-stat-card[data-color="red"] .visit-stat-icon { background: linear-gradient(135deg, #f87171, #ef4444); }
+.visit-stat-card[data-color="yellow"] .visit-stat-icon { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+.visit-stat-card[data-color="purple"] .visit-stat-icon { background: linear-gradient(135deg, #a78bfa, #7c3aed); }
+.visit-stat-card[data-color="gray"] .visit-stat-icon { background: linear-gradient(135deg, #d1d5db, #9ca3af); }
+
+@media(min-width: 768px) {
+  .visit-stats-grid { grid-template-columns: repeat(5, 1fr); }
+}
+
+/* Inline Add Visit animated button (used in visits filters) */
+.add-visit-animated {
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  background: linear-gradient(90deg, var(--color-primary-500), var(--color-primary));
+  box-shadow: 0 10px 24px rgba(59,130,246,0.16);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast);
+}
+.add-visit-animated:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 34px rgba(59,130,246,0.2);
+  filter: brightness(1.03);
+}
+.add-visit-animated .btn-icon {
+  width: 18px;
+  height: 18px;
+  transition: transform var(--transition-fast);
+}
+.add-visit-animated:hover .btn-icon {
+  transform: translateY(-2px) rotate(12deg);
+}
+
+/* Floating Action Button */
+.fab {
+  position: fixed;
+  /* Align to the right edge of the centered content-wrapper (max-width: 1600px).
+     When the viewport is narrower than the content max, fall back to the viewport edge. */
+  right: calc(max((100% - 1600px)/2, 0px) + 24px);
+  bottom: 24px;
+  z-index: var(--z-fixed);
+}
+.fab-btn {
+  padding: 0.65rem 1rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  background: linear-gradient(90deg, var(--color-primary-500), var(--color-primary));
+  box-shadow: 0 12px 30px rgba(59,130,246,0.18);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast);
+}
+.fab-btn:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 36px rgba(59,130,246,0.22);
+  filter: brightness(1.02);
+}
+.fab-icon {
+  width: 20px;
+  height: 20px;
+  transition: transform var(--transition-fast);
+}
+.fab-btn:hover .fab-icon {
+  transform: translateY(-3px) rotate(12deg);
+}
+
+@media (max-width: 640px) {
+  .fab { right: 16px; bottom: 16px; }
+}
+
+/* Visits summary header layout */
+.summary-card-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 12px;
+}
+.summary-card-title {
+  font-size: 1.125rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-right: auto;
+}
+.summary-card-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Top row above the summary card */
+.visits-top-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.visits-top-title {
+  font-size: 1.25rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.visits-top-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.summary-card-children {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 320px;
+  justify-self: end;
+}
+
+/* Right-align filters inside the centered summary card for visits and illnesses */
+.visits-summary .summary-card-children,
+.illnesses-summary .summary-card-children {
+  /* handled by justify-self on .summary-card-children */
+}
+
+.visits-summary .filters-inline {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Illnesses summary should match visits layout for filters */
+.illnesses-summary .filters-inline {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.illnesses-summary .filters-grid {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.visits-summary .filters-grid {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.visits-summary .filter-group label {
+  display: block;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.visits-summary .filter-group select {
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-background-card);
+}
+
+.visits-summary .filters-actions .btn-icon {
+  margin-right: 8px;
+}
+
+/* Segmented control */
+.segmented-control {
+  display: inline-flex;
+  gap: 6px;
+  background: transparent;
+}
+
+.segmented-control-item {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-background-card);
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.segmented-control-item.active {
+  background: linear-gradient(90deg, rgba(59,130,246,0.12), rgba(59,130,246,0.04));
+  border-color: rgba(59,130,246,0.4);
+}
+
+/* Child pills */
+.child-pills {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pills-list {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-background-card);
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.pill.active {
+  background: linear-gradient(90deg, rgba(16,185,129,0.12), rgba(59,130,246,0.04));
+  border-color: rgba(59,130,246,0.3);
+}
+.pill-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.pill-label { font-size: 0.85rem; }
+.child-combobox .combobox-input {
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-background-card);
+}
+.summary-card-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.summary-card-stat-value {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+.summary-card-stat-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+@media (prefers-color-scheme: dark) {
+  .summary-card-modern {
+    background: var(--color-background-card);
+    border-color: var(--color-border);
+  }
+}
 :root {
   /* Colors */
   /* Primary */
@@ -33,6 +416,9 @@
   --color-success-light: #d1fae5;
   --color-warning: #f59e0b;
   --color-warning-light: #fef3c7;
+  /* Vision (purple) */
+  --color-vision: #7c3aed;
+  --color-vision-light: rgba(124, 58, 237, 0.08);
   --color-info: #06b6d4;
   --color-info-light: #cffafe;
   --color-danger: #ef4444;
@@ -212,7 +598,6 @@ body {
 
 [data-theme="dark"] .card:hover {
   box-shadow: var(--elevation-3);
-  border-color: rgba(59, 130, 246, 0.3);
 }
 
 [data-theme="dark"] .btn-primary {
@@ -576,6 +961,7 @@ body {
   flex-direction: column;
   gap: var(--spacing-xs);
   min-width: 150px;
+  padding-left: 50px;
 }
 
 .filter-group label {
@@ -738,6 +1124,22 @@ body {
   margin-right: 0;
 }
 
+/* Badges row under the visit label */
+.timeline-item-badges-row {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+  margin-top: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.wellness-badges-group {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 /* Accent pill used for Wellness and Injury icons */
 .visit-pill {
   width: 40px;
@@ -767,17 +1169,18 @@ body {
 
 /* Outline icon wrapper: no filled badge, icon color is the accent */
 .visit-icon-outline {
-  width: 40px;
+  width: 30px;
   height: 40px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   color: var(--color-visit-accent);
   background: transparent;
+  transition: box-shadow 160ms var(--transition-base);
 }
 .visit-icon-outline .visit-type-svg {
   width: 20px;
   height: 20px;
+  transform: translateY(var(--icon-optical-offset, 0));
 }
 
 [data-theme="dark"] .visit-icon-outline {
@@ -789,7 +1192,6 @@ body {
   /* Reduced from +50% to +25% overall: wrapper 96px -> 120px */
   width: 120px;
   height: 120px;
-  transform: translateY(-10px); /* smaller upward nudge for visual center */
 }
 .visit-type-icon .visit-icon-outline .visit-type-svg {
   /* SVG scaled proportionally (48px -> 60px for +25%) */
@@ -805,35 +1207,92 @@ body {
   width: 68px;
   height: 68px;
   display: inline-block;
-  transform: scale(0.92);
+  transform: translateY(var(--icon-optical-offset, 0)) scale(0.92);
 }
 
-/* Specific adjustment for the sick (pill) icon to align its visual center
-   with the other icons — a slightly larger nudge than the default wrapper. */
 .visit-type-icon .visit-icon-outline.visit-icon--sick {
-  transform: translateY(-15px);
+  /* optical offset controlled via --icon-optical-offset on the icon */
 }
 .visit-icon--wellness { color: var(--color-success); }
 .visit-icon--sick { color: var(--color-danger); }
 .visit-icon--injury { color: var(--color-visit-accent); }
-.visit-icon--vision { color: var(--color-warning); }
+.visit-icon--vision { color: var(--color-vision); }
 .visit-type-button .visit-icon-outline:hover {
-  transform: translateY(-15px); /* hover lift scaled to new sizing */
+  /* hover lift removed in favor of glow on the icon to avoid layout shift */
 }
 
-/* Hover lift for sick icon is slightly larger to maintain perceived center */
+/* Hover lift removed for sick icon; glow is used instead */
 .visit-type-button .visit-icon-outline.visit-icon--sick:hover {
-  transform: translateY(-20px);
 }
 
 /* Ensure SVG icons explicitly pick up currentColor for fill/stroke
    and force per-type colors to match light mode when in dark mode. */
 .visit-icon-outline .visit-type-svg,
 .visit-icon-outline .visit-type-svg svg {
-  color: inherit;
-  /* Default to outline icons: use stroke only and do not fill shapes. */
+  stroke: currentColor;
+}
+
+/* CENTRAL ICON NORMALIZATION
+   Use CSS variables to control stroke weights in one place and make
+   it easy to tune modal vs inline sizes. Filled icons opt-out via
+   `.visit-type-svg--filled`. This block intentionally uses high
+   specificity and `!important` where necessary to override legacy
+   inline attributes from third-party SVGs. */
+:root {
+  --icon-stroke-default: 1px;      /* baseline for timeline/list */
+  --icon-stroke-modal: 1.25px;     /* larger for modal big icons */
+  --icon-stroke-sick: 1px;         /* pill icon adjustment */
+}
+
+.visit-icon-outline {
+  /* default stroke for icons inside this wrapper */
+  --icon-stroke: var(--icon-stroke-default);
+}
+
+/* Modal-sized icons should be heavier by default */
+.visit-type-icon .visit-icon-outline {
+  --icon-stroke: var(--icon-stroke-modal);
+}
+
+/* Specific per-type adjustments (easy to tune) */
+.visit-icon--sick { --icon-stroke: var(--icon-stroke-sick); }
+
+/* Apply stroke/fill/weight uniformly to svg and path elements; filled
+   icons opt out with `.visit-type-svg--filled`. */
+.visit-icon-outline .visit-type-svg:not(.visit-type-svg--filled),
+.visit-icon-outline .visit-type-svg:not(.visit-type-svg--filled) svg,
+.visit-icon-outline .visit-type-svg:not(.visit-type-svg--filled) svg path,
+.visit-icon-outline .visit-type-svg:not(.visit-type-svg--filled) svg g {
+  stroke: currentColor !important;
+  stroke-width: var(--icon-stroke) !important;
+  fill: none !important;
+  vector-effect: non-scaling-stroke !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+/* Filled icons (explicit) keep their filled appearance */
+.visit-type-svg--filled,
+.visit-type-svg--filled svg,
+.visit-type-svg--filled svg path {
+  fill: currentColor !important;
+  stroke: none !important;
+}
+
+/* Ensure stroke rules also apply to path elements inside icon SVGs (mdi/react, etc.)
+   and use non-scaling strokes so stroke thickness remains consistent. */
+.visit-icon-outline .visit-type-svg:not(.visit-type-svg--filled) svg path,
+.visit-icon-outline .visit-type-svg:not(.visit-type-svg--filled) svg g {
   stroke: currentColor;
   fill: none;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Normalize SVG stroke appearance across icon sets so thickness looks uniform */
+.visit-icon-outline .visit-type-svg svg {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke; /* keeps stroke consistent when icons scale */
 }
 
 /* Some icon libraries/components expect to be filled; add an explicit
@@ -844,31 +1303,115 @@ body {
   stroke: none;
 }
 
+/* Modal icon: slightly heavier stroke at modal size for better legibility */
+.visit-type-icon .visit-type-svg svg {
+  stroke-width: 1.25px;
+}
+
+/* Exception: make the sick (pill) icon thinner in the modal so its
+   visual weight matches other icons. This overrides the modal-wide
+   increase for this specific type. */
+.visit-type-icon .visit-icon-outline.visit-icon--sick .visit-type-svg svg {
+  stroke-width: 1px;
+}
+
+/* Optical offsets per icon (keeps nudges centralized and easy to tweak) */
+.visit-icon--sick { --icon-optical-offset: -2px; }
+.visit-icon--injury { --icon-optical-offset: 1px; }
+
+/* Hover glow on icon instead of moving the button (no layout shift) */
+.visit-type-button:hover .visit-icon-outline {
+  /* remove hover outline/glow; keep hover subtle without layout shift */
+  box-shadow: none;
+}
+
+/* Ensure sick icon wrapper does not show a square/box background
+   and visually matches other outline icons (no extra box). */
+.visit-icon-outline.visit-icon--sick {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 9999px;
+  padding: 0;
+}
+
+/* If a pill icon renders with an internal filled rect, ensure the wrapper
+   doesn't clip or add a visible square. */
+.visit-icon-outline.visit-icon--sick .visit-type-svg {
+  display: inline-block;
+}
+
+/* Strongly ensure no visual box appears around the sick icon: remove
+   backgrounds, borders or shadows from the wrapper and any SVG children.
+   Use !important sparingly here to override upstream icon-library inline
+   styles that could introduce rect fills. */
+.visit-icon-outline.visit-icon--sick,
+.visit-icon-outline.visit-icon--sick .visit-type-svg,
+.visit-icon-outline.visit-icon--sick svg,
+.visit-icon-outline.visit-icon--sick svg * {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  fill: none !important;
+}
+
 [data-theme="dark"] .visit-icon--wellness { color: var(--color-success); }
 [data-theme="dark"] .visit-icon--sick { color: var(--color-danger); }
 [data-theme="dark"] .visit-icon--injury { color: var(--color-visit-accent); }
-[data-theme="dark"] .visit-icon--vision { color: var(--color-warning); }
+[data-theme="dark"] .visit-icon--vision { color: var(--color-vision); }
 
 /* Per-type overrides: some icon libraries are filled by default
    (Material / Phosphor). Ensure those icons render as intended
    instead of getting outline-only (or accidental colored rects). */
-.visit-icon--sick .visit-type-svg,
-.visit-icon--sick .visit-type-svg svg {
-  fill: currentColor;   /* show filled shapes */
-  stroke: none;         /* remove any stroke that creates undesired borders */
-  vector-effect: non-scaling-stroke;
+.visit-icon--sick .visit-type-svg.visit-type-svg--filled,
+.visit-icon--sick .visit-type-svg.visit-type-svg--filled svg {
+  fill: currentColor;   /* allow filled variants for sick icons */
+  stroke: none;
 }
 
 /* For lucide / stroke-based icons (wellness, vision) keep stroke-only */
 
 .visit-icon--wellness .visit-type-svg,
 .visit-icon--wellness .visit-type-svg svg,
-.visit-icon--vision .visit-type-svg,
-.visit-icon--vision .visit-type-svg svg,
 .visit-icon--injury .visit-type-svg,
 .visit-icon--injury .visit-type-svg svg {
   stroke: currentColor;
   fill: none;
+}
+
+.visit-icon--illness { 
+  color: var(--color-warning);
+  stroke-width: 0.0001;
+}
+
+[data-theme="dark"] .visit-icon--illness { color: var(--color-warning); }
+
+/* Slightly reduce mask stroke to match perceived weight of other outline icons. */
+.visit-icon--illness .visit-type-svg svg,
+.visit-icon--illness .visit-type-svg svg path {
+  stroke-width: 0.9px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Force mask SVG path to render as stroke-only even if the icon library
+   sets fill attributes inline. Use !important carefully to override
+   inline attributes from third-party SVGs for this specific icon. */
+.visit-icon--illness .visit-type-svg svg path,
+.visit-icon--illness .visit-type-svg svg {
+  stroke: currentColor !important;
+  fill: none !important;
+  stroke-width: 0.95px !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  vector-effect: non-scaling-stroke !important;
+}
+/* Vision icons should be outline/stroke-only like other lucide icons */
+.visit-icon--vision .visit-type-svg,
+.visit-icon--vision .visit-type-svg svg {
+  stroke: currentColor;
+  fill: none;
+  vector-effect: non-scaling-stroke;
 }
 
 /* Reduce stroke thickness for outline icons to half their default
@@ -876,13 +1419,9 @@ body {
    consistent regardless of transforms. */
 .visit-icon--wellness .visit-type-svg,
 .visit-icon--wellness .visit-type-svg svg,
-.visit-icon--vision .visit-type-svg,
-.visit-icon--vision .visit-type-svg svg,
 .visit-icon--injury .visit-type-svg,
 .visit-icon--injury .visit-type-svg svg {
   vector-effect: non-scaling-stroke;
-  /* medium stroke for a happy visual balance */
-  stroke-width: 1px;
 }
 
 /* Slightly larger for injury icons in compact timeline so they match the
@@ -913,6 +1452,12 @@ body {
   stroke: none;
   vector-effect: none;
 }
+
+/* Strong override: force illness (mask) icon and all its SVG children to
+   use the centralized stroke variable and remove any fills or inline
+   stroke-widths coming from third-party icon libs. Placed after other
+   icon rules to ensure highest specificity in this file. */
+
 
 .timeline-item-date-row {
   display: flex;
@@ -1305,6 +1850,7 @@ body {
   max-width: 1600px;
   width: 100%;
   box-sizing: border-box;
+  padding-bottom: 30px; /* ensure space below body even when content fills the page */
 }
 
 .app-footer {
@@ -1480,8 +2026,7 @@ body {
 }
 
 .btn-lg {
-  padding: var(--spacing-md) var(--spacing-xl);
-  font-size: 1.125rem;
+  padding: var(--spacing-md);
 }
 
 .btn-primary {
@@ -1644,7 +2189,6 @@ body {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--spacing-xl);
-  padding: var(--spacing-sm) 0;
 }
 
 .child-card-compact {
@@ -1905,7 +2449,7 @@ body {
 }
 
 .overview-last-visit-link:hover .overview-last-visit {
-  background: var(--color-surface-hover);
+  /* Keep pointer for interactivity but avoid changing background color */
   cursor: pointer;
 }
 
@@ -2338,7 +2882,7 @@ body {
 }
 
 .settings-expandable-header:focus {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: -2px;
 }
 
@@ -5403,8 +5947,7 @@ select.form-input:disabled {
 
 .visit-type-button:hover {
   border-color: var(--color-primary);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  /* no translate to avoid layout shift; glow will indicate hover */
 }
 
 .visit-type-button.wellness:hover {
@@ -5424,7 +5967,7 @@ select.form-input:disabled {
 
 .visit-type-button.vision:hover {
   background: var(--color-surface);
-  border-color: var(--color-warning);
+  border-color: var(--color-vision);
 }
 
 /* Dark mode specific hover adjustments */
@@ -5441,7 +5984,7 @@ select.form-input:disabled {
 }
 
 [data-theme="dark"] .visit-type-button.vision:hover {
-  background: rgba(245, 158, 11, 0.1);
+  background: var(--color-vision-light);
 }
 
 .visit-type-icon {
@@ -5575,6 +6118,7 @@ select.form-input:disabled {
   border-bottom: 2px solid var(--color-border);
   margin-bottom: var(--spacing-lg);
 }
+
 
 .tab-button {
   padding: var(--spacing-sm) var(--spacing-lg);
@@ -6236,9 +6780,8 @@ select.form-input:disabled {
 }
 
 .vaccine-dose-item:hover {
-  background: var(--color-surface-hover);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  /* Neutral hover: no blue tint or border color change */
+  background: var(--color-surface);
 }
 
 .vaccine-dose-number {
@@ -6426,14 +6969,6 @@ select.form-input:disabled {
 
 .btn-spinner-wrapper .loading-spinner p {
   display: none;
-}
-
-/* ============================================================================
- * Home Page Tabs
- * ============================================================================ */
-
-.home-tab-content {
-  padding: var(--spacing-md) 0;
 }
 
 /* ============================================================================
@@ -6980,7 +7515,7 @@ select.form-input:disabled {
 }
 
 .password-toggle:focus {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }

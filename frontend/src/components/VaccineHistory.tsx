@@ -6,6 +6,7 @@ import { formatDate } from '../lib/date-utils';
 import { childrenApi, ApiClientError } from '../lib/api-client';
 import FileUpload from './FileUpload';
 import LoadingSpinner from './LoadingSpinner';
+import VaccineSummary from './VaccineSummary';
 
 interface VaccineHistoryProps {
   visits: Visit[];
@@ -189,18 +190,10 @@ function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProp
 
   return (
     <div className="vaccine-history-container">
-      <div className="vaccine-history-summary">
-        <div className="vaccine-summary-stat">
-          <span className="vaccine-summary-label">Total Vaccines:</span>
-          <span className="vaccine-summary-value">{vaccineRecords.length}</span>
-        </div>
-        <div className="vaccine-summary-stat">
-          <span className="vaccine-summary-label">Total Doses:</span>
-          <span className="vaccine-summary-value">
-            {vaccineRecords.reduce((sum, record) => sum + record.dates.length, 0)}
-          </span>
-        </div>
-      </div>
+      <VaccineSummary
+        totalVaccines={vaccineRecords.length}
+        totalDoses={vaccineRecords.reduce((sum, record) => sum + record.dates.length, 0)}
+      />
 
       <div className="vaccine-history-list">
         {vaccineRecords.map((record) => (

@@ -12,7 +12,7 @@ import GrowthChartsPage from './pages/GrowthChartsPage';
 import AddVisitPage from './pages/AddVisitPage';
 import EditVisitPage from './pages/EditVisitPage';
 import VisitDetailPage from './pages/VisitDetailPage';
-import KidsManagementPage from './pages/KidsManagementPage';
+import FamilyManagementPage from './pages/FamilyManagementPage';
 import SettingsPage from './pages/SettingsPage';
 import IllnessesPage from './pages/IllnessesPage';
 import AddIllnessPage from './pages/AddIllnessPage';
@@ -56,7 +56,7 @@ function App() {
                   <Route path="/metrics" element={<MetricsPage />} />
                   
                   {/* Management & Settings */}
-                  <Route path="/family" element={<KidsManagementPage />} />
+                  <Route path="/family" element={<FamilyManagementPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   
                   <Route path="*" element={<NotFoundPage />} />

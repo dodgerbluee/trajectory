@@ -506,7 +506,7 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
         $18, $19, $20, $21,
         $22, $23, $24, $25,
         $26, $27,
-        $28, $29, $30, $31
+        $28, $29, $30
       ) RETURNING *`,
       [
         input.child_id, input.visit_date, input.visit_type, input.location, input.doctor_name, input.title,

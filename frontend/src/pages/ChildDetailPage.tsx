@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { HiPlus, HiChartBar, HiExclamationCircle } from 'react-icons/hi';
+import { LuClipboard, LuThermometer } from 'react-icons/lu';
 import { childrenApi, visitsApi, illnessesApi, ApiClientError } from '../lib/api-client';
 import type { Child, Visit, VisitType, Illness, VisitAttachment, ChildAttachment } from '../types/api';
 import { calculateAge, formatAge, formatDate } from '../lib/date-utils';
@@ -13,9 +14,14 @@ import VisitTypeModal from '../components/VisitTypeModal';
 import Select from '../components/Select';
 import TimelineItem from '../components/TimelineItem';
 import Tabs from '../components/Tabs';
+import GrowthChartTab from '../components/GrowthChartTab';
 import DocumentsList from '../components/DocumentsList';
 import ImageCropUpload from '../components/ImageCropUpload';
 import VaccineHistory from '../components/VaccineHistory';
+import { MdOutlinePersonalInjury } from 'react-icons/md';
+import { LuPill } from 'react-icons/lu';
+import { LuEye } from 'react-icons/lu';
+// replaced local mask icon with Lucide thermometer for illness
 
 function ChildDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -27,11 +33,13 @@ function ChildDetailPage() {
   const [lastWellnessVisit, setLastWellnessVisit] = useState<Visit | null>(null);
   const [lastSickVisit, setLastSickVisit] = useState<Visit | null>(null);
   const [lastVisionVisit, setLastVisionVisit] = useState<Visit | null>(null);
+  const [lastInjuryVisit, setLastInjuryVisit] = useState<Visit | null>(null);
+  const [lastIllness, setLastIllness] = useState<Illness | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showVisitTypeModal, setShowVisitTypeModal] = useState(false);
   const [visitTypeFilter, setVisitTypeFilter] = useState<'all' | 'wellness' | 'sick' | 'injury' | 'vision'>('all');
-  const [activeTab, setActiveTab] = useState<'visits' | 'illnesses' | 'documents' | 'vaccines'>('visits');
+  const [activeTab, setActiveTab] = useState<'visits' | 'illnesses' | 'documents' | 'vaccines' | 'trends'>('visits');
   const [documents, setDocuments] = useState<Array<(VisitAttachment & { visit: Visit; type: 'visit' }) | (ChildAttachment & { type: 'child' })>>([]);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
   const [showAvatarEditor, setShowAvatarEditor] = useState(false);
@@ -73,6 +81,14 @@ function ChildDetailPage() {
       setChild(childResponse.data);
       setVisits(allVisitsResponse.data);
       setIllnesses(illnessesResponse.data);
+      // Derive last injury visit from all visits
+      const sortedAll = [...allVisitsResponse.data].sort((a, b) => new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime());
+      const lastInjury = sortedAll.find(v => v.visit_type === 'injury') || null;
+      setLastInjuryVisit(lastInjury);
+      // Derive last illness (use the latest illness that has an end_date)
+      const endedIllnesses = illnessesResponse.data.filter(i => i.end_date).sort((a, b) => new Date(b.end_date!).getTime() - new Date(a.end_date!).getTime());
+      const lastEndedIllness = endedIllnesses.length > 0 ? endedIllnesses[0] : null;
+      setLastIllness(lastEndedIllness);
       // Determine which visits have attachments so the timeline can show an indicator
       try {
         const visitAttachmentChecks = await Promise.all(
@@ -394,9 +410,11 @@ function ChildDetailPage() {
               {lastWellnessVisit && (
                 <Link to={`/visits/${lastWellnessVisit.id}`} className="overview-last-visit-link">
                   <div className="overview-last-visit">
-                    <span className="overview-visit-icon">✓</span>
+                    <div className={`visit-icon-outline visit-icon--wellness`} aria-hidden="true">
+                      <LuClipboard className="visit-type-svg" />
+                    </div>
                     <div className="overview-visit-info">
-                      <span className="overview-visit-label">Last Wellness:</span>
+                      <span className="overview-visit-label">Last Wellness Visit:</span>
                       <span className="overview-visit-date">{formatDate(lastWellnessVisit.visit_date)}</span>
                     </div>
                   </div>
@@ -405,9 +423,11 @@ function ChildDetailPage() {
               {lastSickVisit && (
                 <Link to={`/visits/${lastSickVisit.id}`} className="overview-last-visit-link">
                   <div className="overview-last-visit">
-                    <span className="overview-visit-icon">🤒</span>
+                    <div className={`visit-icon-outline visit-icon--sick`} aria-hidden="true">
+                      <LuPill className="visit-type-svg" />
+                    </div>
                     <div className="overview-visit-info">
-                      <span className="overview-visit-label">Last Sick:</span>
+                      <span className="overview-visit-label">Last Sick Visit:</span>
                       <span className="overview-visit-date">{formatDate(lastSickVisit.visit_date)}</span>
                     </div>
                   </div>
@@ -416,10 +436,38 @@ function ChildDetailPage() {
               {lastVisionVisit && (
                 <Link to={`/visits/${lastVisionVisit.id}`} className="overview-last-visit-link">
                   <div className="overview-last-visit">
-                    <span className="overview-visit-icon">👁️</span>
+                    <div className={`visit-icon-outline visit-icon--vision`} aria-hidden="true">
+                      <LuEye className="visit-type-svg" />
+                    </div>
                     <div className="overview-visit-info">
-                      <span className="overview-visit-label">Last Vision:</span>
+                      <span className="overview-visit-label">Last Vision Visit:</span>
                       <span className="overview-visit-date">{formatDate(lastVisionVisit.visit_date)}</span>
+                    </div>
+                  </div>
+                </Link>
+              )}
+              {lastInjuryVisit && (
+                <Link to={`/visits/${lastInjuryVisit.id}`} className="overview-last-visit-link">
+                  <div className="overview-last-visit">
+                    <div className={`visit-icon-outline visit-icon--injury`} aria-hidden="true">
+                      <MdOutlinePersonalInjury className="visit-type-svg visit-type-svg--filled" />
+                    </div>
+                    <div className="overview-visit-info">
+                      <span className="overview-visit-label">Last Injury Visit:</span>
+                      <span className="overview-visit-date">{formatDate(lastInjuryVisit.visit_date)}</span>
+                    </div>
+                  </div>
+                </Link>
+              )}
+              {lastIllness && (
+                <Link to={`/illnesses/${lastIllness.id}`} className="overview-last-visit-link">
+                  <div className="overview-last-visit">
+                    <div className={`visit-icon-outline visit-icon--illness`} aria-hidden="true">
+                      <LuThermometer className="visit-type-svg" />
+                    </div>
+                    <div className="overview-visit-info">
+                      <span className="overview-visit-label">Last Illness:</span>
+                      <span className="overview-visit-date">{formatDate(lastIllness.end_date || lastIllness.start_date)}</span>
                     </div>
                   </div>
                 </Link>
@@ -521,6 +569,17 @@ function ChildDetailPage() {
                   content: <VaccineHistory visits={visitsWithVaccines} childId={parseInt(id!)} onUploadSuccess={loadDocuments} />,
                 });
               }
+
+              // Trends / Growth Charts tab for this child
+              tabsArray.push({
+                id: 'trends',
+                label: 'Trends',
+                content: (
+                  <div>
+                    <GrowthChartTab filterChildId={child.id} />
+                  </div>
+                ),
+              });
 
               return (
                 <Tabs

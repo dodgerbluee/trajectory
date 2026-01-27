@@ -48,7 +48,7 @@ function HomePage() {
   }, [activeTab]);
 
   const familyContent = (
-    <div className="home-tab-content">
+    <div>
       {loading && <LoadingSpinner message="Loading family..." />}
       {error && <ErrorMessage message={error} onRetry={loadChildren} />}
       {!loading && !error && (

@@ -1,39 +1,33 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { /* Link removed - not used */ } from 'react-router-dom';
 import { illnessesApi, childrenApi, ApiClientError } from '../lib/api-client';
 import type { Illness, Child, IllnessType } from '../types/api';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 import TimelineItem from './TimelineItem';
 import Card from './Card';
-import Button from './Button';
-import { HiPlus } from 'react-icons/hi';
+// Button removed - Add action moved into summary section
+// HiPlus removed — using summary-section controls for adding illness
+import VisitStats from './VisitStats';
+import { LuActivity } from 'react-icons/lu';
+import ChildPills from './ChildPills';
 
-const ILLNESS_TYPES: { value: IllnessType; label: string }[] = [
-  { value: 'flu', label: 'Flu' },
-  { value: 'strep', label: 'Strep Throat' },
-  { value: 'rsv', label: 'RSV' },
-  { value: 'covid', label: 'COVID-19' },
-  { value: 'cold', label: 'Cold' },
-  { value: 'stomach_bug', label: 'Stomach Bug' },
-  { value: 'ear_infection', label: 'Ear Infection' },
-  { value: 'hand_foot_mouth', label: 'Hand, Foot & Mouth' },
-  { value: 'croup', label: 'Croup' },
-  { value: 'pink_eye', label: 'Pink Eye' },
-  { value: 'other', label: 'Other' },
-];
+// Illness types constant removed - not used by the modernized UI
 
 function AllIllnessesView() {
+  // keep an unfiltered source for stable stats and a displayed list filtered client-side
+  const [allIllnesses, setAllIllnesses] = useState<Illness[]>([]);
   const [illnesses, setIllnesses] = useState<Illness[]>([]);
   const [children, setChildren] = useState<Child[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterChildId, setFilterChildId] = useState<number | undefined>(undefined);
   const [filterIllnessType, setFilterIllnessType] = useState<IllnessType | undefined>(undefined);
+  const [filterIllnessStatus, setFilterIllnessStatus] = useState<'ongoing' | 'ended' | undefined>(undefined);
 
   useEffect(() => {
     loadData();
-  }, [filterChildId, filterIllnessType]);
+  }, [filterChildId, filterIllnessType, filterIllnessStatus]);
 
   const loadData = async () => {
     try {
@@ -41,15 +35,22 @@ function AllIllnessesView() {
       setError(null);
       
       const [illnessesResponse, childrenResponse] = await Promise.all([
+        // fetch illnesses without illness_type so stats remain stable; apply filtering client-side
         illnessesApi.getAll({
           child_id: filterChildId,
-          illness_type: filterIllnessType,
           limit: 500,
         }),
         childrenApi.getAll(),
       ]);
 
-      setIllnesses(illnessesResponse.data);
+      setAllIllnesses(illnessesResponse.data);
+      let displayed = filterIllnessType ? illnessesResponse.data.filter(i => i.illness_type === filterIllnessType) : illnessesResponse.data;
+      if (filterIllnessStatus === 'ongoing') {
+        displayed = displayed.filter(i => !i.end_date);
+      } else if (filterIllnessStatus === 'ended') {
+        displayed = displayed.filter(i => !!i.end_date);
+      }
+      setIllnesses(displayed);
       setChildren(childrenResponse.data);
     } catch (err) {
       if (err instanceof ApiClientError) {
@@ -78,6 +79,9 @@ function AllIllnessesView() {
     });
   }, [illnesses]);
 
+  // stats source (unfiltered) so counts remain stable when filtering
+  const statsSource = useMemo(() => allIllnesses, [allIllnesses]);
+
   if (loading) {
     return <LoadingSpinner message="Loading illnesses..." />;
   }
@@ -88,47 +92,36 @@ function AllIllnessesView() {
 
   return (
     <div className="all-illnesses-view">
-      {/* Filters with Add Button */}
-      <Card className="filters-card">
-        <div className="filters-toolbar">
-          <div className="filters-grid">
-            <div className="filter-group">
-              <label htmlFor="filter-child">Filter by Child:</label>
-              <select
-                id="filter-child"
-                value={filterChildId || ''}
-                onChange={(e) => setFilterChildId(e.target.value ? parseInt(e.target.value) : undefined)}
-              >
-                <option value="">All Children</option>
-                {children.map(child => (
-                  <option key={child.id} value={child.id}>{child.name}</option>
-                ))}
-              </select>
+      <div className="summary-card-modern illnesses-summary">
+        <div className="summary-card-content">
+          <VisitStats
+            stats={[
+              { label: 'Total Illnesses', value: statsSource.length, icon: LuActivity, color: 'blue', onClick: () => { setFilterIllnessType(undefined); setFilterIllnessStatus(undefined); }, active: !filterIllnessType && !filterIllnessStatus },
+              { label: 'Ongoing', value: statsSource.filter(i => !i.end_date).length, icon: LuActivity, color: 'red', onClick: () => { setFilterIllnessStatus('ongoing'); setFilterIllnessType(undefined); }, active: filterIllnessStatus === 'ongoing' },
+              { label: 'Ended', value: statsSource.filter(i => !!i.end_date).length, icon: LuActivity, color: 'emerald', onClick: () => { setFilterIllnessStatus('ended'); setFilterIllnessType(undefined); }, active: filterIllnessStatus === 'ended' },
+            ]}
+          />
+
+          <div className="summary-card-children">
+            <div className="filters-inline" style={{ width: 320 }}>
+              <div className="filters-grid">
+                <div className="filter-group">
+                  <label>Child</label>
+                  <div>
+                    {/* reuse ChildPills for child filter */}
+                    <ChildPills
+                      childrenList={children}
+                      selectedChildId={filterChildId}
+                      onSelect={(id) => setFilterChildId(id)}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="filter-group">
-              <label htmlFor="filter-type">Filter by Type:</label>
-              <select
-                id="filter-type"
-                value={filterIllnessType || ''}
-                onChange={(e) => setFilterIllnessType(e.target.value as IllnessType || undefined)}
-              >
-                <option value="">All Types</option>
-                {ILLNESS_TYPES.map(type => (
-                  <option key={type.value} value={type.value}>{type.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="filters-actions">
-            <Link to="/illnesses/new">
-              <Button>
-                <HiPlus className="btn-icon" />
-                Add Illness
-              </Button>
-            </Link>
           </div>
         </div>
-      </Card>
+      </div>
+      {/* Filters moved into the summary card above; removed redundant filter toolbar */}
 
       {/* Illnesses Timeline */}
       {sortedIllnesses.length === 0 ? (

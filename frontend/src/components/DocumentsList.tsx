@@ -10,6 +10,7 @@ import type { VisitAttachment, ChildAttachment, Visit } from '../types/api';
 import { visitsApi, childrenApi, ApiClientError } from '../lib/api-client';
 // formatDate not needed here; document entries show visit type and title instead of date
 import LoadingSpinner from './LoadingSpinner';
+import DocumentsSummary from './DocumentsSummary';
 
 interface DocumentWithVisit extends VisitAttachment {
   visit: Visit;
@@ -138,20 +139,11 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
   return (
     <div className="documents-list">
       {showHeader && (
-        <div className="document-history-summary">
-          <div className="document-history-stat">
-            <span className="document-history-label">Total Documents:</span>
-            <span className="document-history-value">{totalDocsCount}</span>
-          </div>
-          <div className="document-history-stat">
-            <span className="document-history-label">Visit Documents:</span>
-            <span className="document-history-value">{visitDocsCount}</span>
-          </div>
-          <div className="document-history-stat">
-            <span className="document-history-label">Child Documents:</span>
-            <span className="document-history-value">{childDocsCount}</span>
-          </div>
-        </div>
+        <DocumentsSummary
+          total={totalDocsCount}
+          visitDocuments={visitDocsCount}
+          childDocuments={childDocsCount}
+        />
       )}
       {documents.map((doc) => (
         <div key={`${doc.type}-${doc.id}`} className="document-item timeline-item-modern">

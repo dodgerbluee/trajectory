@@ -1,9 +1,9 @@
 import type { VisitType } from '../types/api';
 import Button from './Button';
 import Card from './Card';
-import { LuClipboard, LuEye } from 'react-icons/lu';
+import { LuClipboard, LuEye, LuPill } from 'react-icons/lu';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
-import { Pill } from 'phosphor-react';
+// removed phosphor-react Pill import; using Lucide `LuPill` instead
 
 interface VisitTypeModalProps {
   isOpen: boolean;
@@ -41,7 +41,7 @@ function VisitTypeModal({ isOpen, onSelect, onClose }: VisitTypeModalProps) {
             >
               <div className="visit-type-icon">
                 <div className="visit-icon-outline visit-icon--sick">
-                  <Pill className="visit-type-svg" weight="light" />
+                  <LuPill className="visit-type-svg" />
                 </div>
               </div>
               <div className="visit-type-label">Sick Visit</div>

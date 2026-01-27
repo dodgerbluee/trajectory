@@ -6,8 +6,8 @@ import ErrorMessage from './ErrorMessage';
 import Card from './Card';
 import Button from './Button';
 import Heatmap from './Heatmap';
-import Select from './Select';
-import Tabs from './Tabs';
+import ChildPills from './ChildPills';
+// Tabs removed; using inline view toggle in controls
 import GrowthChartTab from './GrowthChartTab';
 import { HiChevronLeft, HiChevronRight } from 'react-icons/hi';
 import { formatDate } from '../lib/date-utils';
@@ -88,181 +88,179 @@ function MetricsView() {
   );
 
   return (
-    <Tabs
-      tabs={[
-        {
-          id: 'illness',
-          label: 'Illness',
-          content: (
-            <>
-              {/* Controls */}
-              <Card className="metrics-controls">
-                <div className="metrics-controls-inline">
-                  <div className="metrics-year-section">
-                    <span className="metrics-control-label">Year</span>
-                    <div className="year-selector">
-                      <Button 
-                        variant="secondary" 
-                        size="sm"
-                        onClick={() => handleYearChange(-1)}
-                        disabled={selectedYear <= 2020}
-                      >
-                        <HiChevronLeft className="btn-icon" />
-                      </Button>
-                      <span className="year-display">{selectedYear}</span>
-                      <Button 
-                        variant="secondary" 
-                        size="sm"
-                        onClick={() => handleYearChange(1)}
-                        disabled={selectedYear >= new Date().getFullYear()}
-                      >
-                        <HiChevronRight className="btn-icon" />
-                      </Button>
-                    </div>
-                  </div>
+    <>
+      <Card className="metrics-controls">
+        <div className="metrics-controls-inline">
+          <div className="metrics-year-section">
+            <span className="metrics-control-label">Year</span>
+            <div className="year-selector">
+              <Button 
+                variant="secondary" 
+                size="sm"
+                onClick={() => handleYearChange(-1)}
+                disabled={selectedYear <= 2020}
+              >
+                <HiChevronLeft className="btn-icon" />
+              </Button>
+              <span className="year-display">{selectedYear}</span>
+              <Button 
+                variant="secondary" 
+                size="sm"
+                onClick={() => handleYearChange(1)}
+                disabled={selectedYear >= new Date().getFullYear()}
+              >
+                <HiChevronRight className="btn-icon" />
+              </Button>
+            </div>
+          </div>
 
-                  <div className="metrics-controls-divider"></div>
-                  
-                  <div className="metrics-filter-section">
-                    <span className="metrics-control-label">Filter</span>
-                    <Select
-                      id="filter-child"
-                      value={filterChildId?.toString() || ''}
-                      onChange={(value) => setFilterChildId(value ? parseInt(value) : undefined)}
-                      options={[
-                        { value: '', label: 'All Children' },
-                        ...children.map(child => ({ value: child.id.toString(), label: child.name }))
-                      ]}
-                    />
-                  </div>
-                </div>
-              </Card>
+          <div className="metrics-controls-divider"></div>
+          
+          <div className="metrics-filter-section">
+            <span className="metrics-control-label">Filter</span>
+            <ChildPills
+              childrenList={children}
+              selectedChildId={filterChildId}
+              onSelect={(id) => setFilterChildId(id)}
+            />
+          </div>
 
-              {/* Summary Stats */}
-              <div className="metrics-summary">
-                {/* Avatar Card - Far Left */}
-                <Card className="summary-card summary-card-avatars">
-                  <div className="summary-avatars">
-                    {filterChildId ? (
-                      // Single avatar when filtered
-                      (() => {
-                        const child = children.find(c => c.id === filterChildId);
-                        if (!child) return null;
-                        const avatarUrl = child.avatar
-                          ? childrenApi.getAvatarUrl(child.avatar)
-                          : childrenApi.getDefaultAvatarUrl(child.gender);
-                        return (
-                          <img
-                            src={avatarUrl}
-                            alt={child.name}
-                            className="summary-avatar-single"
-                          />
-                        );
-                      })()
-                    ) : (
-                      // Multiple avatars when showing all children
-                      children.slice(0, 6).map((child) => {
-                        const avatarUrl = child.avatar
-                          ? childrenApi.getAvatarUrl(child.avatar)
-                          : childrenApi.getDefaultAvatarUrl(child.gender);
-                        return (
-                          <img
-                            key={child.id}
-                            src={avatarUrl}
-                            alt={child.name}
-                            className="summary-avatar-item"
-                            title={child.name}
-                          />
-                        );
-                      })
+          <div className="metrics-view-toggle" style={{ marginLeft: 'auto' }}>
+            <Button
+              variant={activeTab === 'illness' ? 'primary' : 'secondary'}
+              size="sm"
+              onClick={() => setActiveTab('illness')}
+            >
+              Illness
+            </Button>
+            <Button
+              variant={activeTab === 'growth' ? 'primary' : 'secondary'}
+              size="sm"
+              onClick={() => setActiveTab('growth')}
+              style={{ marginLeft: 8 }}
+            >
+              Growth
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      {/* Summary Stats */}
+      <div className="metrics-summary">
+        <Card className="summary-card summary-card-avatars">
+          <div className="summary-avatars">
+            {filterChildId ? (
+              (() => {
+                const child = children.find(c => c.id === filterChildId);
+                if (!child) return null;
+                const avatarUrl = child.avatar
+                  ? childrenApi.getAvatarUrl(child.avatar)
+                  : childrenApi.getDefaultAvatarUrl(child.gender);
+                return (
+                  <img
+                    src={avatarUrl}
+                    alt={child.name}
+                    className="summary-avatar-single"
+                  />
+                );
+              })()
+            ) : (
+              children.slice(0, 6).map((child) => {
+                const avatarUrl = child.avatar
+                  ? childrenApi.getAvatarUrl(child.avatar)
+                  : childrenApi.getDefaultAvatarUrl(child.gender);
+                return (
+                  <img
+                    key={child.id}
+                    src={avatarUrl}
+                    alt={child.name}
+                    className="summary-avatar-item"
+                    title={child.name}
+                  />
+                );
+              })
+            )}
+          </div>
+          <div className="summary-label">
+            {filterChildId 
+              ? children.find(c => c.id === filterChildId)?.name || 'Child'
+              : 'All Children'}
+          </div>
+        </Card>
+
+        <Card className="summary-card">
+          <div className="summary-value">{uniqueDaysWithIllness}</div>
+          <div className="summary-label">Days with Illness</div>
+        </Card>
+        <Card className="summary-card">
+          <div className="summary-value">{totalSickDays}</div>
+          <div className="summary-label">Total Sick Days</div>
+        </Card>
+        {!filterChildId && (
+          <Card className="summary-card">
+            <div className="summary-value">{Math.round(heatmapData.maxCount)}</div>
+            <div className="summary-label">Max Sick Children/Day</div>
+          </Card>
+        )}
+        {filterChildId && (
+          <Card className="summary-card">
+            <div className="summary-value">{Math.round(heatmapData.maxCount)}</div>
+            <div className="summary-label">Max Severity</div>
+          </Card>
+        )}
+        {maxDay.count > 0 && (
+          <Card className="summary-card">
+            <div className="summary-value">{formatDate(maxDay.date)}</div>
+            <div className="summary-label">Peak Illness Date</div>
+          </Card>
+        )}
+      </div>
+
+      {/* Content area */}
+      {activeTab === 'illness' ? (
+        <>
+          <Card title={`Illness Heatmap - ${selectedYear}`}>
+            <p className="heatmap-description">
+              {filterChildId 
+                ? 'Each square represents a day. Darker colors indicate higher illness severity (1-10). Click on a day to see details.'
+                : 'Each square represents a day. Darker colors indicate more children were sick on that day. Click on a day to see details.'}
+            </p>
+            <Heatmap 
+              data={heatmapData} 
+              onDayClick={handleDayClick}
+              isSingleChild={filterChildId !== undefined}
+            />
+          </Card>
+
+          {selectedDate && selectedDayData && (
+            <Card title={`Details for ${formatDate(selectedDate)}`}>
+              <div className="day-details">
+                {filterChildId ? (
+                  <p><strong>Severity:</strong> {Math.round(selectedDayData.count)}/10</p>
+                ) : (
+                  <>
+                    <p><strong>Children Sick:</strong> {Math.round(selectedDayData.count)}</p>
+                    {selectedDayData.children.length > 0 && (
+                      <div>
+                        <strong>Affected Children:</strong>
+                        <ul>
+                          {selectedDayData.children.map(childId => {
+                            const child = children.find(c => c.id === childId);
+                            return <li key={childId}>{child?.name || `Child #${childId}`}</li>;
+                          })}
+                        </ul>
+                      </div>
                     )}
-                  </div>
-                  <div className="summary-label">
-                    {filterChildId 
-                      ? children.find(c => c.id === filterChildId)?.name || 'Child'
-                      : 'All Children'}
-                  </div>
-                </Card>
-                
-                <Card className="summary-card">
-                  <div className="summary-value">{uniqueDaysWithIllness}</div>
-                  <div className="summary-label">Days with Illness</div>
-                </Card>
-                <Card className="summary-card">
-                  <div className="summary-value">{totalSickDays}</div>
-                  <div className="summary-label">Total Sick Days</div>
-                </Card>
-                {!filterChildId && (
-                  <Card className="summary-card">
-                    <div className="summary-value">{Math.round(heatmapData.maxCount)}</div>
-                    <div className="summary-label">Max Sick Children/Day</div>
-                  </Card>
-                )}
-                {filterChildId && (
-                  <Card className="summary-card">
-                    <div className="summary-value">{Math.round(heatmapData.maxCount)}</div>
-                    <div className="summary-label">Max Severity</div>
-                  </Card>
-                )}
-                {maxDay.count > 0 && (
-                  <Card className="summary-card">
-                    <div className="summary-value">{formatDate(maxDay.date)}</div>
-                    <div className="summary-label">Peak Illness Date</div>
-                  </Card>
+                  </>
                 )}
               </div>
-
-              {/* Heatmap */}
-              <Card title={`Illness Heatmap - ${selectedYear}`}>
-                <p className="heatmap-description">
-                  {filterChildId 
-                    ? 'Each square represents a day. Darker colors indicate higher illness severity (1-10). Click on a day to see details.'
-                    : 'Each square represents a day. Darker colors indicate more children were sick on that day. Click on a day to see details.'}
-                </p>
-                <Heatmap 
-                  data={heatmapData} 
-                  onDayClick={handleDayClick}
-                  isSingleChild={filterChildId !== undefined}
-                />
-              </Card>
-
-              {/* Selected Day Details */}
-              {selectedDate && selectedDayData && (
-                <Card title={`Details for ${formatDate(selectedDate)}`}>
-                  <div className="day-details">
-                    {filterChildId ? (
-                      <p><strong>Severity:</strong> {Math.round(selectedDayData.count)}/10</p>
-                    ) : (
-                      <>
-                        <p><strong>Children Sick:</strong> {Math.round(selectedDayData.count)}</p>
-                        {selectedDayData.children.length > 0 && (
-                          <div>
-                            <strong>Affected Children:</strong>
-                            <ul>
-                              {selectedDayData.children.map(childId => {
-                                const child = children.find(c => c.id === childId);
-                                return <li key={childId}>{child?.name || `Child #${childId}`}</li>;
-                              })}
-                            </ul>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </Card>
-              )}
-            </>
-          ),
-        },
-        {
-          id: 'growth',
-          label: 'Growth',
-          content: <GrowthChartTab filterChildId={filterChildId} />,
-        },
-      ]}
-      activeTab={activeTab}
-      onTabChange={(tabId) => setActiveTab(tabId as 'illness' | 'growth')}
-    />
+            </Card>
+          )}
+        </>
+      ) : (
+        <GrowthChartTab filterChildId={filterChildId} />
+      )}
+    </>
   );
 }
 
