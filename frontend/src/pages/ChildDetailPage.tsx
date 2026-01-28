@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { HiPlus, HiChartBar, HiExclamationCircle } from 'react-icons/hi';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
+import { LuActivity, LuHeart, LuThermometer } from 'react-icons/lu';
 import { childrenApi, visitsApi, illnessesApi, ApiClientError } from '../lib/api-client';
 import type { Child, Visit, VisitType, Illness, VisitAttachment, ChildAttachment } from '../types/api';
 import { calculateAge, formatAge, formatDate } from '../lib/date-utils';
@@ -10,16 +10,24 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import Notification from '../components/Notification';
 import VisitTypeModal from '../components/VisitTypeModal';
-import Select from '../components/Select';
 import TimelineItem from '../components/TimelineItem';
 import Tabs from '../components/Tabs';
 import DocumentsList from '../components/DocumentsList';
 import ImageCropUpload from '../components/ImageCropUpload';
 import VaccineHistory from '../components/VaccineHistory';
+import VisitsSidebar from '../components/VisitsSidebar';
+import IllnessesSidebar from '../components/IllnessesSidebar';
+import TrendsSidebar from '../components/TrendsSidebar';
+import MetricsView from '../components/MetricsView';
+import { MdOutlinePersonalInjury } from 'react-icons/md';
+import { LuPill } from 'react-icons/lu';
+import { LuEye } from 'react-icons/lu';
+// replaced local mask icon with Lucide thermometer for illness
 
 function ChildDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const [child, setChild] = useState<Child | null>(null);
   const [visits, setVisits] = useState<Visit[]>([]);
@@ -27,11 +35,16 @@ function ChildDetailPage() {
   const [lastWellnessVisit, setLastWellnessVisit] = useState<Visit | null>(null);
   const [lastSickVisit, setLastSickVisit] = useState<Visit | null>(null);
   const [lastVisionVisit, setLastVisionVisit] = useState<Visit | null>(null);
+  const [lastInjuryVisit, setLastInjuryVisit] = useState<Visit | null>(null);
+  const [lastIllness, setLastIllness] = useState<Illness | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showVisitTypeModal, setShowVisitTypeModal] = useState(false);
   const [visitTypeFilter, setVisitTypeFilter] = useState<'all' | 'wellness' | 'sick' | 'injury' | 'vision'>('all');
-  const [activeTab, setActiveTab] = useState<'visits' | 'illnesses' | 'documents' | 'vaccines'>('visits');
+  const [filterIllnessStatus, setFilterIllnessStatus] = useState<'ongoing' | 'ended' | undefined>(undefined);
+  const [metricsActiveTab, setMetricsActiveTab] = useState<'illness' | 'growth'>('illness');
+  const [metricsYear, setMetricsYear] = useState<number>(new Date().getFullYear());
+  const [activeTab, setActiveTab] = useState<'visits' | 'illnesses' | 'metrics' | 'documents' | 'vaccines'>('visits');
   const [documents, setDocuments] = useState<Array<(VisitAttachment & { visit: Visit; type: 'visit' }) | (ChildAttachment & { type: 'child' })>>([]);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
   const [showAvatarEditor, setShowAvatarEditor] = useState(false);
@@ -41,6 +54,8 @@ function ChildDetailPage() {
     message: string;
     type: 'success' | 'error';
   } | null>(null);
+  // Track which visits have attachments (visit ID set)
+  const [visitsWithAttachments, setVisitsWithAttachments] = useState<Set<number>>(new Set());
 
   const loadChild = useCallback(async () => {
     if (!id) {
@@ -71,6 +86,36 @@ function ChildDetailPage() {
       setChild(childResponse.data);
       setVisits(allVisitsResponse.data);
       setIllnesses(illnessesResponse.data);
+      // Derive last injury visit from all visits
+      const sortedAll = [...allVisitsResponse.data].sort((a, b) => new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime());
+      const lastInjury = sortedAll.find(v => v.visit_type === 'injury') || null;
+      setLastInjuryVisit(lastInjury);
+      // Derive last illness (use the latest illness that has an end_date)
+      const endedIllnesses = illnessesResponse.data.filter(i => i.end_date).sort((a, b) => new Date(b.end_date!).getTime() - new Date(a.end_date!).getTime());
+      const lastEndedIllness = endedIllnesses.length > 0 ? endedIllnesses[0] : null;
+      setLastIllness(lastEndedIllness);
+      // Determine which visits have attachments so the timeline can show an indicator
+      try {
+        const visitAttachmentChecks = await Promise.all(
+          allVisitsResponse.data.map(async (visit) => {
+            try {
+              const attachmentsResp = await visitsApi.getAttachments(visit.id);
+              return (attachmentsResp.data && attachmentsResp.data.length > 0) ? visit.id : null;
+            } catch (err) {
+              // On error, treat as no attachments for that visit
+              return null;
+            }
+          })
+        );
+
+        const visitIdsWithAttachments = new Set<number>();
+        visitAttachmentChecks.forEach(id => {
+          if (id !== null) visitIdsWithAttachments.add(id as number);
+        });
+        setVisitsWithAttachments(visitIdsWithAttachments);
+      } catch (err) {
+        // ignore attachment population errors
+      }
       
       // Get most recent wellness visit (visits are sorted by date DESC)
       if (wellnessVisitsResponse.data.length > 0) {
@@ -100,6 +145,14 @@ function ChildDetailPage() {
   useEffect(() => {
     loadChild();
   }, [loadChild]);
+
+  // When navigating back from Add Illness (or similar), open the requested tab
+  const stateTab = (location.state as { tab?: 'visits' | 'illnesses' | 'metrics' | 'documents' | 'vaccines' } | null)?.tab;
+  useEffect(() => {
+    if (stateTab != null) {
+      setActiveTab(stateTab);
+    }
+  }, [stateTab]);
 
   const loadDocuments = useCallback(async () => {
     if (!id) return;
@@ -191,16 +244,10 @@ function ChildDetailPage() {
     }
   };
 
-  // Track which visits have attachments
-  const visitsWithAttachments = useMemo(() => {
-    const visitIds = new Set<number>();
-    documents.forEach(doc => {
-      if (doc.type === 'visit') {
-        visitIds.add(doc.visit.id);
-      }
-    });
-    return visitIds;
-  }, [documents]);
+  // When loading child data, also fetch attachments for each visit to determine
+  // which visits have attachments so the visits timeline can show an indicator.
+  // This runs as part of `loadChild` (below) and is kept here as a safety fallback
+  // in case documents are loaded separately.
 
   // Filter visits - MUST be called before early returns (Rules of Hooks)
   const visitItems = useMemo(() => {
@@ -229,7 +276,7 @@ function ChildDetailPage() {
     return items;
   }, [visits, visitTypeFilter]);
 
-  // Filter illnesses - MUST be called before early returns (Rules of Hooks)
+  // Filter illnesses by status - MUST be called before early returns (Rules of Hooks)
   const illnessItems = useMemo(() => {
     type IllnessItem = {
       id: string;
@@ -237,22 +284,24 @@ function ChildDetailPage() {
       data: Illness;
     };
 
-    const items: IllnessItem[] = [];
+    let list = illnesses;
+    if (filterIllnessStatus === 'ongoing') {
+      list = illnesses.filter((i) => !i.end_date);
+    } else if (filterIllnessStatus === 'ended') {
+      list = illnesses.filter((i) => !!i.end_date);
+    }
 
-    // Add all illnesses
-    illnesses.forEach(illness => {
-      items.push({
-        id: `illness-${illness.id}`,
-        date: illness.start_date,
-        data: illness,
-      });
-    });
+    const items: IllnessItem[] = list.map((illness) => ({
+      id: `illness-${illness.id}`,
+      date: illness.start_date,
+      data: illness,
+    }));
 
     // Sort by date (most recent first)
     items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return items;
-  }, [illnesses]);
+  }, [illnesses, filterIllnessStatus]);
 
   // Early returns AFTER all hooks
   if (loading) {
@@ -267,21 +316,10 @@ function ChildDetailPage() {
     return <ErrorMessage message="Child not found" onRetry={loadChild} />;
   }
 
-  // Safely calculate age with error handling
-  let age;
-  try {
-    age = calculateAge(child.date_of_birth);
-  } catch (err) {
-    console.error('Error calculating age:', err);
-    age = { years: 0, months: 0 };
-  }
+  const age = calculateAge(child.date_of_birth);
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <Link to="/" className="breadcrumb">← Back to Children</Link>
-      </div>
-
       {notification && (
         <Notification
           message={notification.message}
@@ -293,9 +331,9 @@ function ChildDetailPage() {
       {/* Unified Overview and Tabs Section */}
       <Card>
         <div className="child-detail-body">
-          {/* Overview Section */}
+          {/* Overview Section - without header title */}
           <div className="child-detail-section">
-            <h3 className="child-detail-section-title">Overview</h3>
+            <Link to="/" className="breadcrumb">← Back to Children</Link>
             <div className="overview-header">
               <div className="overview-main">
                 <div className="overview-avatar">
@@ -359,27 +397,6 @@ function ChildDetailPage() {
                   </div>
                 </div>
               </div>
-              <div className="overview-actions">
-                <Button onClick={() => setShowVisitTypeModal(true)} size="sm">
-                  <HiPlus className="btn-icon" />
-                  Add Visit
-                </Button>
-                <Link 
-                  to={`/illnesses/new?child_id=${child.id}`}
-                  state={{ fromChild: true, childId: child.id }}
-                >
-                  <Button variant="secondary" size="sm">
-                    <HiExclamationCircle className="btn-icon" />
-                    Add Illness
-                  </Button>
-                </Link>
-                <Link to={`/children/${child.id}/growth`}>
-                  <Button variant="secondary" size="sm">
-                    <HiChartBar className="btn-icon" />
-                    Growth Charts
-                  </Button>
-                </Link>
-              </div>
             </div>
             
             {/* Last Visits in Overview */}
@@ -387,9 +404,11 @@ function ChildDetailPage() {
               {lastWellnessVisit && (
                 <Link to={`/visits/${lastWellnessVisit.id}`} className="overview-last-visit-link">
                   <div className="overview-last-visit">
-                    <span className="overview-visit-icon">✓</span>
+                    <div className={`visit-icon-outline visit-icon--wellness`} aria-hidden="true">
+                      <LuHeart className="visit-type-svg" />
+                    </div>
                     <div className="overview-visit-info">
-                      <span className="overview-visit-label">Last Wellness:</span>
+                      <span className="overview-visit-label">Last Wellness Visit:</span>
                       <span className="overview-visit-date">{formatDate(lastWellnessVisit.visit_date)}</span>
                     </div>
                   </div>
@@ -398,9 +417,11 @@ function ChildDetailPage() {
               {lastSickVisit && (
                 <Link to={`/visits/${lastSickVisit.id}`} className="overview-last-visit-link">
                   <div className="overview-last-visit">
-                    <span className="overview-visit-icon">🤒</span>
+                    <div className={`visit-icon-outline visit-icon--sick`} aria-hidden="true">
+                      <LuPill className="visit-type-svg" />
+                    </div>
                     <div className="overview-visit-info">
-                      <span className="overview-visit-label">Last Sick:</span>
+                      <span className="overview-visit-label">Last Sick Visit:</span>
                       <span className="overview-visit-date">{formatDate(lastSickVisit.visit_date)}</span>
                     </div>
                   </div>
@@ -409,10 +430,38 @@ function ChildDetailPage() {
               {lastVisionVisit && (
                 <Link to={`/visits/${lastVisionVisit.id}`} className="overview-last-visit-link">
                   <div className="overview-last-visit">
-                    <span className="overview-visit-icon">👁️</span>
+                    <div className={`visit-icon-outline visit-icon--vision`} aria-hidden="true">
+                      <LuEye className="visit-type-svg" />
+                    </div>
                     <div className="overview-visit-info">
-                      <span className="overview-visit-label">Last Vision:</span>
+                      <span className="overview-visit-label">Last Vision Visit:</span>
                       <span className="overview-visit-date">{formatDate(lastVisionVisit.visit_date)}</span>
+                    </div>
+                  </div>
+                </Link>
+              )}
+              {lastInjuryVisit && (
+                <Link to={`/visits/${lastInjuryVisit.id}`} className="overview-last-visit-link">
+                  <div className="overview-last-visit">
+                    <div className={`visit-icon-outline visit-icon--injury`} aria-hidden="true">
+                      <MdOutlinePersonalInjury className="visit-type-svg visit-type-svg--filled" />
+                    </div>
+                    <div className="overview-visit-info">
+                      <span className="overview-visit-label">Last Injury Visit:</span>
+                      <span className="overview-visit-date">{formatDate(lastInjuryVisit.visit_date)}</span>
+                    </div>
+                  </div>
+                </Link>
+              )}
+              {lastIllness && (
+                <Link to={`/illnesses/${lastIllness.id}`} className="overview-last-visit-link">
+                  <div className="overview-last-visit">
+                    <div className={`visit-icon-outline visit-icon--illness`} aria-hidden="true">
+                      <LuThermometer className="visit-type-svg" />
+                    </div>
+                    <div className="overview-visit-info">
+                      <span className="overview-visit-label">Last Illness:</span>
+                      <span className="overview-visit-date">{formatDate(lastIllness.end_date || lastIllness.start_date)}</span>
                     </div>
                   </div>
                 </Link>
@@ -425,91 +474,208 @@ function ChildDetailPage() {
 
           {/* Tabs Section */}
           <div className="child-detail-section">
-            <Tabs
-              activeTab={activeTab}
-              onTabChange={(tabId) => setActiveTab(tabId as 'visits' | 'illnesses' | 'documents' | 'vaccines')}
-              tabs={[
-                {
-                  id: 'visits',
-                  label: 'Visits',
-                  content: (
-                    <div>
-                      <div className="timeline-filters">
-                        <div className="filter-group">
-                          <label htmlFor="visit-type-filter">Visit Type:</label>
-                          <Select
-                            id="visit-type-filter"
-                            value={visitTypeFilter}
-                            onChange={(value) => setVisitTypeFilter(value as 'all' | 'wellness' | 'sick' | 'injury' | 'vision')}
-                            options={[
-                              { value: 'all', label: 'All Visits' },
-                              { value: 'wellness', label: 'Wellness' },
-                              { value: 'sick', label: 'Sick' },
-                              { value: 'injury', label: 'Injury' },
-                              { value: 'vision', label: 'Vision' },
-                            ]}
-                          />
-                        </div>
-                      </div>
+            {(() => {
+              const tabsArray: any[] = [];
 
+              tabsArray.push({
+                id: 'visits',
+                label: 'Visits',
+                content: (
+                  <div className="visits-page-layout">
+                    <VisitsSidebar
+                      stats={[
+                        {
+                          label: 'Total Visits',
+                          value: visits.length,
+                          icon: LuActivity,
+                          color: 'gray',
+                          onClick: () => setVisitTypeFilter('all'),
+                          active: visitTypeFilter === 'all',
+                        },
+                        {
+                          label: 'Wellness',
+                          value: visits.filter((v) => v.visit_type === 'wellness').length,
+                          icon: LuHeart,
+                          color: 'emerald',
+                          onClick: () => setVisitTypeFilter('wellness'),
+                          active: visitTypeFilter === 'wellness',
+                        },
+                        {
+                          label: 'Sick',
+                          value: visits.filter((v) => v.visit_type === 'sick').length,
+                          icon: LuPill,
+                          color: 'red',
+                          onClick: () => setVisitTypeFilter('sick'),
+                          active: visitTypeFilter === 'sick',
+                        },
+                        {
+                          label: 'Injury',
+                          value: visits.filter((v) => v.visit_type === 'injury').length,
+                          icon: MdOutlinePersonalInjury,
+                          color: 'blue',
+                          onClick: () => setVisitTypeFilter('injury'),
+                          active: visitTypeFilter === 'injury',
+                        },
+                        {
+                          label: 'Vision',
+                          value: visits.filter((v) => v.visit_type === 'vision').length,
+                          icon: LuEye,
+                          color: 'purple',
+                          onClick: () => setVisitTypeFilter('vision'),
+                          active: visitTypeFilter === 'vision',
+                        },
+                      ]}
+                      // Child detail page already implies the child; hide selector.
+                      childrenList={[]}
+                      selectedChildId={undefined}
+                      onSelectChild={() => {}}
+                      hideChildFilter
+                    />
+
+                    <main className="visits-main">
                       {visitItems.length === 0 ? (
-                        <div className="empty-state">
-                          <p>No visits recorded yet. Click "Add Visit" to get started.</p>
-                        </div>
+                        <Card>
+                          <p className="empty-state">
+                            No visits recorded yet. Click "Add Visit" to get started.
+                          </p>
+                        </Card>
                       ) : (
-                        <div className="timeline-list-modern">
-                          {visitItems.map((item) => (
-                            <TimelineItem
-                              key={item.id}
-                              type="visit"
-                              data={item.data}
-                              hasAttachments={visitsWithAttachments.has(item.data.id)}
-                            />
-                          ))}
-                        </div>
+                        <Card>
+                          <div className="timeline-list-modern">
+                            {visitItems.map((item) => (
+                              <TimelineItem
+                                key={item.id}
+                                type="visit"
+                                data={item.data}
+                                hasAttachments={visitsWithAttachments.has(item.data.id)}
+                                childName={undefined} // Child detail page: don't show child badge here
+                              />
+                            ))}
+                          </div>
+                        </Card>
                       )}
-                    </div>
-                  ),
-                },
-                {
-                  id: 'illnesses',
-                  label: 'Illnesses',
-                  content: (
-                    <div>
+                    </main>
+                  </div>
+                ),
+              });
+
+              tabsArray.push({
+                id: 'illnesses',
+                label: 'Illnesses',
+                content: (
+                  <div className="visits-page-layout">
+                    <IllnessesSidebar
+                      stats={[
+                        {
+                          label: 'Total Illnesses',
+                          value: illnesses.length,
+                          icon: LuActivity,
+                          color: 'blue',
+                          onClick: () => setFilterIllnessStatus(undefined),
+                          active: !filterIllnessStatus,
+                        },
+                        {
+                          label: 'Ongoing',
+                          value: illnesses.filter((i) => !i.end_date).length,
+                          icon: LuActivity,
+                          color: 'red',
+                          onClick: () => setFilterIllnessStatus('ongoing'),
+                          active: filterIllnessStatus === 'ongoing',
+                        },
+                        {
+                          label: 'Ended',
+                          value: illnesses.filter((i) => !!i.end_date).length,
+                          icon: LuActivity,
+                          color: 'emerald',
+                          onClick: () => setFilterIllnessStatus('ended'),
+                          active: filterIllnessStatus === 'ended',
+                        },
+                      ]}
+                      childrenList={[]}
+                      selectedChildId={undefined}
+                      onSelectChild={() => {}}
+                      hideChildFilter
+                      addIllnessChildId={child?.id}
+                    />
+                    <main className="visits-main">
                       {illnessItems.length === 0 ? (
-                        <div className="empty-state">
-                          <p>No illnesses recorded yet. Click "Add Illness" to get started.</p>
-                        </div>
+                        <Card>
+                          <p className="empty-state">
+                            No illnesses recorded yet. Click "Add Illness" to get started.
+                          </p>
+                        </Card>
                       ) : (
-                        <div className="timeline-list-modern">
-                          {illnessItems.map((item) => (
-                            <TimelineItem
-                              key={item.id}
-                              type="illness"
-                              data={item.data}
-                            />
-                          ))}
-                        </div>
+                        <Card>
+                          <div className="timeline-list-modern">
+                            {illnessItems.map((item) => (
+                              <TimelineItem
+                                key={item.id}
+                                type="illness"
+                                data={item.data}
+                              />
+                            ))}
+                          </div>
+                        </Card>
                       )}
-                    </div>
-                  ),
-                },
-                {
-                  id: 'documents',
-                  label: 'Documents',
-                  content: loadingDocuments ? (
-                    <LoadingSpinner message="Loading documents..." />
-                  ) : (
-                    <DocumentsList documents={documents} onUpdate={loadDocuments} showHeader={true} />
-                  ),
-                },
-                {
+                    </main>
+                  </div>
+                ),
+              });
+
+              tabsArray.push({
+                id: 'documents',
+                label: 'Documents',
+                content: loadingDocuments ? (
+                  <LoadingSpinner message="Loading documents..." />
+                ) : (
+                  <DocumentsList documents={documents} onUpdate={loadDocuments} showHeader={true} />
+                ),
+              });
+
+              // Only include the Vaccines tab when there are visits with vaccines
+              if (visitsWithVaccines.length > 0) {
+                tabsArray.push({
                   id: 'vaccines',
-                  label: 'Vaccine History',
+                  label: 'Vaccines',
                   content: <VaccineHistory visits={visitsWithVaccines} childId={parseInt(id!)} onUploadSuccess={loadDocuments} />,
-                },
-              ]}
-            />
+                });
+              }
+
+              // Metrics tab at far right
+              tabsArray.push({
+                id: 'metrics',
+                label: 'Metrics',
+                content: (
+                  <div className="visits-page-layout">
+                    <TrendsSidebar
+                      activeTab={metricsActiveTab}
+                      onChangeTab={(t) => setMetricsActiveTab(t)}
+                      childrenList={child ? [child] : []}
+                      selectedChildId={child?.id}
+                      onSelectChild={() => {}}
+                    />
+                    <main className="visits-main">
+                      <MetricsView
+                        activeTab={metricsActiveTab}
+                        onActiveTabChange={(t) => setMetricsActiveTab(t)}
+                        selectedYear={metricsYear}
+                        onSelectedYearChange={(y) => setMetricsYear(y)}
+                        filterChildId={child?.id}
+                        onFilterChildChange={() => {}}
+                      />
+                    </main>
+                  </div>
+                ),
+              });
+
+              return (
+                <Tabs
+                  activeTab={activeTab}
+                  onTabChange={(tabId) => setActiveTab(tabId as 'visits' | 'illnesses' | 'metrics' | 'documents' | 'vaccines')}
+                  tabs={tabsArray}
+                />
+              );
+            })()}
           </div>
         </div>
       </Card>
@@ -519,7 +685,7 @@ function ChildDetailPage() {
         onSelect={(visitType: VisitType) => {
           setShowVisitTypeModal(false);
           navigate(`/children/${child.id}/visits/new?type=${visitType}`, {
-            state: { fromChild: true, childId: child.id }
+            state: { from: `${location.pathname}${location.search}`, childId: child.id }
           });
         }}
         onClose={() => setShowVisitTypeModal(false)}

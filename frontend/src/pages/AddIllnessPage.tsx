@@ -9,21 +9,8 @@ import Button from '../components/Button';
 import Notification from '../components/Notification';
 import LoadingSpinner from '../components/LoadingSpinner';
 import SeveritySelector from '../components/SeveritySelector';
+import IllnessesInput from '../components/IllnessesInput';
 import Checkbox from '../components/Checkbox';
-
-const ILLNESS_TYPES: { value: IllnessType; label: string }[] = [
-  { value: 'flu', label: 'Flu' },
-  { value: 'strep', label: 'Strep Throat' },
-  { value: 'rsv', label: 'RSV' },
-  { value: 'covid', label: 'COVID-19' },
-  { value: 'cold', label: 'Cold' },
-  { value: 'stomach_bug', label: 'Stomach Bug' },
-  { value: 'ear_infection', label: 'Ear Infection' },
-  { value: 'hand_foot_mouth', label: 'Hand, Foot & Mouth' },
-  { value: 'croup', label: 'Croup' },
-  { value: 'pink_eye', label: 'Pink Eye' },
-  { value: 'other', label: 'Other' },
-];
 
 function AddIllnessPage() {
   const navigate = useNavigate();
@@ -50,6 +37,12 @@ function AddIllnessPage() {
     visit_id: null,
     notes: null,
   });
+
+  const [selectedIllnesses, setSelectedIllnesses] = useState<IllnessType[]>([formData.illness_type]);
+
+  useEffect(() => {
+    setSelectedIllnesses(formData.illness_type ? [formData.illness_type] : []);
+  }, [formData.illness_type]);
 
   useEffect(() => {
     loadData();
@@ -100,11 +93,11 @@ function AddIllnessPage() {
       await illnessesApi.create(formData);
       setNotification({ message: 'Illness added successfully!', type: 'success' });
       setTimeout(() => {
-        // Navigate back to child timeline if coming from there
-        if ((location.state as any)?.fromChild && (location.state as any)?.childId) {
-          navigate(`/children/${(location.state as any).childId}`);
+        const state = location.state as { fromChild?: boolean; childId?: number; fromTab?: string } | null;
+        if (state?.fromChild && state?.childId != null) {
+          navigate(`/children/${state.childId}`, { state: { tab: state.fromTab ?? 'illnesses' } });
         } else {
-          navigate('/illnesses');
+          navigate('/', { state: { tab: 'illnesses' } });
         }
       }, 1000);
     } catch (error) {
@@ -130,12 +123,13 @@ function AddIllnessPage() {
       <div className="page-header">
         <div>
           <Link 
-            to={((location.state as any)?.fromChild && (location.state as any)?.childId)
-              ? `/children/${(location.state as any).childId}`
-              : '/illnesses'} 
+            to={((location.state as { fromChild?: boolean; childId?: number })?.fromChild && (location.state as { childId?: number }).childId)
+              ? `/children/${(location.state as { childId: number }).childId}`
+              : '/'} 
+            state={{ tab: 'illnesses' }}
             className="breadcrumb"
           >
-            ← Back to {((location.state as any)?.fromChild) ? (children.find(c => c.id === (location.state as any)?.childId)?.name || 'Child') : 'Illnesses'}
+            ← Back to {((location.state as { fromChild?: boolean; childId?: number })?.fromChild) ? (children.find(c => c.id === (location.state as { childId?: number })?.childId)?.name || 'Child') : 'Illnesses'}
           </Link>
           <h1>Add Illness</h1>
         </div>
@@ -166,15 +160,17 @@ function AddIllnessPage() {
             />
           )}
 
-          <FormField
-            label="Illness Type"
-            type="select"
-            value={formData.illness_type || ''}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, illness_type: e.target.value as IllnessType })}
-            required
-            disabled={submitting}
-            options={ILLNESS_TYPES}
-          />
+          <div className="form-field">
+            <label className="form-label">Illness Type</label>
+            <IllnessesInput
+              value={selectedIllnesses}
+              onChange={(ills) => {
+                setSelectedIllnesses(ills);
+                setFormData({ ...formData, illness_type: ills && ills.length > 0 ? ills[0] : ('' as IllnessType) });
+              }}
+              disabled={submitting}
+            />
+          </div>
 
           <FormField
             label="Start Date"
@@ -259,11 +255,12 @@ function AddIllnessPage() {
             variant="secondary" 
             disabled={submitting}
             onClick={() => {
-              // Navigate back to where we came from, or to illnesses page if no origin
-              if ((location.state as any)?.fromChild && (location.state as any)?.childId) {
-                navigate(`/children/${(location.state as any).childId}`);
+              // Navigate back to where we came from, or to Home illnesses tab if no origin
+              const state = location.state as { fromChild?: boolean; childId?: number; fromTab?: string } | null;
+              if (state?.fromChild && state?.childId != null) {
+                navigate(`/children/${state.childId}`, { state: { tab: state.fromTab ?? 'illnesses' } });
               } else {
-                navigate('/illnesses');
+                navigate('/', { state: { tab: 'illnesses' } });
               }
             }}
           >

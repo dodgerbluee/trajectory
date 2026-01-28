@@ -38,7 +38,7 @@ measurementsRouter.get('/', async (req: Request, res: Response, next: NextFuncti
 
     // Build WHERE clause
     const conditions = ['child_id = $1'];
-    const values: any[] = [childId];
+    const values: unknown[] = [childId];
     let paramIndex = 2;
 
     const dateFilter = buildDateRangeFilter(dateRange, 'measurement_date', paramIndex);
@@ -174,7 +174,7 @@ measurementsRouter.put('/:id', async (req: Request, res: Response, next: NextFun
 
     // Build dynamic update query
     const updates: string[] = [];
-    const values: any[] = [];
+    const values: unknown[] = [];
     let paramCount = 1;
 
     if (req.body.measurement_date !== undefined) {

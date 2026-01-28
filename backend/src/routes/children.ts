@@ -133,7 +133,7 @@ childrenRouter.put('/:id', async (req: Request, res: Response, next: NextFunctio
 
     // Build dynamic update query based on provided fields
     const updates: string[] = [];
-    const values: any[] = [];
+    const values: unknown[] = [];
     let paramCount = 1;
 
     if (req.body.name !== undefined) {

@@ -12,6 +12,7 @@ import attachmentsRouter from './routes/attachments.js';
 import avatarsRouter from './routes/avatars.js';
 import visitsRouter from './routes/visits.js';
 import illnessesRouter from './routes/illnesses.js';
+import { authRouter } from './routes/auth.js';
 import { errorHandler } from './middleware/error-handler.js';
 
 export function createApp(): express.Application {
@@ -40,6 +41,7 @@ export function createApp(): express.Application {
   });
 
   // API routes
+  app.use('/api/auth', authRouter); // Authentication endpoints
   app.use('/api/children', childrenRouter);
   app.use('/api/visits', visitsRouter); // Unified visits endpoint
   app.use('/api/illnesses', illnessesRouter); // Illness tracking

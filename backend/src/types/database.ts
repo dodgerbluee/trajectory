@@ -225,7 +225,7 @@ export interface Visit {
   heart_rate: number | null;
   
   // Sick visit fields
-  illness_type: IllnessType | null;
+  // illnesses are stored in `visit_illnesses` join table; no single `illness_type` on visits
   symptoms: string | null;
   temperature: number | null;
   end_date: string | null; // ISO date string
@@ -238,11 +238,24 @@ export interface Visit {
   
   // Vision visit fields
   vision_prescription: string | null; // Prescription details
+  // Structured refraction data (OD/OS) stored as JSONB
+  vision_refraction?: {
+    od: { sphere: number | null; cylinder: number | null; axis: number | null };
+    os: { sphere: number | null; cylinder: number | null; axis: number | null };
+    notes?: string | null;
+  } | null;
+  // Whether glasses or contacts were ordered during the visit
+  ordered_glasses: boolean | null;
+  ordered_contacts: boolean | null;
+  // Legacy column retained for compatibility
   needs_glasses: boolean | null;
   
   // Medical interventions
   vaccines_administered: string[] | null;
   prescriptions: Prescription[] | null;
+
+  // Joined from visit_illnesses (not stored on visits table)
+  illnesses?: IllnessType[] | null;
   
   tags: string[] | null;
   notes: string | null;
@@ -270,7 +283,6 @@ export interface CreateVisitInput {
   blood_pressure?: string | null;
   heart_rate?: number | null;
   
-  illness_type?: IllnessType | null;
   symptoms?: string | null;
   temperature?: number | null;
   end_date?: string | null;
@@ -282,7 +294,15 @@ export interface CreateVisitInput {
   follow_up_date?: string | null;
   
   // Vision visit fields
+  // Vision visit fields
   vision_prescription?: string | null;
+  vision_refraction?: {
+    od?: { sphere?: number | null; cylinder?: number | null; axis?: number | null } | null;
+    os?: { sphere?: number | null; cylinder?: number | null; axis?: number | null } | null;
+    notes?: string | null;
+  } | null;
+  ordered_glasses?: boolean | null;
+  ordered_contacts?: boolean | null;
   needs_glasses?: boolean | null;
   
   vaccines_administered?: string[] | null;
@@ -310,7 +330,6 @@ export interface UpdateVisitInput {
   bmi_value?: number | null;
   bmi_percentile?: number | null;
   
-  illness_type?: IllnessType | null;
   symptoms?: string | null;
   temperature?: number | null;
   end_date?: string | null;
@@ -349,7 +368,6 @@ export interface VisitRow {
   blood_pressure: string | null;
   heart_rate: number | null;
   
-  illness_type: IllnessType | null;
   symptoms: string | null;
   temperature: string | null; // Decimal comes as string
   end_date: Date | null;
@@ -361,11 +379,18 @@ export interface VisitRow {
   follow_up_date: Date | null;
   
   // Vision visit fields
-  vision_prescription: string | null;
-  needs_glasses: boolean | null;
+  vision_prescription?: string | null;
+  vision_refraction?: {
+    od?: { sphere?: number | null; cylinder?: number | null; axis?: number | null } | null;
+    os?: { sphere?: number | null; cylinder?: number | null; axis?: number | null } | null;
+    notes?: string | null;
+  } | null;
+  ordered_glasses?: boolean | null;
+  ordered_contacts?: boolean | null;
+  needs_glasses?: boolean | null;
   
   vaccines_administered: string | null; // TEXT field
-  prescriptions: any; // JSONB field
+  prescriptions: unknown; // JSONB field
   
   tags: string | null; // TEXT field (JSON array)
   notes: string | null;
@@ -377,6 +402,26 @@ export interface VisitRow {
  * Convert VisitRow from database to Visit for API response
  */
 export function visitRowToVisit(row: VisitRow): Visit {
+  const parseNum = (x: unknown): number | null => {
+    if (x === null || x === undefined || x === '') return null;
+    const n = typeof x === 'number' ? x : typeof x === 'string' ? Number(x) : NaN;
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const parsePrescriptions = (val: unknown): Prescription[] | null => {
+    if (val === null || val === undefined) return null;
+    if (Array.isArray(val)) return val as Prescription[];
+    if (typeof val === 'string') {
+      try {
+        const parsed = JSON.parse(val) as unknown;
+        return Array.isArray(parsed) ? (parsed as Prescription[]) : null;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+
   return {
     id: row.id,
     child_id: row.child_id,
@@ -398,7 +443,7 @@ export function visitRowToVisit(row: VisitRow): Visit {
     blood_pressure: row.blood_pressure,
     heart_rate: row.heart_rate,
     
-    illness_type: row.illness_type,
+    // visit-level illness_type removed; illnesses are returned separately from visit_illnesses
     symptoms: row.symptoms,
     temperature: row.temperature ? parseFloat(row.temperature) : null,
     end_date: row.end_date ? row.end_date.toISOString().split('T')[0] : null,
@@ -410,11 +455,27 @@ export function visitRowToVisit(row: VisitRow): Visit {
     follow_up_date: row.follow_up_date ? row.follow_up_date.toISOString().split('T')[0] : null,
     
     // Vision visit fields
-    vision_prescription: row.vision_prescription,
-    needs_glasses: row.needs_glasses,
+    vision_prescription: row.vision_prescription ?? null,
+    vision_refraction: (() => {
+      const v = row.vision_refraction;
+      if (!v) return null;
+      const norm = (eye: unknown) => {
+        if (!eye || typeof eye !== 'object') return { sphere: null, cylinder: null, axis: null };
+        const e = eye as Record<string, unknown>;
+        return {
+          sphere: parseNum(e.sphere),
+          cylinder: parseNum(e.cylinder),
+          axis: parseNum(e.axis),
+        };
+      };
+      return { od: norm(v.od ?? null), os: norm(v.os ?? null), notes: v.notes ?? null };
+    })(),
+    ordered_glasses: row.ordered_glasses ?? null,
+    ordered_contacts: row.ordered_contacts ?? null,
+    needs_glasses: row.needs_glasses ?? null,
     
     vaccines_administered: row.vaccines_administered ? row.vaccines_administered.split(',').map(v => v.trim()).filter(v => v) : null,
-    prescriptions: row.prescriptions || null,
+    prescriptions: parsePrescriptions(row.prescriptions),
     
     tags: row.tags ? (() => {
       try {

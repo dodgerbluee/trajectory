@@ -10,24 +10,14 @@ import Notification from '../components/Notification';
 import LoadingSpinner from '../components/LoadingSpinner';
 import PrescriptionInput from '../components/PrescriptionInput';
 import VaccineInput from '../components/VaccineInput';
+import IllnessesInput from '../components/IllnessesInput';
 import FileUpload from '../components/FileUpload';
 import VisitAttachmentsList from '../components/VisitAttachmentsList';
 import TagInput from '../components/TagInput';
 import Checkbox from '../components/Checkbox';
+import { VisionRefractionCard, VisionRefraction } from '../components/VisionRefractionCard';
 
-const ILLNESS_TYPES: { value: IllnessType; label: string }[] = [
-  { value: 'flu', label: 'Flu' },
-  { value: 'strep', label: 'Strep Throat' },
-  { value: 'rsv', label: 'RSV' },
-  { value: 'covid', label: 'COVID-19' },
-  { value: 'cold', label: 'Cold' },
-  { value: 'stomach_bug', label: 'Stomach Bug' },
-  { value: 'ear_infection', label: 'Ear Infection' },
-  { value: 'hand_foot_mouth', label: 'Hand, Foot & Mouth' },
-  { value: 'croup', label: 'Croup' },
-  { value: 'pink_eye', label: 'Pink Eye' },
-  { value: 'other', label: 'Other' },
-];
+
 
 function EditVisitPage() {
   const { id } = useParams<{ id: string }>();
@@ -61,12 +51,16 @@ function EditVisitPage() {
     temperature: null,
     end_date: null,
     vision_prescription: null,
-    needs_glasses: null,
+    vision_refraction: { od: { sphere: null, cylinder: null, axis: null }, os: { sphere: null, cylinder: null, axis: null }, notes: undefined } as any,
+    ordered_glasses: null,
+    ordered_contacts: null,
     vaccines_administered: [],
     prescriptions: [],
     tags: [],
     notes: null,
   });
+
+  const [selectedIllnesses, setSelectedIllnesses] = useState<IllnessType[]>([]);
 
   const [recentLocations, setRecentLocations] = useState<string[]>([]);
   const [recentDoctors, setRecentDoctors] = useState<string[]>([]);
@@ -112,7 +106,7 @@ function EditVisitPage() {
         bmi_percentile: visitData.bmi_percentile,
         blood_pressure: visitData.blood_pressure,
         heart_rate: visitData.heart_rate,
-        illness_type: visitData.illness_type,
+        // illness_type removed; illnesses are handled separately
         symptoms: visitData.symptoms,
         temperature: visitData.temperature,
         end_date: visitData.end_date,
@@ -121,12 +115,19 @@ function EditVisitPage() {
         treatment: visitData.treatment,
         follow_up_date: visitData.follow_up_date,
         vision_prescription: visitData.vision_prescription,
-        needs_glasses: visitData.needs_glasses,
+        vision_refraction: (visitData as any).vision_refraction || { od: { sphere: null, cylinder: null, axis: null }, os: { sphere: null, cylinder: null, axis: null }, notes: undefined },
+        ordered_glasses: (visitData as any).ordered_glasses ?? visitData.needs_glasses ?? null,
+        ordered_contacts: (visitData as any).ordered_contacts ?? null,
         vaccines_administered: visitData.vaccines_administered || [],
         prescriptions: visitData.prescriptions || [],
         tags: visitData.tags || [],
         notes: visitData.notes,
       });
+
+      // Initialize selected illnesses from new `illnesses` array or legacy `illness_type`
+      setSelectedIllnesses((visitData as any).illnesses && (visitData as any).illnesses.length > 0
+        ? (visitData as any).illnesses as IllnessType[]
+        : []);
       
       // Load recent data for autocomplete
       const visitsResponse = await visitsApi.getAll({ child_id: visitData.child_id });
@@ -182,9 +183,9 @@ function EditVisitPage() {
 
     if (!id || !visit) return;
 
-    // Validation
-    if (visit.visit_type === 'sick' && !formData.illness_type) {
-      setNotification({ message: 'Please select an illness type for sick visits', type: 'error' });
+    // Validation (require at least one selected illness for sick visits)
+    if (visit.visit_type === 'sick' && selectedIllnesses.length === 0) {
+      setNotification({ message: 'Please select at least one illness for sick visits', type: 'error' });
       return;
     }
 
@@ -196,7 +197,11 @@ function EditVisitPage() {
     setSubmitting(true);
 
     try {
-      await visitsApi.update(parseInt(id), formData);
+      // Send illnesses array and keep `illness_type` for backward compatibility
+      if (visit.visit_type === 'sick') {
+        (formData as any).illnesses = selectedIllnesses.length > 0 ? selectedIllnesses : null;
+      }
+      await visitsApi.update(parseInt(id), formData as any);
       setNotification({ message: 'Visit updated successfully!', type: 'success' });
       setTimeout(() => {
         navigate(`/visits/${id}`);
@@ -303,14 +308,10 @@ function EditVisitPage() {
             {visit.visit_type === 'sick' && (
               <div className="visit-detail-section">
                 <h3 className="visit-detail-section-title">Illness Information</h3>
-                <FormField
-                  label="Illness Type"
-                  type="select"
-                  value={formData.illness_type || ''}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, illness_type: e.target.value as IllnessType })}
-                  required
+                <IllnessesInput
+                  value={selectedIllnesses}
+                  onChange={(ills) => setSelectedIllnesses(ills)}
                   disabled={submitting}
-                  options={[{ value: '', label: 'Select illness type...' }, ...ILLNESS_TYPES]}
                 />
 
                 <FormField
@@ -526,22 +527,28 @@ function EditVisitPage() {
             {visit.visit_type === 'vision' && (
               <div className="visit-detail-section">
                 <h3 className="visit-detail-section-title">Vision Information</h3>
-                <FormField
-                  label="Prescription"
-                  type="textarea"
-                  value={formData.vision_prescription !== undefined ? (formData.vision_prescription || '') : (visit.vision_prescription || '')}
-                  onChange={(e) => setFormData({ ...formData, vision_prescription: e.target.value || null })}
-                  disabled={submitting}
-                  placeholder="Enter prescription details..."
-                  rows={3}
+                <VisionRefractionCard
+                  value={formData.vision_refraction as any}
+                  onChange={(v: VisionRefraction) => setFormData({ ...formData, vision_refraction: v })}
+                  readOnly={submitting}
                 />
 
-                <Checkbox
-                  label="Needs Glasses"
-                  checked={formData.needs_glasses !== undefined ? (formData.needs_glasses === true) : (visit.needs_glasses === true)}
-                  onChange={(checked) => setFormData({ ...formData, needs_glasses: checked ? true : null })}
-                  disabled={submitting}
-                />
+                <div style={{ marginTop: '12px' }}>
+                  <Checkbox
+                    label="Ordered Glasses"
+                    checked={formData.ordered_glasses !== undefined ? (formData.ordered_glasses === true) : ((visit as any).ordered_glasses === true)}
+                    onChange={(checked) => setFormData({ ...formData, ordered_glasses: checked ? true : null })}
+                    disabled={submitting}
+                  />
+                  <div style={{ marginTop: '8px' }}>
+                    <Checkbox
+                      label="Ordered Contacts"
+                      checked={formData.ordered_contacts !== undefined ? (formData.ordered_contacts === true) : ((visit as any).ordered_contacts === true)}
+                      onChange={(checked) => setFormData({ ...formData, ordered_contacts: checked ? true : null })}
+                      disabled={submitting}
+                    />
+                  </div>
+                </div>
               </div>
             )}
 

@@ -68,7 +68,14 @@ function buildQueryString(params: Record<string, any>): string {
 }
 
 /**
- * Make HTTP request with error handling
+ * Get access token from localStorage
+ */
+function getAccessToken(): string | null {
+  return localStorage.getItem('trajectory_access_token');
+}
+
+/**
+ * Make HTTP request with error handling and authentication
  */
 async function request<T>(
   endpoint: string,
@@ -76,12 +83,20 @@ async function request<T>(
 ): Promise<ApiResponse<T>> {
   const url = `${API_BASE_URL}${endpoint}`;
   
+  const accessToken = getAccessToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> || {}),
+  };
+
+  // Add authorization header if token exists
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`;
+  }
+  
   const config: RequestInit = {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers,
   };
 
   try {
@@ -96,6 +111,20 @@ async function request<T>(
 
     if (!response.ok) {
       const error = data as ApiError;
+      
+      // Handle 401 Unauthorized - token might be expired
+      if (response.status === 401 && accessToken) {
+        // Clear tokens on unauthorized response
+        localStorage.removeItem('trajectory_access_token');
+        localStorage.removeItem('trajectory_refresh_token');
+        localStorage.removeItem('trajectory_user');
+        
+        // Redirect to login if not already there
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+      }
+      
       throw new ApiClientError(
         error.error.message,
         error.error.statusCode,
@@ -490,6 +519,21 @@ export const visitsApi = {
    */
   async getById(id: number): Promise<ApiResponse<Visit>> {
     return request<Visit>(`/api/visits/${id}`);
+  },
+
+  /**
+   * Get visit history
+   */
+  async getHistory(id: number): Promise<ApiResponse<Array<{
+    id: number;
+    visit_id: number;
+    user_id: number | null;
+    action: 'created' | 'updated' | 'attachment_uploaded';
+    description: string;
+    created_at: string;
+    user_name: string | null;
+  }>>> {
+    return request(`/api/visits/${id}/history`);
   },
 
   /**

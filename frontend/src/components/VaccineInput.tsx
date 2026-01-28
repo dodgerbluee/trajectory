@@ -70,19 +70,6 @@ function VaccineInput({ value, onChange, disabled }: VaccineInputProps) {
 
   return (
     <div className="vaccine-input-modern">
-      <div className="vaccine-input-header">
-        <h4 className="vaccine-input-title">Vaccines Administered</h4>
-        <button
-          type="button"
-          onClick={() => setIsModalOpen(true)}
-          disabled={disabled}
-          className="vaccine-add-button"
-          title="Add vaccines"
-        >
-          <HiPlus />
-        </button>
-      </div>
-
       {value.length > 0 && (
         <div className="vaccine-badges-list">
           {value.map((vaccine) => (
@@ -101,11 +88,16 @@ function VaccineInput({ value, onChange, disabled }: VaccineInputProps) {
               )}
             </span>
           ))}
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            disabled={disabled}
+            className="vaccine-add-button"
+            title="Add vaccines"
+          >
+            <HiPlus />
+          </button>
         </div>
-      )}
-
-      {value.length === 0 && (
-        <p className="vaccine-empty-state">No vaccines added. Click + to add vaccines.</p>
       )}
 
       {isModalOpen && (

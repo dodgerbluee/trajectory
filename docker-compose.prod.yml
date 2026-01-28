@@ -1,13 +1,17 @@
 services:
   trajectory:
     container_name: trajectory
-    image: ghcr.io/dodgerbluee/trajectory:dev-20260125-b938b59
+    image: ghcr.io/dodgerbluee/trajectory:dev-20260125-045b082
     volumes:
-      - /docked/trajectory/uploads_data:/app/uploads
-      - /docked/trajectory/avatars_data:/app/avatars
+      - ./uploads_data:/app/uploads
+      - ./avatars_data:/app/avatars
+    ports:
+      - 3001:3001
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-trajectory_user}:${DB_PASSWORD}@trajectory-db:5432/${POSTGRES_DB:-trajectory}
-      PORT: 3001:3001
+      # Auth (generate strong random secrets for production)
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
     depends_on:
       trajectory-db:
         condition: service_healthy
@@ -17,7 +21,7 @@ services:
     container_name: trajectory-db
     image: postgres:16-alpine
     volumes:
-      - /docked/trajectory/data:/var/lib/postgresql/data
+      - ./data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-trajectory}
       POSTGRES_USER: ${POSTGRES_USER:-trajectory_user}

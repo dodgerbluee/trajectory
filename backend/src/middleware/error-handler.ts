@@ -45,6 +45,13 @@ export class BadRequestError extends AppError {
   }
 }
 
+export class UnauthorizedError extends AppError {
+  constructor(message: string = 'Unauthorized') {
+    super(401, message);
+    this.name = 'UnauthorizedError';
+  }
+}
+
 /**
  * Standard error response format
  */
@@ -54,7 +61,7 @@ interface ErrorResponse {
     type: string;
     statusCode: number;
     field?: string;
-    details?: any;
+    details?: unknown;
   };
   meta: {
     timestamp: string;
@@ -70,7 +77,7 @@ function createErrorResponse(
   err: Error,
   statusCode: number,
   req?: Request,
-  details?: any
+  details?: unknown
 ): ErrorResponse {
   return {
     error: {

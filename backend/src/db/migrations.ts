@@ -48,10 +48,11 @@ async function getAppliedMigrations(): Promise<string[]> {
   try {
     const result = await query<MigrationRecord>('SELECT name FROM migrations ORDER BY id');
     return result.rows.map(row => row.name);
-  } catch (error: any) {
+  } catch (error: unknown) {
     // If migrations table doesn't exist yet, return empty array
     // This will be handled by ensureMigrationsTable
-    if (error.code === '42P01') { // relation does not exist
+    const err = error as Partial<{ code: unknown }>;
+    if (err.code === '42P01') { // relation does not exist
       return [];
     }
     throw error;
@@ -78,10 +79,10 @@ async function executeMigration(name: string, sql: string): Promise<void> {
     
     await client.query('COMMIT');
     console.log(`  ✓ Migration ${name} applied successfully`);
-  } catch (error: any) {
+  } catch (error: unknown) {
     await client.query('ROLLBACK');
     // Log concise error message instead of full stack trace
-    const errorMessage = error?.message || error?.toString() || 'Unknown error';
+    const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(`  ✗ Migration ${name} failed: ${errorMessage}`);
     throw error;
   } finally {
@@ -127,8 +128,9 @@ async function getMigrationFiles(): Promise<Array<[string, string]>> {
       .map(file => [file, join(migrationsDir, file)] as [string, string]);
     
     return sqlFiles;
-  } catch (error: any) {
-    if (error.code === 'ENOENT') {
+  } catch (error: unknown) {
+    const err = error as Partial<{ code: unknown }>;
+    if (err.code === 'ENOENT') {
       // Migrations directory doesn't exist - return empty array
       return [];
     }
@@ -178,9 +180,9 @@ export async function runMigrations(): Promise<void> {
     }
     
     console.log(`\n✓ All migrations applied successfully\n`);
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Log concise error message instead of full stack trace
-    const errorMessage = error?.message || error?.toString() || 'Unknown error';
+    const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(`\n✗ Migration failed: ${errorMessage}`);
     throw error;
   }

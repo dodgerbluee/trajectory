@@ -19,12 +19,6 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
   const [growthData, setGrowthData] = useState<GrowthDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Metric visibility toggles
-  const [showWeight, setShowWeight] = useState(true);
-  const [showHeight, setShowHeight] = useState(true);
-  const [showHeadCirc, setShowHeadCirc] = useState(true);
-  const [showBMI, setShowBMI] = useState(true);
 
   useEffect(() => {
     loadGrowthData();
@@ -61,65 +55,15 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
 
   const isMultiChild = !filterChildId && growthData.length > 0;
 
+  const filteredGrowthData = growthData;
+
   return (
     <Card>
       <div className="growth-chart-body">
-        {/* Metric Toggle Controls */}
-        <div className="growth-chart-section">
-          <h3 className="growth-chart-section-title">Metric Selection</h3>
-          <div className="growth-metric-toggles">
-            <label className="growth-metric-toggle">
-              <input
-                type="checkbox"
-                checked={showWeight}
-                onChange={(e) => setShowWeight(e.target.checked)}
-              />
-              <span className="growth-metric-label">
-                <span className="growth-metric-color" style={{ backgroundColor: '#3b82f6' }}></span>
-                Weight
-              </span>
-            </label>
-            <label className="growth-metric-toggle">
-              <input
-                type="checkbox"
-                checked={showHeight}
-                onChange={(e) => setShowHeight(e.target.checked)}
-              />
-              <span className="growth-metric-label">
-                <span className="growth-metric-color" style={{ backgroundColor: '#10b981' }}></span>
-                Height
-              </span>
-            </label>
-            <label className="growth-metric-toggle">
-              <input
-                type="checkbox"
-                checked={showHeadCirc}
-                onChange={(e) => setShowHeadCirc(e.target.checked)}
-              />
-              <span className="growth-metric-label">
-                <span className="growth-metric-color" style={{ backgroundColor: '#f59e0b' }}></span>
-                Head Circumference
-              </span>
-            </label>
-            <label className="growth-metric-toggle">
-              <input
-                type="checkbox"
-                checked={showBMI}
-                onChange={(e) => setShowBMI(e.target.checked)}
-              />
-              <span className="growth-metric-label">
-                <span className="growth-metric-color" style={{ backgroundColor: '#ef4444' }}></span>
-                BMI
-              </span>
-            </label>
-          </div>
-        </div>
-
-        {/* Growth Charts - Value and Percentile for each metric */}
         <div className="growth-chart-section">
           <h3 className="growth-chart-section-title">Growth Charts</h3>
           <div className="growth-charts-grid">
-            {showWeight && (
+            {(
               <>
                 <div className="growth-chart-item">
                   <h4 className="growth-chart-item-title">Weight Over Time (by Age)</h4>
@@ -129,7 +73,7 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                       : 'Weight for all children plotted by age. Each child is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
-                    data={growthData}
+                    data={filteredGrowthData}
                     metric="weight"
                     mode="value"
                     isMultiChild={isMultiChild}
@@ -144,7 +88,7 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                       : 'Weight percentiles for all children plotted by age. Each child is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
-                    data={growthData}
+                    data={filteredGrowthData}
                     metric="weight"
                     mode="percentile"
                     isMultiChild={isMultiChild}
@@ -154,7 +98,7 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
               </>
             )}
 
-            {showHeight && (
+            {(
               <>
                 <div className="growth-chart-item">
                   <h4 className="growth-chart-item-title">Height Over Time (by Age)</h4>
@@ -164,7 +108,7 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                       : 'Height for all children plotted by age. Each child is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
-                    data={growthData}
+                    data={filteredGrowthData}
                     metric="height"
                     mode="value"
                     isMultiChild={isMultiChild}
@@ -179,7 +123,7 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                       : 'Height percentiles for all children plotted by age. Each child is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
-                    data={growthData}
+                    data={filteredGrowthData}
                     metric="height"
                     mode="percentile"
                     isMultiChild={isMultiChild}
@@ -189,7 +133,7 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
               </>
             )}
 
-            {showHeadCirc && (
+            {(
               <>
                 <div className="growth-chart-item">
                   <h4 className="growth-chart-item-title">Head Circumference Over Time (by Age)</h4>
@@ -199,7 +143,7 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                       : 'Head circumference for all children plotted by age. Each child is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
-                    data={growthData}
+                    data={filteredGrowthData}
                     metric="head_circumference"
                     mode="value"
                     isMultiChild={isMultiChild}
@@ -214,7 +158,7 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                       : 'Head circumference percentiles for all children plotted by age. Each child is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
-                    data={growthData}
+                    data={filteredGrowthData}
                     metric="head_circumference"
                     mode="percentile"
                     isMultiChild={isMultiChild}
@@ -224,7 +168,7 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
               </>
             )}
 
-            {showBMI && (
+            {(
               <>
                 <div className="growth-chart-item">
                   <h4 className="growth-chart-item-title">BMI Over Time (by Age)</h4>
@@ -234,7 +178,7 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                       : 'BMI for all children plotted by age. Each child is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
-                    data={growthData}
+                    data={filteredGrowthData}
                     metric="bmi"
                     mode="value"
                     isMultiChild={isMultiChild}
@@ -249,7 +193,7 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                       : 'BMI percentiles for all children plotted by age. Each child is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
-                    data={growthData}
+                    data={filteredGrowthData}
                     metric="bmi"
                     mode="percentile"
                     isMultiChild={isMultiChild}
@@ -257,12 +201,6 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                   />
                 </div>
               </>
-            )}
-
-            {!showWeight && !showHeight && !showHeadCirc && !showBMI && (
-              <div className="chart-empty">
-                <p>Select at least one metric above to view growth charts.</p>
-              </div>
             )}
           </div>
         </div>

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState, useMemo } from 'react';
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { visitsApi, childrenApi, ApiClientError } from '../lib/api-client';
 import type { Visit, Child, VisitType } from '../types/api';
 import { formatDate } from '../lib/date-utils';
@@ -8,22 +8,26 @@ import ErrorMessage from '../components/ErrorMessage';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import VisitTypeModal from '../components/VisitTypeModal';
+import VisitsSidebar from '../components/VisitsSidebar';
+import { LuActivity, LuHeart, LuPill, LuEye } from 'react-icons/lu';
+import { MdOutlinePersonalInjury } from 'react-icons/md';
 
 function VisitsPage() {
   const { childId } = useParams<{ childId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [child, setChild] = useState<Child | null>(null);
-  const [visits, setVisits] = useState<Visit[]>([]);
+  const [allVisits, setAllVisits] = useState<Visit[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'wellness' | 'sick'>('all');
+  const [filterVisitType, setFilterVisitType] = useState<VisitType | undefined>(undefined);
   const [showVisitTypeModal, setShowVisitTypeModal] = useState(false);
 
   useEffect(() => {
     if (childId) {
       loadData();
     }
-  }, [childId, filter]);
+  }, [childId]);
 
   const loadData = async () => {
     if (!childId) return;
@@ -31,17 +35,14 @@ function VisitsPage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const [childResponse, visitsResponse] = await Promise.all([
         childrenApi.getById(parseInt(childId)),
-        visitsApi.getAll({
-          child_id: parseInt(childId),
-          visit_type: filter === 'all' ? undefined : filter,
-        }),
+        visitsApi.getAll({ child_id: parseInt(childId), limit: 500 }),
       ]);
 
       setChild(childResponse.data);
-      setVisits(visitsResponse.data);
+      setAllVisits(visitsResponse.data);
     } catch (err) {
       if (err instanceof ApiClientError) {
         setError(err.message);
@@ -52,6 +53,11 @@ function VisitsPage() {
       setLoading(false);
     }
   };
+
+  const visits = useMemo(() => {
+    if (!filterVisitType) return allVisits;
+    return allVisits.filter((v) => v.visit_type === filterVisitType);
+  }, [allVisits, filterVisitType]);
 
   if (loading) {
     return <LoadingSpinner message="Loading visits..." />;
@@ -65,8 +71,22 @@ function VisitsPage() {
     return <ErrorMessage message="Child not found" />;
   }
 
-  const wellnessCount = visits.filter(v => v.visit_type === 'wellness').length;
-  const sickCount = visits.filter(v => v.visit_type === 'sick').length;
+  const statsSource = allVisits;
+  const sidebar = (
+    <VisitsSidebar
+      stats={[
+        { label: 'Total Visits', value: statsSource.length, icon: LuActivity, color: 'gray', onClick: () => setFilterVisitType(undefined), active: !filterVisitType },
+        { label: 'Wellness', value: statsSource.filter((v) => v.visit_type === 'wellness').length, icon: LuHeart, color: 'emerald', onClick: () => setFilterVisitType('wellness'), active: filterVisitType === 'wellness' },
+        { label: 'Sick', value: statsSource.filter((v) => v.visit_type === 'sick').length, icon: LuPill, color: 'red', onClick: () => setFilterVisitType('sick'), active: filterVisitType === 'sick' },
+        { label: 'Injury', value: statsSource.filter((v) => v.visit_type === 'injury').length, icon: MdOutlinePersonalInjury, color: 'blue', onClick: () => setFilterVisitType('injury'), active: filterVisitType === 'injury' },
+        { label: 'Vision', value: statsSource.filter((v) => v.visit_type === 'vision').length, icon: LuEye, color: 'purple', onClick: () => setFilterVisitType('vision'), active: filterVisitType === 'vision' },
+      ]}
+      childrenList={[]}
+      selectedChildId={undefined}
+      onSelectChild={() => {}}
+      hideChildFilter
+    />
+  );
 
   return (
     <div className="page-container">
@@ -80,36 +100,18 @@ function VisitsPage() {
         <Button onClick={() => setShowVisitTypeModal(true)}>+ Add Visit</Button>
       </div>
 
-      <div className="visit-filters">
-        <button
-          className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
-          onClick={() => setFilter('all')}
-        >
-          All ({visits.length})
-        </button>
-        <button
-          className={`filter-btn ${filter === 'wellness' ? 'active' : ''}`}
-          onClick={() => setFilter('wellness')}
-        >
-          Wellness ({wellnessCount})
-        </button>
-        <button
-          className={`filter-btn ${filter === 'sick' ? 'active' : ''}`}
-          onClick={() => setFilter('sick')}
-        >
-          Sick ({sickCount})
-        </button>
-      </div>
-
-      {visits.length === 0 ? (
+      <div className="visits-page-layout">
+        {sidebar}
+        <main className="visits-main">
+          {visits.length === 0 ? (
         <Card>
           <p className="empty-state">
-            No {filter !== 'all' ? filter : ''} visits recorded yet.
+            No {filterVisitType ? `${filterVisitType} ` : ''}visits recorded yet.
             <br />
             <Link to={`/children/${childId}/visits/new`}>Add the first visit</Link>
           </p>
         </Card>
-      ) : (
+          ) : (
         <div className="visits-list">
           {visits.map((visit) => (
             <Link key={visit.id} to={`/visits/${visit.id}`} className="visit-card-link">
@@ -124,9 +126,9 @@ function VisitsPage() {
                   <span className="visit-arrow">→</span>
                 </div>
                 
-                {visit.illness_type && (
+                {visit.illnesses && visit.illnesses.length > 0 && (
                   <div className="visit-illness">
-                    <strong>Illness:</strong> {visit.illness_type.replace('_', ' ')}
+                    <strong>Illness:</strong> {visit.illnesses.map(i => i.replace('_', ' ')).join(', ')}
                   </div>
                 )}
                 
@@ -165,13 +167,15 @@ function VisitsPage() {
             </Link>
           ))}
         </div>
-      )}
+          )}
+        </main>
+      </div>
 
       <VisitTypeModal
         isOpen={showVisitTypeModal}
         onSelect={(visitType: VisitType) => {
           setShowVisitTypeModal(false);
-          navigate(`/children/${childId}/visits/new?type=${visitType}`);
+          navigate(`/children/${childId}/visits/new?type=${visitType}`, { state: { from: `${location.pathname}${location.search}`, childId } });
         }}
         onClose={() => setShowVisitTypeModal(false)}
       />

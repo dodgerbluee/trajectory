@@ -35,7 +35,7 @@ function AboutDropdown() {
       {isOpen && (
         <div className="about-dropdown-menu">
           <Link
-            to="/kids-management"
+            to="/family"
             className="about-dropdown-item"
             onClick={() => setIsOpen(false)}
           >

@@ -8,6 +8,515 @@
   box-sizing: border-box;
 }
 
+/* Shared summary section used across vaccines, documents, visits, illnesses */
+.summary-section {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+}
+.summary-section .summary-items {
+  display: flex;
+  gap: var(--spacing-lg);
+  align-items: center;
+}
+.summary-section .summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.summary-section .summary-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+.summary-section .summary-value {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+.summary-section .summary-children {
+  margin-left: auto;
+}
+/* Modern summary card used for documents and vaccines */
+.summary-card-modern {
+  display: flex;
+  align-items: center;
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  box-shadow: var(--shadow-sm);
+  gap: 16px;
+}
+.summary-card-modern .summary-card-content {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 16px;
+  align-items: center;
+}
+.summary-card-title {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+/* Vision refraction styles */
+.vision-refraction-card {
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 0 6px 18px rgba(21, 30, 45, 0.04);
+}
+.vision-refraction-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.vision-refraction-header h3 {
+  font-size: 1rem;
+  margin: 0;
+}
+.refraction-sub {
+  font-size: 0.825rem;
+  color: var(--color-text-secondary);
+  margin-left: auto;
+}
+.refraction-grid {
+  display: grid;
+  grid-template-columns: 80px repeat(3, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+.col-label {
+  font-size: 0.825rem;
+  color: var(--color-text-secondary);
+  padding-left: 8px;
+}
+.eye-label {
+  font-weight: 700;
+  color: var(--color-text-primary);
+  padding-left: 8px;
+}
+.refraction-input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(16,24,40,0.08);
+  background: var(--color-background);
+  transition: box-shadow 0.12s ease, border-color 0.12s ease;
+}
+.refraction-input:focus {
+  outline: none;
+  border-color: rgba(124, 58, 237, 0.9);
+  box-shadow: 0 6px 18px rgba(124,58,237,0.08);
+}
+.refraction-textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(16,24,40,0.06);
+  resize: vertical;
+}
+.refraction-notes {
+  margin-top: 12px;
+}
+
+.vision-refraction-card .visually-hidden {
+  position: absolute !important;
+  height: 1px; width: 1px; overflow: hidden; clip: rect(1px, 1px, 1px, 1px);
+}
+
+@media (max-width: 720px) {
+  .refraction-grid { grid-template-columns: 64px repeat(3, 1fr); gap: 8px; }
+  .refraction-sub { display: none; }
+}
+.summary-card-stats {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+.summary-card-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(80px, 1fr);
+  gap: 20px;
+  align-items: center;
+}
+.summary-card-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.summary-card-stat .summary-card-stat-value {
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Visit stat cards grid */
+.visit-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.visit-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  cursor: pointer;
+  text-align: left;
+}
+.visit-stat-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+}
+.visit-stat-card.active {
+  background: linear-gradient(90deg, rgba(96,165,250,0.12), rgba(59,130,246,0.06));
+  border-color: rgba(59,130,246,0.12);
+}
+.visit-stat-card.active {
+  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+}
+
+/* Compact/Sidebar variant for VisitStats (used when `vertical` is true)
+   Makes sidebar stat buttons smaller and visually distinct from main stats */
+.visit-stats-vertical .visit-stat-card {
+  padding: 8px;
+  border-radius: 10px;
+  gap: 8px;
+  align-items: center;
+}
+.visit-stats-vertical .visit-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.06);
+}
+.visit-stats-vertical .visit-stat-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+}
+.visit-stats-vertical .visit-stat-icon-svg {
+  width: 16px;
+  height: 16px;
+}
+.visit-stats-vertical .visit-stat-value {
+  font-size: 1rem;
+}
+.visit-stats-vertical .visit-stat-label {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+.visit-stats-vertical .visit-stat-card.active {
+  background: linear-gradient(90deg, rgba(167,139,250,0.12), rgba(124,58,237,0.06));
+  border-color: rgba(124,58,237,0.12);
+}
+
+.visit-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.visit-stat-icon-svg {
+  width: 20px;
+  height: 20px;
+  color: white;
+}
+
+.visit-stat-body {
+  display: flex;
+  flex-direction: column;
+}
+.visit-stat-value {
+  font-size: 1.125rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+.visit-stat-label {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+/* Color accents */
+.visit-stat-card[data-color="blue"] .visit-stat-icon { background: linear-gradient(135deg, #60a5fa, #3b82f6); }
+.visit-stat-card[data-color="emerald"] .visit-stat-icon { background: linear-gradient(135deg, #34d399, #10b981); }
+.visit-stat-card[data-color="red"] .visit-stat-icon { background: linear-gradient(135deg, #f87171, #ef4444); }
+.visit-stat-card[data-color="yellow"] .visit-stat-icon { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+.visit-stat-card[data-color="purple"] .visit-stat-icon { background: linear-gradient(135deg, #a78bfa, #7c3aed); }
+.visit-stat-card[data-color="gray"] .visit-stat-icon { background: linear-gradient(135deg, #d1d5db, #9ca3af); }
+
+@media(min-width: 768px) {
+  .visit-stats-grid { grid-template-columns: repeat(5, 1fr); }
+}
+
+/* Inline Add Visit animated button (used in visits filters) */
+.add-visit-animated {
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  background: linear-gradient(90deg, var(--color-primary-500), var(--color-primary));
+  box-shadow: 0 10px 24px rgba(59,130,246,0.16);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast);
+}
+.add-visit-animated:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 34px rgba(59,130,246,0.2);
+  filter: brightness(1.03);
+}
+.add-visit-animated .btn-icon {
+  width: 18px;
+  height: 18px;
+  transition: transform var(--transition-fast);
+}
+.add-visit-animated:hover .btn-icon {
+  transform: translateY(-2px) rotate(12deg);
+}
+
+/* Floating Action Button */
+.fab {
+  position: fixed;
+  /* Align to the right edge of the centered content-wrapper (max-width: 1600px).
+     When the viewport is narrower than the content max, fall back to the viewport edge. */
+  right: calc(max((100% - 1600px)/2, 0px) + 24px);
+  bottom: 24px;
+  z-index: var(--z-fixed);
+}
+.fab-btn {
+  padding: 0.65rem 1rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  background: linear-gradient(90deg, var(--color-primary-500), var(--color-primary));
+  box-shadow: 0 12px 30px rgba(59,130,246,0.18);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast);
+}
+.fab-btn:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 36px rgba(59,130,246,0.22);
+  filter: brightness(1.02);
+}
+.fab-icon {
+  width: 20px;
+  height: 20px;
+  transition: transform var(--transition-fast);
+}
+.fab-btn:hover .fab-icon {
+  transform: translateY(-3px) rotate(12deg);
+}
+
+@media (max-width: 640px) {
+  .fab { right: 16px; bottom: 16px; }
+}
+
+/* Visits summary header layout */
+.summary-card-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 12px;
+}
+.summary-card-title {
+  font-size: 1.125rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-right: auto;
+}
+.summary-card-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Top row above the summary card */
+.visits-top-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.visits-top-title {
+  font-size: 1.25rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.visits-top-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.summary-card-children {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 320px;
+  justify-self: end;
+}
+
+/* Right-align filters inside the centered summary card for visits and illnesses */
+.visits-summary .summary-card-children,
+.illnesses-summary .summary-card-children {
+  /* handled by justify-self on .summary-card-children */
+}
+
+.visits-summary .filters-inline {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Illnesses summary should match visits layout for filters */
+.illnesses-summary .filters-inline {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.illnesses-summary .filters-grid {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.visits-summary .filters-grid {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.visits-summary .filter-group label {
+  display: block;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.visits-summary .filter-group select {
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-background-card);
+}
+
+.visits-summary .filters-actions .btn-icon {
+  margin-right: 8px;
+}
+
+/* Segmented control */
+.segmented-control {
+  display: inline-flex;
+  gap: 6px;
+  background: transparent;
+}
+
+.segmented-control-item {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-background-card);
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.segmented-control-item.active {
+  background: linear-gradient(90deg, rgba(59,130,246,0.12), rgba(59,130,246,0.04));
+  border-color: rgba(59,130,246,0.4);
+}
+
+/* Child pills */
+.child-pills {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pills-list {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-background-card);
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.pill.active {
+  background: linear-gradient(90deg, rgba(16,185,129,0.12), rgba(59,130,246,0.04));
+  border-color: rgba(59,130,246,0.3);
+}
+.pill-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.all-avatars {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  margin-right: 6px;
+}
+.all-avatar-item {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--color-background-card);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.06);
+  background: var(--color-background-card);
+}
+.pill-label { font-size: 0.85rem; }
+.child-combobox .combobox-input {
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-background-card);
+}
+.summary-card-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.summary-card-stat-value {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+.summary-card-stat-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+@media (prefers-color-scheme: dark) {
+  .summary-card-modern {
+    background: var(--color-background-card);
+    border-color: var(--color-border);
+  }
+}
 :root {
   /* Colors */
   /* Primary */
@@ -20,6 +529,9 @@
   --color-primary-600: #2563eb;
   --color-primary-700: #1d4ed8;
   --color-primary-900: #1e3a8a;
+  /* Accent for visit pills (navy) */
+  --color-visit-accent: #0b3d91;
+  --color-visit-accent-2: #0f4bb3;
   
   /* Secondary Colors */
   --color-secondary: #64748b;
@@ -30,6 +542,9 @@
   --color-success-light: #d1fae5;
   --color-warning: #f59e0b;
   --color-warning-light: #fef3c7;
+  /* Vision (purple) */
+  --color-vision: #7c3aed;
+  --color-vision-light: rgba(124, 58, 237, 0.08);
   --color-info: #06b6d4;
   --color-info-light: #cffafe;
   --color-danger: #ef4444;
@@ -49,8 +564,8 @@
   --color-gray-900: #111827;
   
   /* Background Colors (Light Mode) */
-  --color-background: #ffffff;
-  --color-background-card: #f5f5f5;
+  --color-background: #f5f5f5;
+  --color-background-card: #ffffff;
   --color-surface: #f8fafc;
   --color-border: #e2e8f0;
   
@@ -126,45 +641,46 @@
     sans-serif;
 }
 
-/* Dark Mode Variables */
+/* Dark Mode Variables - Professional Modern Theme */
 [data-theme="dark"] {
-  /* Background Colors - Lighter and darker greys */
-  --color-background: #1a1a1a;
-  --color-background-card: #2d2d2d;
-  --color-surface: #2d2d2d;
-  --color-border: #404040;
+  /* Background Colors - Deep dark greys with subtle elevation */
+  --color-background: #0a0a0a;
+  --color-background-card: #121212;
+  --color-surface: #1a1a1a;
+  --color-border: #2a2a2a;
   
-  /* Text Colors */
-  --color-text-primary: #e5e5e5;
-  --color-text-secondary: #a3a3a3;
+  /* Text Colors - High contrast for readability */
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #a0a0a0;
   
-  /* Primary Colors (adjusted for dark) */
-  --color-primary: #60a5fa;
-  --color-primary-hover: #3b82f6;
-  --color-primary-light: #1e3a8a;
+  /* Primary Colors - Vibrant modern blue that pops */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #60a5fa;
+  --color-primary-light: rgba(59, 130, 246, 0.1);
   
-  /* Semantic Colors (adjusted) */
-  --color-success: #34d399;
-  --color-success-light: #064e3b;
-  --color-warning: #fbbf24;
-  --color-warning-light: #78350f;
-  --color-info: #22d3ee;
-  --color-info-light: #164e63;
-  --color-danger: #f87171;
-  --color-danger-hover: #ef4444;
-  --color-danger-light: #7f1d1d;
+  /* Semantic Colors - Modern, vibrant, accessible */
+  --color-success: #10b981;
+  --color-success-light: rgba(16, 185, 129, 0.15);
+  --color-warning: #f59e0b;
+  --color-warning-light: rgba(245, 158, 11, 0.15);
+  --color-info: #06b6d4;
+  --color-info-light: rgba(6, 182, 212, 0.15);
+  --color-danger: #ef4444;
+  --color-danger-hover: #dc2626;
+  --color-danger-light: rgba(239, 68, 68, 0.15);
   
-  /* Shadows (lighter for dark mode) */
-  --elevation-1: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --elevation-2: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --elevation-3: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
-  --elevation-4: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
-  --elevation-5: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+  /* Enhanced Shadows - Deeper, more dramatic for dark mode */
+  --elevation-1: 0 1px 3px 0 rgba(0, 0, 0, 0.5), 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --elevation-2: 0 3px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
+  --elevation-3: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+  --elevation-4: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+  --elevation-5: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
   
   --shadow-sm: var(--elevation-1);
   --shadow-md: var(--elevation-3);
   --shadow-lg: var(--elevation-4);
 }
+
 
 /* Smooth theme transitions for specific elements */
 body,
@@ -178,6 +694,10 @@ body,
               border-color var(--transition-base);
 }
 
+html {
+  overflow-y: scroll;
+}
+
 body {
   font-family: var(--font-family);
   color: var(--color-text-primary);
@@ -185,6 +705,63 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* Ensure dark mode color scheme is applied */
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* Dark Mode Enhancements - Modern Professional Theme */
+[data-theme="dark"] .card {
+  background-color: var(--color-background-card);
+  border-color: var(--color-border);
+  box-shadow: var(--elevation-2);
+  transition: box-shadow var(--transition-base), border-color var(--transition-base);
+}
+
+[data-theme="dark"] .card:hover {
+  box-shadow: var(--elevation-3);
+}
+
+[data-theme="dark"] .btn-primary {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  transition: all var(--transition-base);
+}
+
+[data-theme="dark"] .btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--color-primary-hover) 0%, var(--color-primary) 100%);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+  transform: translateY(-1px);
+}
+
+[data-theme="dark"] .btn-secondary {
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+  transition: all var(--transition-base);
+}
+
+[data-theme="dark"] .btn-secondary:hover:not(:disabled) {
+  background-color: var(--color-border);
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .header-content {
+  background-color: var(--color-background-card);
+  border-color: var(--color-border);
+  box-shadow: var(--elevation-3);
+}
+
+[data-theme="dark"] input.form-input:focus,
+[data-theme="dark"] textarea.form-input:focus,
+[data-theme="dark"] select.form-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), var(--elevation-1);
+  outline: none;
 }
 
 /* ============================================================================
@@ -204,10 +781,11 @@ body {
   padding: var(--spacing-md);
   display: flex;
   justify-content: center;
+  width: 100%;
 }
 
 .header-content {
-  max-width: 1200px;
+  max-width: 1600px;
   width: 100%;
   background-color: var(--color-background-card);
   border-radius: var(--radius-lg);
@@ -217,6 +795,7 @@ body {
   justify-content: space-between;
   box-shadow: var(--shadow-md);
   border: 1px solid var(--color-border);
+  box-sizing: border-box;
 }
 
 .header-brand {
@@ -255,6 +834,101 @@ body {
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
+}
+
+/* Settings page layout - left sidebar */
+
+/* Page-level wrapper that centers content like HomePage */
+.settings-page-grid {
+  max-width: 1600px; /* match header/content width */
+  margin: 0 auto;
+}
+
+.body-header {
+  padding-bottom: var(--spacing-md);
+}
+
+
+.settings-card {
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0; /* inner grid controls padding */
+}
+
+.settings-card-grid {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: var(--spacing-md);
+  align-items: start;
+  padding: var(--spacing-md);
+}
+
+.settings-card-header {
+  grid-column: 1 / -1;
+  padding: 0 var(--spacing-md) 0 var(--spacing-md); /* remove top padding to align with other pages */
+  /* Separator under header to visually divide title from content */
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.settings-title {
+  margin: 0;
+  font-size: var(--font-size-2xl);
+}
+
+.settings-save-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--spacing-md) 0 0 0;
+}
+
+.settings-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+/* Metrics (Trends) page two-column layout aligning subheadings on left */
+/* Metrics (Trends) page styles removed (restored to previous state) */
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.sidebar-item.active,
+.sidebar-item:hover {
+  background: var(--color-primary-light);
+}
+
+.sidebar-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.settings-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.settings-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+  background: transparent;
 }
 
 /* Illness Notification */
@@ -413,6 +1087,7 @@ body {
   flex-direction: column;
   gap: var(--spacing-xs);
   min-width: 150px;
+  padding-left: 50px;
 }
 
 .filter-group label {
@@ -437,7 +1112,7 @@ body {
 
 .timeline-item-modern {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);
   background: var(--color-background-card);
@@ -464,8 +1139,41 @@ body {
   justify-content: center;
   font-size: 1.125rem;
   line-height: 1;
-  background: var(--color-surface);
+  /* background: var(--color-surface); */
   border-radius: var(--radius-sm);
+}
+
+/* Ensure timeline rows are vertically centered: icon, label and badges */
+.timeline-item-main,
+.timeline-item-label-row,
+.timeline-item-wellness-single-line,
+.timeline-item-header-compact {
+  align-items: center;
+}
+
+/* Keep timeline-item-content using its column layout's default (stretch)
+   so children aren't horizontally centered. We only want header rows
+   vertically centered. */
+.timeline-item-content {
+  align-items: stretch;
+}
+
+/* Make inline text and filename links align center with icons */
+.timeline-item-label-compact,
+.document-filename-link {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+/* Prevent SVG baseline shifts: render as block and center */
+.timeline-item-icon svg,
+.visit-type-svg,
+.document-file-icon,
+.timeline-item-icon > * {
+  display: block;
+  vertical-align: middle;
+  line-height: 1;
 }
 
 
@@ -499,12 +1207,488 @@ body {
   flex-wrap: wrap;
 }
 
-.timeline-item-label-compact {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
-  white-space: nowrap;
+.timeline-item-wellness-single-line {
+  flex-wrap: nowrap;
+  overflow: hidden;
+  min-width: 0;
+  gap: var(--spacing-xs);
 }
+
+/* Center wellness text vertically so the label aligns in the box */
+.timeline-item-wellness-single-line {
+  align-items: center;
+}
+
+.timeline-item-wellness-single-line .timeline-item-label-compact {
+  flex-shrink: 0;
+  margin-right: 0;
+}
+
+.timeline-item-wellness-single-line .wellness-title-badge-inline {
+  flex-shrink: 0;
+}
+
+.timeline-item-wellness-single-line .timeline-badge {
+  flex-shrink: 0;
+  white-space: nowrap;
+  margin: 0;
+}
+
+.timeline-item-wellness-single-line .timeline-item-date-compact {
+  flex-shrink: 0;
+  margin-right: 0;
+}
+
+.wellness-date-spaced {
+  margin-left: auto !important;
+  padding-left: var(--spacing-md);
+}
+
+.timeline-item-wellness-single-line .attachment-indicator {
+  flex-shrink: 0;
+  margin-left: var(--spacing-xs);
+  margin-right: 0;
+}
+
+/* Badges row under the visit label */
+.timeline-item-badges-row {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+  margin-top: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.wellness-badges-group {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Accent pill used for Wellness and Injury icons */
+.visit-pill {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(11, 61, 145, 0.14);
+  transition: transform 160ms var(--transition-base), box-shadow 160ms var(--transition-base);
+}
+.visit-pill:hover {
+  transform: translateY(-3px);
+}
+.visit-pill .visit-type-svg {
+  width: 20px;
+  height: 20px;
+}
+.visit-pill--accent {
+  background: linear-gradient(180deg, var(--color-visit-accent-2), var(--color-visit-accent));
+}
+
+[data-theme="dark"] .visit-pill {
+  box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+}
+
+/* Outline icon wrapper: no filled badge, icon color is the accent */
+.visit-icon-outline {
+  width: 30px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  color: var(--color-visit-accent);
+  background: transparent;
+  transition: box-shadow 160ms var(--transition-base);
+}
+.visit-icon-outline .visit-type-svg {
+  width: 20px;
+  height: 20px;
+  transform: translateY(var(--icon-optical-offset, 0));
+}
+
+[data-theme="dark"] .visit-icon-outline {
+  color: var(--color-visit-accent-2);
+}
+
+/* Make icons in the VisitTypeModal larger and color-coded per type */
+.visit-type-icon .visit-icon-outline {
+  /* Reduced from +50% to +25% overall: wrapper 96px -> 120px */
+  width: 120px;
+  height: 120px;
+}
+.visit-type-icon .visit-icon-outline .visit-type-svg {
+  /* SVG scaled proportionally (48px -> 60px for +25%) */
+  width: 60px;
+  height: 60px;
+}
+
+/* Increase injury icon size slightly in the Visit Type modal to visually
+   match the clipboard and pill icons (some icon sets have different
+   viewBox scaling which makes them appear smaller). */
+.visit-type-icon .visit-icon-outline.visit-icon--injury .visit-type-svg,
+.visit-type-icon .visit-icon-outline.visit-icon--injury .visit-type-svg svg {
+  width: 68px;
+  height: 68px;
+  display: inline-block;
+  transform: translateY(var(--icon-optical-offset, 0)) scale(0.92);
+}
+
+.visit-type-icon .visit-icon-outline.visit-icon--sick {
+  /* optical offset controlled via --icon-optical-offset on the icon */
+}
+.visit-icon--wellness { color: var(--color-success); }
+.visit-icon--sick { color: var(--color-danger); }
+.visit-icon--injury { color: var(--color-visit-accent); }
+.visit-icon--vision { color: var(--color-vision); }
+.visit-type-button .visit-icon-outline:hover {
+  /* hover lift removed in favor of glow on the icon to avoid layout shift */
+}
+
+/* Hover lift removed for sick icon; glow is used instead */
+.visit-type-button .visit-icon-outline.visit-icon--sick:hover {
+}
+
+/* Sidebar layout for Visits page */
+.visits-page-layout {
+  display: flex;
+  gap: 24px;
+  align-items: stretch;
+}
+.visits-sidebar {
+  width: 220px;
+  flex: 0 0 220px;
+  position: sticky;
+  top: 20px;
+  align-self: stretch;
+  height: auto;
+}
+.visits-sidebar-inner {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  color: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: var(--elevation-3);
+  border: 1px solid var(--color-border);
+  overflow: auto;
+}
+.sidebar-brand {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+.sidebar-sub {
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.78);
+}
+.sidebar-divider {
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.04));
+  margin: 12px 0;
+}
+.sidebar-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.visit-stats-grid {
+  display: grid;
+  grid-auto-rows: min-content;
+  gap: 10px;
+}
+.visit-stat-card {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.04);
+  color: #fff;
+}
+.visit-stat-icon { opacity: 0.98 }
+.visit-stat-label { color: rgba(255,255,255,0.8) }
+.visit-stat-value { color: #fff }
+
+.sidebar-section { margin-top: 18px }
+.sidebar-section-title { font-size: 0.875rem; color: rgba(255,255,255,0.82); margin-bottom: 8px }
+
+.child-selector { display: flex; flex-direction: column; gap: 8px }
+.child-row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px; border-radius: 8px; background: transparent; border: none; text-align: left; color: inherit; cursor: pointer }
+.child-row:hover { background: rgba(255,255,255,0.02) }
+.child-row.active { background: linear-gradient(90deg, rgba(96,165,250,0.14), rgba(59,130,246,0.06)); box-shadow: 0 6px 18px rgba(12,18,30,0.12) }
+.child-row-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover }
+.child-row-avatar-placeholder { width: 40px; height: 40px; border-radius: 50%; display:flex; align-items:center; justify-content:center; background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.9) }
+
+/* Stacked avatars for the All Children selector (larger than pill stack) */
+.child-all-avatars {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  margin-right: 6px;
+}
+.child-all-avatar-item {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--color-background-card);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+  background: var(--color-background-card);
+}
+.child-row-body { flex: 1 }
+.child-row-name { font-weight: 600 }
+.child-row-sub { font-size: 0.8rem; color: rgba(255,255,255,0.7) }
+.child-row-indicator { width: 8px; height: 8px; border-radius: 999px; background: linear-gradient(90deg,#60a5fa,#3b82f6); margin-left: 8px; opacity: 0 }
+.child-row.active .child-row-indicator { opacity: 1; transform: translateX(0); transition: opacity 180ms ease }
+
+.sidebar-spacer { flex: 1 }
+.sidebar-action { padding-top: 12px }
+.sidebar-add-btn { width: 100%; background: linear-gradient(90deg, #60a5fa, #3b82f6); color: #fff }
+.sidebar-add-btn:hover { filter: brightness(1.03); transform: translateY(-2px) }
+
+.visits-main { flex: 1 }
+
+@media (max-width: 900px) {
+  .visits-page-layout { flex-direction: column }
+  .visits-sidebar { position: relative; width: 100%; top: 0; }
+}
+
+/* Ensure SVG icons explicitly pick up currentColor for fill/stroke
+   and force per-type colors to match light mode when in dark mode. */
+.visit-icon-outline .visit-type-svg,
+.visit-icon-outline .visit-type-svg svg {
+  stroke: currentColor;
+}
+
+/* CENTRAL ICON NORMALIZATION
+   Use CSS variables to control stroke weights in one place and make
+   it easy to tune modal vs inline sizes. Filled icons opt-out via
+   `.visit-type-svg--filled`. This block intentionally uses high
+   specificity and `!important` where necessary to override legacy
+   inline attributes from third-party SVGs. */
+:root {
+  --icon-stroke-default: 1px;      /* baseline for timeline/list */
+  --icon-stroke-modal: 1.25px;     /* larger for modal big icons */
+  --icon-stroke-sick: 1px;         /* pill icon adjustment */
+}
+
+.visit-icon-outline {
+  /* default stroke for icons inside this wrapper */
+  --icon-stroke: var(--icon-stroke-default);
+}
+
+/* Modal-sized icons should be heavier by default */
+.visit-type-icon .visit-icon-outline {
+  --icon-stroke: var(--icon-stroke-modal);
+}
+
+/* Specific per-type adjustments (easy to tune) */
+.visit-icon--sick { --icon-stroke: var(--icon-stroke-sick); }
+
+/* Apply stroke/fill/weight uniformly to svg and path elements; filled
+   icons opt out with `.visit-type-svg--filled`. */
+.visit-icon-outline .visit-type-svg:not(.visit-type-svg--filled),
+.visit-icon-outline .visit-type-svg:not(.visit-type-svg--filled) svg,
+.visit-icon-outline .visit-type-svg:not(.visit-type-svg--filled) svg path,
+.visit-icon-outline .visit-type-svg:not(.visit-type-svg--filled) svg g {
+  stroke: currentColor !important;
+  stroke-width: var(--icon-stroke) !important;
+  fill: none !important;
+  vector-effect: non-scaling-stroke !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+/* Filled icons (explicit) keep their filled appearance */
+.visit-type-svg--filled,
+.visit-type-svg--filled svg,
+.visit-type-svg--filled svg path {
+  fill: currentColor !important;
+  stroke: none !important;
+}
+
+/* Ensure stroke rules also apply to path elements inside icon SVGs (mdi/react, etc.)
+   and use non-scaling strokes so stroke thickness remains consistent. */
+.visit-icon-outline .visit-type-svg:not(.visit-type-svg--filled) svg path,
+.visit-icon-outline .visit-type-svg:not(.visit-type-svg--filled) svg g {
+  stroke: currentColor;
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Normalize SVG stroke appearance across icon sets so thickness looks uniform */
+.visit-icon-outline .visit-type-svg svg {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke; /* keeps stroke consistent when icons scale */
+}
+
+/* Some icon libraries/components expect to be filled; add an explicit
+   helper class when you want a filled icon: `visit-type-svg--filled`. */
+.visit-type-svg--filled,
+.visit-type-svg--filled svg {
+  fill: currentColor;
+  stroke: none;
+}
+
+/* Modal icon: slightly heavier stroke at modal size for better legibility */
+.visit-type-icon .visit-type-svg svg {
+  stroke-width: 1.25px;
+}
+
+/* Exception: make the sick (pill) icon thinner in the modal so its
+   visual weight matches other icons. This overrides the modal-wide
+   increase for this specific type. */
+.visit-type-icon .visit-icon-outline.visit-icon--sick .visit-type-svg svg {
+  stroke-width: 1px;
+}
+
+/* Optical offsets per icon (keeps nudges centralized and easy to tweak) */
+.visit-icon--sick { --icon-optical-offset: -2px; }
+.visit-icon--injury { --icon-optical-offset: 1px; }
+
+/* Hover glow on icon instead of moving the button (no layout shift) */
+.visit-type-button:hover .visit-icon-outline {
+  /* remove hover outline/glow; keep hover subtle without layout shift */
+  box-shadow: none;
+}
+
+/* Ensure sick icon wrapper does not show a square/box background
+   and visually matches other outline icons (no extra box). */
+.visit-icon-outline.visit-icon--sick {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 9999px;
+  padding: 0;
+}
+
+/* If a pill icon renders with an internal filled rect, ensure the wrapper
+   doesn't clip or add a visible square. */
+.visit-icon-outline.visit-icon--sick .visit-type-svg {
+  display: inline-block;
+}
+
+/* Strongly ensure no visual box appears around the sick icon: remove
+   backgrounds, borders or shadows from the wrapper and any SVG children.
+   Use !important sparingly here to override upstream icon-library inline
+   styles that could introduce rect fills. */
+.visit-icon-outline.visit-icon--sick,
+.visit-icon-outline.visit-icon--sick .visit-type-svg,
+.visit-icon-outline.visit-icon--sick svg,
+.visit-icon-outline.visit-icon--sick svg * {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  fill: none !important;
+}
+
+[data-theme="dark"] .visit-icon--wellness { color: var(--color-success); }
+[data-theme="dark"] .visit-icon--sick { color: var(--color-danger); }
+[data-theme="dark"] .visit-icon--injury { color: var(--color-visit-accent); }
+[data-theme="dark"] .visit-icon--vision { color: var(--color-vision); }
+
+/* Per-type overrides: some icon libraries are filled by default
+   (Material / Phosphor). Ensure those icons render as intended
+   instead of getting outline-only (or accidental colored rects). */
+.visit-icon--sick .visit-type-svg.visit-type-svg--filled,
+.visit-icon--sick .visit-type-svg.visit-type-svg--filled svg {
+  fill: currentColor;   /* allow filled variants for sick icons */
+  stroke: none;
+}
+
+/* For lucide / stroke-based icons (wellness, vision) keep stroke-only */
+
+.visit-icon--wellness .visit-type-svg,
+.visit-icon--wellness .visit-type-svg svg,
+.visit-icon--injury .visit-type-svg,
+.visit-icon--injury .visit-type-svg svg {
+  stroke: currentColor;
+  fill: none;
+}
+
+.visit-icon--illness { 
+  color: var(--color-warning);
+  stroke-width: 0.0001;
+}
+
+[data-theme="dark"] .visit-icon--illness { color: var(--color-warning); }
+
+/* Slightly reduce mask stroke to match perceived weight of other outline icons. */
+.visit-icon--illness .visit-type-svg svg,
+.visit-icon--illness .visit-type-svg svg path {
+  stroke-width: 0.9px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Force mask SVG path to render as stroke-only even if the icon library
+   sets fill attributes inline. Use !important carefully to override
+   inline attributes from third-party SVGs for this specific icon. */
+.visit-icon--illness .visit-type-svg svg path,
+.visit-icon--illness .visit-type-svg svg {
+  stroke: currentColor !important;
+  fill: none !important;
+  stroke-width: 0.95px !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  vector-effect: non-scaling-stroke !important;
+}
+/* Vision icons should be outline/stroke-only like other lucide icons */
+.visit-icon--vision .visit-type-svg,
+.visit-icon--vision .visit-type-svg svg {
+  stroke: currentColor;
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Reduce stroke thickness for outline icons to half their default
+   to match design request. Use non-scaling stroke so the width is
+   consistent regardless of transforms. */
+.visit-icon--wellness .visit-type-svg,
+.visit-icon--wellness .visit-type-svg svg,
+.visit-icon--injury .visit-type-svg,
+.visit-icon--injury .visit-type-svg svg {
+  vector-effect: non-scaling-stroke;
+}
+
+/* Slightly larger for injury icons in compact timeline so they match the
+   perceived weight of LuClipboard / Pill icons used elsewhere. */
+.visit-icon--injury .visit-type-svg,
+.visit-icon--injury .visit-type-svg svg {
+  width: 22px;
+  height: 22px;
+  transform: scale(0.95);
+}
+
+/* Make sure any filled paths in the Material injury icon render as filled
+   and are visually bolder to match line weight of other icons. Use
+   a slightly thicker appearance by ensuring fill is applied and stroke
+   removed for filled variants. */
+.visit-icon--injury .visit-type-svg.visit-type-svg--filled svg path,
+.visit-icon--injury .visit-type-svg.visit-type-svg--filled svg g {
+  fill: currentColor !important;
+  stroke: none !important;
+}
+
+/* If an injury icon is explicitly marked as "filled" use the filled style
+   This overrides the generic injury outline rule above for icons that need
+   to render filled shapes (Material / Phosphor filled variants). */
+.visit-icon--injury .visit-type-svg.visit-type-svg--filled,
+.visit-icon--injury .visit-type-svg.visit-type-svg--filled svg {
+  fill: currentColor;
+  stroke: none;
+  vector-effect: none;
+}
+
+/* Strong override: force illness (mask) icon and all its SVG children to
+   use the centralized stroke variable and remove any fills or inline
+   stroke-widths coming from third-party icon libs. Placed after other
+   icon rules to ensure highest specificity in this file. */
+
 
 .timeline-item-date-row {
   display: flex;
@@ -517,6 +1701,19 @@ body {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   white-space: nowrap;
+}
+
+.illness-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  background: var(--color-background);
 }
 
 .timeline-item-arrow-compact {
@@ -569,18 +1766,56 @@ body {
 }
 
 .wellness-title-badge {
+  /* Match timeline badge sizing/shape but keep primary (blue) color */
   display: inline-flex;
   align-items: center;
+  gap: 4px;
   padding: 2px var(--spacing-xs);
-  background: transparent;
-  border: 1px solid var(--color-primary);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
-  color: var(--color-primary);
+  line-height: 1;
   white-space: nowrap;
-  line-height: 1.2;
+}
+
+.wellness-badges-group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+  padding-left: var(--spacing-md);
+}
+
+/* Injury badge should have same left padding as wellness badges */
+.injury-badge {
+  /* moved left padding to the wrapper `.injury-content` so badges
+     themselves don't carry additional left margin */
+  margin-left: 0;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Wrapper for injury visit details. Adds left padding so the injury
+   content lines up with wellness entries' badges. */
+.injury-content {
+  padding-left: var(--spacing-md);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+/* Make primary info render inline within injury content to match wellness layout */
+.injury-content .timeline-item-primary {
+  display: inline-block;
   margin-left: var(--spacing-xs);
+}
+
+/* Align injury date to the right and give it the same left spacing */
+.injury-date-spaced {
+  margin-left: auto;
+  padding-left: var(--spacing-md);
 }
 
 .attachment-indicator {
@@ -589,6 +1824,19 @@ body {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   margin-left: var(--spacing-xs);
+}
+
+.attachment-indicator .attachment-icon,
+.attachment-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  color: inherit;
+}
+.attachment-indicator .attachment-icon svg,
+.attachment-icon svg {
+  stroke: currentColor;
+  fill: none;
 }
 
 .child-name-badge {
@@ -823,14 +2071,17 @@ body {
 
 .app-main {
   flex: 1;
-  max-width: 1200px;
+  padding: var(--spacing-md);
+  display: flex;
+  justify-content: center;
   width: 100%;
-  margin: 0 auto;
-  padding: var(--spacing-xl) var(--spacing-lg);
 }
 
 .content-wrapper {
+  max-width: 1600px;
   width: 100%;
+  box-sizing: border-box;
+  padding-bottom: 30px; /* ensure space below body even when content fills the page */
 }
 
 .app-footer {
@@ -839,13 +2090,67 @@ body {
   margin-top: auto;
 }
 
-.footer-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: var(--spacing-lg);
-  text-align: center;
+/* Version footer - fixed to bottom right */
+.version-footer {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  align-items: center;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
   color: var(--color-text-secondary);
-  font-size: 0.875rem;
+  display: inline-flex;
+  font-size: 0.7rem;
+  gap: 6px;
+  opacity: 0.6;
+  padding: 4px 8px;
+  pointer-events: auto;
+  transition: opacity 0.2s ease, color 0.2s ease;
+  z-index: 100;
+}
+
+.version-footer:hover {
+  opacity: 1;
+  color: var(--color-primary);
+}
+
+.github-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.github-link:hover {
+  color: var(--color-primary);
+}
+
+.github-link-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.footer-separator {
+  color: inherit;
+  opacity: 0.5;
+}
+
+.footer-version {
+  color: inherit;
+}
+
+/* Dark mode adjustments for version footer */
+[data-theme="dark"] .version-footer {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="light"] .version-footer {
+  background: rgba(0, 0, 0, 0.05);
 }
 
 /* ============================================================================
@@ -879,8 +2184,12 @@ body {
   display: inline-block;
   color: var(--color-text-secondary);
   text-decoration: none;
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
   font-size: 0.875rem;
+}
+
+.child-detail-section .breadcrumb {
+  margin-bottom: var(--spacing-lg);
 }
 
 .breadcrumb:hover {
@@ -948,8 +2257,7 @@ body {
 }
 
 .btn-lg {
-  padding: var(--spacing-md) var(--spacing-xl);
-  font-size: 1.125rem;
+  padding: var(--spacing-md);
 }
 
 .btn-primary {
@@ -999,27 +2307,27 @@ body {
    Kids Management Page
    ============================================================================ */
 
-.kids-management-list {
+.family-list {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
 }
 
-.kid-management-card {
+.family-card {
   padding: var(--spacing-lg);
 }
 
-.kid-management-content {
+.family-content {
   display: flex;
   align-items: center;
   gap: var(--spacing-lg);
 }
 
-.kid-management-avatar {
+.family-avatar {
   flex-shrink: 0;
 }
 
-.kid-management-avatar-img {
+.family-avatar-img {
   width: 60px;
   height: 60px;
   border-radius: 50%;
@@ -1027,19 +2335,19 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
-.kid-management-info {
+.family-info {
   flex: 1;
   min-width: 0;
 }
 
-.kid-management-name {
+.family-name {
   margin: 0 0 var(--spacing-xs) 0;
   font-size: 1.25rem;
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
 }
 
-.kid-management-details {
+.family-details {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
@@ -1047,32 +2355,32 @@ body {
   color: var(--color-text-secondary);
 }
 
-.kid-management-actions {
+.family-actions {
   display: flex;
   gap: var(--spacing-sm);
   flex-shrink: 0;
 }
 
-.kid-management-add-link {
+.family-add-link {
   text-decoration: none;
   color: inherit;
 }
 
-.kid-management-add-card {
+.family-add-card {
   border: 2px dashed var(--color-border);
   background-color: transparent;
   transition: all 0.2s;
   cursor: pointer;
 }
 
-.kid-management-add-card:hover {
+.family-add-card:hover {
   border-color: var(--color-primary);
   background-color: var(--color-surface);
   transform: translateY(-2px);
   box-shadow: var(--elevation-2);
 }
 
-.kid-management-add-avatar {
+.family-add-avatar {
   width: 60px;
   height: 60px;
   border-radius: 50%;
@@ -1086,7 +2394,7 @@ body {
   transition: all 0.2s;
 }
 
-.kid-management-add-card:hover .kid-management-add-avatar {
+.family-add-card:hover .family-add-avatar {
   border-color: var(--color-primary);
   color: var(--color-primary);
   background-color: var(--color-primary-light);
@@ -1110,9 +2418,8 @@ body {
 /* Children Grid Cards */
 .children-grid-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--spacing-xl);
-  padding: var(--spacing-sm) 0;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-md);
 }
 
 .child-card-compact {
@@ -1373,7 +2680,7 @@ body {
 }
 
 .overview-last-visit-link:hover .overview-last-visit {
-  background: var(--color-surface-hover);
+  /* Keep pointer for interactivity but avoid changing background color */
   cursor: pointer;
 }
 
@@ -1740,6 +3047,131 @@ body {
 
 .about-value {
   color: var(--color-text-primary);
+}
+
+/* User Info Card */
+.user-info-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.user-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.user-info-row:last-child {
+  border-bottom: none;
+}
+
+.user-info-label {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.user-info-value {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+}
+
+/* Expandable Settings Sections */
+.settings-expandable {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+  overflow: hidden;
+  transition: border-color var(--transition-base);
+}
+
+.settings-expandable:hover {
+  border-color: var(--color-primary);
+}
+
+.settings-expandable-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--color-surface);
+  border: none;
+  cursor: pointer;
+  transition: background-color var(--transition-base);
+  text-align: left;
+}
+
+.settings-expandable-header:hover {
+  background: var(--color-background-card);
+}
+
+.settings-expandable-header:focus {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+
+.settings-expandable-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
+}
+
+.settings-expandable-icon {
+  font-size: var(--font-size-lg);
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.settings-expandable-chevron {
+  font-size: var(--font-size-lg);
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+  transition: transform var(--transition-base);
+}
+
+.settings-expandable-content {
+  padding: var(--spacing-lg);
+  background: var(--color-background);
+  border-top: 1px solid var(--color-border);
+}
+
+.settings-expandable-content .form-field {
+  margin-bottom: var(--spacing-md);
+}
+
+.settings-expandable-content .form-field:last-of-type {
+  margin-bottom: var(--spacing-lg);
+}
+
+.settings-update-button {
+  margin-top: var(--spacing-sm);
+}
+
+/* Dark mode adjustments for expandable sections */
+[data-theme="dark"] .settings-expandable-header {
+  background: var(--color-background-card);
+}
+
+[data-theme="dark"] .settings-expandable-header:hover {
+  background: var(--color-gray-700);
+}
+
+[data-theme="dark"] .settings-expandable-content {
+  background: var(--color-background);
+}
+
+[data-theme="dark"] .user-info-card {
+  background: var(--color-background-card);
 }
 
 .section-nav {
@@ -2877,7 +4309,7 @@ select.form-input:disabled {
   overflow-x: auto;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1600px) {
   .metrics-summary {
     grid-template-columns: auto repeat(auto-fit, minmax(140px, 1fr));
   }
@@ -2906,7 +4338,6 @@ select.form-input:disabled {
 
 .summary-avatars {
   display: flex;
-  gap: var(--spacing-xs);
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
@@ -3409,6 +4840,56 @@ select.form-input:disabled {
   .event-actions .btn {
     flex: 1;
   }
+  
+  .visit-detail-header {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    align-items: stretch;
+  }
+  
+  .visit-detail-actions {
+    width: 100%;
+  }
+  
+  .visit-detail-actions .btn {
+    flex: 1;
+  }
+  
+  .visit-info-item {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+  
+  .visit-info-label {
+    min-width: auto;
+  }
+  
+  .visit-measurements-compact {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  
+  .visit-vaccines-compact {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .visit-history-entry-compact {
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+  }
+  
+  .visit-history-date-compact {
+    margin-left: 0;
+    margin-right: 0;
+    width: 100%;
+    order: 2;
+  }
+  
+  .visit-history-user-compact {
+    width: 100%;
+    order: 3;
+  }
 }
 
 /* ============================================================================
@@ -3818,7 +5299,267 @@ select.form-input:disabled {
 .visit-detail-body {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xl);
+  gap: var(--spacing-lg);
+}
+
+.visit-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.visit-detail-header .breadcrumb {
+  margin-bottom: 0;
+}
+
+.visit-detail-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+.visit-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.visit-header-section {
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.visit-header-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-xs) 0;
+}
+
+.visit-header-date {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.visit-section-header {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 var(--spacing-md) 0;
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.visit-title-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.visit-info-stacked {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.visit-info-item {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: baseline;
+}
+
+.visit-info-label {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  min-width: 100px;
+  font-size: 0.875rem;
+}
+
+.visit-info-value {
+  color: var(--color-text-primary);
+  flex: 1;
+}
+
+.visit-measurements-section {
+  padding: var(--spacing-sm) 0;
+}
+
+.visit-measurements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.measurement-card {
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm);
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.measurement-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.measurement-card-label {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--spacing-xs);
+  font-weight: 500;
+}
+
+.measurement-card-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.measurement-card-percentile {
+  font-size: 0.75rem;
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.measurement-compact {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: baseline;
+  font-size: 0.875rem;
+}
+
+.measurement-compact-label {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.measurement-compact-value {
+  color: var(--color-text-primary);
+}
+
+.visit-vaccines-compact {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+  flex-wrap: wrap;
+  padding: var(--spacing-sm) 0;
+}
+
+.visit-vaccines-label {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.visit-vaccines-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.vaccine-badge-compact {
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.visit-prescriptions-compact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) 0;
+  font-size: 0.875rem;
+}
+
+.prescription-compact {
+  color: var(--color-text-primary);
+}
+
+.prescription-notes {
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.visit-notes-section {
+  padding: var(--spacing-sm) 0;
+}
+
+.visit-notes-text {
+  color: var(--color-text-primary);
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.visit-history-tab {
+  padding: var(--spacing-sm) 0;
+}
+
+.visit-history-list-compact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.visit-history-entry-compact {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) 0;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.visit-history-entry-compact:last-child {
+  border-bottom: none;
+}
+
+.visit-history-icon-compact {
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+}
+
+.visit-history-description-compact {
+  flex: 1;
+  color: var(--color-text-primary);
+}
+
+.visit-history-date-compact {
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  margin-left: auto;
+  margin-right: var(--spacing-sm);
+}
+
+.visit-history-user-compact {
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  font-style: italic;
+}
+
+.visit-attachments-tab {
+  padding: var(--spacing-sm) 0;
 }
 
 .visit-detail-section {
@@ -3977,7 +5718,6 @@ select.form-input:disabled {
 
 .vaccine-input-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   margin-bottom: var(--spacing-sm);
 }
@@ -4021,6 +5761,7 @@ select.form-input:disabled {
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-xs);
+  padding-bottom: var(--spacing-lg);
 }
 
 .vaccine-badge-item {
@@ -4316,18 +6057,20 @@ select.form-input:disabled {
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: var(--spacing-lg);
+  /* reduce outer padding so modal can use more vertical space */
+  padding: var(--spacing-md);
 }
 
 .modal-content {
-  max-width: 800px;
+  /* Increase modal width and height allowance so content fits without scrolling */
+  max-width: 1000px;
   width: 100%;
-  max-height: 90vh;
+  max-height: 98vh;
   overflow-y: auto;
 }
 
 .modal-content-large {
-  max-width: 800px;
+  max-width: 1000px;
 }
 
 .modal-header {
@@ -4404,6 +6147,69 @@ select.form-input:disabled {
   margin-bottom: var(--spacing-lg);
 }
 
+/* Compact sidebar variant for visit-type buttons used in sidebars */
+.visit-type-button.sidebar {
+  padding: 8px;
+  min-height: auto;
+  border-width: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+  border-radius: 12px;
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+}
+.visit-type-button.sidebar .visit-type-icon {
+  margin-bottom: 0;
+}
+.visit-type-button.sidebar .visit-type-icon .visit-icon-outline {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-radius: 8px;
+}
+.visit-type-button.sidebar.wellness .visit-icon-outline { color: var(--color-success); }
+.visit-type-button.sidebar.sick .visit-icon-outline { color: var(--color-danger); }
+.visit-type-button.sidebar.active { box-shadow: 0 8px 20px rgba(0,0,0,0.08); transform: translateY(-2px); }
+
+/* Sidebar variant: show small label under compact icon */
+.visit-type-button.sidebar .visit-type-label {
+  font-size: 0.75rem;
+  margin-top: 6px;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+/* Larger small-variant: square with label stacked for sidebar */
+.visit-type-button.visit-type-small {
+  width: 92px;
+  height: auto;
+  padding: 10px 8px;
+  border-radius: 10px;
+  flex-direction: column;
+}
+.visit-type-button.visit-type-small .visit-type-icon {
+  margin-bottom: 6px;
+}
+.visit-type-button.visit-type-small .visit-icon-outline {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  display:flex; align-items:center; justify-content:center;
+}
+.visit-type-button.visit-type-small .visit-type-svg { width: 28px; height: 28px; color: white; }
+
+/* Graph icon background for growth button (use primary blue gradient) */
+.visit-icon-outline.sidebar-graph {
+  background: linear-gradient(135deg, #60a5fa, #3b82f6);
+}
+
+.visit-type-button.visit-type-small.wellness .visit-icon-outline.sidebar-graph .visit-type-svg { color: white; }
+
+
+
 @media (max-width: 1024px) {
   .visit-type-selection {
     grid-template-columns: repeat(2, 1fr);
@@ -4428,33 +6234,33 @@ select.form-input:disabled {
   cursor: pointer;
   transition: all 0.2s;
   text-align: center;
-  min-height: 180px;
+  /* slightly reduce min-height to fit more comfortably in the modal */
+  min-height: 160px;
 }
 
 .visit-type-button:hover {
   border-color: var(--color-primary);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  /* no translate to avoid layout shift; glow will indicate hover */
 }
 
 .visit-type-button.wellness:hover {
   background: var(--color-surface);
-  border-color: #10b981;
+  border-color: var(--color-success);
 }
 
 .visit-type-button.sick:hover {
   background: var(--color-surface);
-  border-color: #ef4444;
+  border-color: var(--color-danger);
 }
 
 .visit-type-button.injury:hover {
   background: var(--color-surface);
-  border-color: #f59e0b;
+  border-color: var(--color-visit-accent);
 }
 
 .visit-type-button.vision:hover {
   background: var(--color-surface);
-  border-color: var(--color-primary);
+  border-color: var(--color-vision);
 }
 
 /* Dark mode specific hover adjustments */
@@ -4467,11 +6273,11 @@ select.form-input:disabled {
 }
 
 [data-theme="dark"] .visit-type-button.injury:hover {
-  background: rgba(245, 158, 11, 0.1);
+  background: rgba(11, 61, 145, 0.12);
 }
 
 [data-theme="dark"] .visit-type-button.vision:hover {
-  background: rgba(59, 130, 246, 0.1);
+  background: var(--color-vision-light);
 }
 
 .visit-type-icon {
@@ -4501,6 +6307,14 @@ select.form-input:disabled {
 /* ============================================================================
    Responsive Styles - Children Grid
    ============================================================================ */
+
+/* Tablet: 2 columns */
+/* Large screens: 3 columns */
+@media (max-width: 1200px) {
+  .children-grid-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
 
 /* Tablet: 2 columns */
 @media (max-width: 1024px) {
@@ -4606,6 +6420,7 @@ select.form-input:disabled {
   margin-bottom: var(--spacing-lg);
 }
 
+
 .tab-button {
   padding: var(--spacing-sm) var(--spacing-lg);
   background: none;
@@ -4632,7 +6447,6 @@ select.form-input:disabled {
 }
 
 .tabs-content {
-  min-height: 200px;
 }
 
 /* ============================================================================
@@ -4660,7 +6474,6 @@ select.form-input:disabled {
   background: var(--color-surface);
   border-color: var(--color-primary);
 }
-
 .document-icon {
   font-size: 1.25rem;
   flex-shrink: 0;
@@ -4671,11 +6484,29 @@ select.form-input:disabled {
   min-width: 0;
 }
 
+/* File icon sizing for documents list (Lucide svgs) */
+.document-file-icon {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  color: var(--color-text-secondary);
+  opacity: 0.95;
+}
+
+/* Ensure document badges follow the same compact single-line layout as visits/illnesses */
+.document-item.timeline-item-modern .timeline-item-label-row .document-filename-link {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+.file-size-badge {
+  opacity: 0.9;
+}
+
 .document-filename-link {
   display: block;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  color: var(--color-primary);
+  color: var(--color-text-secondary);
   text-decoration: none;
   cursor: pointer;
   background: none;
@@ -4687,6 +6518,18 @@ select.form-input:disabled {
 
 .document-filename-link:hover {
   color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+/* Ensure document filename appears as a blue inline hyperlink inside timeline rows */
+.timeline-item-label-row .document-filename-link {
+  display: inline;
+  color: var(--color-text-secondary) !important;
+  text-decoration: none;
+}
+.timeline-item-label-row .document-filename-link:hover {
+  /* keep hover underline but keep text color as grey */
+  color: var(--color-text-secondary) !important;
   text-decoration: underline;
 }
 
@@ -4882,7 +6725,7 @@ select.form-input:disabled {
   }
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1600px) {
   .growth-charts-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -5136,14 +6979,13 @@ select.form-input:disabled {
 .vaccine-history-container {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-sm);
 }
 
 .vaccine-history-summary {
   display: flex;
   gap: var(--spacing-lg);
   padding: var(--spacing-md);
-  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
@@ -5169,7 +7011,7 @@ select.form-input:disabled {
 .vaccine-history-list {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
 }
 
 .vaccine-history-item {
@@ -5239,9 +7081,8 @@ select.form-input:disabled {
 }
 
 .vaccine-dose-item:hover {
-  background: var(--color-surface-hover);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  /* Neutral hover: no blue tint or border color change */
+  background: var(--color-surface);
 }
 
 .vaccine-dose-number {
@@ -5268,9 +7109,8 @@ select.form-input:disabled {
   color: var(--color-primary);
 }
 
-/* Vaccine Reports Section */
 .vaccine-reports-section {
-  margin-bottom: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
 }
 
 .vaccine-reports-title {
@@ -5433,14 +7273,6 @@ select.form-input:disabled {
 }
 
 /* ============================================================================
- * Home Page Tabs
- * ============================================================================ */
-
-.home-tab-content {
-  padding: var(--spacing-md) 0;
-}
-
-/* ============================================================================
  * All Illnesses/Visits Views
  * ============================================================================ */
 
@@ -5579,7 +7411,6 @@ select.form-input:disabled {
   display: flex;
   gap: var(--spacing-lg);
   padding: var(--spacing-md);
-  background: var(--color-surface);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
   flex-wrap: wrap;
@@ -5842,4 +7673,183 @@ select.form-input:disabled {
 .visit-history-date {
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
+}
+
+/* ============================================================================
+   Login Page
+   ============================================================================ */
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  background: var(--color-background);
+}
+
+.login-container {
+  width: 100%;
+  max-width: 420px;
+}
+
+.login-card {
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-2xl);
+  box-shadow: var(--elevation-4);
+  width: 100%;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: var(--spacing-2xl);
+}
+
+.login-logo {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto var(--spacing-md);
+  display: block;
+}
+
+.login-title {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.login-subtitle {
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.login-form .form-field {
+  margin-bottom: 0;
+}
+
+.login-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: calc(var(--spacing-xs) * -1);
+  margin-bottom: var(--spacing-xs);
+}
+
+.forgot-password-link {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  transition: opacity 0.2s;
+}
+
+.forgot-password-link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+.login-button {
+  margin-top: var(--spacing-xs);
+}
+
+.login-footer {
+  margin-top: var(--spacing-xl);
+  text-align: center;
+  padding-top: var(--spacing-xl);
+  border-top: 1px solid var(--color-border);
+}
+
+.login-footer p {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.register-link {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+  transition: opacity 0.2s;
+}
+
+.register-link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper .form-input {
+  padding-right: 48px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: var(--spacing-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-lg);
+  transition: color 0.2s;
+  z-index: 1;
+}
+
+.password-toggle:hover {
+  color: var(--color-text-primary);
+}
+
+.password-toggle:focus {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .login-page {
+  background: var(--color-background);
+}
+
+[data-theme="dark"] .login-card {
+  background: var(--color-background-card);
+  border-color: var(--color-border);
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .login-page {
+    padding: var(--spacing-md);
+  }
+
+  .login-card {
+    padding: var(--spacing-xl);
+  }
+
+  .login-title {
+    font-size: var(--font-size-2xl);
+  }
+}
+
+/* Form hint styling */
+.form-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-top: var(--spacing-xs);
+  line-height: var(--line-height-normal);
 }

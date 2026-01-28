@@ -3,7 +3,9 @@
  * Handles file uploads, downloads, and management
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Response, NextFunction } from 'express';
+import type { Request as ExpressRequest } from 'express';
+import type { AuthRequest } from '../middleware/auth.js';
 import multer, { FileFilterCallback } from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
@@ -12,12 +14,10 @@ import { query } from '../db/connection.js';
 import type { MeasurementAttachmentRow, VisitAttachmentRow, ChildAttachmentRow } from '../types/database.js';
 import { createResponse } from '../types/api.js';
 
-// Extend Express Request type to include file
-declare global {
-  namespace Express {
-    interface Request {
-      file?: Express.Multer.File;
-    }
+// Extend Express Request type to include file (module augmentation; avoids namespaces)
+declare module 'express-serve-static-core' {
+  interface Request {
+    file?: Express.Multer.File;
   }
 }
 
@@ -134,11 +134,11 @@ async function verifyStoredFilenameUniqueAfterInsert(
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
-  destination: async (_req: Request, _file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
+  destination: async (_req: ExpressRequest, _file: Express.Multer.File, cb: (error: Error | null, destination: string) => void): Promise<void> => {
     await ensureUploadDir();
     cb(null, UPLOAD_DIR);
   },
-  filename: (_req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
+  filename: (_req: ExpressRequest, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void): void => {
     const ext = path.extname(file.originalname);
     const uniqueName = `${randomUUID()}${ext}`;
     cb(null, uniqueName);
@@ -150,7 +150,7 @@ const upload = multer({
   limits: {
     fileSize: MAX_FILE_SIZE,
   },
-  fileFilter: (_req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
+  fileFilter: (_req: ExpressRequest, file: Express.Multer.File, cb: FileFilterCallback): void => {
     if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
       cb(null, true);
     } else {
@@ -166,7 +166,7 @@ const upload = multer({
 router.post(
   '/measurements/:measurementId/attachments',
   upload.single('file'),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: ExpressRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const measurementId = parseInt(req.params.measurementId);
 
@@ -370,7 +370,7 @@ router.post(
 
 router.get(
   '/measurements/:measurementId/attachments',
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: ExpressRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const measurementId = parseInt(req.params.measurementId);
 
@@ -415,7 +415,7 @@ router.get(
 
 router.get(
   '/attachments/:id',
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: ExpressRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const id = parseInt(req.params.id);
 
@@ -510,7 +510,7 @@ router.get(
 
 router.delete(
   '/attachments/:id',
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: ExpressRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const id = parseInt(req.params.id);
 
@@ -526,7 +526,7 @@ router.delete(
       }
 
       // Get attachment info before deleting - check all three tables
-      let result = await query<MeasurementAttachmentRow>(
+      const result = await query<MeasurementAttachmentRow>(
         'SELECT * FROM measurement_attachments WHERE id = $1',
         [id]
       );
@@ -601,7 +601,7 @@ router.delete(
 router.post(
   '/visits/:visitId/attachments',
   upload.single('file'),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const visitId = parseInt(req.params.visitId);
 
@@ -785,6 +785,17 @@ router.post(
         updated_at: result.rows[0].created_at.toISOString(), // visit_attachments doesn't have updated_at, use created_at
       };
 
+      // Insert history entry for attachment upload
+      await query(
+        `INSERT INTO visit_history (visit_id, user_id, action, description)
+         VALUES ($1, $2, 'attachment_uploaded', $3)`,
+        [
+          visitId,
+          req.userId || null,
+          `Document uploaded: ${req.file.originalname}`
+        ]
+      );
+
       res.status(201).json(createResponse(attachment));
     } catch (error) {
       // Clean up uploaded file on error
@@ -806,7 +817,7 @@ router.post(
 
 router.get(
   '/visits/:visitId/attachments',
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: ExpressRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const visitId = parseInt(req.params.visitId);
 
@@ -850,7 +861,7 @@ router.get(
 // Update attachment filename (works for both measurement and visit attachments)
 // ============================================================================
 
-router.put('/attachments/:id', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+router.put('/attachments/:id', async (req: ExpressRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const attachmentId = parseInt(req.params.id);
     const { original_filename } = req.body;
@@ -923,7 +934,7 @@ router.put('/attachments/:id', async (req: Request, res: Response, next: NextFun
 router.post(
   '/children/:childId/attachments',
   upload.single('file'),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: ExpressRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const childId = parseInt(req.params.childId);
       if (isNaN(childId)) {
@@ -1101,7 +1112,7 @@ router.post(
 // Get all attachments for a child
 router.get(
   '/children/:childId/attachments',
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: ExpressRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const childId = parseInt(req.params.childId);
       if (isNaN(childId)) {
@@ -1142,7 +1153,7 @@ router.get(
 );
 
 // Update child attachment filename
-router.put('/attachments/:id', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+router.put('/attachments/:id', async (req: ExpressRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const attachmentId = parseInt(req.params.id);
     const { original_filename } = req.body;

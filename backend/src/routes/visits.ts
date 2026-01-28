@@ -2,10 +2,12 @@
  * Visit Routes - Unified wellness and sick visits
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Response, NextFunction } from 'express';
+import type { Request as ExpressRequest } from 'express';
 import { query } from '../db/connection.js';
 import { createResponse } from '../types/api.js';
 import { BadRequestError, NotFoundError } from '../middleware/error-handler.js';
+import type { AuthRequest } from '../middleware/auth.js';
 import type { VisitRow, CreateVisitInput, VisitType, IllnessType } from '../types/database.js';
 import { visitRowToVisit as convertVisitRow } from '../types/database.js';
 
@@ -15,14 +17,14 @@ const router = Router();
 // Validation helpers
 // ============================================================================
 
-function validateVisitType(value: any): VisitType {
+function validateVisitType(value: unknown): VisitType {
   if (typeof value !== 'string' || !['wellness', 'sick', 'injury', 'vision'].includes(value)) {
     throw new BadRequestError('visit_type must be "wellness", "sick", "injury", or "vision"');
   }
   return value as VisitType;
 }
 
-function validateIllnessType(value: any): IllnessType | null {
+function validateIllnessType(value: unknown): IllnessType | null {
   if (value === undefined || value === null || value === '') {
     return null;
   }
@@ -33,33 +35,63 @@ function validateIllnessType(value: any): IllnessType | null {
   return value as IllnessType;
 }
 
-function validateDate(value: any, fieldName: string): string {
+function validateIllnessesArray(value: unknown): IllnessType[] | null {
+  if (value === undefined || value === null) return null;
+  if (!Array.isArray(value)) {
+    throw new BadRequestError('illnesses must be an array of strings');
+  }
+  const arr: IllnessType[] = value.map((v: unknown, idx: number) => {
+    try {
+      const validated = validateIllnessType(v);
+      if (!validated) throw new Error('invalid');
+      return validated;
+    } catch (err) {
+      throw new BadRequestError(`illnesses[${idx}] is invalid`);
+    }
+  });
+  return arr;
+}
+
+function validateDate(value: unknown, fieldName: string): string {
   if (!value) {
     throw new BadRequestError(`${fieldName} is required`);
   }
-  const date = new Date(value);
+  if (typeof value !== 'string' && typeof value !== 'number' && !(value instanceof Date)) {
+    throw new BadRequestError(`${fieldName} must be a valid date`);
+  }
+  const date = new Date(value as string | number | Date);
   if (isNaN(date.getTime())) {
     throw new BadRequestError(`${fieldName} must be a valid date`);
   }
-  return value;
+  return String(value);
 }
 
-function validateOptionalDate(value: any): string | null {
+function validateOptionalDate(value: unknown): string | null {
   if (value === undefined || value === null || value === '') {
     return null;
   }
-  const date = new Date(value);
+  if (typeof value !== 'string' && typeof value !== 'number' && !(value instanceof Date)) {
+    throw new BadRequestError('Invalid date format');
+  }
+  const date = new Date(value as string | number | Date);
   if (isNaN(date.getTime())) {
     throw new BadRequestError('Invalid date format');
   }
-  return value;
+  return String(value);
 }
 
-function validateOptionalNumber(value: any, min?: number, max?: number): number | null {
+function validateOptionalNumber(value: unknown, min?: number, max?: number): number | null {
   if (value === undefined || value === null || value === '') {
     return null;
   }
-  const num = typeof value === 'number' ? value : parseFloat(value);
+  let num: number;
+  if (typeof value === 'number') {
+    num = value;
+  } else if (typeof value === 'string') {
+    num = parseFloat(value);
+  } else {
+    throw new BadRequestError('Invalid number');
+  }
   if (isNaN(num)) {
     throw new BadRequestError('Invalid number');
   }
@@ -72,7 +104,7 @@ function validateOptionalNumber(value: any, min?: number, max?: number): number 
   return num;
 }
 
-function validateOptionalString(value: any): string | null {
+function validateOptionalString(value: unknown): string | null {
   if (value === undefined || value === null || value === '') {
     return null;
   }
@@ -82,7 +114,7 @@ function validateOptionalString(value: any): string | null {
   return value.trim();
 }
 
-function validateVaccines(value: any): string | null {
+function validateVaccines(value: unknown): string | null {
   if (value === undefined || value === null) {
     return null;
   }
@@ -95,7 +127,9 @@ function validateVaccines(value: any): string | null {
   throw new BadRequestError('vaccines_administered must be an array of strings or a comma-separated string');
 }
 
-function validatePrescriptions(value: any): any {
+type PrescriptionInput = { medication: string; dosage: string; duration: string; notes?: string };
+
+function validatePrescriptions(value: unknown): PrescriptionInput[] | null {
   if (value === undefined || value === null) {
     return null;
   }
@@ -103,18 +137,49 @@ function validatePrescriptions(value: any): any {
     throw new BadRequestError('prescriptions must be an array');
   }
   // Validate prescription structure
-  value.forEach((rx: any, index: number) => {
-    if (!rx.medication || typeof rx.medication !== 'string') {
+  value.forEach((rx: unknown, index: number) => {
+    if (!rx || typeof rx !== 'object') {
+      throw new BadRequestError(`prescriptions[${index}] must be an object`);
+    }
+    const r = rx as Record<string, unknown>;
+    if (!r.medication || typeof r.medication !== 'string') {
       throw new BadRequestError(`prescriptions[${index}].medication is required and must be a string`);
     }
-    if (!rx.dosage || typeof rx.dosage !== 'string') {
+    if (!r.dosage || typeof r.dosage !== 'string') {
       throw new BadRequestError(`prescriptions[${index}].dosage is required and must be a string`);
     }
-    if (!rx.duration || typeof rx.duration !== 'string') {
+    if (!r.duration || typeof r.duration !== 'string') {
       throw new BadRequestError(`prescriptions[${index}].duration is required and must be a string`);
     }
   });
-  return value;
+  return value as PrescriptionInput[];
+}
+
+type VisionEye = { sphere: number | null; cylinder: number | null; axis: number | null };
+type VisionRefractionInput = { od: VisionEye; os: VisionEye; notes?: string };
+
+function validateVisionRefraction(value: unknown): VisionRefractionInput | null {
+  if (value === undefined || value === null || value === '') return null;
+  if (typeof value !== 'object') {
+    throw new BadRequestError('vision_refraction must be an object');
+  }
+  const validateEye = (eye: unknown): VisionEye => {
+    if (!eye) return { sphere: null, cylinder: null, axis: null };
+    if (typeof eye !== 'object') return { sphere: null, cylinder: null, axis: null };
+    const e = eye as Record<string, unknown>;
+    const sphere = e.sphere === undefined || e.sphere === null || e.sphere === '' ? null : Number(e.sphere);
+    const cylinder = e.cylinder === undefined || e.cylinder === null || e.cylinder === '' ? null : Number(e.cylinder);
+    const axis = e.axis === undefined || e.axis === null || e.axis === '' ? null : Number(e.axis);
+    if (sphere !== null && isNaN(sphere)) throw new BadRequestError('vision_refraction.od.sphere must be a number');
+    if (cylinder !== null && isNaN(cylinder)) throw new BadRequestError('vision_refraction.od.cylinder must be a number');
+    if (axis !== null && isNaN(axis)) throw new BadRequestError('vision_refraction.od.axis must be a number');
+    return { sphere, cylinder, axis };
+  };
+  const v = value as Record<string, unknown>;
+  const od = validateEye(v.od);
+  const os = validateEye(v.os);
+  const notes = v.notes ? String(v.notes) : undefined;
+  return { od, os, notes };
 }
 
 // ============================================================================
@@ -125,7 +190,7 @@ function validatePrescriptions(value: any): any {
 // GET /api/visits/growth-data - Get growth data for charts (age-based)
 // ============================================================================
 
-router.get('/growth-data', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/growth-data', async (req: ExpressRequest, res: Response, next: NextFunction) => {
   try {
     const childId = req.query.child_id ? parseInt(req.query.child_id as string) : undefined;
     const startDate = req.query.start_date as string | undefined;
@@ -165,7 +230,7 @@ router.get('/growth-data', async (req: Request, res: Response, next: NextFunctio
         )
     `;
 
-    const queryParams: any[] = [];
+    const queryParams: unknown[] = [];
     let paramIndex = 1;
 
     if (childId) {
@@ -188,19 +253,41 @@ router.get('/growth-data', async (req: Request, res: Response, next: NextFunctio
 
     queryText += ` ORDER BY v.visit_date ASC`;
 
-    const result = await query(queryText, queryParams);
+    type GrowthRow = {
+      visit_id: number;
+      visit_date: Date;
+      child_id: number;
+      weight_value: string | null;
+      weight_percentile: string | null;
+      height_value: string | null;
+      height_percentile: string | null;
+      head_circumference_value: string | null;
+      head_circumference_percentile: string | null;
+      bmi_value: string | null;
+      bmi_percentile: string | null;
+      child_name: string;
+      date_of_birth: Date;
+      gender: string;
+      birth_weight: string | null;
+      birth_height: string | null;
+    };
+
+    const result = await query<GrowthRow>(queryText, queryParams);
 
     // Parse decimal values (PostgreSQL returns DECIMAL as string)
-    const parseDecimal = (val: any): number | null => {
+    const parseDecimal = (val: unknown): number | null => {
       if (val === null || val === undefined) return null;
-      const parsed = typeof val === 'string' ? parseFloat(val) : val;
-      return isNaN(parsed) ? null : parsed;
+      const parsed =
+        typeof val === 'string' ? parseFloat(val) :
+        typeof val === 'number' ? val :
+        NaN;
+      return Number.isNaN(parsed) ? null : parsed;
     };
 
     // Get unique children to add birth data points
     const childBirthData = new Map<number, { birth_weight: string | null; birth_height: string | null; date_of_birth: Date; child_name: string; gender: string }>();
     
-    result.rows.forEach((row: any) => {
+    result.rows.forEach((row) => {
       if (!childBirthData.has(row.child_id)) {
         childBirthData.set(row.child_id, {
           birth_weight: row.birth_weight,
@@ -213,14 +300,32 @@ router.get('/growth-data', async (req: Request, res: Response, next: NextFunctio
     });
 
     // Add birth data points (age 0) for children with birth measurements
-    const birthDataPoints: any[] = [];
+    type GrowthPoint = {
+      visit_id: number | null;
+      visit_date: string;
+      age_months: number;
+      age_days: number;
+      weight_value: number | null;
+      weight_percentile: number | null;
+      height_value: number | null;
+      height_percentile: number | null;
+      head_circumference_value: number | null;
+      head_circumference_percentile: number | null;
+      bmi_value: number | null;
+      bmi_percentile: number | null;
+      child_id: number;
+      child_name: string;
+      gender: string;
+    };
+
+    const birthDataPoints: GrowthPoint[] = [];
     childBirthData.forEach((birthData, childId) => {
       const birthWeight = parseDecimal(birthData.birth_weight);
       const birthHeight = parseDecimal(birthData.birth_height);
       
       if (birthWeight !== null || birthHeight !== null) {
         // Only include if we're showing this child (filtered by childId) or all children
-        const shouldInclude = !childId || result.rows.some((r: any) => r.child_id === childId);
+        const shouldInclude = !childId || result.rows.some((r) => r.child_id === childId);
         if (shouldInclude) {
           birthDataPoints.push({
             visit_id: null, // No visit for birth
@@ -244,7 +349,7 @@ router.get('/growth-data', async (req: Request, res: Response, next: NextFunctio
     });
 
     // Calculate age in months for each visit
-    const growthData = result.rows.map((row: any) => {
+    const growthData = result.rows.map((row) => {
       const visitDate = new Date(row.visit_date);
       const birthDate = new Date(row.date_of_birth);
       
@@ -322,7 +427,7 @@ router.get('/growth-data', async (req: Request, res: Response, next: NextFunctio
   }
 });
 
-router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', async (req: ExpressRequest, res: Response, next: NextFunction) => {
   try {
     const childId = req.query.child_id ? parseInt(req.query.child_id as string) : undefined;
     const visitType = req.query.visit_type as VisitType | undefined;
@@ -330,7 +435,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
 
     let queryText = 'SELECT * FROM visits WHERE 1=1';
-    const queryParams: any[] = [];
+    const queryParams: unknown[] = [];
     let paramCount = 1;
 
     if (childId) {
@@ -347,7 +452,26 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     queryParams.push(limit, offset);
 
     const result = await query<VisitRow>(queryText, queryParams);
-    const visits = result.rows.map(convertVisitRow);
+    const visitRows = result.rows;
+    const visits = visitRows.map(convertVisitRow);
+
+    // Attach illnesses for each visit (if any)
+    if (visitRows.length > 0) {
+      const visitIds = visitRows.map((r) => r.id);
+      const illRes = await query<{ visit_id: number; illness_type: IllnessType }>(
+        `SELECT visit_id, illness_type FROM visit_illnesses WHERE visit_id = ANY($1)`,
+        [visitIds]
+      );
+      const map = new Map<number, IllnessType[]>();
+      illRes.rows.forEach((row) => {
+        const arr = map.get(row.visit_id) || [];
+        arr.push(row.illness_type);
+        map.set(row.visit_id, arr);
+      });
+      visits.forEach(v => {
+        v.illnesses = map.get(v.id) || null;
+      });
+    }
 
     res.json(createResponse(visits));
   } catch (error) {
@@ -359,7 +483,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 // GET /api/visits/:id - Get single visit
 // ============================================================================
 
-router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/:id', async (req: ExpressRequest, res: Response, next: NextFunction) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -375,7 +499,15 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
       throw new NotFoundError('Visit');
     }
 
-    res.json(createResponse(convertVisitRow(result.rows[0])));
+    const visit = convertVisitRow(result.rows[0]);
+
+    // Attach illnesses
+    const illRes = await query<{ illness_type: IllnessType }>(
+      `SELECT illness_type FROM visit_illnesses WHERE visit_id = $1`,
+      [visit.id]
+    );
+    visit.illnesses = illRes.rows.length > 0 ? illRes.rows.map((r) => r.illness_type) : null;
+    res.json(createResponse(visit));
   } catch (error) {
     next(error);
   }
@@ -385,7 +517,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 // POST /api/visits - Create new visit
 // ============================================================================
 
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const input: CreateVisitInput = {
       child_id: parseInt(req.body.child_id),
@@ -404,8 +536,6 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       head_circumference_percentile: validateOptionalNumber(req.body.head_circumference_percentile, 0, 100),
       bmi_value: validateOptionalNumber(req.body.bmi_value),
       bmi_percentile: validateOptionalNumber(req.body.bmi_percentile, 0, 100),
-      
-      illness_type: validateIllnessType(req.body.illness_type),
       symptoms: validateOptionalString(req.body.symptoms),
       temperature: validateOptionalNumber(req.body.temperature, 95, 110),
       end_date: validateOptionalDate(req.body.end_date),
@@ -416,15 +546,23 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       treatment: validateOptionalString(req.body.treatment),
       follow_up_date: validateOptionalDate(req.body.follow_up_date),
       
+      // Vision fields
+      vision_prescription: validateOptionalString(req.body.vision_prescription),
+      vision_refraction: validateVisionRefraction(req.body.vision_refraction),
+      ordered_glasses: req.body.ordered_glasses === true ? true : (req.body.ordered_glasses === false ? false : null),
+      ordered_contacts: req.body.ordered_contacts === true ? true : (req.body.ordered_contacts === false ? false : null),
+
       vaccines_administered: req.body.vaccines_administered,
       prescriptions: req.body.prescriptions,
-      
+
       notes: validateOptionalString(req.body.notes),
     };
 
-    // Validate: sick visits must have illness_type
-    if (input.visit_type === 'sick' && !input.illness_type) {
-      throw new BadRequestError('illness_type is required for sick visits');
+    // Support illnesses array (multiple illnesses)
+    const illnesses = validateIllnessesArray(req.body.illnesses);
+    // Validate: sick visits must provide at least one illness in the illnesses array
+    if (input.visit_type === 'sick' && (!illnesses || illnesses.length === 0)) {
+      throw new BadRequestError('At least one illness is required for sick visits');
     }
 
     // Validate: injury visits should have injury_type
@@ -441,64 +579,103 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       ? JSON.stringify(input.tags.filter(t => t && t.trim()))
       : null;
 
-    const result = await query<VisitRow>(
-      `INSERT INTO visits (
-        child_id, visit_date, visit_type, location, doctor_name, title,
-        weight_value, weight_ounces, weight_percentile,
-        height_value, height_percentile,
-        head_circumference_value, head_circumference_percentile,
-        bmi_value, bmi_percentile,
-        blood_pressure, heart_rate,
-        illness_type, symptoms, temperature, end_date,
-        injury_type, injury_location, treatment, follow_up_date,
-        vision_prescription, needs_glasses,
-        vaccines_administered, prescriptions, tags, notes
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6,
-        $7, $8, $9,
-        $10, $11,
-        $12, $13,
-        $14, $15,
-        $16, $17,
-        $18, $19, $20, $21,
-        $22, $23, $24, $25,
-        $26, $27,
-        $28, $29, $30, $31
-      ) RETURNING *`,
-      [
-        input.child_id, input.visit_date, input.visit_type, input.location, input.doctor_name, input.title,
-        input.weight_value, input.weight_ounces, input.weight_percentile,
-        input.height_value, input.height_percentile,
-        input.head_circumference_value, input.head_circumference_percentile,
-        input.bmi_value, input.bmi_percentile,
-        input.blood_pressure, input.heart_rate,
-        input.illness_type, input.symptoms, input.temperature, input.end_date,
-        input.injury_type, input.injury_location, input.treatment, input.follow_up_date,
-        input.vision_prescription, input.needs_glasses,
-        vaccines, prescriptions ? JSON.stringify(prescriptions) : null, tagsJson, input.notes,
-      ]
-    );
+    let result;
+    try {
+      result = await query<VisitRow>(
+        `INSERT INTO visits (
+          child_id, visit_date, visit_type, location, doctor_name, title,
+          weight_value, weight_ounces, weight_percentile,
+          height_value, height_percentile,
+          head_circumference_value, head_circumference_percentile,
+          bmi_value, bmi_percentile,
+          blood_pressure, heart_rate,
+            symptoms, temperature, end_date, injury_type,
+          injury_location, treatment, follow_up_date,
+          vision_prescription, vision_refraction, ordered_glasses, ordered_contacts,
+          vaccines_administered, prescriptions, tags, notes
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6,
+          $7, $8, $9,
+          $10, $11,
+          $12, $13,
+          $14, $15,
+          $16, $17,
+          $18, $19, $20, $21,
+          $22, $23, $24,
+          $25, $26, $27, $28,
+          $29, $30, $31, $32
+        ) RETURNING *`,
+        [
+          input.child_id, input.visit_date, input.visit_type, input.location, input.doctor_name, input.title,
+          input.weight_value, input.weight_ounces, input.weight_percentile,
+          input.height_value, input.height_percentile,
+          input.head_circumference_value, input.head_circumference_percentile,
+          input.bmi_value, input.bmi_percentile,
+          input.blood_pressure, input.heart_rate,
+          input.symptoms, input.temperature, input.end_date, input.injury_type,
+          input.injury_location, input.treatment, input.follow_up_date,
+          input.vision_prescription, input.vision_refraction ? JSON.stringify(input.vision_refraction) : null, input.ordered_glasses, input.ordered_contacts,
+          vaccines, prescriptions ? JSON.stringify(prescriptions) : null, tagsJson, input.notes,
+        ]
+      );
+    } catch (dbErr: unknown) {
+      // Log detailed info for debugging (do not leak to clients)
+      const e = dbErr as Partial<{ message: unknown; code: unknown; stack: unknown }>;
+      console.error('Failed to INSERT visit', {
+        message: e.message,
+        code: e.code,
+        stack: e.stack,
+        body: req.body,
+      });
+
+      // Provide clearer client-facing guidance for common schema mismatch
+      const msg = typeof e.message === 'string' && e.message.includes('more target columns')
+        ? 'Server error creating visit: database INSERT column/value count mismatch. Please check backend migrations and route parameter ordering.'
+        : 'Failed to create visit';
+
+      return next(new BadRequestError(msg));
+    }
 
     const visit = convertVisitRow(result.rows[0]);
 
+    // Persist illnesses into join table if provided
+    if (illnesses && illnesses.length > 0) {
+      const insertPromises = illnesses.map(ill => query(`INSERT INTO visit_illnesses (visit_id, illness_type) VALUES ($1, $2)`, [visit.id, ill]));
+      await Promise.all(insertPromises);
+      visit.illnesses = illnesses;
+    } else {
+      visit.illnesses = null;
+    }
+
+    // Insert history entry for visit creation
+    await query(
+      `INSERT INTO visit_history (visit_id, user_id, action, description)
+       VALUES ($1, $2, 'created', 'Visit created')`,
+      [visit.id, req.userId || null]
+    );
+
     // Auto-create illness entry if requested and visit is sick
-    if (input.create_illness && input.visit_type === 'sick' && input.illness_type) {
+    if (input.create_illness && input.visit_type === 'sick' && (Array.isArray(illnesses) && illnesses.length > 0)) {
       try {
-        await query(
-          `INSERT INTO illnesses (
-            child_id, illness_type, start_date, end_date, symptoms, temperature, visit_id, notes
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-          [
-            input.child_id,
-            input.illness_type,
-            input.visit_date,
-            input.end_date,
-            input.symptoms,
-            input.temperature,
-            visit.id,
-            input.notes,
-          ]
-        );
+        // Create illness entries for each illness selected (if multiple)
+        const toCreate = illnesses && illnesses.length > 0 ? illnesses : [];
+        for (const ill of toCreate) {
+          await query(
+            `INSERT INTO illnesses (
+              child_id, illness_type, start_date, end_date, symptoms, temperature, visit_id, notes
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [
+              input.child_id,
+              ill,
+              input.visit_date,
+              input.end_date,
+              input.symptoms,
+              input.temperature,
+              visit.id,
+              input.notes,
+            ]
+          );
+        }
       } catch (illnessError) {
         // Log error but don't fail the visit creation
         console.error('Failed to create illness from visit:', illnessError);
@@ -515,7 +692,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 // PUT /api/visits/:id - Update visit
 // ============================================================================
 
-router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -524,7 +701,7 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
 
     // Build dynamic update query
     const updates: string[] = [];
-    const values: any[] = [];
+    const values: unknown[] = [];
     let paramCount = 1;
 
     if (req.body.visit_date !== undefined) {
@@ -607,9 +784,10 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
       values.push(validateOptionalNumber(req.body.heart_rate, 40, 250));
     }
 
-    if (req.body.illness_type !== undefined) {
-      updates.push(`illness_type = $${paramCount++}`);
-      values.push(validateIllnessType(req.body.illness_type));
+    // If illnesses array is provided, we'll update the join table after the main update completes
+    let illnessesToSet: IllnessType[] | null = null;
+    if (req.body.illnesses !== undefined) {
+      illnessesToSet = validateIllnessesArray(req.body.illnesses);
     }
 
     if (req.body.symptoms !== undefined) {
@@ -654,9 +832,19 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
       values.push(validateOptionalString(req.body.vision_prescription));
     }
 
-    if (req.body.needs_glasses !== undefined) {
-      updates.push(`needs_glasses = $${paramCount++}`);
-      values.push(req.body.needs_glasses === true ? true : (req.body.needs_glasses === false ? false : null));
+    if (req.body.vision_refraction !== undefined) {
+      updates.push(`vision_refraction = $${paramCount++}`);
+      values.push(req.body.vision_refraction ? JSON.stringify(validateVisionRefraction(req.body.vision_refraction)) : null);
+    }
+
+    if (req.body.ordered_glasses !== undefined) {
+      updates.push(`ordered_glasses = $${paramCount++}`);
+      values.push(req.body.ordered_glasses === true ? true : (req.body.ordered_glasses === false ? false : null));
+    }
+
+    if (req.body.ordered_contacts !== undefined) {
+      updates.push(`ordered_contacts = $${paramCount++}`);
+      values.push(req.body.ordered_contacts === true ? true : (req.body.ordered_contacts === false ? false : null));
     }
 
     if (req.body.vaccines_administered !== undefined) {
@@ -673,7 +861,11 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
     if (req.body.tags !== undefined) {
       updates.push(`tags = $${paramCount++}`);
       const tagsArray = Array.isArray(req.body.tags) ? req.body.tags : [];
-      values.push(tagsArray.length > 0 ? JSON.stringify(tagsArray.filter((t: any) => t && String(t).trim())) : null);
+      values.push(
+        tagsArray.length > 0
+          ? JSON.stringify(tagsArray.filter((t: unknown) => t && String(t).trim()))
+          : null
+      );
     }
 
     if (req.body.notes !== undefined) {
@@ -699,7 +891,83 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
       throw new NotFoundError('Visit');
     }
 
-    res.json(createResponse(convertVisitRow(result.rows[0])));
+    const visit = convertVisitRow(result.rows[0]);
+
+    // If illnesses array provided, sync the join table to match the provided list
+    if (illnessesToSet !== null) {
+      await query(`DELETE FROM visit_illnesses WHERE visit_id = $1`, [id]);
+      if (illnessesToSet.length > 0) {
+        const insertPromises = illnessesToSet.map((ill: IllnessType) => query(`INSERT INTO visit_illnesses (visit_id, illness_type) VALUES ($1, $2)`, [id, ill]));
+        await Promise.all(insertPromises);
+        visit.illnesses = illnessesToSet;
+      } else {
+        visit.illnesses = null;
+      }
+    } else {
+      const existing = await query<{ illness_type: IllnessType }>(
+        `SELECT illness_type FROM visit_illnesses WHERE visit_id = $1`,
+        [id]
+      );
+      visit.illnesses = existing.rows.length > 0 ? existing.rows.map((r) => r.illness_type) : null;
+    }
+
+    // Insert history entry for visit update
+    await query(
+      `INSERT INTO visit_history (visit_id, user_id, action, description)
+       VALUES ($1, $2, 'updated', 'Visit updated')`,
+      [id, req.userId || null]
+    );
+
+    res.json(createResponse(visit));
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ============================================================================
+// GET /api/visits/:id/history - Get visit history
+// ============================================================================
+
+router.get('/:id/history', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new BadRequestError('Invalid visit ID');
+    }
+
+    const result = await query<{
+      id: number;
+      visit_id: number;
+      user_id: number | null;
+      action: string;
+      description: string;
+      created_at: Date;
+      user_name: string | null;
+    }>(
+      `SELECT 
+        vh.id,
+        vh.visit_id,
+        vh.user_id,
+        vh.action,
+        vh.description,
+        vh.created_at,
+        u.name as user_name
+       FROM visit_history vh
+       LEFT JOIN users u ON vh.user_id = u.id
+       WHERE vh.visit_id = $1
+       ORDER BY vh.created_at DESC`,
+      [id]
+    );
+
+    res.json(createResponse(result.rows.map(row => ({
+      id: row.id,
+      visit_id: row.visit_id,
+      user_id: row.user_id,
+      action: row.action,
+      description: row.description,
+      created_at: row.created_at.toISOString(),
+      user_name: row.user_name,
+    }))));
   } catch (error) {
     next(error);
   }
@@ -709,7 +977,7 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
 // DELETE /api/visits/:id - Delete visit
 // ============================================================================
 
-router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', async (req: ExpressRequest, res: Response, next: NextFunction) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {

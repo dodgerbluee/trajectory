@@ -10,24 +10,14 @@ import Notification from '../components/Notification';
 import LoadingSpinner from '../components/LoadingSpinner';
 import PrescriptionInput from '../components/PrescriptionInput';
 import VaccineInput from '../components/VaccineInput';
+import IllnessesInput from '../components/IllnessesInput';
 import VisitTypeModal from '../components/VisitTypeModal';
 import TagInput from '../components/TagInput';
 import FileUpload from '../components/FileUpload';
 import Checkbox from '../components/Checkbox';
+import { VisionRefractionCard, VisionRefraction } from '../components/VisionRefractionCard';
 
-const ILLNESS_TYPES: { value: IllnessType; label: string }[] = [
-  { value: 'flu', label: 'Flu' },
-  { value: 'strep', label: 'Strep Throat' },
-  { value: 'rsv', label: 'RSV' },
-  { value: 'covid', label: 'COVID-19' },
-  { value: 'cold', label: 'Cold' },
-  { value: 'stomach_bug', label: 'Stomach Bug' },
-  { value: 'ear_infection', label: 'Ear Infection' },
-  { value: 'hand_foot_mouth', label: 'Hand, Foot & Mouth' },
-  { value: 'croup', label: 'Croup' },
-  { value: 'pink_eye', label: 'Pink Eye' },
-  { value: 'other', label: 'Other' },
-];
+
 
 function AddVisitPage() {
   const { childId: childIdFromUrl } = useParams<{ childId?: string }>();
@@ -63,7 +53,6 @@ function AddVisitPage() {
     bmi_percentile: null,
     blood_pressure: null,
     heart_rate: null,
-    illness_type: null,
     symptoms: null,
     temperature: null,
     end_date: null,
@@ -72,13 +61,18 @@ function AddVisitPage() {
     treatment: null,
     follow_up_date: null,
     vision_prescription: null,
-    needs_glasses: null,
+    ordered_glasses: null,
+    ordered_contacts: null,
+    vision_refraction: { od: { sphere: null, cylinder: null, axis: null }, os: { sphere: null, cylinder: null, axis: null }, notes: undefined } as any,
     vaccines_administered: [],
     prescriptions: [],
     tags: [],
     notes: null,
     create_illness: false,
   });
+
+  // Support multiple illnesses client-side (kept simple and compatible)
+  const [selectedIllnesses, setSelectedIllnesses] = useState<IllnessType[]>([]);
 
   const [recentLocations, setRecentLocations] = useState<string[]>([]);
   const [recentDoctors, setRecentDoctors] = useState<string[]>([]);
@@ -91,6 +85,14 @@ function AddVisitPage() {
       setShowVisitTypeModal(true);
     }
   }, [visitTypeFromUrl]);
+
+  // Determine origin for back/cancel navigation
+  const fromState = (location.state || {}) as any;
+  const originFrom = typeof fromState.from === 'string' ? fromState.from : null;
+  const originFromTab = fromState.fromTab as string | undefined; // e.g. 'visits' when returning to home tab
+  const originFromChild = !!fromState.fromChild;
+  const originChildId = fromState.childId ? parseInt(fromState.childId) : (childIdFromUrl ? parseInt(childIdFromUrl) : null);
+  const originFromVisits = !!fromState.fromVisits;
 
   useEffect(() => {
     // Set initial child selection
@@ -153,8 +155,8 @@ function AddVisitPage() {
     e.preventDefault();
 
     // Validation
-    if (formData.visit_type === 'sick' && !formData.illness_type) {
-      setNotification({ message: 'Please select an illness type for sick visits', type: 'error' });
+    if (formData.visit_type === 'sick' && selectedIllnesses.length === 0) {
+      setNotification({ message: 'Please select at least one illness for sick visits', type: 'error' });
       return;
     }
 
@@ -166,6 +168,11 @@ function AddVisitPage() {
     setSubmitting(true);
 
     try {
+      // ensure formData.illness_type remains compatible with API (use first selected illness)
+      if (formData.visit_type === 'sick') {
+        // send full illnesses array (no legacy `illness_type`)
+        (formData as any).illnesses = selectedIllnesses.length > 0 ? selectedIllnesses : null;
+      }
       // Create the visit first
       const response = await visitsApi.create(formData);
       const visitId = response.data.id;
@@ -221,12 +228,15 @@ function AddVisitPage() {
     );
   }
 
+  const backLink = originFromChild && originChildId ? `/children/${originChildId}` : (originFromVisits || originFromTab ? '/' : (childIdFromUrl ? `/children/${childIdFromUrl}` : '/'));
+  const backState = (originFromVisits || originFromTab) ? { tab: originFromTab || 'visits' } : undefined;
+
   return (
     <div className="page-container">
       <div className="page-header">
         <div>
-          <Link to="/" className="breadcrumb">
-            ← Back to Home
+          <Link to={backLink} state={backState} className="breadcrumb">
+            ← Back
           </Link>
           <h1>Add Visit</h1>
         </div>
@@ -312,14 +322,9 @@ function AddVisitPage() {
             {formData.visit_type === 'sick' && (
               <div className="visit-detail-section">
                 <h3 className="visit-detail-section-title">Illness Information</h3>
-                <FormField
-                  label="Illness Type"
-                  type="select"
-                  value={formData.illness_type || ''}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, illness_type: e.target.value as IllnessType })}
-                  required
-                  disabled={submitting}
-                  options={[{ value: '', label: 'Select illness type...' }, ...ILLNESS_TYPES]}
+                <IllnessesInput
+                  value={selectedIllnesses}
+                  onChange={(ills) => setSelectedIllnesses(ills)}
                 />
 
                 <FormField
@@ -353,7 +358,7 @@ function AddVisitPage() {
                   min={formData.visit_date}
                 />
 
-                {formData.illness_type && (
+                {selectedIllnesses.length > 0 && (
                   <div className="form-field">
                     <label className="form-field-label">
                       <input
@@ -552,22 +557,28 @@ function AddVisitPage() {
             {formData.visit_type === 'vision' && (
               <div className="visit-detail-section">
                 <h3 className="visit-detail-section-title">Vision Information</h3>
-                <FormField
-                  label="Vision Prescription"
-                  type="textarea"
-                  value={formData.vision_prescription || ''}
-                  onChange={(e) => setFormData({ ...formData, vision_prescription: e.target.value || null })}
-                  disabled={submitting}
-                  placeholder="e.g., OD: -2.00, OS: -1.75"
-                  rows={3}
+                <VisionRefractionCard
+                  value={formData.vision_refraction as any}
+                  onChange={(v: VisionRefraction) => setFormData({ ...formData, vision_refraction: v })}
+                  readOnly={submitting}
                 />
 
-                <Checkbox
-                  label="Needs Glasses"
-                  checked={formData.needs_glasses || false}
-                  onChange={(checked) => setFormData({ ...formData, needs_glasses: checked })}
-                  disabled={submitting}
-                />
+                <div style={{ marginTop: '12px' }}>
+                  <Checkbox
+                    label="Ordered Glasses"
+                    checked={formData.ordered_glasses || false}
+                    onChange={(checked) => setFormData({ ...formData, ordered_glasses: checked })}
+                    disabled={submitting}
+                  />
+                  <div style={{ marginTop: '8px' }}>
+                    <Checkbox
+                      label="Ordered Contacts"
+                      checked={formData.ordered_contacts || false}
+                      onChange={(checked) => setFormData({ ...formData, ordered_contacts: checked })}
+                      disabled={submitting}
+                    />
+                  </div>
+                </div>
               </div>
             )}
 
@@ -662,11 +673,26 @@ function AddVisitPage() {
           <Button type="submit" disabled={submitting}>
             {submitting ? 'Adding Visit...' : 'Add Visit'}
           </Button>
-          <Link to="/">
-            <Button type="button" variant="secondary" disabled={submitting}>
-              Cancel
-            </Button>
-          </Link>
+          <Button 
+            type="button" 
+            variant="secondary" 
+            disabled={submitting}
+            onClick={() => {
+              if (originFromTab || originFromVisits) {
+                navigate('/', { state: { tab: originFromTab || 'visits' } });
+              } else if (originFrom) {
+                navigate(originFrom);
+              } else if (originFromChild && originChildId) {
+                navigate(`/children/${originChildId}`);
+              } else if (childIdFromUrl) {
+                navigate(`/children/${childIdFromUrl}`);
+              } else {
+                navigate('/', { state: { tab: 'visits' } });
+              }
+            }}
+          >
+            Cancel
+          </Button>
         </div>
       </form>
 
@@ -678,11 +704,14 @@ function AddVisitPage() {
         }}
         onClose={() => {
           setShowVisitTypeModal(false);
-          // Navigate back to where we came from, or to home if no origin
-          if ((location.state as any)?.fromChild && (location.state as any)?.childId) {
+          if (originFromTab || originFromVisits) {
+            navigate('/', { state: { tab: originFromTab || 'visits' } });
+          } else if (originFrom) {
+            navigate(originFrom);
+          } else if ((location.state as any)?.fromChild && (location.state as any)?.childId) {
             navigate(`/children/${(location.state as any).childId}`);
           } else {
-            navigate('/');
+            navigate('/', { state: { tab: 'visits' } });
           }
         }}
       />

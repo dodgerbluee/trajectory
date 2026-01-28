@@ -72,7 +72,7 @@ export interface CreateChildInput {
   name: string;
   date_of_birth: string;
   gender: Gender;
-  avatar?: string;
+  // `illnesses` is the canonical list of illnesses; legacy single `illness_type` removed
   notes?: string;
   due_date?: string | null;
   birth_weight?: number | null;
@@ -158,6 +158,18 @@ export interface Prescription {
   notes?: string;
 }
 
+export type EyeRefraction = {
+  sphere: number | null;
+  cylinder: number | null;
+  axis: number | null;
+};
+
+export type VisionRefraction = {
+  od: EyeRefraction;
+  os: EyeRefraction;
+  notes?: string;
+};
+
 export interface Visit {
   id: number;
   child_id: number;
@@ -182,6 +194,8 @@ export interface Visit {
   
   // Sick visit
   illness_type: IllnessType | null;
+  // New: multiple illnesses associated with this visit
+  illnesses?: IllnessType[] | null;
   symptoms: string | null;
   temperature: number | null;
   end_date: string | null;
@@ -194,6 +208,9 @@ export interface Visit {
   
   // Vision visit
   vision_prescription: string | null;
+  vision_refraction?: VisionRefraction | null;
+  ordered_glasses: boolean | null;
+  ordered_contacts: boolean | null;
   needs_glasses: boolean | null;
   
   // Medical
@@ -226,7 +243,8 @@ export interface CreateVisitInput {
   blood_pressure?: string | null;
   heart_rate?: number | null;
   
-  illness_type?: IllnessType | null;
+  // illnesses array is used instead of single illness_type
+  illnesses?: IllnessType[] | null;
   symptoms?: string | null;
   temperature?: number | null;
   end_date?: string | null;
@@ -239,6 +257,9 @@ export interface CreateVisitInput {
   
   // Vision visit fields
   vision_prescription?: string | null;
+  vision_refraction?: VisionRefraction | null;
+  ordered_glasses?: boolean | null;
+  ordered_contacts?: boolean | null;
   needs_glasses?: boolean | null;
   
   vaccines_administered?: string[] | null;
@@ -269,6 +290,7 @@ export interface UpdateVisitInput {
   heart_rate?: number | null;
   
   illness_type?: IllnessType | null;
+  illnesses?: IllnessType[] | null;
   symptoms?: string | null;
   temperature?: number | null;
   end_date?: string | null;
@@ -281,6 +303,9 @@ export interface UpdateVisitInput {
   
   // Vision visit fields
   vision_prescription?: string | null;
+  vision_refraction?: VisionRefraction | null;
+  ordered_glasses?: boolean | null;
+  ordered_contacts?: boolean | null;
   needs_glasses?: boolean | null;
   
   vaccines_administered?: string[] | null;

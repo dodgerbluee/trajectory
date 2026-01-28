@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { visitsApi, childrenApi, ApiClientError } from '../lib/api-client';
 import type { Visit, Child, VisitAttachment } from '../types/api';
@@ -9,11 +9,15 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import Notification from '../components/Notification';
 import VisitAttachmentsList from '../components/VisitAttachmentsList';
+import Tabs from '../components/Tabs';
+import { useAuth } from '../contexts/AuthContext';
+import { VisionRefractionCard } from '../components/VisionRefractionCard';
 
 function VisitDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   
   const [visit, setVisit] = useState<Visit | null>(null);
   const [child, setChild] = useState<Child | null>(null);
@@ -23,12 +27,30 @@ function VisitDetailPage() {
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [attachments, setAttachments] = useState<VisitAttachment[]>([]);
   const [loadingAttachments, setLoadingAttachments] = useState(false);
+  const [activeTab, setActiveTab] = useState<'visit' | 'history' | 'attachments'>('visit');
+
+  // Reset active tab if attachments tab is removed and we're on it
+  useEffect(() => {
+    if (activeTab === 'attachments' && attachments.length === 0) {
+      setActiveTab('visit');
+    }
+  }, [attachments.length, activeTab]);
+  const [history, setHistory] = useState<Array<{
+    id: number;
+    visit_id: number;
+    user_id: number | null;
+    action: 'created' | 'updated' | 'attachment_uploaded';
+    description: string;
+    created_at: string;
+    user_name: string | null;
+  }>>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
     if (id) {
       loadVisit();
     }
-  }, [id]);
+  }, [id, location.key]);
 
   const loadVisit = async () => {
     try {
@@ -41,8 +63,11 @@ function VisitDetailPage() {
       const childResponse = await childrenApi.getById(visitResponse.data.child_id);
       setChild(childResponse.data);
       
-      // Load attachments
-      await loadAttachments(parseInt(id!));
+      // Load attachments and history
+      await Promise.all([
+        loadAttachments(parseInt(id!)),
+        loadHistory(parseInt(id!))
+      ]);
     } catch (err) {
       if (err instanceof ApiClientError) {
         setError(err.message);
@@ -66,8 +91,31 @@ function VisitDetailPage() {
     }
   };
 
+  const loadHistory = async (visitId: number) => {
+    try {
+      setLoadingHistory(true);
+      const response = await visitsApi.getHistory(visitId);
+      setHistory(response.data);
+    } catch (error) {
+      console.error('Failed to load history:', error);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
   const handleAttachmentDelete = (attachmentId: number) => {
-    setAttachments(attachments.filter(a => a.id !== attachmentId));
+    const updatedAttachments = attachments.filter(a => a.id !== attachmentId);
+    setAttachments(updatedAttachments);
+    
+    // If we deleted the last attachment and we're on the attachments tab, switch to visit tab
+    if (updatedAttachments.length === 0 && activeTab === 'attachments') {
+      setActiveTab('visit');
+    }
+    
+    // Reload history to reflect attachment deletion
+    if (id) {
+      loadHistory(parseInt(id));
+    }
   };
 
   const handleDelete = async () => {
@@ -106,33 +154,6 @@ function VisitDetailPage() {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <div>
-          <Link to={`/children/${visit.child_id}`} className="breadcrumb">
-            ← Back to {child.name}
-          </Link>
-          <h1>
-            {visit.visit_type === 'wellness' ? '📋 Wellness' : 
-             visit.visit_type === 'sick' ? '🤒 Sick' : 
-             visit.visit_type === 'injury' ? '🩹 Injury' :
-             visit.visit_type === 'vision' ? '👁️ Vision' :
-             'Visit'} Visit
-          </h1>
-          <p className="page-subtitle">{formatDate(visit.visit_date)}</p>
-        </div>
-        <div className="page-actions">
-          <Link 
-            to={`/visits/${visit.id}/edit`}
-            state={{ childId: visit.child_id, fromChild: (location.state as any)?.fromChild || false }}
-          >
-            <Button variant="secondary">Edit Visit</Button>
-          </Link>
-          <Button variant="danger" onClick={handleDelete} disabled={deleting}>
-            {deleting ? 'Deleting...' : 'Delete Visit'}
-          </Button>
-        </div>
-      </div>
-
       {notification && (
         <Notification
           message={notification.message}
@@ -141,241 +162,284 @@ function VisitDetailPage() {
         />
       )}
 
-      <Card title="Visit Details">
+      <Card>
         <div className="visit-detail-body">
-          {/* Basic Information Section */}
-          <div className="visit-detail-section">
-            <h3 className="visit-detail-section-title">Basic Information</h3>
-            <div className="detail-grid">
-              <div className="detail-item">
-                <strong>Date:</strong>
-                <span>{formatDate(visit.visit_date)}</span>
-              </div>
-              <div className="detail-item">
-                <strong>Type:</strong>
-                <span>
-                  {visit.visit_type === 'wellness' ? 'Wellness Visit' : 
-                   visit.visit_type === 'sick' ? 'Sick Visit' : 
-                   visit.visit_type === 'injury' ? 'Injury Visit' :
-                   'Vision Visit'}
-                </span>
-              </div>
-              {visit.visit_type === 'wellness' && visit.title && (
-                <div className="detail-item">
-                  <strong>Title:</strong>
-                  <span className="wellness-title-badge">{visit.title}</span>
-                </div>
-              )}
-              {visit.location && (
-                <div className="detail-item">
-                  <strong>Location:</strong>
-                  <span>{visit.location}</span>
-                </div>
-              )}
-              {visit.doctor_name && (
-                <div className="detail-item">
-                  <strong>Doctor:</strong>
-                  <span>{visit.doctor_name}</span>
-                </div>
-              )}
+          {/* Header with Back button and Actions */}
+          <div className="visit-detail-header">
+            <Link to={`/children/${visit.child_id}`} className="breadcrumb">
+              ← Back to {child.name}
+            </Link>
+            <div className="visit-detail-actions">
+              <Link 
+                to={`/visits/${visit.id}/edit`}
+                state={{ childId: visit.child_id, fromChild: (location.state as any)?.fromChild || false }}
+              >
+                <Button variant="secondary" size="sm">Edit Visit</Button>
+              </Link>
+              <Button variant="danger" size="sm" onClick={handleDelete} disabled={deleting}>
+                {deleting ? 'Deleting...' : 'Delete Visit'}
+              </Button>
             </div>
-            {visit.tags && visit.tags.length > 0 && (
-              <div className="visit-tags">
-                {visit.tags.map((tag, index) => (
-                  <span key={index} className="tag-badge">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
 
-          {/* Illness/Injury Information Section */}
-          {visit.visit_type === 'sick' && (
-            <div className="visit-detail-section">
-              <h3 className="visit-detail-section-title">Illness Information</h3>
-              <div className="detail-grid">
-                <div className="detail-item">
-                  <strong>Illness Type:</strong>
-                  <span>{visit.illness_type?.replace('_', ' ')}</span>
-                </div>
-                {visit.temperature && (
-                  <div className="detail-item">
-                    <strong>Temperature:</strong>
-                    <span>{visit.temperature}°F</span>
-                  </div>
-                )}
-                {visit.end_date && (
-                  <div className="detail-item">
-                    <strong>Resolved:</strong>
-                    <span>{formatDate(visit.end_date)}</span>
-                  </div>
-                )}
-              </div>
-              {visit.symptoms && (
-                <div className="detail-item">
-                  <strong>Symptoms:</strong>
-                  <p>{visit.symptoms}</p>
-                </div>
-              )}
-            </div>
-          )}
+          {/* Visit Header */}
+          <div className="visit-header-section">
+            <h2 className="visit-header-title">
+              {visit.visit_type === 'wellness' ? 'Wellness Visit' : 
+               visit.visit_type === 'sick' ? 'Sick Visit' : 
+               visit.visit_type === 'injury' ? 'Injury Visit' :
+               'Vision Visit'}
+            </h2>
+            <p className="visit-header-date">{formatDate(visit.visit_date)}</p>
+          </div>
 
-          {visit.visit_type === 'injury' && (
-            <div className="visit-detail-section">
-              <h3 className="visit-detail-section-title">Injury Information</h3>
-              <div className="detail-grid">
-                {visit.injury_type && (
-                  <div className="detail-item">
-                    <strong>Injury Type:</strong>
-                    <span>{visit.injury_type}</span>
-                  </div>
-                )}
-                {visit.injury_location && (
-                  <div className="detail-item">
-                    <strong>Location:</strong>
-                    <span>{visit.injury_location}</span>
-                  </div>
-                )}
-                {visit.follow_up_date && (
-                  <div className="detail-item">
-                    <strong>Follow-up Date:</strong>
-                    <span>{formatDate(visit.follow_up_date)}</span>
-                  </div>
-                )}
-              </div>
-              {visit.treatment && (
-                <div className="detail-item">
-                  <strong>Treatment:</strong>
-                  <p>{visit.treatment}</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {visit.visit_type === 'vision' && (
-            <div className="visit-detail-section">
-              <h3 className="visit-detail-section-title">Vision Information</h3>
-              <div className="detail-grid">
-                {visit.vision_prescription && (
-                  <div className="detail-item">
-                    <strong>Prescription:</strong>
-                    <p>{visit.vision_prescription}</p>
-                  </div>
-                )}
-                <div className="detail-item">
-                  <strong>Needs Glasses:</strong>
-                  <span>{visit.needs_glasses ? 'Yes' : 'No'}</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Measurements Section */}
-          {(visit.weight_value || visit.height_value || visit.head_circumference_value || visit.bmi_value || visit.blood_pressure || visit.heart_rate) && (
-            <div className="visit-detail-section">
-              <h3 className="visit-detail-section-title">Measurements</h3>
-              <div className="measurements-grid">
-                {visit.weight_value && (
-                  <div className="measurement-item">
-                    <div className="measurement-label">Weight</div>
-                    <div className="measurement-value">
-                      {visit.weight_value} {visit.weight_ounces ? `+ ${visit.weight_ounces} oz` : 'lbs'}
+          <Tabs
+            activeTab={activeTab}
+            onTabChange={(tabId) => setActiveTab(tabId as 'visit' | 'history' | 'attachments')}
+            tabs={[
+              {
+                id: 'visit',
+                label: 'Visit',
+                content: (
+                  <div className="visit-tab-content">
+                    {/* Basic Information - Stacked Vertically */}
+                    <div className="visit-info-stacked">
+                      {visit.visit_type === 'wellness' && visit.title && (
+                        <div className="visit-info-item">
+                          <span className="visit-info-label">Title:</span>
+                          <span className="visit-title-badge">{visit.title}</span>
+                        </div>
+                      )}
+                      {visit.location && (
+                        <div className="visit-info-item">
+                          <span className="visit-info-label">Location:</span>
+                          <span className="visit-info-value">{visit.location}</span>
+                        </div>
+                      )}
+                      {visit.doctor_name && (
+                        <div className="visit-info-item">
+                          <span className="visit-info-label">Doctor:</span>
+                          <span className="visit-info-value">{visit.doctor_name}</span>
+                        </div>
+                      )}
                     </div>
-                    {visit.weight_percentile && (
-                      <div className="measurement-percentile">{visit.weight_percentile}th %ile</div>
+                    {visit.tags && visit.tags.length > 0 && (
+                      <div className="visit-tags">
+                        {visit.tags.map((tag, index) => (
+                          <span key={index} className="tag-badge">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Illness/Injury/Vision Information */}
+                    {visit.visit_type === 'sick' && (
+                      <div className="visit-info-stacked">
+                        {visit.illnesses && visit.illnesses.length > 0 && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Illnesses:</span>
+                            <span className="visit-info-value">{visit.illnesses.map(i => i.replace('_', ' ')).join(', ')}</span>
+                          </div>
+                        )}
+                        {visit.temperature && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Temperature:</span>
+                            <span className="visit-info-value">{visit.temperature}°F</span>
+                          </div>
+                        )}
+                        {visit.end_date && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Resolved:</span>
+                            <span className="visit-info-value">{formatDate(visit.end_date)}</span>
+                          </div>
+                        )}
+                        {visit.symptoms && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Symptoms:</span>
+                            <span className="visit-info-value">{visit.symptoms}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {visit.visit_type === 'injury' && (
+                      <div className="visit-info-stacked">
+                        {visit.injury_type && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Injury Type:</span>
+                            <span className="visit-info-value">{visit.injury_type}</span>
+                          </div>
+                        )}
+                        {visit.injury_location && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Injury Location:</span>
+                            <span className="visit-info-value">{visit.injury_location}</span>
+                          </div>
+                        )}
+                        {visit.follow_up_date && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Follow-up Date:</span>
+                            <span className="visit-info-value">{formatDate(visit.follow_up_date)}</span>
+                          </div>
+                        )}
+                        {visit.treatment && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Treatment:</span>
+                            <span className="visit-info-value">{visit.treatment}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {visit.visit_type === 'vision' && (
+                      <div className="visit-info-stacked">
+                        {(visit as any).vision_refraction ? (
+                          <div className="visit-info-item">
+                            <VisionRefractionCard value={(visit as any).vision_refraction} onChange={() => {}} readOnly />
+                          </div>
+                        ) : visit.vision_prescription ? (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">👁️ Prescription:</span>
+                            <span className="visit-info-value">{visit.vision_prescription}</span>
+                          </div>
+                        ) : null}
+                        <div className="visit-info-item">
+                          <span className="visit-info-label">Ordered Glasses:</span>
+                          <span className="visit-info-value">{(visit as any).ordered_glasses ? 'Yes' : 'No'}</span>
+                        </div>
+                        <div className="visit-info-item">
+                          <span className="visit-info-label">Ordered Contacts:</span>
+                          <span className="visit-info-value">{(visit as any).ordered_contacts ? 'Yes' : 'No'}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Measurements Section */}
+                    {(visit.weight_value || visit.height_value || visit.head_circumference_value || visit.bmi_value || visit.blood_pressure || visit.heart_rate) && (
+                      <div className="visit-measurements-section">
+                        <h3 className="visit-section-header">Measurements</h3>
+                        <div className="visit-measurements-grid">
+                          {visit.weight_value && (
+                            <div className="measurement-card">
+                              <div className="measurement-card-label">Weight</div>
+                              <div className="measurement-card-value">
+                                {visit.weight_value}{visit.weight_ounces ? ` + ${visit.weight_ounces}oz` : 'lbs'}
+                              </div>
+                              {visit.weight_percentile && (
+                                <div className="measurement-card-percentile">{visit.weight_percentile}th %ile</div>
+                              )}
+                            </div>
+                          )}
+                          {visit.height_value && (
+                            <div className="measurement-card">
+                              <div className="measurement-card-label">Height</div>
+                              <div className="measurement-card-value">{visit.height_value}"</div>
+                              {visit.height_percentile && (
+                                <div className="measurement-card-percentile">{visit.height_percentile}th %ile</div>
+                              )}
+                            </div>
+                          )}
+                          {visit.head_circumference_value && (
+                            <div className="measurement-card">
+                              <div className="measurement-card-label">Head Circ</div>
+                              <div className="measurement-card-value">{visit.head_circumference_value}"</div>
+                              {visit.head_circumference_percentile && (
+                                <div className="measurement-card-percentile">{visit.head_circumference_percentile}th %ile</div>
+                              )}
+                            </div>
+                          )}
+                          {visit.bmi_value && (
+                            <div className="measurement-card">
+                              <div className="measurement-card-label">BMI</div>
+                              <div className="measurement-card-value">{visit.bmi_value}</div>
+                              {visit.bmi_percentile && (
+                                <div className="measurement-card-percentile">{visit.bmi_percentile}th %ile</div>
+                              )}
+                            </div>
+                          )}
+                          {visit.blood_pressure && (
+                            <div className="measurement-card">
+                              <div className="measurement-card-label">Blood Pressure</div>
+                              <div className="measurement-card-value">{visit.blood_pressure}</div>
+                            </div>
+                          )}
+                          {visit.heart_rate && (
+                            <div className="measurement-card">
+                              <div className="measurement-card-label">Heart Rate</div>
+                              <div className="measurement-card-value">{visit.heart_rate} bpm</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Compact Vaccines */}
+                    {visit.vaccines_administered && visit.vaccines_administered.length > 0 && (
+                      <div className="visit-vaccines-compact">
+                        <span className="visit-vaccines-label">Vaccines:</span>
+                        <div className="visit-vaccines-badges">
+                          {visit.vaccines_administered.map((vaccine, index) => (
+                            <span key={index} className="vaccine-badge-compact">
+                              {vaccine}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Prescriptions */}
+                    {visit.prescriptions && visit.prescriptions.length > 0 && (
+                      <div className="visit-prescriptions-compact">
+                        {visit.prescriptions.map((rx, index) => (
+                          <div key={index} className="prescription-compact">
+                            <strong>{rx.medication}</strong> - {rx.dosage} for {rx.duration}
+                            {rx.notes && <span className="prescription-notes"> ({rx.notes})</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Notes */}
+                    {visit.notes && (
+                      <div className="visit-notes-section">
+                        <h3 className="visit-section-header">Notes</h3>
+                        <p className="visit-notes-text">{visit.notes}</p>
+                      </div>
                     )}
                   </div>
-                )}
-                {visit.height_value && (
-                  <div className="measurement-item">
-                    <div className="measurement-label">Height</div>
-                    <div className="measurement-value">{visit.height_value}"</div>
-                    {visit.height_percentile && (
-                      <div className="measurement-percentile">{visit.height_percentile}th %ile</div>
+                ),
+              },
+              {
+                id: 'history',
+                label: 'History',
+                content: (
+                  <div className="visit-history-tab">
+                    <VisitHistory history={history} loading={loadingHistory} user={user} />
+                  </div>
+                ),
+              },
+              ...(attachments.length > 0 ? [{
+                id: 'attachments',
+                label: 'Attachments',
+                content: (
+                  <div className="visit-attachments-tab">
+                    {loadingAttachments ? (
+                      <div className="attachments-loading">Loading attachments...</div>
+                    ) : (
+                      <VisitAttachmentsList
+                        attachments={attachments}
+                        onDelete={handleAttachmentDelete}
+                        readOnly={false}
+                        visitId={visit.id}
+                        onUpdate={() => loadAttachments(visit.id)}
+                      />
                     )}
                   </div>
-                )}
-                {visit.head_circumference_value && (
-                  <div className="measurement-item">
-                    <div className="measurement-label">Head Circ.</div>
-                    <div className="measurement-value">{visit.head_circumference_value}"</div>
-                    {visit.head_circumference_percentile && (
-                      <div className="measurement-percentile">{visit.head_circumference_percentile}th %ile</div>
-                    )}
-                  </div>
-                )}
-                {visit.bmi_value && (
-                  <div className="measurement-item">
-                    <div className="measurement-label">BMI</div>
-                    <div className="measurement-value">{visit.bmi_value}</div>
-                    {visit.bmi_percentile && (
-                      <div className="measurement-percentile">{visit.bmi_percentile}th %ile</div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Vaccines Section */}
-          {visit.vaccines_administered && visit.vaccines_administered.length > 0 && (
-            <div className="visit-detail-section">
-              <h3 className="visit-detail-section-title">Vaccines Administered</h3>
-              <div className="vaccines-list">
-                {visit.vaccines_administered.map((vaccine, index) => (
-                  <span key={index} className="vaccine-badge">
-                    💉 {vaccine}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Prescriptions Section */}
-          {visit.prescriptions && visit.prescriptions.length > 0 && (
-            <div className="visit-detail-section">
-              <h3 className="visit-detail-section-title">Prescriptions</h3>
-              {visit.prescriptions.map((rx, index) => (
-                <div key={index} className="prescription-detail">
-                  <h4>{rx.medication}</h4>
-                  <p><strong>Dosage:</strong> {rx.dosage}</p>
-                  <p><strong>Duration:</strong> {rx.duration}</p>
-                  {rx.notes && <p><strong>Notes:</strong> {rx.notes}</p>}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Notes Section */}
-          {visit.notes && (
-            <div className="visit-detail-section">
-              <h3 className="visit-detail-section-title">Notes</h3>
-              <p>{visit.notes}</p>
-            </div>
-          )}
-
-          {/* Attachments Section */}
-          <div className="visit-detail-section">
-            <h3 className="visit-detail-section-title">Attachments</h3>
-            {loadingAttachments ? (
-              <div className="attachments-loading">Loading attachments...</div>
-            ) : (
-              <VisitAttachmentsList
-                attachments={attachments}
-                onDelete={handleAttachmentDelete}
-                readOnly={false}
-                visitId={visit.id}
-                onUpdate={() => loadAttachments(visit.id)}
-              />
-            )}
-          </div>
-
-          {/* History Section */}
-          <div className="visit-detail-section">
-            <h3 className="visit-detail-section-title">History</h3>
-            <VisitHistory visit={visit} attachments={attachments} />
-          </div>
+                ),
+              }] : []),
+            ]}
+          />
         </div>
       </Card>
     </div>
@@ -383,58 +447,38 @@ function VisitDetailPage() {
 }
 
 interface VisitHistoryProps {
-  visit: Visit;
-  attachments: VisitAttachment[];
+  history: Array<{
+    id: number;
+    visit_id: number;
+    user_id: number | null;
+    action: 'created' | 'updated' | 'attachment_uploaded';
+    description: string;
+    created_at: string;
+    user_name: string | null;
+  }>;
+  loading: boolean;
+  user: { name: string } | null;
 }
 
-function VisitHistory({ visit, attachments }: VisitHistoryProps) {
-  const historyEntries = useMemo(() => {
-    const entries: Array<{ type: 'created' | 'updated' | 'attachment'; date: string; description: string }> = [];
+function VisitHistory({ history, loading, user }: VisitHistoryProps) {
+  if (loading) {
+    return <div className="visit-history-loading">Loading history...</div>;
+  }
 
-    // Visit creation
-    entries.push({
-      type: 'created',
-      date: visit.created_at,
-      description: 'Visit created',
-    });
-
-    // Visit updates (if updated_at is different from created_at)
-    if (visit.updated_at && visit.updated_at !== visit.created_at) {
-      entries.push({
-        type: 'updated',
-        date: visit.updated_at,
-        description: 'Visit updated',
-      });
-    }
-
-    // Document uploads
-    attachments.forEach(attachment => {
-      entries.push({
-        type: 'attachment',
-        date: attachment.created_at,
-        description: `Document uploaded: ${attachment.original_filename}`,
-      });
-    });
-
-    // Sort by date (most recent first)
-    return entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [visit, attachments]);
-
-  if (historyEntries.length === 0) {
+  if (history.length === 0) {
     return <div className="visit-history-empty">No history available</div>;
   }
 
   return (
-    <div className="visit-history-list">
-      {historyEntries.map((entry, index) => (
-        <div key={index} className="visit-history-entry">
-          <div className="visit-history-icon">
-            {entry.type === 'created' ? '➕' : entry.type === 'updated' ? '✏️' : '📎'}
-          </div>
-          <div className="visit-history-content">
-            <div className="visit-history-description">{entry.description}</div>
-            <div className="visit-history-date">{formatDateTime(entry.date)}</div>
-          </div>
+    <div className="visit-history-list-compact">
+      {history.map((entry) => (
+        <div key={entry.id} className="visit-history-entry-compact">
+          <span className="visit-history-icon-compact">
+            {entry.action === 'created' ? '➕' : entry.action === 'updated' ? '✏️' : '📎'}
+          </span>
+          <span className="visit-history-description-compact">{entry.description}</span>
+          <span className="visit-history-date-compact">{formatDateTime(entry.created_at)}</span>
+          <span className="visit-history-user-compact">{entry.user_name || user?.name || 'Unknown'}</span>
         </div>
       ))}
     </div>
