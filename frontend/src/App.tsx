@@ -8,16 +8,13 @@ import RegisterPage from './pages/RegisterPage';
 import ChildDetailPage from './pages/ChildDetailPage';
 import AddChildPage from './pages/AddChildPage';
 import EditChildPage from './pages/EditChildPage';
-import GrowthChartsPage from './pages/GrowthChartsPage';
 import AddVisitPage from './pages/AddVisitPage';
 import EditVisitPage from './pages/EditVisitPage';
 import VisitDetailPage from './pages/VisitDetailPage';
 import FamilyManagementPage from './pages/FamilyManagementPage';
 import SettingsPage from './pages/SettingsPage';
-import IllnessesPage from './pages/IllnessesPage';
 import AddIllnessPage from './pages/AddIllnessPage';
 import EditIllnessPage from './pages/EditIllnessPage';
-import MetricsPage from './pages/MetricsPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
@@ -39,7 +36,6 @@ function App() {
                   <Route path="/children/new" element={<AddChildPage />} />
                   <Route path="/children/:id" element={<ChildDetailPage />} />
                   <Route path="/children/:id/edit" element={<EditChildPage />} />
-                  <Route path="/children/:id/growth" element={<GrowthChartsPage />} />
                   
                   {/* Unified Visit Routes */}
                   <Route path="/visits/new" element={<AddVisitPage />} />
@@ -47,13 +43,10 @@ function App() {
                   <Route path="/visits/:id" element={<VisitDetailPage />} />
                   <Route path="/visits/:id/edit" element={<EditVisitPage />} />
                   
-                  {/* Illnesses */}
-                  <Route path="/illnesses" element={<IllnessesPage />} />
+                  {/* Illnesses: use home page illnesses tab */}
+                  <Route path="/illnesses" element={<HomePage />} />
                   <Route path="/illnesses/new" element={<AddIllnessPage />} />
                   <Route path="/illnesses/:id/edit" element={<EditIllnessPage />} />
-                  
-                  {/* Metrics */}
-                  <Route path="/metrics" element={<MetricsPage />} />
                   
                   {/* Management & Settings */}
                   <Route path="/family" element={<FamilyManagementPage />} />

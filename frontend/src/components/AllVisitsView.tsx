@@ -1,15 +1,11 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
 import { visitsApi, childrenApi, ApiClientError } from '../lib/api-client';
 import type { Visit, Child, VisitType } from '../types/api';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 import TimelineItem from './TimelineItem';
 import Card from './Card';
-import Button from './Button';
-import { HiPlus } from 'react-icons/hi';
-import VisitsSummary from './VisitsSummary';
-import ChildPills from './ChildPills';
+import VisitsSidebar from './VisitsSidebar';
 import { LuActivity, LuHeart, LuPill, LuEye } from 'react-icons/lu';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
 
@@ -111,8 +107,8 @@ function AllVisitsView() {
   }
 
   return (
-    <div className="all-visits-view">
-      <VisitsSummary
+    <div className="visits-page-layout">
+      <VisitsSidebar
         stats={[
           { label: 'Total Visits', value: statsSource.length, icon: LuActivity, color: 'gray', onClick: () => setFilterVisitType(undefined), active: !filterVisitType },
           { label: 'Wellness', value: statsSource.filter(v => v.visit_type === 'wellness').length, icon: LuHeart, color: 'emerald', onClick: () => setFilterVisitType('wellness'), active: filterVisitType === 'wellness' },
@@ -120,58 +116,39 @@ function AllVisitsView() {
           { label: 'Injury', value: statsSource.filter(v => v.visit_type === 'injury').length, icon: MdOutlinePersonalInjury, color: 'blue', onClick: () => setFilterVisitType('injury'), active: filterVisitType === 'injury' },
           { label: 'Vision', value: statsSource.filter(v => v.visit_type === 'vision').length, icon: LuEye, color: 'purple', onClick: () => setFilterVisitType('vision'), active: filterVisitType === 'vision' },
         ]}
-      >
-        <div className="filters-inline" style={{ width: 320 }}>
-          <div className="filters-grid">
-            <div className="filter-group">
-              <label>Child Filter</label>
-              <div>
-                <ChildPills
-                  childrenList={children}
-                  selectedChildId={filterChildId}
-                  onSelect={(id) => setFilterChildId(id)}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </VisitsSummary>
+        childrenList={children}
+        selectedChildId={filterChildId}
+        onSelectChild={(id: number | undefined) => setFilterChildId(id)}
+      />
 
-      {/* Visits Timeline */}
-      {sortedVisits.length === 0 ? (
-        <Card>
-          <p className="empty-state">
-            No visits recorded yet. Click "Add Visit" to get started.
-          </p>
-        </Card>
-      ) : (
-        <Card>
-          <div className="timeline-list-modern">
-            {sortedVisits.map((visit) => {
-              const child = childMap.get(visit.child_id);
-              return (
-                <TimelineItem 
-                  key={visit.id}
-                  type="visit" 
-                  data={visit}
-                  childName={child?.name || `Child #${visit.child_id}`}
-                  childId={visit.child_id}
-                  hasAttachments={visitsWithAttachments.has(visit.id)}
-                />
-              );
-            })}
-          </div>
-        </Card>
-      )}
-      
-      <div className="fab">
-        <Link to="/visits/new">
-          <Button size="lg" className="fab-btn">
-            <HiPlus className="fab-icon" />
-            Add Visit
-          </Button>
-        </Link>
-      </div>
+      <main className="visits-main">
+        {/* Visits Timeline */}
+        {sortedVisits.length === 0 ? (
+          <Card>
+            <p className="empty-state">
+              No visits recorded yet. Click "Add Visit" to get started.
+            </p>
+          </Card>
+        ) : (
+          <Card>
+            <div className="timeline-list-modern">
+              {sortedVisits.map((visit) => {
+                const child = childMap.get(visit.child_id);
+                return (
+                  <TimelineItem 
+                    key={visit.id}
+                    type="visit" 
+                    data={visit}
+                    childName={child?.name || `Child #${visit.child_id}`}
+                    childId={visit.child_id}
+                    hasAttachments={visitsWithAttachments.has(visit.id)}
+                  />
+                );
+              })}
+            </div>
+          </Card>
+        )}
+      </main>
     </div>
   );
 }

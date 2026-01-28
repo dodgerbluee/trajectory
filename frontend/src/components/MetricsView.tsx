@@ -4,26 +4,43 @@ import type { HeatmapData, Child } from '../types/api';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 import Card from './Card';
-import Button from './Button';
 import Heatmap from './Heatmap';
-import ChildPills from './ChildPills';
-// Tabs removed; using inline view toggle in controls
 import GrowthChartTab from './GrowthChartTab';
-import { HiChevronLeft, HiChevronRight } from 'react-icons/hi';
+// import { HiChevronLeft, HiChevronRight } from 'react-icons/hi';
 import { formatDate } from '../lib/date-utils';
+import { HiChevronLeft, HiChevronRight } from 'react-icons/hi';
 
-function MetricsView() {
+interface MetricsViewProps {
+  activeTab?: 'illness' | 'growth';
+  onActiveTabChange?: (tab: 'illness' | 'growth') => void;
+  selectedYear?: number;
+  onSelectedYearChange?: (year: number) => void;
+  filterChildId?: number | undefined;
+  onFilterChildChange?: (id?: number) => void;
+}
+
+function MetricsView({
+  activeTab: activeTabProp,
+  selectedYear: selectedYearProp,
+  onSelectedYearChange,
+  filterChildId: filterChildIdProp,
+}: MetricsViewProps) {
   const [heatmapData, setHeatmapData] = useState<HeatmapData | null>(null);
   const [children, setChildren] = useState<Child[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [filterChildId, setFilterChildId] = useState<number | undefined>(undefined);
+  const [internalYear] = useState(new Date().getFullYear());
+  const [internalFilterChildId] = useState<number | undefined>(undefined);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'illness' | 'growth'>('illness');
+  const [internalActiveTab] = useState<'illness' | 'growth'>('illness');
+
+  const selectedYear = selectedYearProp ?? internalYear;
+  const filterChildId = filterChildIdProp ?? internalFilterChildId;
+  const activeTab = activeTabProp ?? internalActiveTab;
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYear, filterChildId]);
 
   const loadData = async () => {
@@ -57,8 +74,10 @@ function MetricsView() {
   };
 
   const handleYearChange = (delta: number) => {
-    setSelectedYear(prev => prev + delta);
+    const next = selectedYear + delta;
+    if (onSelectedYearChange) onSelectedYearChange(next);
   };
+
 
   if (loading) {
     return <LoadingSpinner message="Loading metrics..." />;
@@ -89,65 +108,6 @@ function MetricsView() {
 
   return (
     <>
-      <Card className="metrics-controls">
-        <div className="metrics-controls-inline">
-          {activeTab !== 'growth' && (
-            <>
-              <div className="metrics-year-section">
-                <span className="metrics-control-label">Year</span>
-                <div className="year-selector">
-                  <Button 
-                    variant="secondary" 
-                    size="sm"
-                    onClick={() => handleYearChange(-1)}
-                    disabled={selectedYear <= 2020}
-                  >
-                    <HiChevronLeft className="btn-icon" />
-                  </Button>
-                  <span className="year-display">{selectedYear}</span>
-                  <Button 
-                    variant="secondary" 
-                    size="sm"
-                    onClick={() => handleYearChange(1)}
-                    disabled={selectedYear >= new Date().getFullYear()}
-                  >
-                    <HiChevronRight className="btn-icon" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="metrics-controls-divider"></div>
-            </>
-          )}
-          
-          <div className="metrics-filter-section">
-            <span className="metrics-control-label">Filter</span>
-            <ChildPills
-              childrenList={children}
-              selectedChildId={filterChildId}
-              onSelect={(id) => setFilterChildId(id)}
-            />
-          </div>
-
-          <div className="metrics-view-toggle" style={{ marginLeft: 'auto' }}>
-            <Button
-              variant={activeTab === 'illness' ? 'primary' : 'secondary'}
-              size="sm"
-              onClick={() => setActiveTab('illness')}
-            >
-              Illness
-            </Button>
-            <Button
-              variant={activeTab === 'growth' ? 'primary' : 'secondary'}
-              size="sm"
-              onClick={() => setActiveTab('growth')}
-              style={{ marginLeft: 8 }}
-            >
-              Growth
-            </Button>
-          </div>
-        </div>
-      </Card>
 
       {/* Summary Stats (only for Illness view) */}
       {activeTab !== 'growth' && (
@@ -225,7 +185,29 @@ function MetricsView() {
       {/* Content area */}
       {activeTab === 'illness' ? (
         <>
-          <Card title={`Illness Heatmap - ${selectedYear}`}>
+          <Card>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 className="card-title">Illness Heatmap</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => handleYearChange(-1)}
+                  disabled={selectedYear <= 2020}
+                >
+                  <HiChevronLeft className="btn-icon" />
+                </button>
+                <div style={{ fontWeight: 600 }}>{selectedYear}</div>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => handleYearChange(1)}
+                  disabled={selectedYear >= new Date().getFullYear()}
+                >
+                  <HiChevronRight className="btn-icon" />
+                </button>
+              </div>
+            </div>
             <p className="heatmap-description">
               {filterChildId 
                 ? 'Each square represents a day. Darker colors indicate higher illness severity (1-10). Click on a day to see details.'

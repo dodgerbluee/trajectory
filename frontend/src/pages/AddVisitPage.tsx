@@ -15,6 +15,7 @@ import VisitTypeModal from '../components/VisitTypeModal';
 import TagInput from '../components/TagInput';
 import FileUpload from '../components/FileUpload';
 import Checkbox from '../components/Checkbox';
+import { VisionRefractionCard, VisionRefraction } from '../components/VisionRefractionCard';
 
 
 
@@ -60,7 +61,9 @@ function AddVisitPage() {
     treatment: null,
     follow_up_date: null,
     vision_prescription: null,
-    needs_glasses: null,
+    ordered_glasses: null,
+    ordered_contacts: null,
+    vision_refraction: { od: { sphere: null, cylinder: null, axis: null }, os: { sphere: null, cylinder: null, axis: null }, notes: undefined } as any,
     vaccines_administered: [],
     prescriptions: [],
     tags: [],
@@ -82,6 +85,13 @@ function AddVisitPage() {
       setShowVisitTypeModal(true);
     }
   }, [visitTypeFromUrl]);
+
+  // Determine origin for back/cancel navigation
+  const fromState = (location.state || {}) as any;
+  const originFrom = typeof fromState.from === 'string' ? fromState.from : null;
+  const originFromChild = !!fromState.fromChild;
+  const originChildId = fromState.childId ? parseInt(fromState.childId) : (childIdFromUrl ? parseInt(childIdFromUrl) : null);
+  const originFromVisits = !!fromState.fromVisits;
 
   useEffect(() => {
     // Set initial child selection
@@ -217,12 +227,14 @@ function AddVisitPage() {
     );
   }
 
+  const backLink = originFromChild && originChildId ? `/children/${originChildId}` : (originFromVisits ? '/?tab=visits' : (childIdFromUrl ? `/children/${childIdFromUrl}` : '/'));
+
   return (
     <div className="page-container">
       <div className="page-header">
         <div>
-          <Link to="/" className="breadcrumb">
-            ← Back to Home
+          <Link to={backLink} className="breadcrumb">
+            ← Back
           </Link>
           <h1>Add Visit</h1>
         </div>
@@ -543,22 +555,28 @@ function AddVisitPage() {
             {formData.visit_type === 'vision' && (
               <div className="visit-detail-section">
                 <h3 className="visit-detail-section-title">Vision Information</h3>
-                <FormField
-                  label="Vision Prescription"
-                  type="textarea"
-                  value={formData.vision_prescription || ''}
-                  onChange={(e) => setFormData({ ...formData, vision_prescription: e.target.value || null })}
-                  disabled={submitting}
-                  placeholder="e.g., OD: -2.00, OS: -1.75"
-                  rows={3}
+                <VisionRefractionCard
+                  value={formData.vision_refraction as any}
+                  onChange={(v: VisionRefraction) => setFormData({ ...formData, vision_refraction: v })}
+                  readOnly={submitting}
                 />
 
-                <Checkbox
-                  label="Needs Glasses"
-                  checked={formData.needs_glasses || false}
-                  onChange={(checked) => setFormData({ ...formData, needs_glasses: checked })}
-                  disabled={submitting}
-                />
+                <div style={{ marginTop: '12px' }}>
+                  <Checkbox
+                    label="Ordered Glasses"
+                    checked={formData.ordered_glasses || false}
+                    onChange={(checked) => setFormData({ ...formData, ordered_glasses: checked })}
+                    disabled={submitting}
+                  />
+                  <div style={{ marginTop: '8px' }}>
+                    <Checkbox
+                      label="Ordered Contacts"
+                      checked={formData.ordered_contacts || false}
+                      onChange={(checked) => setFormData({ ...formData, ordered_contacts: checked })}
+                      disabled={submitting}
+                    />
+                  </div>
+                </div>
               </div>
             )}
 
@@ -653,11 +671,27 @@ function AddVisitPage() {
           <Button type="submit" disabled={submitting}>
             {submitting ? 'Adding Visit...' : 'Add Visit'}
           </Button>
-          <Link to="/">
-            <Button type="button" variant="secondary" disabled={submitting}>
-              Cancel
-            </Button>
-          </Link>
+          <Button 
+            type="button" 
+            variant="secondary" 
+            disabled={submitting}
+            onClick={() => {
+              // Navigate back to where we came from (prefer explicit `from`), or to visits tab if no origin
+              if (originFrom) {
+                navigate(originFrom);
+              } else if (originFromChild && originChildId) {
+                navigate(`/children/${originChildId}`);
+              } else if (originFromVisits) {
+                navigate('/?tab=visits');
+              } else if (childIdFromUrl) {
+                navigate(`/children/${childIdFromUrl}`);
+              } else {
+                navigate('/?tab=visits');
+              }
+            }}
+          >
+            Cancel
+          </Button>
         </div>
       </form>
 
@@ -669,8 +703,10 @@ function AddVisitPage() {
         }}
         onClose={() => {
           setShowVisitTypeModal(false);
-          // Navigate back to where we came from, or to home if no origin
-          if ((location.state as any)?.fromChild && (location.state as any)?.childId) {
+          // Prefer explicit `from` path when available, otherwise fall back to child/home
+          if (originFrom) {
+            navigate(originFrom);
+          } else if ((location.state as any)?.fromChild && (location.state as any)?.childId) {
             navigate(`/children/${(location.state as any).childId}`);
           } else {
             navigate('/');

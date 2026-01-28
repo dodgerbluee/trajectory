@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { childrenApi } from '../lib/api-client';
 import type { Child } from '../types/api';
@@ -10,12 +11,21 @@ import Tabs from '../components/Tabs';
 import AllIllnessesView from '../components/AllIllnessesView';
 import AllVisitsView from '../components/AllVisitsView';
 import MetricsView from '../components/MetricsView';
+import TrendsSidebar from '../components/TrendsSidebar';
+import VisitTypeModal from '../components/VisitTypeModal';
 
 function HomePage() {
-  const [activeTab, setActiveTab] = useState<'family' | 'illnesses' | 'visits' | 'trends'>('family');
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const initialTab = (searchParams.get('tab') as 'family' | 'illnesses' | 'visits' | 'trends') || 'family';
+  const [activeTab, setActiveTab] = useState<'family' | 'illnesses' | 'visits' | 'trends'>(initialTab);
   const [children, setChildren] = useState<Child[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [metricsActiveTab, setMetricsActiveTab] = useState<'illness' | 'growth'>('illness');
+  const [metricsYear, setMetricsYear] = useState<number>(new Date().getFullYear());
+  const [metricsFilterChildId, setMetricsFilterChildId] = useState<number | undefined>(undefined);
 
   const loadChildren = async () => {
     try {
@@ -41,11 +51,17 @@ function HomePage() {
   };
 
   useEffect(() => {
-    if (activeTab === 'family' && children.length === 0) {
+    if ((activeTab === 'family' || activeTab === 'trends') && children.length === 0) {
       loadChildren();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
+
+  useEffect(() => {
+    const tab = (searchParams.get('tab') as 'family' | 'illnesses' | 'visits' | 'trends') || 'family';
+    setActiveTab(tab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.toString()]);
 
   const familyContent = (
     <div>
@@ -126,7 +142,29 @@ function HomePage() {
     {
       id: 'trends',
       label: 'Trends',
-      content: <MetricsView />,
+      content: (
+        <div className="visits-page-layout">
+          <TrendsSidebar
+            activeTab={metricsActiveTab}
+            onChangeTab={(t) => setMetricsActiveTab(t)}
+            childrenList={children}
+            selectedChildId={metricsFilterChildId}
+            onSelectChild={(id) => setMetricsFilterChildId(id)}
+            
+          />
+
+          <main className="visits-main">
+            <MetricsView
+              activeTab={metricsActiveTab}
+              onActiveTabChange={(t) => setMetricsActiveTab(t)}
+              selectedYear={metricsYear}
+              onSelectedYearChange={(y) => setMetricsYear(y)}
+              filterChildId={metricsFilterChildId}
+              onFilterChildChange={(id) => setMetricsFilterChildId(id)}
+            />
+          </main>
+        </div>
+      ),
     },
   ];
 
@@ -139,6 +177,21 @@ function HomePage() {
           onTabChange={(tabId) => setActiveTab(tabId as 'family' | 'visits' | 'illnesses' | 'trends')}
         />
       </Card>
+      {/* Visit type modal triggered via navigation state (no URL query) on the Home page */}
+      <VisitTypeModal
+        isOpen={!!((location.state as any)?.openAddVisit)}
+        onSelect={(visitType: any) => {
+          const stateFrom = (location.state as any)?.from;
+          const from = stateFrom ?? (location.pathname === '/' ? '/?tab=visits' : `${location.pathname}${location.search}`);
+          navigate(`/visits/new?type=${visitType}`, { state: { from } });
+        }}
+        onClose={() => {
+          // clear the openAddVisit flag from location state without changing URL
+          const currentState = { ...(location.state as any) };
+          delete currentState.openAddVisit;
+          navigate(location.pathname + location.search, { state: currentState, replace: true });
+        }}
+      />
       <div className="version-footer">
         <a 
           href="https://github.com/dodgerbluee/trajectory" 

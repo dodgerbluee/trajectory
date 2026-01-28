@@ -18,8 +18,23 @@ function ChildPills({ childrenList, selectedChildId, onSelect }: Props) {
           type="button"
           className={`pill ${selectedChildId === undefined ? 'active' : ''}`}
           onClick={() => onSelect(undefined)}
+          title="All Children"
         >
-          All
+          <div className="all-avatars">
+            {childrenList.slice(0, 4).map((c, i) => {
+              const avatarUrl = c.avatar ? childrenApi.getAvatarUrl(c.avatar) : childrenApi.getDefaultAvatarUrl(c.gender);
+              return (
+                <img
+                  key={c.id}
+                  src={avatarUrl}
+                  alt={c.name}
+                  className="all-avatar-item"
+                  style={{ marginLeft: i === 0 ? 0 : -25, zIndex: 10 - i }}
+                />
+              );
+            })}
+          </div>
+          <span className="pill-label">All</span>
         </button>
 
         {options.map((c) => {

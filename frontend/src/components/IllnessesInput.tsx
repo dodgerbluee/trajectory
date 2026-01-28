@@ -60,7 +60,7 @@ function IllnessesInput({ value, onChange, disabled }: IllnessesInputProps) {
 
     return (
         <div className="illnesses-input-modern" ref={ref}>
-            {value.length > 0 && (
+            {value.length > 0 ? (
                 <div className="vaccine-badges-list">
                     {value.map((v) => (
                         <span key={v} className="vaccine-badge-item">
@@ -85,6 +85,17 @@ function IllnessesInput({ value, onChange, disabled }: IllnessesInputProps) {
                         className="vaccine-add-button"
                         title="Add illnesses">
                         <HiPlus />
+                    </button>
+                </div>
+            ) : (
+                <div className="vaccine-empty">
+                    <button
+                        type="button"
+                        onClick={() => setOpen(true)}
+                        disabled={disabled}
+                        className="vaccine-add-button"
+                    >
+                        <HiPlus /> Add illnesses
                     </button>
                 </div>
             )}

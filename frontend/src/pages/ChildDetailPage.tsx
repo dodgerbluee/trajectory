@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { HiPlus, HiChartBar, HiExclamationCircle } from 'react-icons/hi';
-import { LuClipboard, LuThermometer } from 'react-icons/lu';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
+import { HiPlus, HiExclamationCircle } from 'react-icons/hi';
+import { LuHeart, LuThermometer } from 'react-icons/lu';
 import { childrenApi, visitsApi, illnessesApi, ApiClientError } from '../lib/api-client';
 import type { Child, Visit, VisitType, Illness, VisitAttachment, ChildAttachment } from '../types/api';
 import { calculateAge, formatAge, formatDate } from '../lib/date-utils';
@@ -14,7 +14,6 @@ import VisitTypeModal from '../components/VisitTypeModal';
 import Select from '../components/Select';
 import TimelineItem from '../components/TimelineItem';
 import Tabs from '../components/Tabs';
-import GrowthChartTab from '../components/GrowthChartTab';
 import DocumentsList from '../components/DocumentsList';
 import ImageCropUpload from '../components/ImageCropUpload';
 import VaccineHistory from '../components/VaccineHistory';
@@ -26,6 +25,7 @@ import { LuEye } from 'react-icons/lu';
 function ChildDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const [child, setChild] = useState<Child | null>(null);
   const [visits, setVisits] = useState<Visit[]>([]);
@@ -39,7 +39,7 @@ function ChildDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [showVisitTypeModal, setShowVisitTypeModal] = useState(false);
   const [visitTypeFilter, setVisitTypeFilter] = useState<'all' | 'wellness' | 'sick' | 'injury' | 'vision'>('all');
-  const [activeTab, setActiveTab] = useState<'visits' | 'illnesses' | 'documents' | 'vaccines' | 'trends'>('visits');
+  const [activeTab, setActiveTab] = useState<'visits' | 'illnesses' | 'documents' | 'vaccines'>('visits');
   const [documents, setDocuments] = useState<Array<(VisitAttachment & { visit: Visit; type: 'visit' }) | (ChildAttachment & { type: 'child' })>>([]);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
   const [showAvatarEditor, setShowAvatarEditor] = useState(false);
@@ -396,12 +396,6 @@ function ChildDetailPage() {
                     Add Illness
                   </Button>
                 </Link>
-                <Link to={`/children/${child.id}/growth`}>
-                  <Button variant="secondary" size="sm">
-                    <HiChartBar className="btn-icon" />
-                    Growth Charts
-                  </Button>
-                </Link>
               </div>
             </div>
             
@@ -411,7 +405,7 @@ function ChildDetailPage() {
                 <Link to={`/visits/${lastWellnessVisit.id}`} className="overview-last-visit-link">
                   <div className="overview-last-visit">
                     <div className={`visit-icon-outline visit-icon--wellness`} aria-hidden="true">
-                      <LuClipboard className="visit-type-svg" />
+                      <LuHeart className="visit-type-svg" />
                     </div>
                     <div className="overview-visit-info">
                       <span className="overview-visit-label">Last Wellness Visit:</span>
@@ -570,16 +564,6 @@ function ChildDetailPage() {
                 });
               }
 
-              // Trends / Growth Charts tab for this child
-              tabsArray.push({
-                id: 'trends',
-                label: 'Trends',
-                content: (
-                  <div>
-                    <GrowthChartTab filterChildId={child.id} />
-                  </div>
-                ),
-              });
 
               return (
                 <Tabs
@@ -598,7 +582,7 @@ function ChildDetailPage() {
         onSelect={(visitType: VisitType) => {
           setShowVisitTypeModal(false);
           navigate(`/children/${child.id}/visits/new?type=${visitType}`, {
-            state: { fromChild: true, childId: child.id }
+            state: { from: `${location.pathname}${location.search}`, childId: child.id }
           });
         }}
         onClose={() => setShowVisitTypeModal(false)}

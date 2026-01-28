@@ -158,6 +158,18 @@ export interface Prescription {
   notes?: string;
 }
 
+export type EyeRefraction = {
+  sphere: number | null;
+  cylinder: number | null;
+  axis: number | null;
+};
+
+export type VisionRefraction = {
+  od: EyeRefraction;
+  os: EyeRefraction;
+  notes?: string;
+};
+
 export interface Visit {
   id: number;
   child_id: number;
@@ -196,6 +208,9 @@ export interface Visit {
   
   // Vision visit
   vision_prescription: string | null;
+  vision_refraction?: VisionRefraction | null;
+  ordered_glasses: boolean | null;
+  ordered_contacts: boolean | null;
   needs_glasses: boolean | null;
   
   // Medical
@@ -242,6 +257,9 @@ export interface CreateVisitInput {
   
   // Vision visit fields
   vision_prescription?: string | null;
+  vision_refraction?: VisionRefraction | null;
+  ordered_glasses?: boolean | null;
+  ordered_contacts?: boolean | null;
   needs_glasses?: boolean | null;
   
   vaccines_administered?: string[] | null;
@@ -285,6 +303,9 @@ export interface UpdateVisitInput {
   
   // Vision visit fields
   vision_prescription?: string | null;
+  vision_refraction?: VisionRefraction | null;
+  ordered_glasses?: boolean | null;
+  ordered_contacts?: boolean | null;
   needs_glasses?: boolean | null;
   
   vaccines_administered?: string[] | null;

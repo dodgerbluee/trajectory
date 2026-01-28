@@ -136,6 +136,27 @@ function validatePrescriptions(value: any): any {
   return value;
 }
 
+function validateVisionRefraction(value: any): any | null {
+  if (value === undefined || value === null || value === '') return null;
+  if (typeof value !== 'object') {
+    throw new BadRequestError('vision_refraction must be an object');
+  }
+  const validateEye = (eye: any) => {
+    if (!eye) return { sphere: null, cylinder: null, axis: null };
+    const sphere = eye.sphere === undefined || eye.sphere === null || eye.sphere === '' ? null : Number(eye.sphere);
+    const cylinder = eye.cylinder === undefined || eye.cylinder === null || eye.cylinder === '' ? null : Number(eye.cylinder);
+    const axis = eye.axis === undefined || eye.axis === null || eye.axis === '' ? null : Number(eye.axis);
+    if (sphere !== null && isNaN(sphere)) throw new BadRequestError('vision_refraction.od.sphere must be a number');
+    if (cylinder !== null && isNaN(cylinder)) throw new BadRequestError('vision_refraction.od.cylinder must be a number');
+    if (axis !== null && isNaN(axis)) throw new BadRequestError('vision_refraction.od.axis must be a number');
+    return { sphere, cylinder, axis };
+  };
+  const od = validateEye(value.od);
+  const os = validateEye(value.os);
+  const notes = value.notes ? String(value.notes) : undefined;
+  return { od, os, notes };
+}
+
 // ============================================================================
 // GET /api/visits - List visits with filtering
 // ============================================================================
@@ -457,9 +478,15 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
       treatment: validateOptionalString(req.body.treatment),
       follow_up_date: validateOptionalDate(req.body.follow_up_date),
       
+      // Vision fields
+      vision_prescription: validateOptionalString(req.body.vision_prescription),
+      vision_refraction: validateVisionRefraction(req.body.vision_refraction),
+      ordered_glasses: req.body.ordered_glasses === true ? true : (req.body.ordered_glasses === false ? false : null),
+      ordered_contacts: req.body.ordered_contacts === true ? true : (req.body.ordered_contacts === false ? false : null),
+
       vaccines_administered: req.body.vaccines_administered,
       prescriptions: req.body.prescriptions,
-      
+
       notes: validateOptionalString(req.body.notes),
     };
 
@@ -484,43 +511,61 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
       ? JSON.stringify(input.tags.filter(t => t && t.trim()))
       : null;
 
-    const result = await query<VisitRow>(
-      `INSERT INTO visits (
-        child_id, visit_date, visit_type, location, doctor_name, title,
-        weight_value, weight_ounces, weight_percentile,
-        height_value, height_percentile,
-        head_circumference_value, head_circumference_percentile,
-        bmi_value, bmi_percentile,
-        blood_pressure, heart_rate,
-          symptoms, temperature, end_date,
-        injury_type, injury_location, treatment, follow_up_date,
-        vision_prescription, needs_glasses,
-        vaccines_administered, prescriptions, tags, notes
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6,
-        $7, $8, $9,
-        $10, $11,
-        $12, $13,
-        $14, $15,
-        $16, $17,
-        $18, $19, $20, $21,
-        $22, $23, $24, $25,
-        $26, $27,
-        $28, $29, $30
-      ) RETURNING *`,
-      [
-        input.child_id, input.visit_date, input.visit_type, input.location, input.doctor_name, input.title,
-        input.weight_value, input.weight_ounces, input.weight_percentile,
-        input.height_value, input.height_percentile,
-        input.head_circumference_value, input.head_circumference_percentile,
-        input.bmi_value, input.bmi_percentile,
-        input.blood_pressure, input.heart_rate,
-        input.symptoms, input.temperature, input.end_date,
-        input.injury_type, input.injury_location, input.treatment, input.follow_up_date,
-        input.vision_prescription, input.needs_glasses,
-        vaccines, prescriptions ? JSON.stringify(prescriptions) : null, tagsJson, input.notes,
-      ]
-    );
+    let result;
+    try {
+      result = await query<VisitRow>(
+        `INSERT INTO visits (
+          child_id, visit_date, visit_type, location, doctor_name, title,
+          weight_value, weight_ounces, weight_percentile,
+          height_value, height_percentile,
+          head_circumference_value, head_circumference_percentile,
+          bmi_value, bmi_percentile,
+          blood_pressure, heart_rate,
+            symptoms, temperature, end_date, injury_type,
+          injury_location, treatment, follow_up_date,
+          vision_prescription, vision_refraction, ordered_glasses, ordered_contacts,
+          vaccines_administered, prescriptions, tags, notes
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6,
+          $7, $8, $9,
+          $10, $11,
+          $12, $13,
+          $14, $15,
+          $16, $17,
+          $18, $19, $20, $21,
+          $22, $23, $24,
+          $25, $26, $27, $28,
+          $29, $30, $31, $32
+        ) RETURNING *`,
+        [
+          input.child_id, input.visit_date, input.visit_type, input.location, input.doctor_name, input.title,
+          input.weight_value, input.weight_ounces, input.weight_percentile,
+          input.height_value, input.height_percentile,
+          input.head_circumference_value, input.head_circumference_percentile,
+          input.bmi_value, input.bmi_percentile,
+          input.blood_pressure, input.heart_rate,
+          input.symptoms, input.temperature, input.end_date, input.injury_type,
+          input.injury_location, input.treatment, input.follow_up_date,
+          input.vision_prescription, input.vision_refraction ? JSON.stringify(input.vision_refraction) : null, input.ordered_glasses, input.ordered_contacts,
+          vaccines, prescriptions ? JSON.stringify(prescriptions) : null, tagsJson, input.notes,
+        ]
+      );
+    } catch (dbErr: any) {
+      // Log detailed info for debugging (do not leak to clients)
+      console.error('Failed to INSERT visit', {
+        message: dbErr && dbErr.message,
+        code: dbErr && dbErr.code,
+        stack: dbErr && dbErr.stack,
+        body: req.body,
+      });
+
+      // Provide clearer client-facing guidance for common schema mismatch
+      const msg = typeof dbErr?.message === 'string' && dbErr.message.includes('more target columns')
+        ? 'Server error creating visit: database INSERT column/value count mismatch. Please check backend migrations and route parameter ordering.'
+        : 'Failed to create visit';
+
+      return next(new BadRequestError(msg));
+    }
 
     const visit = convertVisitRow(result.rows[0]);
 
@@ -718,9 +763,19 @@ router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
       values.push(validateOptionalString(req.body.vision_prescription));
     }
 
-    if (req.body.needs_glasses !== undefined) {
-      updates.push(`needs_glasses = $${paramCount++}`);
-      values.push(req.body.needs_glasses === true ? true : (req.body.needs_glasses === false ? false : null));
+    if (req.body.vision_refraction !== undefined) {
+      updates.push(`vision_refraction = $${paramCount++}`);
+      values.push(req.body.vision_refraction ? JSON.stringify(validateVisionRefraction(req.body.vision_refraction)) : null);
+    }
+
+    if (req.body.ordered_glasses !== undefined) {
+      updates.push(`ordered_glasses = $${paramCount++}`);
+      values.push(req.body.ordered_glasses === true ? true : (req.body.ordered_glasses === false ? false : null));
+    }
+
+    if (req.body.ordered_contacts !== undefined) {
+      updates.push(`ordered_contacts = $${paramCount++}`);
+      values.push(req.body.ordered_contacts === true ? true : (req.body.ordered_contacts === false ? false : null));
     }
 
     if (req.body.vaccines_administered !== undefined) {

@@ -97,7 +97,8 @@ function AddIllnessPage() {
         if ((location.state as any)?.fromChild && (location.state as any)?.childId) {
           navigate(`/children/${(location.state as any).childId}`);
         } else {
-          navigate('/illnesses');
+          // Send user to Home with illnesses tab active
+          navigate('/?tab=illnesses');
         }
       }, 1000);
     } catch (error) {
@@ -125,7 +126,7 @@ function AddIllnessPage() {
           <Link 
             to={((location.state as any)?.fromChild && (location.state as any)?.childId)
               ? `/children/${(location.state as any).childId}`
-              : '/illnesses'} 
+              : '/?tab=illnesses'} 
             className="breadcrumb"
           >
             ← Back to {((location.state as any)?.fromChild) ? (children.find(c => c.id === (location.state as any)?.childId)?.name || 'Child') : 'Illnesses'}
@@ -254,11 +255,11 @@ function AddIllnessPage() {
             variant="secondary" 
             disabled={submitting}
             onClick={() => {
-              // Navigate back to where we came from, or to illnesses page if no origin
+              // Navigate back to where we came from, or to Home illnesses tab if no origin
               if ((location.state as any)?.fromChild && (location.state as any)?.childId) {
                 navigate(`/children/${(location.state as any).childId}`);
               } else {
-                navigate('/illnesses');
+                navigate('/?tab=illnesses');
               }
             }}
           >

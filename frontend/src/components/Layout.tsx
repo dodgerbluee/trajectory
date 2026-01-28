@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import ThemeToggle from './ThemeToggle';
 import AboutDropdown from './AboutDropdown';
@@ -17,11 +17,13 @@ function Layout({ children }: LayoutProps) {
     await logout();
   };
 
+  const [, setSearchParams] = useSearchParams();
+
   return (
     <div className="app-container">
       <header className="app-header">
         <div className="header-content">
-          <Link to="/" className="header-brand">
+          <Link to="/?tab=family" className="header-brand" onClick={(e) => { e.preventDefault(); setSearchParams({ tab: 'family' }); }}>
             <img 
               src="/logo/trajectory.png" 
               alt="Trajectory Logo" 

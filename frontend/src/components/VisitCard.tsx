@@ -52,7 +52,23 @@ function VisitCard({ visit, childName, childId, hasAttachments }: VisitCardProps
     if (visit.height_value) badges.push({ key: 'height', label: `📏 ${visit.height_value}"` });
     if (visit.vaccines_administered?.length) badges.push({ key: 'vax', label: `💉 ${visit.vaccines_administered.length}` });
     if (visit.prescriptions?.length) badges.push({ key: 'rx', label: `💊 ${visit.prescriptions.length}` });
-    if (visit.needs_glasses) badges.push({ key: 'glasses', label: '👓 Needs Glasses' });
+        // Compact vision prescription preview (simple: OD <sphere>, OS <sphere>)
+    const vr: any = (visit as any).vision_refraction;
+    const fmt = (n: number | null) => (n === null || n === undefined ? '--' : Number(n).toFixed(2));
+    if (visit.visit_type === 'vision') {
+        if (vr && (vr.od || vr.os)) {
+            const od = vr.od || {};
+            const os = vr.os || {};
+            const presLabel = `OD ${fmt(od.sphere)}, OS ${fmt(os.sphere)}`;
+            badges.push({ key: 'vision-presc', label: `👁️ ${presLabel}` });
+        } else if (visit.vision_prescription) {
+            // Fallback to legacy freeform prescription string (trimmed)
+            const short = visit.vision_prescription.length > 40 ? visit.vision_prescription.slice(0, 37) + '…' : visit.vision_prescription;
+            badges.push({ key: 'vision-presc', label: `👁️ ${short}` });
+        }
+    }
+    if ((visit as any).ordered_glasses) badges.push({ key: 'ordered-glasses', label: '👓' });
+    if ((visit as any).ordered_contacts) badges.push({ key: 'ordered-contacts', label: '🫧' });
 
     return (
         <Link to={url} state={linkState} className="timeline-item-link">

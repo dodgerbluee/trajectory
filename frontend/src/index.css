@@ -58,6 +58,79 @@
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
 }
+
+/* Vision refraction styles */
+.vision-refraction-card {
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 0 6px 18px rgba(21, 30, 45, 0.04);
+}
+.vision-refraction-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.vision-refraction-header h3 {
+  font-size: 1rem;
+  margin: 0;
+}
+.refraction-sub {
+  font-size: 0.825rem;
+  color: var(--color-text-secondary);
+  margin-left: auto;
+}
+.refraction-grid {
+  display: grid;
+  grid-template-columns: 80px repeat(3, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+.col-label {
+  font-size: 0.825rem;
+  color: var(--color-text-secondary);
+  padding-left: 8px;
+}
+.eye-label {
+  font-weight: 700;
+  color: var(--color-text-primary);
+  padding-left: 8px;
+}
+.refraction-input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(16,24,40,0.08);
+  background: var(--color-background);
+  transition: box-shadow 0.12s ease, border-color 0.12s ease;
+}
+.refraction-input:focus {
+  outline: none;
+  border-color: rgba(124, 58, 237, 0.9);
+  box-shadow: 0 6px 18px rgba(124,58,237,0.08);
+}
+.refraction-textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(16,24,40,0.06);
+  resize: vertical;
+}
+.refraction-notes {
+  margin-top: 12px;
+}
+
+.vision-refraction-card .visually-hidden {
+  position: absolute !important;
+  height: 1px; width: 1px; overflow: hidden; clip: rect(1px, 1px, 1px, 1px);
+}
+
+@media (max-width: 720px) {
+  .refraction-grid { grid-template-columns: 64px repeat(3, 1fr); gap: 8px; }
+  .refraction-sub { display: none; }
+}
 .summary-card-stats {
   display: flex;
   gap: 20px;
@@ -103,7 +176,44 @@
   box-shadow: 0 10px 20px rgba(0,0,0,0.08);
 }
 .visit-stat-card.active {
+  background: linear-gradient(90deg, rgba(96,165,250,0.12), rgba(59,130,246,0.06));
+  border-color: rgba(59,130,246,0.12);
+}
+.visit-stat-card.active {
   box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+}
+
+/* Compact/Sidebar variant for VisitStats (used when `vertical` is true)
+   Makes sidebar stat buttons smaller and visually distinct from main stats */
+.visit-stats-vertical .visit-stat-card {
+  padding: 8px;
+  border-radius: 10px;
+  gap: 8px;
+  align-items: center;
+}
+.visit-stats-vertical .visit-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.06);
+}
+.visit-stats-vertical .visit-stat-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+}
+.visit-stats-vertical .visit-stat-icon-svg {
+  width: 16px;
+  height: 16px;
+}
+.visit-stats-vertical .visit-stat-value {
+  font-size: 1rem;
+}
+.visit-stats-vertical .visit-stat-label {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+.visit-stats-vertical .visit-stat-card.active {
+  background: linear-gradient(90deg, rgba(167,139,250,0.12), rgba(124,58,237,0.06));
+  border-color: rgba(124,58,237,0.12);
 }
 
 .visit-stat-icon {
@@ -362,6 +472,22 @@
   height: 20px;
   border-radius: 50%;
   object-fit: cover;
+}
+.all-avatars {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  margin-right: 6px;
+}
+.all-avatar-item {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--color-background-card);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.06);
+  background: var(--color-background-card);
 }
 .pill-label { font-size: 0.85rem; }
 .child-combobox .combobox-input {
@@ -1223,6 +1349,111 @@ body {
 
 /* Hover lift removed for sick icon; glow is used instead */
 .visit-type-button .visit-icon-outline.visit-icon--sick:hover {
+}
+
+/* Sidebar layout for Visits page */
+.visits-page-layout {
+  display: flex;
+  gap: 24px;
+  align-items: stretch;
+}
+.visits-sidebar {
+  width: 220px;
+  flex: 0 0 220px;
+  position: sticky;
+  top: 20px;
+  align-self: stretch;
+  height: auto;
+}
+.visits-sidebar-inner {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  color: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: var(--elevation-3);
+  border: 1px solid var(--color-border);
+  overflow: auto;
+}
+.sidebar-brand {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+.sidebar-sub {
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.78);
+}
+.sidebar-divider {
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.04));
+  margin: 12px 0;
+}
+.sidebar-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.visit-stats-grid {
+  display: grid;
+  grid-auto-rows: min-content;
+  gap: 10px;
+}
+.visit-stat-card {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.04);
+  color: #fff;
+}
+.visit-stat-icon { opacity: 0.98 }
+.visit-stat-label { color: rgba(255,255,255,0.8) }
+.visit-stat-value { color: #fff }
+
+.sidebar-section { margin-top: 18px }
+.sidebar-section-title { font-size: 0.875rem; color: rgba(255,255,255,0.82); margin-bottom: 8px }
+
+.child-selector { display: flex; flex-direction: column; gap: 8px }
+.child-row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px; border-radius: 8px; background: transparent; border: none; text-align: left; color: inherit; cursor: pointer }
+.child-row:hover { background: rgba(255,255,255,0.02) }
+.child-row.active { background: linear-gradient(90deg, rgba(96,165,250,0.14), rgba(59,130,246,0.06)); box-shadow: 0 6px 18px rgba(12,18,30,0.12) }
+.child-row-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover }
+.child-row-avatar-placeholder { width: 40px; height: 40px; border-radius: 50%; display:flex; align-items:center; justify-content:center; background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.9) }
+
+/* Stacked avatars for the All Children selector (larger than pill stack) */
+.child-all-avatars {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  margin-right: 6px;
+}
+.child-all-avatar-item {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--color-background-card);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+  background: var(--color-background-card);
+}
+.child-row-body { flex: 1 }
+.child-row-name { font-weight: 600 }
+.child-row-sub { font-size: 0.8rem; color: rgba(255,255,255,0.7) }
+.child-row-indicator { width: 8px; height: 8px; border-radius: 999px; background: linear-gradient(90deg,#60a5fa,#3b82f6); margin-left: 8px; opacity: 0 }
+.child-row.active .child-row-indicator { opacity: 1; transform: translateX(0); transition: opacity 180ms ease }
+
+.sidebar-spacer { flex: 1 }
+.sidebar-action { padding-top: 12px }
+.sidebar-add-btn { width: 100%; background: linear-gradient(90deg, #60a5fa, #3b82f6); color: #fff }
+.sidebar-add-btn:hover { filter: brightness(1.03); transform: translateY(-2px) }
+
+.visits-main { flex: 1 }
+
+@media (max-width: 900px) {
+  .visits-page-layout { flex-direction: column }
+  .visits-sidebar { position: relative; width: 100%; top: 0; }
 }
 
 /* Ensure SVG icons explicitly pick up currentColor for fill/stroke
@@ -2187,8 +2418,8 @@ body {
 /* Children Grid Cards */
 .children-grid-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--spacing-xl);
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-md);
 }
 
 .child-card-compact {
@@ -4107,7 +4338,6 @@ select.form-input:disabled {
 
 .summary-avatars {
   display: flex;
-  gap: var(--spacing-xs);
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
@@ -5917,6 +6147,69 @@ select.form-input:disabled {
   margin-bottom: var(--spacing-lg);
 }
 
+/* Compact sidebar variant for visit-type buttons used in sidebars */
+.visit-type-button.sidebar {
+  padding: 8px;
+  min-height: auto;
+  border-width: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+  border-radius: 12px;
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+}
+.visit-type-button.sidebar .visit-type-icon {
+  margin-bottom: 0;
+}
+.visit-type-button.sidebar .visit-type-icon .visit-icon-outline {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-radius: 8px;
+}
+.visit-type-button.sidebar.wellness .visit-icon-outline { color: var(--color-success); }
+.visit-type-button.sidebar.sick .visit-icon-outline { color: var(--color-danger); }
+.visit-type-button.sidebar.active { box-shadow: 0 8px 20px rgba(0,0,0,0.08); transform: translateY(-2px); }
+
+/* Sidebar variant: show small label under compact icon */
+.visit-type-button.sidebar .visit-type-label {
+  font-size: 0.75rem;
+  margin-top: 6px;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+/* Larger small-variant: square with label stacked for sidebar */
+.visit-type-button.visit-type-small {
+  width: 92px;
+  height: auto;
+  padding: 10px 8px;
+  border-radius: 10px;
+  flex-direction: column;
+}
+.visit-type-button.visit-type-small .visit-type-icon {
+  margin-bottom: 6px;
+}
+.visit-type-button.visit-type-small .visit-icon-outline {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  display:flex; align-items:center; justify-content:center;
+}
+.visit-type-button.visit-type-small .visit-type-svg { width: 28px; height: 28px; color: white; }
+
+/* Graph icon background for growth button (use primary blue gradient) */
+.visit-icon-outline.sidebar-graph {
+  background: linear-gradient(135deg, #60a5fa, #3b82f6);
+}
+
+.visit-type-button.visit-type-small.wellness .visit-icon-outline.sidebar-graph .visit-type-svg { color: white; }
+
+
+
 @media (max-width: 1024px) {
   .visit-type-selection {
     grid-template-columns: repeat(2, 1fr);
@@ -6014,6 +6307,14 @@ select.form-input:disabled {
 /* ============================================================================
    Responsive Styles - Children Grid
    ============================================================================ */
+
+/* Tablet: 2 columns */
+/* Large screens: 3 columns */
+@media (max-width: 1200px) {
+  .children-grid-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
 
 /* Tablet: 2 columns */
 @media (max-width: 1024px) {

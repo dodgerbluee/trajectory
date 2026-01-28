@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { childrenApi, ApiClientError } from '../lib/api-client';
 import type { Child } from '../types/api';
@@ -73,6 +73,10 @@ function FamilyManagementPage() {
     loadChildren();
   }, []);
 
+  const sortedChildren = useMemo(() => {
+    return [...children].sort((a, b) => new Date(a.date_of_birth).getTime() - new Date(b.date_of_birth).getTime());
+  }, [children]);
+
   if (loading) {
     return <LoadingSpinner message="Loading children..." />;
   }
@@ -95,7 +99,7 @@ function FamilyManagementPage() {
           <h1>Family</h1>
         </div>
         <div className="family-list">
-          {children.map((child) => {
+          {sortedChildren.map((child: Child) => {
               const avatarUrl = child.avatar
                 ? childrenApi.getAvatarUrl(child.avatar)
                 : childrenApi.getDefaultAvatarUrl(child.gender);

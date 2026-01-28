@@ -11,6 +11,7 @@ import Notification from '../components/Notification';
 import VisitAttachmentsList from '../components/VisitAttachmentsList';
 import Tabs from '../components/Tabs';
 import { useAuth } from '../contexts/AuthContext';
+import { VisionRefractionCard } from '../components/VisionRefractionCard';
 
 function VisitDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -293,15 +294,23 @@ function VisitDetailPage() {
 
                     {visit.visit_type === 'vision' && (
                       <div className="visit-info-stacked">
-                        {visit.vision_prescription && (
+                        {(visit as any).vision_refraction ? (
                           <div className="visit-info-item">
-                            <span className="visit-info-label">Prescription:</span>
+                            <VisionRefractionCard value={(visit as any).vision_refraction} onChange={() => {}} readOnly />
+                          </div>
+                        ) : visit.vision_prescription ? (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">👁️ Prescription:</span>
                             <span className="visit-info-value">{visit.vision_prescription}</span>
                           </div>
-                        )}
+                        ) : null}
                         <div className="visit-info-item">
-                          <span className="visit-info-label">Needs Glasses:</span>
-                          <span className="visit-info-value">{visit.needs_glasses ? 'Yes' : 'No'}</span>
+                          <span className="visit-info-label">Ordered Glasses:</span>
+                          <span className="visit-info-value">{(visit as any).ordered_glasses ? 'Yes' : 'No'}</span>
+                        </div>
+                        <div className="visit-info-item">
+                          <span className="visit-info-label">Ordered Contacts:</span>
+                          <span className="visit-info-value">{(visit as any).ordered_contacts ? 'Yes' : 'No'}</span>
                         </div>
                       </div>
                     )}

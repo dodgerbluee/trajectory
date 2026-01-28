@@ -12,11 +12,17 @@ interface StatItem {
 
 interface Props {
   stats: StatItem[];
+  vertical?: boolean;
+  showValues?: boolean;
 }
 
-function VisitStats({ stats }: Props) {
+function VisitStats({ stats, vertical = false, showValues = true }: Props) {
+  const style: React.CSSProperties = vertical
+    ? { display: 'grid', gridTemplateColumns: '1fr', gridAutoFlow: 'row', gridAutoRows: 'min-content', gap: 12 }
+    : { display: 'grid', gridAutoFlow: 'row', gridAutoRows: 'min-content', gap: 12 };
+
   return (
-    <div className="visit-stats-grid">
+    <div className={`visit-stats-grid ${vertical ? 'visit-stats-vertical' : ''}`} style={style}>
       {stats.map((s) => {
         const Icon = s.icon || LuActivity;
         return (
@@ -34,7 +40,9 @@ function VisitStats({ stats }: Props) {
             </div>
 
             <div className="visit-stat-body">
-              <div className="visit-stat-value">{s.value}</div>
+              {showValues && (
+                <div className="visit-stat-value">{s.value}</div>
+              )}
               <div className="visit-stat-label">{s.label}</div>
             </div>
           </button>

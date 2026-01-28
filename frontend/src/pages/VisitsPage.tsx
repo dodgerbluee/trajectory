@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { visitsApi, childrenApi, ApiClientError } from '../lib/api-client';
 import type { Visit, Child, VisitType } from '../types/api';
 import { formatDate } from '../lib/date-utils';
@@ -12,6 +12,7 @@ import VisitTypeModal from '../components/VisitTypeModal';
 function VisitsPage() {
   const { childId } = useParams<{ childId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [child, setChild] = useState<Child | null>(null);
   const [visits, setVisits] = useState<Visit[]>([]);
   const [loading, setLoading] = useState(true);
@@ -171,7 +172,7 @@ function VisitsPage() {
         isOpen={showVisitTypeModal}
         onSelect={(visitType: VisitType) => {
           setShowVisitTypeModal(false);
-          navigate(`/children/${childId}/visits/new?type=${visitType}`);
+          navigate(`/children/${childId}/visits/new?type=${visitType}`, { state: { from: `${location.pathname}${location.search}`, childId } });
         }}
         onClose={() => setShowVisitTypeModal(false)}
       />

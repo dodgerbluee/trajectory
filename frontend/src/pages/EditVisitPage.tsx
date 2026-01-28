@@ -15,6 +15,7 @@ import FileUpload from '../components/FileUpload';
 import VisitAttachmentsList from '../components/VisitAttachmentsList';
 import TagInput from '../components/TagInput';
 import Checkbox from '../components/Checkbox';
+import { VisionRefractionCard, VisionRefraction } from '../components/VisionRefractionCard';
 
 
 
@@ -50,7 +51,9 @@ function EditVisitPage() {
     temperature: null,
     end_date: null,
     vision_prescription: null,
-    needs_glasses: null,
+    vision_refraction: { od: { sphere: null, cylinder: null, axis: null }, os: { sphere: null, cylinder: null, axis: null }, notes: undefined } as any,
+    ordered_glasses: null,
+    ordered_contacts: null,
     vaccines_administered: [],
     prescriptions: [],
     tags: [],
@@ -112,7 +115,9 @@ function EditVisitPage() {
         treatment: visitData.treatment,
         follow_up_date: visitData.follow_up_date,
         vision_prescription: visitData.vision_prescription,
-        needs_glasses: visitData.needs_glasses,
+        vision_refraction: (visitData as any).vision_refraction || { od: { sphere: null, cylinder: null, axis: null }, os: { sphere: null, cylinder: null, axis: null }, notes: undefined },
+        ordered_glasses: (visitData as any).ordered_glasses ?? visitData.needs_glasses ?? null,
+        ordered_contacts: (visitData as any).ordered_contacts ?? null,
         vaccines_administered: visitData.vaccines_administered || [],
         prescriptions: visitData.prescriptions || [],
         tags: visitData.tags || [],
@@ -522,22 +527,28 @@ function EditVisitPage() {
             {visit.visit_type === 'vision' && (
               <div className="visit-detail-section">
                 <h3 className="visit-detail-section-title">Vision Information</h3>
-                <FormField
-                  label="Prescription"
-                  type="textarea"
-                  value={formData.vision_prescription !== undefined ? (formData.vision_prescription || '') : (visit.vision_prescription || '')}
-                  onChange={(e) => setFormData({ ...formData, vision_prescription: e.target.value || null })}
-                  disabled={submitting}
-                  placeholder="Enter prescription details..."
-                  rows={3}
+                <VisionRefractionCard
+                  value={formData.vision_refraction as any}
+                  onChange={(v: VisionRefraction) => setFormData({ ...formData, vision_refraction: v })}
+                  readOnly={submitting}
                 />
 
-                <Checkbox
-                  label="Needs Glasses"
-                  checked={formData.needs_glasses !== undefined ? (formData.needs_glasses === true) : (visit.needs_glasses === true)}
-                  onChange={(checked) => setFormData({ ...formData, needs_glasses: checked ? true : null })}
-                  disabled={submitting}
-                />
+                <div style={{ marginTop: '12px' }}>
+                  <Checkbox
+                    label="Ordered Glasses"
+                    checked={formData.ordered_glasses !== undefined ? (formData.ordered_glasses === true) : ((visit as any).ordered_glasses === true)}
+                    onChange={(checked) => setFormData({ ...formData, ordered_glasses: checked ? true : null })}
+                    disabled={submitting}
+                  />
+                  <div style={{ marginTop: '8px' }}>
+                    <Checkbox
+                      label="Ordered Contacts"
+                      checked={formData.ordered_contacts !== undefined ? (formData.ordered_contacts === true) : ((visit as any).ordered_contacts === true)}
+                      onChange={(checked) => setFormData({ ...formData, ordered_contacts: checked ? true : null })}
+                      disabled={submitting}
+                    />
+                  </div>
+                </div>
               </div>
             )}
 

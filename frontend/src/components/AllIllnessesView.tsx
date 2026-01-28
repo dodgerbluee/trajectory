@@ -8,9 +8,8 @@ import TimelineItem from './TimelineItem';
 import Card from './Card';
 // Button removed - Add action moved into summary section
 // HiPlus removed — using summary-section controls for adding illness
-import VisitStats from './VisitStats';
+import IllnessesSidebar from './IllnessesSidebar';
 import { LuActivity } from 'react-icons/lu';
-import ChildPills from './ChildPills';
 
 // Illness types constant removed - not used by the modernized UI
 
@@ -91,63 +90,45 @@ function AllIllnessesView() {
   }
 
   return (
-    <div className="all-illnesses-view">
-      <div className="summary-card-modern illnesses-summary">
-        <div className="summary-card-content">
-          <VisitStats
-            stats={[
-              { label: 'Total Illnesses', value: statsSource.length, icon: LuActivity, color: 'blue', onClick: () => { setFilterIllnessType(undefined); setFilterIllnessStatus(undefined); }, active: !filterIllnessType && !filterIllnessStatus },
-              { label: 'Ongoing', value: statsSource.filter(i => !i.end_date).length, icon: LuActivity, color: 'red', onClick: () => { setFilterIllnessStatus('ongoing'); setFilterIllnessType(undefined); }, active: filterIllnessStatus === 'ongoing' },
-              { label: 'Ended', value: statsSource.filter(i => !!i.end_date).length, icon: LuActivity, color: 'emerald', onClick: () => { setFilterIllnessStatus('ended'); setFilterIllnessType(undefined); }, active: filterIllnessStatus === 'ended' },
-            ]}
-          />
+    <div className="visits-page-layout">
+      <IllnessesSidebar
+        stats={[
+          { label: 'Total Illnesses', value: statsSource.length, icon: LuActivity, color: 'blue', onClick: () => { setFilterIllnessType(undefined); setFilterIllnessStatus(undefined); }, active: !filterIllnessType && !filterIllnessStatus },
+          { label: 'Ongoing', value: statsSource.filter(i => !i.end_date).length, icon: LuActivity, color: 'red', onClick: () => { setFilterIllnessStatus('ongoing'); setFilterIllnessType(undefined); }, active: filterIllnessStatus === 'ongoing' },
+          { label: 'Ended', value: statsSource.filter(i => !!i.end_date).length, icon: LuActivity, color: 'emerald', onClick: () => { setFilterIllnessStatus('ended'); setFilterIllnessType(undefined); }, active: filterIllnessStatus === 'ended' },
+        ]}
+        childrenList={children}
+        selectedChildId={filterChildId}
+        onSelectChild={(id) => setFilterChildId(id)}
+      />
 
-          <div className="summary-card-children">
-            <div className="filters-inline" style={{ width: 320 }}>
-              <div className="filters-grid">
-                <div className="filter-group">
-                  <label>Child</label>
-                  <div>
-                    {/* reuse ChildPills for child filter */}
-                    <ChildPills
-                      childrenList={children}
-                      selectedChildId={filterChildId}
-                      onSelect={(id) => setFilterChildId(id)}
-                    />
-                  </div>
-                </div>
-              </div>
+      <main className="visits-main">
+        {/* Illnesses Timeline */}
+        {sortedIllnesses.length === 0 ? (
+          <Card>
+            <p className="empty-state">
+              No illnesses recorded yet. Click "Add Illness" to get started.
+            </p>
+          </Card>
+        ) : (
+          <Card>
+            <div className="timeline-list-modern">
+              {sortedIllnesses.map((illness) => {
+                const child = childMap.get(illness.child_id);
+                return (
+                  <TimelineItem 
+                    key={illness.id}
+                    type="illness" 
+                    data={illness}
+                    childName={child?.name || `Child #${illness.child_id}`}
+                    childId={illness.child_id}
+                  />
+                );
+              })}
             </div>
-          </div>
-        </div>
-      </div>
-      {/* Filters moved into the summary card above; removed redundant filter toolbar */}
-
-      {/* Illnesses Timeline */}
-      {sortedIllnesses.length === 0 ? (
-        <Card>
-          <p className="empty-state">
-            No illnesses recorded yet. Click "Add Illness" to get started.
-          </p>
-        </Card>
-      ) : (
-        <Card>
-          <div className="timeline-list-modern">
-            {sortedIllnesses.map((illness) => {
-              const child = childMap.get(illness.child_id);
-              return (
-                <TimelineItem 
-                  key={illness.id}
-                  type="illness" 
-                  data={illness}
-                  childName={child?.name || `Child #${illness.child_id}`}
-                  childId={illness.child_id}
-                />
-              );
-            })}
-          </div>
-        </Card>
-      )}
+          </Card>
+        )}
+      </main>
     </div>
   );
 }

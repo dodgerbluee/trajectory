@@ -238,6 +238,16 @@ export interface Visit {
   
   // Vision visit fields
   vision_prescription: string | null; // Prescription details
+  // Structured refraction data (OD/OS) stored as JSONB
+  vision_refraction?: {
+    od: { sphere: number | null; cylinder: number | null; axis: number | null };
+    os: { sphere: number | null; cylinder: number | null; axis: number | null };
+    notes?: string | null;
+  } | null;
+  // Whether glasses or contacts were ordered during the visit
+  ordered_glasses: boolean | null;
+  ordered_contacts: boolean | null;
+  // Legacy column retained for compatibility
   needs_glasses: boolean | null;
   
   // Medical interventions
@@ -281,7 +291,15 @@ export interface CreateVisitInput {
   follow_up_date?: string | null;
   
   // Vision visit fields
+  // Vision visit fields
   vision_prescription?: string | null;
+  vision_refraction?: {
+    od?: { sphere?: number | null; cylinder?: number | null; axis?: number | null } | null;
+    os?: { sphere?: number | null; cylinder?: number | null; axis?: number | null } | null;
+    notes?: string | null;
+  } | null;
+  ordered_glasses?: boolean | null;
+  ordered_contacts?: boolean | null;
   needs_glasses?: boolean | null;
   
   vaccines_administered?: string[] | null;
@@ -358,8 +376,15 @@ export interface VisitRow {
   follow_up_date: Date | null;
   
   // Vision visit fields
-  vision_prescription: string | null;
-  needs_glasses: boolean | null;
+  vision_prescription?: string | null;
+  vision_refraction?: {
+    od?: { sphere?: number | null; cylinder?: number | null; axis?: number | null } | null;
+    os?: { sphere?: number | null; cylinder?: number | null; axis?: number | null } | null;
+    notes?: string | null;
+  } | null;
+  ordered_glasses?: boolean | null;
+  ordered_contacts?: boolean | null;
+  needs_glasses?: boolean | null;
   
   vaccines_administered: string | null; // TEXT field
   prescriptions: any; // JSONB field
@@ -407,8 +432,20 @@ export function visitRowToVisit(row: VisitRow): Visit {
     follow_up_date: row.follow_up_date ? row.follow_up_date.toISOString().split('T')[0] : null,
     
     // Vision visit fields
-    vision_prescription: row.vision_prescription,
-    needs_glasses: row.needs_glasses,
+    vision_prescription: row.vision_prescription ?? null,
+    vision_refraction: (() => {
+      const v: any = row.vision_refraction;
+      if (!v) return null;
+      const norm = (eye: any) => ({
+        sphere: eye && eye.sphere != null ? Number(eye.sphere) : null,
+        cylinder: eye && eye.cylinder != null ? Number(eye.cylinder) : null,
+        axis: eye && eye.axis != null ? Number(eye.axis) : null,
+      });
+      return { od: norm(v.od || {}), os: norm(v.os || {}), notes: v.notes ?? null };
+    })(),
+    ordered_glasses: (row as any).ordered_glasses ?? null,
+    ordered_contacts: (row as any).ordered_contacts ?? null,
+    needs_glasses: row.needs_glasses ?? null,
     
     vaccines_administered: row.vaccines_administered ? row.vaccines_administered.split(',').map(v => v.trim()).filter(v => v) : null,
     prescriptions: row.prescriptions || null,
