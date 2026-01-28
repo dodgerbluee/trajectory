@@ -6,9 +6,12 @@ services:
       - ./uploads_data:/app/uploads
       - ./avatars_data:/app/avatars
     ports:
-    - 3001:3001
+      - 3001:3001
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-trajectory_user}:${DB_PASSWORD}@trajectory-db:5432/${POSTGRES_DB:-trajectory}
+      # Auth (generate strong random secrets for production)
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
     depends_on:
       trajectory-db:
         condition: service_healthy
