@@ -161,41 +161,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [checkAuth]);
 
   const login = async (email: string, password: string) => {
-    try {
-      const response = await apiRequest<{
-        user: User;
-        accessToken: string;
-        refreshToken: string;
-      }>('/api/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-      });
+    const response = await apiRequest<{
+      user: User;
+      accessToken: string;
+      refreshToken: string;
+    }>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
 
-      setTokens(response.data.accessToken, response.data.refreshToken);
-      setUser(response.data.user);
-      localStorage.setItem(USER_KEY, JSON.stringify(response.data.user));
-    } catch (error) {
-      throw error;
-    }
+    setTokens(response.data.accessToken, response.data.refreshToken);
+    setUser(response.data.user);
+    localStorage.setItem(USER_KEY, JSON.stringify(response.data.user));
   };
 
   const register = async (email: string, password: string, name: string) => {
-    try {
-      const response = await apiRequest<{
-        user: User;
-        accessToken: string;
-        refreshToken: string;
-      }>('/api/auth/register', {
-        method: 'POST',
-        body: JSON.stringify({ email, password, name }),
-      });
+    const response = await apiRequest<{
+      user: User;
+      accessToken: string;
+      refreshToken: string;
+    }>('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, name }),
+    });
 
-      setTokens(response.data.accessToken, response.data.refreshToken);
-      setUser(response.data.user);
-      localStorage.setItem(USER_KEY, JSON.stringify(response.data.user));
-    } catch (error) {
-      throw error;
-    }
+    setTokens(response.data.accessToken, response.data.refreshToken);
+    setUser(response.data.user);
+    localStorage.setItem(USER_KEY, JSON.stringify(response.data.user));
   };
 
   const logout = async () => {
@@ -223,20 +215,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('Not authenticated');
     }
 
-    try {
-      await apiRequest('/api/auth/update-username', {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ newUsername, currentPassword }),
-      });
+    await apiRequest('/api/auth/update-username', {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ newUsername, currentPassword }),
+    });
 
-      // Refresh user data
-      await checkAuth();
-    } catch (error) {
-      throw error;
-    }
+    // Refresh user data
+    await checkAuth();
   };
 
   const updatePassword = async (currentPassword: string, newPassword: string) => {
@@ -245,23 +233,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('Not authenticated');
     }
 
-    try {
-      await apiRequest('/api/auth/update-password', {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ currentPassword, newPassword }),
-      });
+    await apiRequest('/api/auth/update-password', {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
 
-      // Password change invalidates sessions, so we need to re-login
-      // Clear tokens and redirect to login
-      clearTokens();
-      setUser(null);
-      navigate('/login');
-    } catch (error) {
-      throw error;
-    }
+    // Password change invalidates sessions, so we need to re-login
+    // Clear tokens and redirect to login
+    clearTokens();
+    setUser(null);
+    navigate('/login');
   };
 
   return (

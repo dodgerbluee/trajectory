@@ -93,9 +93,9 @@ function AddIllnessPage() {
       await illnessesApi.create(formData);
       setNotification({ message: 'Illness added successfully!', type: 'success' });
       setTimeout(() => {
-        // Navigate back to child timeline if coming from there
-        if ((location.state as any)?.fromChild && (location.state as any)?.childId) {
-          navigate(`/children/${(location.state as any).childId}`);
+        const state = location.state as { fromChild?: boolean; childId?: number; fromTab?: string } | null;
+        if (state?.fromChild && state?.childId != null) {
+          navigate(`/children/${state.childId}`, { state: { tab: state.fromTab ?? 'illnesses' } });
         } else {
           navigate('/', { state: { tab: 'illnesses' } });
         }
@@ -123,13 +123,13 @@ function AddIllnessPage() {
       <div className="page-header">
         <div>
           <Link 
-            to={((location.state as any)?.fromChild && (location.state as any)?.childId)
-              ? `/children/${(location.state as any).childId}`
+            to={((location.state as { fromChild?: boolean; childId?: number })?.fromChild && (location.state as { childId?: number }).childId)
+              ? `/children/${(location.state as { childId: number }).childId}`
               : '/'} 
-            state={!((location.state as any)?.fromChild) ? { tab: 'illnesses' } : undefined}
+            state={{ tab: 'illnesses' }}
             className="breadcrumb"
           >
-            ← Back to {((location.state as any)?.fromChild) ? (children.find(c => c.id === (location.state as any)?.childId)?.name || 'Child') : 'Illnesses'}
+            ← Back to {((location.state as { fromChild?: boolean; childId?: number })?.fromChild) ? (children.find(c => c.id === (location.state as { childId?: number })?.childId)?.name || 'Child') : 'Illnesses'}
           </Link>
           <h1>Add Illness</h1>
         </div>
@@ -256,8 +256,9 @@ function AddIllnessPage() {
             disabled={submitting}
             onClick={() => {
               // Navigate back to where we came from, or to Home illnesses tab if no origin
-              if ((location.state as any)?.fromChild && (location.state as any)?.childId) {
-                navigate(`/children/${(location.state as any).childId}`);
+              const state = location.state as { fromChild?: boolean; childId?: number; fromTab?: string } | null;
+              if (state?.fromChild && state?.childId != null) {
+                navigate(`/children/${state.childId}`, { state: { tab: state.fromTab ?? 'illnesses' } });
               } else {
                 navigate('/', { state: { tab: 'illnesses' } });
               }

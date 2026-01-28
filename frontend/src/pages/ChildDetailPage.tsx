@@ -1,6 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
-import { HiExclamationCircle } from 'react-icons/hi';
 import { LuActivity, LuHeart, LuThermometer } from 'react-icons/lu';
 import { childrenApi, visitsApi, illnessesApi, ApiClientError } from '../lib/api-client';
 import type { Child, Visit, VisitType, Illness, VisitAttachment, ChildAttachment } from '../types/api';
@@ -18,6 +17,8 @@ import ImageCropUpload from '../components/ImageCropUpload';
 import VaccineHistory from '../components/VaccineHistory';
 import VisitsSidebar from '../components/VisitsSidebar';
 import IllnessesSidebar from '../components/IllnessesSidebar';
+import TrendsSidebar from '../components/TrendsSidebar';
+import MetricsView from '../components/MetricsView';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
 import { LuPill } from 'react-icons/lu';
 import { LuEye } from 'react-icons/lu';
@@ -41,7 +42,9 @@ function ChildDetailPage() {
   const [showVisitTypeModal, setShowVisitTypeModal] = useState(false);
   const [visitTypeFilter, setVisitTypeFilter] = useState<'all' | 'wellness' | 'sick' | 'injury' | 'vision'>('all');
   const [filterIllnessStatus, setFilterIllnessStatus] = useState<'ongoing' | 'ended' | undefined>(undefined);
-  const [activeTab, setActiveTab] = useState<'visits' | 'illnesses' | 'documents' | 'vaccines'>('visits');
+  const [metricsActiveTab, setMetricsActiveTab] = useState<'illness' | 'growth'>('illness');
+  const [metricsYear, setMetricsYear] = useState<number>(new Date().getFullYear());
+  const [activeTab, setActiveTab] = useState<'visits' | 'illnesses' | 'metrics' | 'documents' | 'vaccines'>('visits');
   const [documents, setDocuments] = useState<Array<(VisitAttachment & { visit: Visit; type: 'visit' }) | (ChildAttachment & { type: 'child' })>>([]);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
   const [showAvatarEditor, setShowAvatarEditor] = useState(false);
@@ -142,6 +145,14 @@ function ChildDetailPage() {
   useEffect(() => {
     loadChild();
   }, [loadChild]);
+
+  // When navigating back from Add Illness (or similar), open the requested tab
+  const stateTab = (location.state as { tab?: 'visits' | 'illnesses' | 'metrics' | 'documents' | 'vaccines' } | null)?.tab;
+  useEffect(() => {
+    if (stateTab != null) {
+      setActiveTab(stateTab);
+    }
+  }, [stateTab]);
 
   const loadDocuments = useCallback(async () => {
     if (!id) return;
@@ -386,17 +397,6 @@ function ChildDetailPage() {
                   </div>
                 </div>
               </div>
-              <div className="overview-actions">
-                <Link 
-                  to={`/illnesses/new?child_id=${child.id}`}
-                  state={{ fromChild: true, childId: child.id }}
-                >
-                  <Button variant="secondary" size="sm">
-                    <HiExclamationCircle className="btn-icon" />
-                    Add Illness
-                  </Button>
-                </Link>
-              </div>
             </div>
             
             {/* Last Visits in Overview */}
@@ -595,6 +595,7 @@ function ChildDetailPage() {
                       selectedChildId={undefined}
                       onSelectChild={() => {}}
                       hideChildFilter
+                      addIllnessChildId={child?.id}
                     />
                     <main className="visits-main">
                       {illnessItems.length === 0 ? (
@@ -640,11 +641,37 @@ function ChildDetailPage() {
                 });
               }
 
+              // Metrics tab at far right
+              tabsArray.push({
+                id: 'metrics',
+                label: 'Metrics',
+                content: (
+                  <div className="visits-page-layout">
+                    <TrendsSidebar
+                      activeTab={metricsActiveTab}
+                      onChangeTab={(t) => setMetricsActiveTab(t)}
+                      childrenList={child ? [child] : []}
+                      selectedChildId={child?.id}
+                      onSelectChild={() => {}}
+                    />
+                    <main className="visits-main">
+                      <MetricsView
+                        activeTab={metricsActiveTab}
+                        onActiveTabChange={(t) => setMetricsActiveTab(t)}
+                        selectedYear={metricsYear}
+                        onSelectedYearChange={(y) => setMetricsYear(y)}
+                        filterChildId={child?.id}
+                        onFilterChildChange={() => {}}
+                      />
+                    </main>
+                  </div>
+                ),
+              });
 
               return (
                 <Tabs
                   activeTab={activeTab}
-                  onTabChange={(tabId) => setActiveTab(tabId as 'visits' | 'illnesses' | 'documents' | 'vaccines')}
+                  onTabChange={(tabId) => setActiveTab(tabId as 'visits' | 'illnesses' | 'metrics' | 'documents' | 'vaccines')}
                   tabs={tabsArray}
                 />
               );
