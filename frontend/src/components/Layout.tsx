@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useHomeTabRequest } from '../contexts/HomeTabRequestContext';
 import ThemeToggle from './ThemeToggle';
 import AboutDropdown from './AboutDropdown';
 import IllnessNotification from './IllnessNotification';
@@ -12,18 +13,24 @@ interface LayoutProps {
 
 function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const homeTabRequest = useHomeTabRequest();
 
   const handleLogout = async () => {
     await logout();
   };
 
-  const [, setSearchParams] = useSearchParams();
+  const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    homeTabRequest?.requestFamilyTab();
+    navigate('/', { state: { tab: 'family' } });
+  };
 
   return (
     <div className="app-container">
       <header className="app-header">
         <div className="header-content">
-          <Link to="/?tab=family" className="header-brand" onClick={(e) => { e.preventDefault(); setSearchParams({ tab: 'family' }); }}>
+          <Link to="/" className="header-brand" onClick={handleLogoClick}>
             <img 
               src="/logo/trajectory.png" 
               alt="Trajectory Logo" 

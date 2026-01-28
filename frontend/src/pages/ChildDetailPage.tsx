@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
-import { HiPlus, HiExclamationCircle } from 'react-icons/hi';
-import { LuHeart, LuThermometer } from 'react-icons/lu';
+import { HiExclamationCircle } from 'react-icons/hi';
+import { LuActivity, LuHeart, LuThermometer } from 'react-icons/lu';
 import { childrenApi, visitsApi, illnessesApi, ApiClientError } from '../lib/api-client';
 import type { Child, Visit, VisitType, Illness, VisitAttachment, ChildAttachment } from '../types/api';
 import { calculateAge, formatAge, formatDate } from '../lib/date-utils';
@@ -11,12 +11,13 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import Notification from '../components/Notification';
 import VisitTypeModal from '../components/VisitTypeModal';
-import Select from '../components/Select';
 import TimelineItem from '../components/TimelineItem';
 import Tabs from '../components/Tabs';
 import DocumentsList from '../components/DocumentsList';
 import ImageCropUpload from '../components/ImageCropUpload';
 import VaccineHistory from '../components/VaccineHistory';
+import VisitsSidebar from '../components/VisitsSidebar';
+import IllnessesSidebar from '../components/IllnessesSidebar';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
 import { LuPill } from 'react-icons/lu';
 import { LuEye } from 'react-icons/lu';
@@ -39,6 +40,7 @@ function ChildDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [showVisitTypeModal, setShowVisitTypeModal] = useState(false);
   const [visitTypeFilter, setVisitTypeFilter] = useState<'all' | 'wellness' | 'sick' | 'injury' | 'vision'>('all');
+  const [filterIllnessStatus, setFilterIllnessStatus] = useState<'ongoing' | 'ended' | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<'visits' | 'illnesses' | 'documents' | 'vaccines'>('visits');
   const [documents, setDocuments] = useState<Array<(VisitAttachment & { visit: Visit; type: 'visit' }) | (ChildAttachment & { type: 'child' })>>([]);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
@@ -263,7 +265,7 @@ function ChildDetailPage() {
     return items;
   }, [visits, visitTypeFilter]);
 
-  // Filter illnesses - MUST be called before early returns (Rules of Hooks)
+  // Filter illnesses by status - MUST be called before early returns (Rules of Hooks)
   const illnessItems = useMemo(() => {
     type IllnessItem = {
       id: string;
@@ -271,22 +273,24 @@ function ChildDetailPage() {
       data: Illness;
     };
 
-    const items: IllnessItem[] = [];
+    let list = illnesses;
+    if (filterIllnessStatus === 'ongoing') {
+      list = illnesses.filter((i) => !i.end_date);
+    } else if (filterIllnessStatus === 'ended') {
+      list = illnesses.filter((i) => !!i.end_date);
+    }
 
-    // Add all illnesses
-    illnesses.forEach(illness => {
-      items.push({
-        id: `illness-${illness.id}`,
-        date: illness.start_date,
-        data: illness,
-      });
-    });
+    const items: IllnessItem[] = list.map((illness) => ({
+      id: `illness-${illness.id}`,
+      date: illness.start_date,
+      data: illness,
+    }));
 
     // Sort by date (most recent first)
     items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return items;
-  }, [illnesses]);
+  }, [illnesses, filterIllnessStatus]);
 
   // Early returns AFTER all hooks
   if (loading) {
@@ -383,10 +387,6 @@ function ChildDetailPage() {
                 </div>
               </div>
               <div className="overview-actions">
-                <Button onClick={() => setShowVisitTypeModal(true)} size="sm">
-                  <HiPlus className="btn-icon" />
-                  Add Visit
-                </Button>
                 <Link 
                   to={`/illnesses/new?child_id=${child.id}`}
                   state={{ fromChild: true, childId: child.id }}
@@ -481,42 +481,80 @@ function ChildDetailPage() {
                 id: 'visits',
                 label: 'Visits',
                 content: (
-                  <div>
-                    <div className="timeline-filters">
-                      <div className="filter-group">
-                        <label htmlFor="visit-type-filter">Visit Type:</label>
-                        <Select
-                          id="visit-type-filter"
-                          value={visitTypeFilter}
-                          onChange={(value) => setVisitTypeFilter(value as 'all' | 'wellness' | 'sick' | 'injury' | 'vision')}
-                          options={[
-                            { value: 'all', label: 'All Visits' },
-                            { value: 'wellness', label: 'Wellness' },
-                            { value: 'sick', label: 'Sick' },
-                            { value: 'injury', label: 'Injury' },
-                            { value: 'vision', label: 'Vision' },
-                          ]}
-                        />
-                      </div>
-                    </div>
+                  <div className="visits-page-layout">
+                    <VisitsSidebar
+                      stats={[
+                        {
+                          label: 'Total Visits',
+                          value: visits.length,
+                          icon: LuActivity,
+                          color: 'gray',
+                          onClick: () => setVisitTypeFilter('all'),
+                          active: visitTypeFilter === 'all',
+                        },
+                        {
+                          label: 'Wellness',
+                          value: visits.filter((v) => v.visit_type === 'wellness').length,
+                          icon: LuHeart,
+                          color: 'emerald',
+                          onClick: () => setVisitTypeFilter('wellness'),
+                          active: visitTypeFilter === 'wellness',
+                        },
+                        {
+                          label: 'Sick',
+                          value: visits.filter((v) => v.visit_type === 'sick').length,
+                          icon: LuPill,
+                          color: 'red',
+                          onClick: () => setVisitTypeFilter('sick'),
+                          active: visitTypeFilter === 'sick',
+                        },
+                        {
+                          label: 'Injury',
+                          value: visits.filter((v) => v.visit_type === 'injury').length,
+                          icon: MdOutlinePersonalInjury,
+                          color: 'blue',
+                          onClick: () => setVisitTypeFilter('injury'),
+                          active: visitTypeFilter === 'injury',
+                        },
+                        {
+                          label: 'Vision',
+                          value: visits.filter((v) => v.visit_type === 'vision').length,
+                          icon: LuEye,
+                          color: 'purple',
+                          onClick: () => setVisitTypeFilter('vision'),
+                          active: visitTypeFilter === 'vision',
+                        },
+                      ]}
+                      // Child detail page already implies the child; hide selector.
+                      childrenList={[]}
+                      selectedChildId={undefined}
+                      onSelectChild={() => {}}
+                      hideChildFilter
+                    />
 
-                    {visitItems.length === 0 ? (
-                      <div className="empty-state">
-                        <p>No visits recorded yet. Click "Add Visit" to get started.</p>
-                      </div>
-                    ) : (
-                      <div className="timeline-list-modern">
-                        {visitItems.map((item) => (
-                          <TimelineItem
-                            key={item.id}
-                            type="visit"
-                            data={item.data}
-                            hasAttachments={visitsWithAttachments.has(item.data.id)}
-                            childName={undefined} // Child detail page: don't show child badge here
-                          />
-                        ))}
-                      </div>
-                    )}
+                    <main className="visits-main">
+                      {visitItems.length === 0 ? (
+                        <Card>
+                          <p className="empty-state">
+                            No visits recorded yet. Click "Add Visit" to get started.
+                          </p>
+                        </Card>
+                      ) : (
+                        <Card>
+                          <div className="timeline-list-modern">
+                            {visitItems.map((item) => (
+                              <TimelineItem
+                                key={item.id}
+                                type="visit"
+                                data={item.data}
+                                hasAttachments={visitsWithAttachments.has(item.data.id)}
+                                childName={undefined} // Child detail page: don't show child badge here
+                              />
+                            ))}
+                          </div>
+                        </Card>
+                      )}
+                    </main>
                   </div>
                 ),
               });
@@ -525,22 +563,60 @@ function ChildDetailPage() {
                 id: 'illnesses',
                 label: 'Illnesses',
                 content: (
-                  <div>
-                    {illnessItems.length === 0 ? (
-                      <div className="empty-state">
-                        <p>No illnesses recorded yet. Click "Add Illness" to get started.</p>
-                      </div>
-                    ) : (
-                      <div className="timeline-list-modern">
-                        {illnessItems.map((item) => (
-                          <TimelineItem
-                            key={item.id}
-                            type="illness"
-                            data={item.data}
-                          />
-                        ))}
-                      </div>
-                    )}
+                  <div className="visits-page-layout">
+                    <IllnessesSidebar
+                      stats={[
+                        {
+                          label: 'Total Illnesses',
+                          value: illnesses.length,
+                          icon: LuActivity,
+                          color: 'blue',
+                          onClick: () => setFilterIllnessStatus(undefined),
+                          active: !filterIllnessStatus,
+                        },
+                        {
+                          label: 'Ongoing',
+                          value: illnesses.filter((i) => !i.end_date).length,
+                          icon: LuActivity,
+                          color: 'red',
+                          onClick: () => setFilterIllnessStatus('ongoing'),
+                          active: filterIllnessStatus === 'ongoing',
+                        },
+                        {
+                          label: 'Ended',
+                          value: illnesses.filter((i) => !!i.end_date).length,
+                          icon: LuActivity,
+                          color: 'emerald',
+                          onClick: () => setFilterIllnessStatus('ended'),
+                          active: filterIllnessStatus === 'ended',
+                        },
+                      ]}
+                      childrenList={[]}
+                      selectedChildId={undefined}
+                      onSelectChild={() => {}}
+                      hideChildFilter
+                    />
+                    <main className="visits-main">
+                      {illnessItems.length === 0 ? (
+                        <Card>
+                          <p className="empty-state">
+                            No illnesses recorded yet. Click "Add Illness" to get started.
+                          </p>
+                        </Card>
+                      ) : (
+                        <Card>
+                          <div className="timeline-list-modern">
+                            {illnessItems.map((item) => (
+                              <TimelineItem
+                                key={item.id}
+                                type="illness"
+                                data={item.data}
+                              />
+                            ))}
+                          </div>
+                        </Card>
+                      )}
+                    </main>
                   </div>
                 ),
               });

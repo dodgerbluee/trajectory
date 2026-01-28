@@ -89,6 +89,7 @@ function AddVisitPage() {
   // Determine origin for back/cancel navigation
   const fromState = (location.state || {}) as any;
   const originFrom = typeof fromState.from === 'string' ? fromState.from : null;
+  const originFromTab = fromState.fromTab as string | undefined; // e.g. 'visits' when returning to home tab
   const originFromChild = !!fromState.fromChild;
   const originChildId = fromState.childId ? parseInt(fromState.childId) : (childIdFromUrl ? parseInt(childIdFromUrl) : null);
   const originFromVisits = !!fromState.fromVisits;
@@ -227,13 +228,14 @@ function AddVisitPage() {
     );
   }
 
-  const backLink = originFromChild && originChildId ? `/children/${originChildId}` : (originFromVisits ? '/?tab=visits' : (childIdFromUrl ? `/children/${childIdFromUrl}` : '/'));
+  const backLink = originFromChild && originChildId ? `/children/${originChildId}` : (originFromVisits || originFromTab ? '/' : (childIdFromUrl ? `/children/${childIdFromUrl}` : '/'));
+  const backState = (originFromVisits || originFromTab) ? { tab: originFromTab || 'visits' } : undefined;
 
   return (
     <div className="page-container">
       <div className="page-header">
         <div>
-          <Link to={backLink} className="breadcrumb">
+          <Link to={backLink} state={backState} className="breadcrumb">
             ← Back
           </Link>
           <h1>Add Visit</h1>
@@ -676,17 +678,16 @@ function AddVisitPage() {
             variant="secondary" 
             disabled={submitting}
             onClick={() => {
-              // Navigate back to where we came from (prefer explicit `from`), or to visits tab if no origin
-              if (originFrom) {
+              if (originFromTab || originFromVisits) {
+                navigate('/', { state: { tab: originFromTab || 'visits' } });
+              } else if (originFrom) {
                 navigate(originFrom);
               } else if (originFromChild && originChildId) {
                 navigate(`/children/${originChildId}`);
-              } else if (originFromVisits) {
-                navigate('/?tab=visits');
               } else if (childIdFromUrl) {
                 navigate(`/children/${childIdFromUrl}`);
               } else {
-                navigate('/?tab=visits');
+                navigate('/', { state: { tab: 'visits' } });
               }
             }}
           >
@@ -703,13 +704,14 @@ function AddVisitPage() {
         }}
         onClose={() => {
           setShowVisitTypeModal(false);
-          // Prefer explicit `from` path when available, otherwise fall back to child/home
-          if (originFrom) {
+          if (originFromTab || originFromVisits) {
+            navigate('/', { state: { tab: originFromTab || 'visits' } });
+          } else if (originFrom) {
             navigate(originFrom);
           } else if ((location.state as any)?.fromChild && (location.state as any)?.childId) {
             navigate(`/children/${(location.state as any).childId}`);
           } else {
-            navigate('/');
+            navigate('/', { state: { tab: 'visits' } });
           }
         }}
       />

@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { HomeTabRequestProvider } from './contexts/HomeTabRequestContext';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -30,8 +31,9 @@ function App() {
           path="/*"
           element={
             <ProtectedRoute>
-              <Layout>
-                <Routes>
+              <HomeTabRequestProvider>
+                <Layout>
+                  <Routes>
                   <Route path="/" element={<HomePage />} />
                   <Route path="/children/new" element={<AddChildPage />} />
                   <Route path="/children/:id" element={<ChildDetailPage />} />
@@ -53,8 +55,9 @@ function App() {
                   <Route path="/settings" element={<SettingsPage />} />
                   
                   <Route path="*" element={<NotFoundPage />} />
-                </Routes>
-              </Layout>
+                  </Routes>
+                </Layout>
+              </HomeTabRequestProvider>
             </ProtectedRoute>
           }
         />

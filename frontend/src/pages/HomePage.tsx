@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { childrenApi } from '../lib/api-client';
 import type { Child } from '../types/api';
 import { calculateAge, formatAge, formatDate } from '../lib/date-utils';
+import { useHomeTabRequest } from '../contexts/HomeTabRequestContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import Card from '../components/Card';
@@ -14,12 +15,14 @@ import MetricsView from '../components/MetricsView';
 import TrendsSidebar from '../components/TrendsSidebar';
 import VisitTypeModal from '../components/VisitTypeModal';
 
+type HomeTab = 'family' | 'illnesses' | 'visits' | 'trends';
+
 function HomePage() {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const initialTab = (searchParams.get('tab') as 'family' | 'illnesses' | 'visits' | 'trends') || 'family';
-  const [activeTab, setActiveTab] = useState<'family' | 'illnesses' | 'visits' | 'trends'>(initialTab);
+  const homeTabRequest = useHomeTabRequest();
+  const stateTab = (location.state as { tab?: HomeTab } | null)?.tab;
+  const [activeTab, setActiveTab] = useState<HomeTab>(stateTab ?? 'family');
   const [children, setChildren] = useState<Child[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,10 +61,17 @@ function HomePage() {
   }, [activeTab]);
 
   useEffect(() => {
-    const tab = (searchParams.get('tab') as 'family' | 'illnesses' | 'visits' | 'trends') || 'family';
-    setActiveTab(tab);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams.toString()]);
+    if (stateTab) {
+      setActiveTab(stateTab);
+    }
+  }, [stateTab]);
+
+  // Logo click requests Family tab via context (works every time, even when already on home)
+  useEffect(() => {
+    if (homeTabRequest?.requestId != null && homeTabRequest.requestId > 0) {
+      setActiveTab('family');
+    }
+  }, [homeTabRequest?.requestId]);
 
   const familyContent = (
     <div>
@@ -174,7 +184,7 @@ function HomePage() {
         <Tabs
           tabs={tabs}
           activeTab={activeTab}
-          onTabChange={(tabId) => setActiveTab(tabId as 'family' | 'visits' | 'illnesses' | 'trends')}
+          onTabChange={(tabId) => setActiveTab(tabId as HomeTab)}
         />
       </Card>
       {/* Visit type modal triggered via navigation state (no URL query) on the Home page */}
@@ -182,14 +192,15 @@ function HomePage() {
         isOpen={!!((location.state as any)?.openAddVisit)}
         onSelect={(visitType: any) => {
           const stateFrom = (location.state as any)?.from;
-          const from = stateFrom ?? (location.pathname === '/' ? '/?tab=visits' : `${location.pathname}${location.search}`);
-          navigate(`/visits/new?type=${visitType}`, { state: { from } });
+          const stateFromTab = (location.state as any)?.fromTab;
+          const from = stateFrom ?? (location.pathname === '/' ? '/' : `${location.pathname}${location.search}`);
+          const fromTab = stateFromTab ?? (location.pathname === '/' ? 'visits' : undefined);
+          navigate(`/visits/new?type=${visitType}`, { state: { from, fromTab } });
         }}
         onClose={() => {
-          // clear the openAddVisit flag from location state without changing URL
           const currentState = { ...(location.state as any) };
           delete currentState.openAddVisit;
-          navigate(location.pathname + location.search, { state: currentState, replace: true });
+          navigate(location.pathname + (location.search || ''), { state: currentState, replace: true });
         }}
       />
       <div className="version-footer">

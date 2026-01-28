@@ -18,9 +18,10 @@ interface Props {
   childrenList: Child[];
   selectedChildId?: number | undefined;
   onSelectChild: (id?: number) => void;
+  hideChildFilter?: boolean;
 }
 
-export default function IllnessesSidebar({ stats, childrenList, selectedChildId, onSelectChild }: Props) {
+export default function IllnessesSidebar({ stats, childrenList, selectedChildId, onSelectChild, hideChildFilter = false }: Props) {
   return (
     <aside className="visits-sidebar">
       <div className="visits-sidebar-inner">
@@ -34,16 +35,26 @@ export default function IllnessesSidebar({ stats, childrenList, selectedChildId,
           <VisitStats stats={stats as any} vertical />
         </nav>
 
-        <div className="sidebar-section">
-          <h4 className="sidebar-section-title">Child Filter</h4>
-          <ChildSelector childrenList={childrenList} selectedChildId={selectedChildId} onSelect={onSelectChild} />
+        {!hideChildFilter && (
+          <div className="sidebar-section">
+            <h4 className="sidebar-section-title">Child Filter</h4>
+            <ChildSelector childrenList={childrenList} selectedChildId={selectedChildId} onSelect={onSelectChild} />
 
+            <div className="sidebar-action" style={{ marginTop: 12 }}>
+              <Link to="/illnesses/new" className="sidebar-action-link">
+                <Button className="sidebar-add-btn" size="lg">Add Illness</Button>
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {hideChildFilter && (
           <div className="sidebar-action" style={{ marginTop: 12 }}>
             <Link to="/illnesses/new" className="sidebar-action-link">
               <Button className="sidebar-add-btn" size="lg">Add Illness</Button>
             </Link>
           </div>
-        </div>
+        )}
       </div>
     </aside>
   );
