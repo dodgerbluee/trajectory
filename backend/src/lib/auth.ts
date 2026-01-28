@@ -5,6 +5,7 @@
 
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import type { JwtPayload } from 'jsonwebtoken';
 import crypto from 'crypto';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'change-me-in-production';
@@ -52,8 +53,15 @@ export function generateRefreshToken(userId: number, email: string): string {
  */
 export function verifyToken(token: string, isRefresh = false): { userId: number; email: string; type: string } {
   const secret = isRefresh ? JWT_REFRESH_SECRET : JWT_SECRET;
-  const decoded = jwt.verify(token, secret) as any;
-  return { userId: decoded.userId, email: decoded.email, type: decoded.type };
+  const decoded = jwt.verify(token, secret);
+  if (typeof decoded === 'string') {
+    throw new Error('Invalid token payload');
+  }
+  const payload = decoded as JwtPayload & Partial<{ userId: unknown; email: unknown; type: unknown }>;
+  if (typeof payload.userId !== 'number' || typeof payload.email !== 'string' || typeof payload.type !== 'string') {
+    throw new Error('Invalid token payload');
+  }
+  return { userId: payload.userId, email: payload.email, type: payload.type };
 }
 
 /**

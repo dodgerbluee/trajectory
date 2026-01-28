@@ -3,6 +3,8 @@
  * Provides consistent response shapes across all endpoints
  */
 
+import type { ParsedQs } from 'qs';
+
 /**
  * Standard API response wrapper
  */
@@ -68,11 +70,14 @@ export const MAX_LIMIT = 100;
 /**
  * Parse pagination parameters from query string
  */
-export function parsePaginationParams(query: any): PaginationParams {
-  const page = Math.max(1, parseInt(query.page) || DEFAULT_PAGE);
+export function parsePaginationParams(query: ParsedQs): PaginationParams {
+  const pageRaw = typeof query.page === 'string' ? query.page : undefined;
+  const limitRaw = typeof query.limit === 'string' ? query.limit : undefined;
+
+  const page = Math.max(1, parseInt(pageRaw ?? '', 10) || DEFAULT_PAGE);
   const limit = Math.min(
     MAX_LIMIT,
-    Math.max(1, parseInt(query.limit) || DEFAULT_LIMIT)
+    Math.max(1, parseInt(limitRaw ?? '', 10) || DEFAULT_LIMIT)
   );
   const offset = (page - 1) * limit;
 

@@ -16,7 +16,7 @@ const router = Router();
 // Validation helpers
 // ============================================================================
 
-function validateIllnessType(value: any): IllnessType {
+function validateIllnessType(value: unknown): IllnessType {
   if (typeof value !== 'string') {
     throw new BadRequestError('illness_type must be a string');
   }
@@ -41,7 +41,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
 
     let queryText = 'SELECT * FROM illnesses WHERE 1=1';
-    const queryParams: any[] = [];
+    const queryParams: unknown[] = [];
     let paramCount = 1;
 
     if (childId) {
@@ -245,7 +245,7 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
 
     // Build update query dynamically
     const updates: string[] = [];
-    const values: any[] = [];
+    const values: unknown[] = [];
     let paramCount = 1;
 
     if (input.illness_type !== undefined) {

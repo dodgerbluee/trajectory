@@ -14,12 +14,10 @@ import { query } from '../db/connection.js';
 import type { MeasurementAttachmentRow, VisitAttachmentRow, ChildAttachmentRow } from '../types/database.js';
 import { createResponse } from '../types/api.js';
 
-// Extend Express Request type to include file
-declare global {
-  namespace Express {
-    interface Request {
-      file?: Express.Multer.File;
-    }
+// Extend Express Request type to include file (module augmentation; avoids namespaces)
+declare module 'express-serve-static-core' {
+  interface Request {
+    file?: Express.Multer.File;
   }
 }
 
@@ -528,7 +526,7 @@ router.delete(
       }
 
       // Get attachment info before deleting - check all three tables
-      let result = await query<MeasurementAttachmentRow>(
+      const result = await query<MeasurementAttachmentRow>(
         'SELECT * FROM measurement_attachments WHERE id = $1',
         [id]
       );

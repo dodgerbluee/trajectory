@@ -57,14 +57,15 @@ export async function testConnection(): Promise<void> {
       console.log(`  Server time: ${result.rows[0].current_time}`);
       client.release();
       return; // Success - exit retry loop
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Partial<{ code: unknown; message: unknown }>;
       // Check if this is a connection error (database not ready yet)
       const isConnectionError = 
-        error.code === 'ECONNREFUSED' || 
-        error.code === 'ENOTFOUND' ||
-        error.code === 'ETIMEDOUT' ||
-        error.message?.includes('connect') ||
-        error.message?.includes('timeout');
+        err.code === 'ECONNREFUSED' || 
+        err.code === 'ENOTFOUND' ||
+        err.code === 'ETIMEDOUT' ||
+        (typeof err.message === 'string' && err.message.includes('connect')) ||
+        (typeof err.message === 'string' && err.message.includes('timeout'));
       
       if (isConnectionError && attempt < maxRetries) {
         // Calculate exponential backoff delay (with jitter to prevent thundering herd)
@@ -82,7 +83,7 @@ export async function testConnection(): Promise<void> {
         console.error(`✗ Database connection failed after ${maxRetries} attempts`);
         console.error(`  Make sure the database is running and accessible at: ${process.env.DATABASE_URL?.replace(/:[^:@]+@/, ':****@') || 'DATABASE_URL not set'}`);
       } else {
-        console.error('✗ Database connection failed:', error.message || error);
+        console.error('✗ Database connection failed:', (error instanceof Error ? error.message : String(error)));
       }
       throw error;
     }
@@ -102,9 +103,9 @@ export async function closePool(): Promise<void> {
  * Execute a query with automatic connection management
  * This is a convenience wrapper around pool.query
  */
-export async function query<T extends pg.QueryResultRow = any>(
+export async function query<T extends pg.QueryResultRow = pg.QueryResultRow>(
   text: string,
-  params?: any[]
+  params?: unknown[]
 ): Promise<pg.QueryResult<T>> {
   const start = Date.now();
   try {
@@ -117,9 +118,9 @@ export async function query<T extends pg.QueryResultRow = any>(
     }
     
     return result;
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Log concise error message instead of full stack trace
-    const errorMessage = error?.message || error?.toString() || 'Unknown error';
+    const errorMessage = error instanceof Error ? error.message : String(error);
     console.error('Query error:', errorMessage);
     throw error;
   }

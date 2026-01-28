@@ -253,6 +253,9 @@ export interface Visit {
   // Medical interventions
   vaccines_administered: string[] | null;
   prescriptions: Prescription[] | null;
+
+  // Joined from visit_illnesses (not stored on visits table)
+  illnesses?: IllnessType[] | null;
   
   tags: string[] | null;
   notes: string | null;
@@ -387,7 +390,7 @@ export interface VisitRow {
   needs_glasses?: boolean | null;
   
   vaccines_administered: string | null; // TEXT field
-  prescriptions: any; // JSONB field
+  prescriptions: unknown; // JSONB field
   
   tags: string | null; // TEXT field (JSON array)
   notes: string | null;
@@ -399,6 +402,26 @@ export interface VisitRow {
  * Convert VisitRow from database to Visit for API response
  */
 export function visitRowToVisit(row: VisitRow): Visit {
+  const parseNum = (x: unknown): number | null => {
+    if (x === null || x === undefined || x === '') return null;
+    const n = typeof x === 'number' ? x : typeof x === 'string' ? Number(x) : NaN;
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const parsePrescriptions = (val: unknown): Prescription[] | null => {
+    if (val === null || val === undefined) return null;
+    if (Array.isArray(val)) return val as Prescription[];
+    if (typeof val === 'string') {
+      try {
+        const parsed = JSON.parse(val) as unknown;
+        return Array.isArray(parsed) ? (parsed as Prescription[]) : null;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+
   return {
     id: row.id,
     child_id: row.child_id,
@@ -434,21 +457,25 @@ export function visitRowToVisit(row: VisitRow): Visit {
     // Vision visit fields
     vision_prescription: row.vision_prescription ?? null,
     vision_refraction: (() => {
-      const v: any = row.vision_refraction;
+      const v = row.vision_refraction;
       if (!v) return null;
-      const norm = (eye: any) => ({
-        sphere: eye && eye.sphere != null ? Number(eye.sphere) : null,
-        cylinder: eye && eye.cylinder != null ? Number(eye.cylinder) : null,
-        axis: eye && eye.axis != null ? Number(eye.axis) : null,
-      });
-      return { od: norm(v.od || {}), os: norm(v.os || {}), notes: v.notes ?? null };
+      const norm = (eye: unknown) => {
+        if (!eye || typeof eye !== 'object') return { sphere: null, cylinder: null, axis: null };
+        const e = eye as Record<string, unknown>;
+        return {
+          sphere: parseNum(e.sphere),
+          cylinder: parseNum(e.cylinder),
+          axis: parseNum(e.axis),
+        };
+      };
+      return { od: norm(v.od ?? null), os: norm(v.os ?? null), notes: v.notes ?? null };
     })(),
-    ordered_glasses: (row as any).ordered_glasses ?? null,
-    ordered_contacts: (row as any).ordered_contacts ?? null,
+    ordered_glasses: row.ordered_glasses ?? null,
+    ordered_contacts: row.ordered_contacts ?? null,
     needs_glasses: row.needs_glasses ?? null,
     
     vaccines_administered: row.vaccines_administered ? row.vaccines_administered.split(',').map(v => v.trim()).filter(v => v) : null,
-    prescriptions: row.prescriptions || null,
+    prescriptions: parsePrescriptions(row.prescriptions),
     
     tags: row.tags ? (() => {
       try {

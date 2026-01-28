@@ -39,7 +39,7 @@ medicalEventsRouter.get('/', async (req: Request, res: Response, next: NextFunct
 
     // Build WHERE clause
     const conditions = ['child_id = $1'];
-    const values: any[] = [childId];
+    const values: unknown[] = [childId];
     let paramIndex = 2;
 
     // Date range filter on start_date
@@ -163,7 +163,7 @@ medicalEventsRouter.put('/:id', async (req: Request, res: Response, next: NextFu
 
     // Build dynamic update query
     const updates: string[] = [];
-    const values: any[] = [];
+    const values: unknown[] = [];
     let paramCount = 1;
 
     if (req.body.event_type !== undefined) {

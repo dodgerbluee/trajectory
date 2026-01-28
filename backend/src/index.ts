@@ -98,8 +98,12 @@ async function main() {
     process.on('SIGTERM', () => shutdown('SIGTERM'));
 
     // Handle unhandled promise rejections (shouldn't happen with our error handling)
-    process.on('unhandledRejection', (reason: any) => {
-      console.error('Unhandled promise rejection:', reason?.message || reason);
+    process.on('unhandledRejection', (reason: unknown) => {
+      const msg =
+        reason instanceof Error ? reason.message :
+        typeof reason === 'string' ? reason :
+        JSON.stringify(reason);
+      console.error('Unhandled promise rejection:', msg);
       // Don't exit - let the application continue if possible
     });
 
@@ -109,14 +113,14 @@ async function main() {
       shutdown('uncaughtException');
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     // All errors during startup are caught here
     // Log concise error message instead of full stack trace
-    const errorMessage = error?.message || error?.toString() || 'Unknown error';
+    const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(`\n✗ Failed to start server: ${errorMessage}`);
     
     // Only show stack trace in development mode
-    if (process.env.NODE_ENV !== 'production' && error?.stack) {
+    if (process.env.NODE_ENV !== 'production' && error instanceof Error && error.stack) {
       console.error('\nStack trace:', error.stack);
     }
     

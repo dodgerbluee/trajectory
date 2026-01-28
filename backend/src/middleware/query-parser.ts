@@ -5,25 +5,38 @@
 import { ValidationError } from './error-handler.js';
 import type { DateRangeParams } from '../types/api.js';
 import { parsePaginationParams } from '../types/api.js';
+import type { ParsedQs } from 'qs';
 
 /**
  * Parse date range from query parameters
  */
-export function parseDateRange(query: any): DateRangeParams {
+export function parseDateRange(query: ParsedQs): DateRangeParams {
   const params: DateRangeParams = {};
 
-  if (query.start_date) {
-    if (!isValidDateString(query.start_date)) {
+  const startVal = query.start_date;
+  const start =
+    typeof startVal === 'string' ? startVal :
+    Array.isArray(startVal) && typeof startVal[0] === 'string' ? startVal[0] :
+    undefined;
+
+  if (start) {
+    if (!isValidDateString(start)) {
       throw new ValidationError('start_date must be in YYYY-MM-DD format');
     }
-    params.start_date = query.start_date;
+    params.start_date = start;
   }
 
-  if (query.end_date) {
-    if (!isValidDateString(query.end_date)) {
+  const endVal = query.end_date;
+  const end =
+    typeof endVal === 'string' ? endVal :
+    Array.isArray(endVal) && typeof endVal[0] === 'string' ? endVal[0] :
+    undefined;
+
+  if (end) {
+    if (!isValidDateString(end)) {
       throw new ValidationError('end_date must be in YYYY-MM-DD format');
     }
-    params.end_date = query.end_date;
+    params.end_date = end;
   }
 
   // Validate range if both are provided

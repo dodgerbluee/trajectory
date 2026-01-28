@@ -61,7 +61,7 @@ interface ErrorResponse {
     type: string;
     statusCode: number;
     field?: string;
-    details?: any;
+    details?: unknown;
   };
   meta: {
     timestamp: string;
@@ -77,7 +77,7 @@ function createErrorResponse(
   err: Error,
   statusCode: number,
   req?: Request,
-  details?: any
+  details?: unknown
 ): ErrorResponse {
   return {
     error: {

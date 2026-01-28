@@ -30,9 +30,9 @@ interface LogEntry {
   request?: {
     method: string;
     path: string;
-    params?: any;
-    query?: any;
-    body?: any;
+    params?: Record<string, unknown>;
+    query?: Record<string, unknown>;
+    body?: unknown;
     ip?: string;
   };
 }
@@ -76,7 +76,7 @@ export function logError(
 /**
  * Log warning
  */
-export function logWarning(message: string, context?: any): void {
+export function logWarning(message: string, context?: Record<string, unknown>): void {
   const entry: LogEntry = {
     timestamp: new Date().toISOString(),
     level: LogLevel.WARN,
@@ -89,7 +89,7 @@ export function logWarning(message: string, context?: any): void {
 /**
  * Log info
  */
-export function logInfo(message: string, context?: any): void {
+export function logInfo(message: string, context?: Record<string, unknown>): void {
   const entry: LogEntry = {
     timestamp: new Date().toISOString(),
     level: LogLevel.INFO,
