@@ -20,6 +20,7 @@ export interface BaseEntity {
 export type Gender = 'male' | 'female';
 
 export interface Child extends BaseEntity {
+  family_id: number;
   name: string;
   date_of_birth: Date;
   gender: Gender;
@@ -136,6 +137,7 @@ export interface UpdateMedicalEventInput {
  */
 export interface ChildRow {
   id: number;
+  family_id: number;
   name: string;
   date_of_birth: Date;
   gender: Gender;
@@ -596,10 +598,19 @@ export function childRowToEntity(row: ChildRow): Child {
   };
 
   return {
-    ...row,
+    id: row.id,
+    family_id: row.family_id,
+    name: row.name,
+    date_of_birth: row.date_of_birth,
+    gender: row.gender,
+    avatar: row.avatar,
+    notes: row.notes,
+    due_date: row.due_date,
     birth_weight: parseDecimal(row.birth_weight),
     birth_weight_ounces: row.birth_weight_ounces,
     birth_height: parseDecimal(row.birth_height),
+    created_at: row.created_at,
+    updated_at: row.updated_at,
   };
 }
 

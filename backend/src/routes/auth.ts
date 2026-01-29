@@ -29,6 +29,7 @@ import { createResponse } from '../types/api.js';
 import { asyncHandler } from '../middleware/error-handler.js';
 import { loginRateLimiter, passwordResetRateLimiter } from '../middleware/rate-limit.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { getOrCreateDefaultFamilyForUser } from '../lib/family-access.js';
 
 export const authRouter = express.Router();
 
@@ -92,6 +93,9 @@ authRouter.post(
     );
 
     const user = result.rows[0];
+
+    // Create default family so the user can add children (foundation for family-based access)
+    await getOrCreateDefaultFamilyForUser(user.id);
 
     // Generate tokens
     const accessToken = generateAccessToken(user.id, user.email);

@@ -35,6 +35,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-trajectory_user}:${DB_PASSWORD:-development_password}@database:5432/${POSTGRES_DB:-trajectory}
       NODE_ENV: production
       PORT: 3001
+      TZ: ${TZ:-UTC}
       UPLOAD_DIR: /app/uploads
       AVATAR_DIR: /app/avatars
       FRONTEND_DIR: public

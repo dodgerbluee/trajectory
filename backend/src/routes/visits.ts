@@ -3,7 +3,6 @@
  */
 
 import { Router, Response, NextFunction } from 'express';
-import type { Request as ExpressRequest } from 'express';
 import { query } from '../db/connection.js';
 import { createResponse, createPaginatedResponse, parsePaginationParams, type AuditHistoryEvent } from '../types/api.js';
 import { canViewAuditHistory } from '../lib/audit.js';
@@ -14,8 +13,10 @@ import type { VisitRow, CreateVisitInput, VisitType, IllnessType } from '../type
 import { visitRowToVisit as convertVisitRow } from '../types/database.js';
 import { buildFieldDiff, auditChangesSummary } from '../lib/field-diff.js';
 import { recordAuditEvent } from '../lib/audit.js';
+import { getAccessibleChildIds, canAccessChild } from '../lib/family-access.js';
 
 const router = Router();
+router.use(authenticate);
 
 // ============================================================================
 // Validation helpers
@@ -194,8 +195,13 @@ function validateVisionRefraction(value: unknown): VisionRefractionInput | null 
 // GET /api/visits/growth-data - Get growth data for charts (age-based)
 // ============================================================================
 
-router.get('/growth-data', async (req: ExpressRequest, res: Response, next: NextFunction) => {
+router.get('/growth-data', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    const accessibleChildIds = await getAccessibleChildIds(req.userId!);
+    if (accessibleChildIds.length === 0) {
+      return res.json(createResponse([]));
+    }
+
     const childId = req.query.child_id ? parseInt(req.query.child_id as string) : undefined;
     const startDate = req.query.start_date as string | undefined;
     const endDate = req.query.end_date as string | undefined;
@@ -203,8 +209,10 @@ router.get('/growth-data', async (req: ExpressRequest, res: Response, next: Next
     if (childId && isNaN(childId)) {
       throw new BadRequestError('Invalid child_id');
     }
+    if (childId && !accessibleChildIds.includes(childId)) {
+      throw new BadRequestError('Invalid child_id');
+    }
 
-    // Build query for wellness visits with measurements
     let queryText = `
       SELECT 
         v.id as visit_id,
@@ -226,6 +234,7 @@ router.get('/growth-data', async (req: ExpressRequest, res: Response, next: Next
       FROM visits v
       INNER JOIN children c ON v.child_id = c.id
       WHERE v.visit_type = 'wellness'
+        AND v.child_id = ANY($1::int[])
         AND (
           v.weight_value IS NOT NULL 
           OR v.height_value IS NOT NULL 
@@ -234,8 +243,8 @@ router.get('/growth-data', async (req: ExpressRequest, res: Response, next: Next
         )
     `;
 
-    const queryParams: unknown[] = [];
-    let paramIndex = 1;
+    const queryParams: unknown[] = [accessibleChildIds];
+    let paramIndex = 2;
 
     if (childId) {
       queryText += ` AND v.child_id = $${paramIndex}`;
@@ -425,24 +434,32 @@ router.get('/growth-data', async (req: ExpressRequest, res: Response, next: Next
       return a.age_months - b.age_months;
     });
 
-    res.json(createResponse(allGrowthData));
+    return res.json(createResponse(allGrowthData));
   } catch (err) {
-    next(err);
+    return next(err);
   }
 });
 
-router.get('/', async (req: ExpressRequest, res: Response, next: NextFunction) => {
+router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    const accessibleChildIds = await getAccessibleChildIds(req.userId!);
+    if (accessibleChildIds.length === 0) {
+      return res.json(createResponse([]));
+    }
+
     const childId = req.query.child_id ? parseInt(req.query.child_id as string) : undefined;
     const visitType = req.query.visit_type as VisitType | undefined;
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
     const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
 
-    let queryText = 'SELECT * FROM visits WHERE 1=1';
-    const queryParams: unknown[] = [];
-    let paramCount = 1;
+    let queryText = 'SELECT * FROM visits WHERE child_id = ANY($1::int[])';
+    const queryParams: unknown[] = [accessibleChildIds];
+    let paramCount = 2;
 
     if (childId) {
+      if (!accessibleChildIds.includes(childId)) {
+        return res.json(createResponse([]));
+      }
       queryText += ` AND child_id = $${paramCount++}`;
       queryParams.push(childId);
     }
@@ -477,9 +494,9 @@ router.get('/', async (req: ExpressRequest, res: Response, next: NextFunction) =
       });
     }
 
-    res.json(createResponse(visits));
+    return res.json(createResponse(visits));
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -487,7 +504,7 @@ router.get('/', async (req: ExpressRequest, res: Response, next: NextFunction) =
 // GET /api/visits/:id - Get single visit
 // ============================================================================
 
-router.get('/:id', async (req: ExpressRequest, res: Response, next: NextFunction) => {
+router.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -504,6 +521,9 @@ router.get('/:id', async (req: ExpressRequest, res: Response, next: NextFunction
     }
 
     const visit = convertVisitRow(result.rows[0]);
+    if (!(await canAccessChild(req.userId!, visit.child_id))) {
+      throw new NotFoundError('Visit');
+    }
 
     // Attach illnesses
     const illRes = await query<{ illness_type: IllnessType }>(
@@ -523,8 +543,12 @@ router.get('/:id', async (req: ExpressRequest, res: Response, next: NextFunction
 
 router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    const childId = parseInt(req.body.child_id);
+    if (!(await canAccessChild(req.userId!, childId))) {
+      throw new NotFoundError('Child');
+    }
     const input: CreateVisitInput = {
-      child_id: parseInt(req.body.child_id),
+      child_id: childId,
       visit_date: validateDate(req.body.visit_date, 'visit_date'),
       visit_type: validateVisitType(req.body.visit_type),
       location: validateOptionalString(req.body.location),
@@ -625,13 +649,12 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
         ]
       );
     } catch (dbErr: unknown) {
-      // Log detailed info for debugging (do not leak to clients)
+      // Log for debugging; never log request body in production (may contain health data)
       const e = dbErr as Partial<{ message: unknown; code: unknown; stack: unknown }>;
       console.error('Failed to INSERT visit', {
         message: e.message,
         code: e.code,
-        stack: e.stack,
-        body: req.body,
+        ...(process.env.NODE_ENV !== 'production' && { stack: e.stack, body: req.body }),
       });
 
       // Provide clearer client-facing guidance for common schema mismatch
@@ -653,12 +676,14 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
       visit.illnesses = null;
     }
 
-    // Insert history entry for visit creation
-    await query(
-      `INSERT INTO visit_history (visit_id, user_id, action, description)
-       VALUES ($1, $2, 'created', 'Visit created')`,
-      [visit.id, req.userId || null]
-    );
+    await recordAuditEvent({
+      entityType: 'visit',
+      entityId: visit.id,
+      userId: req.userId ?? null,
+      action: 'created',
+      changes: {},
+      summary: 'Visit created',
+    });
 
     // Auto-create illness entry if requested and visit is sick
     if (input.create_illness && input.visit_type === 'sick' && (Array.isArray(illnesses) && illnesses.length > 0)) {
@@ -719,6 +744,9 @@ router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
       throw new NotFoundError('Visit');
     }
     const currentRow = currentResult.rows[0];
+    if (!(await canAccessChild(req.userId!, currentRow.child_id))) {
+      throw new NotFoundError('Visit');
+    }
     const currentVisit = convertVisitRow(currentRow);
 
     // Optimistic locking: check if client's version matches server's version
@@ -1048,13 +1076,6 @@ router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
       });
     }
 
-    // Insert history entry for visit update (legacy)
-    await query(
-      `INSERT INTO visit_history (visit_id, user_id, action, description)
-       VALUES ($1, $2, 'updated', 'Visit updated')`,
-      [id, req.userId || null]
-    );
-
     res.json(createResponse(visit));
   } catch (error) {
     next(error);
@@ -1156,22 +1177,22 @@ router.get('/:id/history', authenticate, async (req: AuthRequest, res: Response,
 // DELETE /api/visits/:id - Delete visit
 // ============================================================================
 
-router.delete('/:id', async (req: ExpressRequest, res: Response, next: NextFunction) => {
+router.delete('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
       throw new BadRequestError('Invalid visit ID');
     }
 
-    const result = await query(
-      'DELETE FROM visits WHERE id = $1 RETURNING id',
-      [id]
-    );
-
-    if (result.rows.length === 0) {
+    const existing = await query<{ child_id: number }>('SELECT child_id FROM visits WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      throw new NotFoundError('Visit');
+    }
+    if (!(await canAccessChild(req.userId!, existing.rows[0].child_id))) {
       throw new NotFoundError('Visit');
     }
 
+    await query('DELETE FROM visits WHERE id = $1', [id]);
     res.status(204).send();
   } catch (error) {
     next(error);

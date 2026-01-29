@@ -701,6 +701,49 @@ export const illnessesApi = {
 };
 
 // ============================================================================
+// Export API
+// ============================================================================
+
+export const exportApi = {
+  /**
+   * Download full data export as ZIP (JSON + HTML report + attachment files).
+   * Triggers a file download in the browser.
+   */
+  async download(): Promise<void> {
+    const url = `${API_BASE_URL}/api/export`;
+    const accessToken = getAccessToken();
+    const headers: Record<string, string> = {};
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+    const response = await fetch(url, { method: 'GET', headers });
+    if (!response.ok) {
+      const text = await response.text();
+      let message = 'Export failed';
+      try {
+        const data = JSON.parse(text);
+        if (data?.error?.message) message = data.error.message;
+      } catch {
+        if (text) message = text.slice(0, 100);
+      }
+      throw new ApiClientError(message, response.status, 'ExportError');
+    }
+    const blob = await response.blob();
+    const disposition = response.headers.get('Content-Disposition');
+    const match = disposition?.match(/filename="?([^";\n]+)"?/);
+    const filename = match ? match[1].trim() : `trajectory-export-${new Date().toISOString().slice(0, 10)}.zip`;
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(objectUrl);
+  },
+};
+
+// ============================================================================
 // Health Check
 // ============================================================================
 

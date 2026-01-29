@@ -1,8 +1,9 @@
 /**
  * Illness Routes - Standalone illness tracking
+ * All endpoints require auth; data is scoped to the user's family (children they can access).
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import { query } from '../db/connection.js';
 import { createResponse, createPaginatedResponse, parsePaginationParams, type AuditHistoryEvent } from '../types/api.js';
 import { canViewAuditHistory } from '../lib/audit.js';
@@ -13,8 +14,11 @@ import { illnessRowToIllness } from '../types/database.js';
 import { validateOptionalString, validateDate, validateOptionalDate, validateNumber } from '../middleware/validation.js';
 import { buildFieldDiff, auditChangesSummary } from '../lib/field-diff.js';
 import { recordAuditEvent } from '../lib/audit.js';
+import { authenticate, type AuthRequest } from '../middleware/auth.js';
+import { getAccessibleChildIds, canAccessChild } from '../lib/family-access.js';
 
 const router = Router();
+router.use(authenticate);
 
 // ============================================================================
 // Validation helpers
@@ -35,8 +39,13 @@ function validateIllnessType(value: unknown): IllnessType {
 // GET /api/illnesses - List illnesses with filtering
 // ============================================================================
 
-router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    const accessibleChildIds = await getAccessibleChildIds(req.userId!);
+    if (accessibleChildIds.length === 0) {
+      return res.json(createResponse([]));
+    }
+
     const childId = req.query.child_id ? parseInt(req.query.child_id as string) : undefined;
     const illnessType = req.query.illness_type as IllnessType | undefined;
     const startDate = req.query.start_date as string | undefined;
@@ -44,11 +53,14 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 100;
     const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
 
-    let queryText = 'SELECT * FROM illnesses WHERE 1=1';
-    const queryParams: unknown[] = [];
-    let paramCount = 1;
+    let queryText = 'SELECT * FROM illnesses WHERE child_id = ANY($1::int[])';
+    const queryParams: unknown[] = [accessibleChildIds];
+    let paramCount = 2;
 
     if (childId) {
+      if (!accessibleChildIds.includes(childId)) {
+        return res.json(createResponse([]));
+      }
       queryText += ` AND child_id = $${paramCount++}`;
       queryParams.push(childId);
     }
@@ -74,9 +86,9 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const result = await query<IllnessRow>(queryText, queryParams);
     const illnesses = result.rows.map(illnessRowToIllness);
 
-    res.json(createResponse(illnesses));
+    return res.json(createResponse(illnesses));
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -84,16 +96,14 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 // GET /api/illnesses/:id/history - Get change history (audit_events) for an illness
 // ============================================================================
 
-router.get('/:id/history', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/:id/history', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
       throw new BadRequestError('Invalid illness ID');
     }
 
-    // Check permissions (extract userId from request if available)
-    const reqWithAuth = req as Request & { userId?: number };
-    if (!await canViewAuditHistory('illness', id, reqWithAuth.userId ?? null)) {
+    if (!await canViewAuditHistory('illness', id, req.userId ?? null)) {
       throw new UnauthorizedError('You do not have permission to view this history');
     }
 
@@ -176,7 +186,7 @@ router.get('/:id/history', async (req: Request, res: Response, next: NextFunctio
 // GET /api/illnesses/:id - Get single illness
 // ============================================================================
 
-router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -191,8 +201,12 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
     if (result.rows.length === 0) {
       throw new NotFoundError('Illness');
     }
+    const illness = result.rows[0];
+    if (!(await canAccessChild(req.userId!, illness.child_id))) {
+      throw new NotFoundError('Illness');
+    }
 
-    res.json(createResponse(illnessRowToIllness(result.rows[0])));
+    res.json(createResponse(illnessRowToIllness(illness)));
   } catch (error) {
     next(error);
   }
@@ -202,10 +216,15 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 // POST /api/illnesses - Create new illness
 // ============================================================================
 
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    const childId = parseInt(req.body.child_id);
+    if (!(await canAccessChild(req.userId!, childId))) {
+      throw new NotFoundError('Child');
+    }
+
     const input: CreateIllnessInput = {
-      child_id: parseInt(req.body.child_id),
+      child_id: childId,
       illness_type: validateIllnessType(req.body.illness_type),
       start_date: validateDate(req.body.start_date, 'start_date'),
       end_date: validateOptionalDate(req.body.end_date, 'end_date'),
@@ -273,14 +292,13 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 // PUT /api/illnesses/:id - Update illness
 // ============================================================================
 
-router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
       throw new BadRequestError('Invalid illness ID');
     }
 
-    // Check illness exists and load updated_at for optimistic locking
     const existing = await query<IllnessRow & { updated_at: Date }>(
       'SELECT *, updated_at FROM illnesses WHERE id = $1',
       [id]
@@ -290,6 +308,9 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
     }
 
     const existingRow = existing.rows[0];
+    if (!(await canAccessChild(req.userId!, existingRow.child_id))) {
+      throw new NotFoundError('Illness');
+    }
     const existingIllness = illnessRowToIllness(existingRow);
 
     // Optimistic locking: check if client's version matches server's version
@@ -435,11 +456,10 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
       { excludeKeys: ['child_id'] }
     );
     if (Object.keys(changes).length > 0) {
-      const reqWithAuth = req as Request & { userId?: number };
       await recordAuditEvent({
         entityType: 'illness',
         entityId: id,
-        userId: reqWithAuth.userId ?? null,
+        userId: req.userId ?? null,
         action: 'updated',
         changes,
       });
@@ -455,22 +475,22 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
 // DELETE /api/illnesses/:id - Delete illness
 // ============================================================================
 
-router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
       throw new BadRequestError('Invalid illness ID');
     }
 
-    const result = await query<{ id: number }>(
-      'DELETE FROM illnesses WHERE id = $1 RETURNING id',
-      [id]
-    );
-
-    if (result.rows.length === 0) {
+    const existing = await query<{ child_id: number }>('SELECT child_id FROM illnesses WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      throw new NotFoundError('Illness');
+    }
+    if (!(await canAccessChild(req.userId!, existing.rows[0].child_id))) {
       throw new NotFoundError('Illness');
     }
 
+    await query('DELETE FROM illnesses WHERE id = $1', [id]);
     res.status(204).send();
   } catch (error) {
     next(error);
@@ -481,23 +501,27 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
 // GET /api/illnesses/metrics/heatmap - Get heatmap data for year
 // ============================================================================
 
-router.get('/metrics/heatmap', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/metrics/heatmap', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    const accessibleChildIds = await getAccessibleChildIds(req.userId!);
+    if (accessibleChildIds.length === 0) {
+      return res.json(createResponse({ year: req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear(), days: [], totalDays: 0, maxCount: 0 }));
+    }
+
     const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
     const childId = req.query.child_id ? parseInt(req.query.child_id as string) : undefined;
 
     if (isNaN(year) || year < 2000 || year > 2100) {
       throw new BadRequestError('Invalid year');
     }
+    if (childId && !accessibleChildIds.includes(childId)) {
+      throw new BadRequestError('Invalid child_id');
+    }
 
-    // Generate date series for the year
     const startOfYear = `${year}-01-01`;
     const endOfYear = `${year}-12-31`;
     const currentDate = new Date().toISOString().split('T')[0];
 
-    // Query to get all days where children were sick
-    // When all children: return whole number count
-    // When single child: return severity (1-10) for color intensity
     const queryText = childId
       ? `
         WITH date_series AS (
@@ -540,6 +564,7 @@ router.get('/metrics/heatmap', async (req: Request, res: Response, next: NextFun
           FROM date_series d
           INNER JOIN illnesses i ON i.start_date <= d.date
             AND (i.end_date IS NULL OR i.end_date >= d.date)
+            AND i.child_id = ANY($4::int[])
         )
         SELECT 
           date::text as date,
@@ -552,7 +577,7 @@ router.get('/metrics/heatmap', async (req: Request, res: Response, next: NextFun
 
     const params = childId 
       ? [startOfYear, endOfYear, currentDate, childId]
-      : [startOfYear, endOfYear, currentDate];
+      : [startOfYear, endOfYear, currentDate, accessibleChildIds];
 
     // For single child: use severity (1-10) directly
     // For all children: use whole number count
@@ -583,9 +608,9 @@ router.get('/metrics/heatmap', async (req: Request, res: Response, next: NextFun
       maxCount,
     };
 
-    res.json(createResponse(heatmapData));
+    return res.json(createResponse(heatmapData));
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 

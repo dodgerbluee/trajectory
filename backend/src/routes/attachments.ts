@@ -4,8 +4,7 @@
  */
 
 import { Router, Response, NextFunction } from 'express';
-import type { Request as ExpressRequest } from 'express';
-import type { AuthRequest } from '../middleware/auth.js';
+import type { Request } from 'express';
 import multer, { FileFilterCallback } from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
@@ -13,6 +12,9 @@ import { randomUUID } from 'crypto';
 import { query } from '../db/connection.js';
 import type { MeasurementAttachmentRow, VisitAttachmentRow, ChildAttachmentRow } from '../types/database.js';
 import { createResponse } from '../types/api.js';
+import { recordAuditEvent } from '../lib/audit.js';
+import { authenticate, type AuthRequest } from '../middleware/auth.js';
+import { canAccessChild } from '../lib/family-access.js';
 
 // Extend Express Request type to include file (module augmentation; avoids namespaces)
 declare module 'express-serve-static-core' {
@@ -22,6 +24,24 @@ declare module 'express-serve-static-core' {
 }
 
 const router = Router();
+router.use(authenticate);
+
+/** Resolve attachment id (any table) to child_id for access check. */
+async function getChildIdForAttachment(attachmentId: number): Promise<number | null> {
+  const child = await query<{ child_id: number }>('SELECT child_id FROM child_attachments WHERE id = $1', [attachmentId]);
+  if (child.rows.length > 0) return child.rows[0].child_id;
+  const visit = await query<{ child_id: number }>(
+    'SELECT v.child_id FROM visit_attachments va INNER JOIN visits v ON v.id = va.visit_id WHERE va.id = $1',
+    [attachmentId]
+  );
+  if (visit.rows.length > 0) return visit.rows[0].child_id;
+  const meas = await query<{ child_id: number }>(
+    'SELECT m.child_id FROM measurement_attachments ma INNER JOIN measurements m ON m.id = ma.measurement_id WHERE ma.id = $1',
+    [attachmentId]
+  );
+  if (meas.rows.length > 0) return meas.rows[0].child_id;
+  return null;
+}
 
 // File storage configuration
 const UPLOAD_DIR = process.env.UPLOAD_DIR || '/app/uploads';
@@ -134,11 +154,11 @@ async function verifyStoredFilenameUniqueAfterInsert(
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
-  destination: async (_req: ExpressRequest, _file: Express.Multer.File, cb: (error: Error | null, destination: string) => void): Promise<void> => {
+  destination: async (_req: Request, _file: Express.Multer.File, cb: (error: Error | null, destination: string) => void): Promise<void> => {
     await ensureUploadDir();
     cb(null, UPLOAD_DIR);
   },
-  filename: (_req: ExpressRequest, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void): void => {
+  filename: (_req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void): void => {
     const ext = path.extname(file.originalname);
     const uniqueName = `${randomUUID()}${ext}`;
     cb(null, uniqueName);
@@ -150,7 +170,7 @@ const upload = multer({
   limits: {
     fileSize: MAX_FILE_SIZE,
   },
-  fileFilter: (_req: ExpressRequest, file: Express.Multer.File, cb: FileFilterCallback): void => {
+  fileFilter: (_req: Request, file: Express.Multer.File, cb: FileFilterCallback): void => {
     if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
       cb(null, true);
     } else {
@@ -166,7 +186,7 @@ const upload = multer({
 router.post(
   '/measurements/:measurementId/attachments',
   upload.single('file'),
-  async (req: ExpressRequest, res: Response, next: NextFunction): Promise<void> => {
+  async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const measurementId = parseInt(req.params.measurementId);
 
@@ -255,14 +275,11 @@ router.post(
         return;
       }
 
-      // Verify measurement exists
-      const measurementCheck = await query<{ exists: boolean }>(
-        'SELECT EXISTS(SELECT 1 FROM measurements WHERE id = $1)',
+      const measurementCheck = await query<{ child_id: number }>(
+        'SELECT child_id FROM measurements WHERE id = $1',
         [measurementId]
       );
-
-      if (!measurementCheck.rows[0].exists) {
-        // Delete uploaded file
+      if (measurementCheck.rows.length === 0 || !(await canAccessChild(req.userId!, measurementCheck.rows[0].child_id))) {
         await fs.unlink(finalFilePath);
         res.status(404).json({
           error: {
@@ -370,7 +387,7 @@ router.post(
 
 router.get(
   '/measurements/:measurementId/attachments',
-  async (req: ExpressRequest, res: Response, next: NextFunction): Promise<void> => {
+  async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const measurementId = parseInt(req.params.measurementId);
 
@@ -380,6 +397,18 @@ router.get(
             message: 'Invalid measurement ID',
             type: 'ValidationError',
             statusCode: 400,
+          },
+        });
+        return;
+      }
+
+      const meas = await query<{ child_id: number }>('SELECT child_id FROM measurements WHERE id = $1', [measurementId]);
+      if (meas.rows.length === 0 || !(await canAccessChild(req.userId!, meas.rows[0].child_id))) {
+        res.status(404).json({
+          error: {
+            message: 'Measurement not found',
+            type: 'NotFoundError',
+            statusCode: 404,
           },
         });
         return;
@@ -415,7 +444,7 @@ router.get(
 
 router.get(
   '/attachments/:id',
-  async (req: ExpressRequest, res: Response, next: NextFunction): Promise<void> => {
+  async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const id = parseInt(req.params.id);
 
@@ -473,6 +502,18 @@ router.get(
         return;
       }
 
+      const childIdForAttachment = await getChildIdForAttachment(id);
+      if (childIdForAttachment === null || !(await canAccessChild(req.userId!, childIdForAttachment))) {
+        res.status(404).json({
+          error: {
+            message: 'Attachment not found',
+            type: 'NotFoundError',
+            statusCode: 404,
+          },
+        });
+        return;
+      }
+
       const filePath = path.join(UPLOAD_DIR, attachment.stored_filename);
 
       // Check if file exists
@@ -510,7 +551,7 @@ router.get(
 
 router.delete(
   '/attachments/:id',
-  async (req: ExpressRequest, res: Response, next: NextFunction): Promise<void> => {
+  async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const id = parseInt(req.params.id);
 
@@ -520,6 +561,18 @@ router.delete(
             message: 'Invalid attachment ID',
             type: 'ValidationError',
             statusCode: 400,
+          },
+        });
+        return;
+      }
+
+      const childIdForAttachment = await getChildIdForAttachment(id);
+      if (childIdForAttachment === null || !(await canAccessChild(req.userId!, childIdForAttachment))) {
+        res.status(404).json({
+          error: {
+            message: 'Attachment not found',
+            type: 'NotFoundError',
+            statusCode: 404,
           },
         });
         return;
@@ -690,14 +743,11 @@ router.post(
         return;
       }
 
-      // Verify visit exists
-      const visitCheck = await query<{ exists: boolean }>(
-        'SELECT EXISTS(SELECT 1 FROM visits WHERE id = $1)',
+      const visitCheck = await query<{ child_id: number }>(
+        'SELECT child_id FROM visits WHERE id = $1',
         [visitId]
       );
-
-      if (!visitCheck.rows[0].exists) {
-        // Delete uploaded file
+      if (visitCheck.rows.length === 0 || !(await canAccessChild(req.userId!, visitCheck.rows[0].child_id))) {
         await fs.unlink(finalFilePath);
         res.status(404).json({
           error: {
@@ -785,16 +835,14 @@ router.post(
         updated_at: result.rows[0].created_at.toISOString(), // visit_attachments doesn't have updated_at, use created_at
       };
 
-      // Insert history entry for attachment upload
-      await query(
-        `INSERT INTO visit_history (visit_id, user_id, action, description)
-         VALUES ($1, $2, 'attachment_uploaded', $3)`,
-        [
-          visitId,
-          req.userId || null,
-          `Document uploaded: ${req.file.originalname}`
-        ]
-      );
+      await recordAuditEvent({
+        entityType: 'visit',
+        entityId: visitId,
+        userId: req.userId ?? null,
+        action: 'updated',
+        changes: {},
+        summary: `Document uploaded: ${req.file.originalname}`,
+      });
 
       res.status(201).json(createResponse(attachment));
     } catch (error) {
@@ -817,7 +865,7 @@ router.post(
 
 router.get(
   '/visits/:visitId/attachments',
-  async (req: ExpressRequest, res: Response, next: NextFunction): Promise<void> => {
+  async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const visitId = parseInt(req.params.visitId);
 
@@ -827,6 +875,18 @@ router.get(
             message: 'Invalid visit ID',
             type: 'ValidationError',
             statusCode: 400,
+          },
+        });
+        return;
+      }
+
+      const visitRow = await query<{ child_id: number }>('SELECT child_id FROM visits WHERE id = $1', [visitId]);
+      if (visitRow.rows.length === 0 || !(await canAccessChild(req.userId!, visitRow.rows[0].child_id))) {
+        res.status(404).json({
+          error: {
+            message: 'Visit not found',
+            type: 'NotFoundError',
+            statusCode: 404,
           },
         });
         return;
@@ -861,7 +921,7 @@ router.get(
 // Update attachment filename (works for both measurement and visit attachments)
 // ============================================================================
 
-router.put('/attachments/:id', async (req: ExpressRequest, res: Response, next: NextFunction): Promise<void> => {
+router.put('/attachments/:id', async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const attachmentId = parseInt(req.params.id);
     const { original_filename } = req.body;
@@ -872,6 +932,18 @@ router.put('/attachments/:id', async (req: ExpressRequest, res: Response, next: 
           message: 'Invalid attachment ID',
           type: 'ValidationError',
           statusCode: 400,
+        },
+      });
+      return;
+    }
+
+    const childIdForAttachment = await getChildIdForAttachment(attachmentId);
+    if (childIdForAttachment === null || !(await canAccessChild(req.userId!, childIdForAttachment))) {
+      res.status(404).json({
+        error: {
+          message: 'Attachment not found',
+          type: 'NotFoundError',
+          statusCode: 404,
         },
       });
       return;
@@ -888,14 +960,18 @@ router.put('/attachments/:id', async (req: ExpressRequest, res: Response, next: 
       return;
     }
 
-    // Try measurement_attachments first
+    // Try child_attachments first, then measurement_attachments, then visit_attachments
     let result = await query(
-      'UPDATE measurement_attachments SET original_filename = $1 WHERE id = $2 RETURNING id',
+      'UPDATE child_attachments SET original_filename = $1 WHERE id = $2 RETURNING id',
       [original_filename.trim(), attachmentId]
     );
-
     if (result.rows.length === 0) {
-      // Try visit_attachments
+      result = await query(
+        'UPDATE measurement_attachments SET original_filename = $1 WHERE id = $2 RETURNING id',
+        [original_filename.trim(), attachmentId]
+      );
+    }
+    if (result.rows.length === 0) {
       result = await query(
         'UPDATE visit_attachments SET original_filename = $1 WHERE id = $2 RETURNING id',
         [original_filename.trim(), attachmentId]
@@ -934,7 +1010,7 @@ router.put('/attachments/:id', async (req: ExpressRequest, res: Response, next: 
 router.post(
   '/children/:childId/attachments',
   upload.single('file'),
-  async (req: ExpressRequest, res: Response, next: NextFunction): Promise<void> => {
+  async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const childId = parseInt(req.params.childId);
       if (isNaN(childId)) {
@@ -943,6 +1019,16 @@ router.post(
             message: 'Invalid child ID',
             type: 'ValidationError',
             statusCode: 400,
+          },
+        });
+        return;
+      }
+      if (!(await canAccessChild(req.userId!, childId))) {
+        res.status(404).json({
+          error: {
+            message: 'Child not found',
+            type: 'NotFoundError',
+            statusCode: 404,
           },
         });
         return;
@@ -1112,7 +1198,7 @@ router.post(
 // Get all attachments for a child
 router.get(
   '/children/:childId/attachments',
-  async (req: ExpressRequest, res: Response, next: NextFunction): Promise<void> => {
+  async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const childId = parseInt(req.params.childId);
       if (isNaN(childId)) {
@@ -1121,6 +1207,16 @@ router.get(
             message: 'Invalid child ID',
             type: 'ValidationError',
             statusCode: 400,
+          },
+        });
+        return;
+      }
+      if (!(await canAccessChild(req.userId!, childId))) {
+        res.status(404).json({
+          error: {
+            message: 'Child not found',
+            type: 'NotFoundError',
+            statusCode: 404,
           },
         });
         return;
@@ -1151,76 +1247,5 @@ router.get(
     }
   }
 );
-
-// Update child attachment filename
-router.put('/attachments/:id', async (req: ExpressRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const attachmentId = parseInt(req.params.id);
-    const { original_filename } = req.body;
-
-    if (isNaN(attachmentId)) {
-      res.status(400).json({
-        error: {
-          message: 'Invalid attachment ID',
-          type: 'ValidationError',
-          statusCode: 400,
-        },
-      });
-      return;
-    }
-
-    if (!original_filename || typeof original_filename !== 'string' || !original_filename.trim()) {
-      res.status(400).json({
-        error: {
-          message: 'original_filename is required',
-          type: 'ValidationError',
-          statusCode: 400,
-        },
-      });
-      return;
-    }
-
-    // Try child_attachments first
-    let result = await query(
-      'UPDATE child_attachments SET original_filename = $1 WHERE id = $2 RETURNING id',
-      [original_filename.trim(), attachmentId]
-    );
-
-    if (result.rows.length === 0) {
-      // Try measurement_attachments
-      result = await query(
-        'UPDATE measurement_attachments SET original_filename = $1 WHERE id = $2 RETURNING id',
-        [original_filename.trim(), attachmentId]
-      );
-
-      if (result.rows.length === 0) {
-        // Try visit_attachments
-        result = await query(
-          'UPDATE visit_attachments SET original_filename = $1 WHERE id = $2 RETURNING id',
-          [original_filename.trim(), attachmentId]
-        );
-      }
-    }
-
-    if (result.rows.length === 0) {
-      res.status(404).json({
-        error: {
-          message: 'Attachment not found',
-          type: 'NotFoundError',
-          statusCode: 404,
-        },
-      });
-      return;
-    }
-
-    res.json(createResponse({ id: attachmentId, original_filename: original_filename.trim() }));
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Delete child attachment (update existing delete endpoint to check child_attachments too)
-// The existing DELETE /attachments/:id already checks measurement and visit attachments
-// We need to update it to also check child_attachments
 
 export default router;

@@ -1,3 +1,14 @@
+// App timezone from server (/health); used for date/time formatting. Default UTC until loaded.
+let appTimezone = 'UTC';
+
+export function setAppTimezone(tz: string): void {
+  appTimezone = tz || 'UTC';
+}
+
+export function getAppTimezone(): string {
+  return appTimezone;
+}
+
 /**
  * Calculate age from date of birth
  */
@@ -56,7 +67,8 @@ export function formatDate(dateString: string): string {
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
+      timeZone: getAppTimezone(),
     });
   }
   
@@ -68,7 +80,8 @@ export function formatDate(dateString: string): string {
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
-    day: 'numeric'
+    day: 'numeric',
+    timeZone: getAppTimezone(),
   });
 }
 
@@ -83,7 +96,8 @@ export function formatDateTime(dateString: string): string {
     day: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
-    hour12: true
+    hour12: true,
+    timeZone: getAppTimezone(),
   });
 }
 
@@ -105,7 +119,8 @@ export function safeFormatDateTime(value: string | number | null | undefined): s
     day: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
-    hour12: true
+    hour12: true,
+    timeZone: getAppTimezone(),
   });
   return formatted === 'Invalid Date' ? String(value) : formatted;
 }

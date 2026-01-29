@@ -1,8 +1,8 @@
--- Initial Trajectory database schema
--- This migration creates all tables, indexes, constraints, and functions
--- Idempotent: Uses IF NOT EXISTS for all objects
+-- Trajectory database schema (setup / configuration)
+-- Idempotent: safe to run on fresh install or existing DB (IF NOT EXISTS / no-op when objects exist)
+-- Applied by the app on startup (backend db setup runner).
 
--- Helper function for updating updated_at timestamps
+-- Helper function for updated_at timestamps
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -11,7 +11,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Children table
+-- Children
 CREATE TABLE IF NOT EXISTS children (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS children (
     CONSTRAINT check_birth_weight_ounces CHECK (birth_weight_ounces IS NULL OR (birth_weight_ounces >= 0 AND birth_weight_ounces < 16))
 );
 
--- Measurements table
+-- Measurements
 CREATE TABLE IF NOT EXISTS measurements (
     id SERIAL PRIMARY KEY,
     child_id INTEGER NOT NULL REFERENCES children(id) ON DELETE CASCADE,
@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS measurements (
     CONSTRAINT check_weight_ounces_range CHECK (weight_ounces IS NULL OR (weight_ounces >= 0 AND weight_ounces < 16))
 );
 
--- Medical events table
+-- Medical events
 CREATE TABLE IF NOT EXISTS medical_events (
     id SERIAL PRIMARY KEY,
     child_id INTEGER NOT NULL REFERENCES children(id) ON DELETE CASCADE,
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS medical_events (
     CONSTRAINT check_date_range CHECK (end_date IS NULL OR end_date >= start_date)
 );
 
--- Visits table (wellness, sick, injury, vision)
+-- Visits (current schema: no illness_type, no follow_up_date; has vision_refraction, ordered_glasses/contacts, illness_start_date)
 CREATE TABLE IF NOT EXISTS visits (
     id SERIAL PRIMARY KEY,
     child_id INTEGER NOT NULL REFERENCES children(id) ON DELETE CASCADE,
@@ -87,16 +87,18 @@ CREATE TABLE IF NOT EXISTS visits (
     bmi_percentile DECIMAL(5,2),
     blood_pressure VARCHAR(20),
     heart_rate INTEGER,
-    illness_type VARCHAR(100),
     symptoms TEXT,
     temperature DECIMAL(4,2),
+    illness_start_date DATE,
     end_date DATE,
     injury_type VARCHAR(100),
     injury_location VARCHAR(255),
     treatment TEXT,
-    follow_up_date DATE,
     vision_prescription TEXT,
     needs_glasses BOOLEAN,
+    ordered_glasses BOOLEAN,
+    ordered_contacts BOOLEAN,
+    vision_refraction JSONB,
     vaccines_administered TEXT,
     prescriptions JSONB,
     tags TEXT,
@@ -111,14 +113,19 @@ CREATE TABLE IF NOT EXISTS visits (
         (bmi_percentile IS NULL OR (bmi_percentile >= 0 AND bmi_percentile <= 100))
     ),
     CONSTRAINT check_visits_temperature CHECK (temperature IS NULL OR (temperature >= 95.0 AND temperature <= 110.0)),
-    CONSTRAINT check_visits_end_date CHECK (end_date IS NULL OR end_date >= visit_date),
-    CONSTRAINT check_heart_rate_range CHECK (heart_rate IS NULL OR (heart_rate >= 40 AND heart_rate <= 250)),
-    CONSTRAINT check_illness_type_for_sick CHECK (
-        (visit_type = 'sick' AND illness_type IS NOT NULL) OR (visit_type IN ('wellness', 'injury', 'vision'))
-    )
+    CONSTRAINT check_visits_illness_start_date CHECK (illness_start_date IS NULL OR illness_start_date <= visit_date),
+    CONSTRAINT check_visits_end_date CHECK (end_date IS NULL OR end_date >= COALESCE(illness_start_date, visit_date)),
+    CONSTRAINT check_heart_rate_range CHECK (heart_rate IS NULL OR (heart_rate >= 40 AND heart_rate <= 250))
 );
 
--- Illnesses table
+-- Visit–illness join (illnesses recorded at a visit)
+CREATE TABLE IF NOT EXISTS visit_illnesses (
+    id SERIAL PRIMARY KEY,
+    visit_id INTEGER NOT NULL REFERENCES visits(id) ON DELETE CASCADE,
+    illness_type VARCHAR(100) NOT NULL
+);
+
+-- Illnesses (standalone records)
 CREATE TABLE IF NOT EXISTS illnesses (
     id SERIAL PRIMARY KEY,
     child_id INTEGER NOT NULL REFERENCES children(id) ON DELETE CASCADE,
@@ -138,10 +145,9 @@ CREATE TABLE IF NOT EXISTS illnesses (
     CONSTRAINT check_illnesses_end_date CHECK (end_date IS NULL OR end_date >= start_date)
 );
 
--- Shared sequence for attachment IDs
+-- Attachments
 CREATE SEQUENCE IF NOT EXISTS attachment_id_seq;
 
--- Measurement attachments table
 CREATE TABLE IF NOT EXISTS measurement_attachments (
     id INTEGER PRIMARY KEY DEFAULT nextval('attachment_id_seq'),
     measurement_id INTEGER NOT NULL REFERENCES measurements(id) ON DELETE CASCADE,
@@ -152,7 +158,6 @@ CREATE TABLE IF NOT EXISTS measurement_attachments (
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Visit attachments table
 CREATE TABLE IF NOT EXISTS visit_attachments (
     id INTEGER PRIMARY KEY DEFAULT nextval('attachment_id_seq'),
     visit_id INTEGER NOT NULL REFERENCES visits(id) ON DELETE CASCADE,
@@ -163,7 +168,6 @@ CREATE TABLE IF NOT EXISTS visit_attachments (
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Child attachments table
 CREATE TABLE IF NOT EXISTS child_attachments (
     id INTEGER PRIMARY KEY DEFAULT nextval('attachment_id_seq'),
     child_id INTEGER NOT NULL REFERENCES children(id) ON DELETE CASCADE,
@@ -175,67 +179,127 @@ CREATE TABLE IF NOT EXISTS child_attachments (
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Indexes for performance
+-- Auth (users, sessions, reset tokens, login attempts)
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    last_login_at TIMESTAMP,
+    failed_login_attempts INTEGER NOT NULL DEFAULT 0,
+    locked_until TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS user_sessions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(255) NOT NULL UNIQUE,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    last_used_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    user_agent TEXT,
+    ip_address VARCHAR(45)
+);
+
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(255) NOT NULL UNIQUE,
+    expires_at TIMESTAMP NOT NULL,
+    used BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS login_attempts (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    ip_address VARCHAR(45) NOT NULL,
+    success BOOLEAN NOT NULL,
+    attempted_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Audit (change history for visits/illnesses)
+CREATE TABLE IF NOT EXISTS audit_events (
+    id BIGSERIAL PRIMARY KEY,
+    entity_type VARCHAR(50) NOT NULL CHECK (entity_type IN ('visit', 'illness')),
+    entity_id INTEGER NOT NULL,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    action VARCHAR(20) NOT NULL CHECK (action IN ('created', 'updated', 'deleted')),
+    changed_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    request_id UUID,
+    changes JSONB NOT NULL,
+    summary TEXT
+);
+
+-- Indexes
 CREATE INDEX IF NOT EXISTS idx_measurements_child_date ON measurements(child_id, measurement_date DESC);
 CREATE INDEX IF NOT EXISTS idx_medical_events_child_date ON medical_events(child_id, start_date DESC);
 CREATE INDEX IF NOT EXISTS idx_visits_child_date ON visits(child_id, visit_date DESC);
 CREATE INDEX IF NOT EXISTS idx_visits_type ON visits(visit_type);
-CREATE INDEX IF NOT EXISTS idx_visits_illness ON visits(illness_type) WHERE illness_type IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_visits_injury_type ON visits(injury_type) WHERE injury_type IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_visit_illnesses_visit ON visit_illnesses(visit_id);
+CREATE INDEX IF NOT EXISTS idx_visit_illnesses_type ON visit_illnesses(illness_type);
 CREATE INDEX IF NOT EXISTS idx_illnesses_child_date ON illnesses(child_id, start_date DESC);
 CREATE INDEX IF NOT EXISTS idx_illnesses_severity ON illnesses(severity) WHERE severity IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_measurement_attachments_measurement ON measurement_attachments(measurement_id);
 CREATE INDEX IF NOT EXISTS idx_visit_attachments_visit ON visit_attachments(visit_id);
 CREATE INDEX IF NOT EXISTS idx_child_attachments_child ON child_attachments(child_id);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_sessions_user ON user_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_token ON user_sessions(token_hash);
+CREATE INDEX IF NOT EXISTS idx_sessions_expires ON user_sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_reset_tokens_token ON password_reset_tokens(token_hash);
+CREATE INDEX IF NOT EXISTS idx_reset_tokens_expires ON password_reset_tokens(expires_at);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_email_ip ON login_attempts(email, ip_address);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_attempted ON login_attempts(attempted_at);
+CREATE INDEX IF NOT EXISTS idx_audit_events_entity ON audit_events (entity_type, entity_id, changed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_events_user ON audit_events (user_id, changed_at DESC) WHERE user_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_audit_events_changed_at ON audit_events (changed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_events_changes_gin ON audit_events USING GIN (changes);
 
--- Triggers for automatic updated_at timestamps
--- Create triggers only if they don't exist (idempotent)
+-- Triggers (idempotent)
 DO $$
 BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_trigger WHERE tgname = 'update_children_updated_at'
-    ) THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_children_updated_at') THEN
         CREATE TRIGGER update_children_updated_at BEFORE UPDATE ON children
             FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
     END IF;
 END $$;
-
 DO $$
 BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_trigger WHERE tgname = 'update_measurements_updated_at'
-    ) THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_measurements_updated_at') THEN
         CREATE TRIGGER update_measurements_updated_at BEFORE UPDATE ON measurements
             FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
     END IF;
 END $$;
-
 DO $$
 BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_trigger WHERE tgname = 'update_medical_events_updated_at'
-    ) THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_medical_events_updated_at') THEN
         CREATE TRIGGER update_medical_events_updated_at BEFORE UPDATE ON medical_events
             FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
     END IF;
 END $$;
-
 DO $$
 BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_trigger WHERE tgname = 'update_visits_updated_at'
-    ) THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_visits_updated_at') THEN
         CREATE TRIGGER update_visits_updated_at BEFORE UPDATE ON visits
             FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
     END IF;
 END $$;
-
 DO $$
 BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_trigger WHERE tgname = 'update_illnesses_updated_at'
-    ) THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_illnesses_updated_at') THEN
         CREATE TRIGGER update_illnesses_updated_at BEFORE UPDATE ON illnesses
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+END $$;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_users_updated_at') THEN
+        CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
             FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
     END IF;
 END $$;

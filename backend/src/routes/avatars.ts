@@ -1,6 +1,6 @@
 /**
  * Child Avatar Routes
- * Handles avatar uploads and management
+ * Handles avatar uploads and management. All endpoints require auth; avatars are scoped to the user's family.
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
@@ -10,8 +10,11 @@ import fs from 'fs/promises';
 import { randomUUID } from 'crypto';
 import { query } from '../db/connection.js';
 import { createResponse } from '../types/api.js';
+import { authenticate, type AuthRequest } from '../middleware/auth.js';
+import { canAccessChild } from '../lib/family-access.js';
 
 const router = Router();
+router.use(authenticate);
 
 // Avatar storage configuration
 const AVATAR_DIR = process.env.AVATAR_DIR || '/app/avatars';
@@ -67,7 +70,7 @@ const upload = multer({
 router.post(
   '/children/:childId/avatar',
   upload.single('avatar'),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const childId = parseInt(req.params.childId);
 
@@ -77,6 +80,17 @@ router.post(
             message: 'Invalid child ID',
             type: 'ValidationError',
             statusCode: 400,
+          },
+        });
+        return;
+      }
+      if (!(await canAccessChild(req.userId!, childId))) {
+        if (req.file) await fs.unlink(req.file.path);
+        res.status(404).json({
+          error: {
+            message: 'Child not found',
+            type: 'NotFoundError',
+            statusCode: 404,
           },
         });
         return;
@@ -93,13 +107,12 @@ router.post(
         return;
       }
 
-      // Verify child exists and get old avatar
-      const childCheck = await query<{ exists: boolean; avatar: string | null }>(
-        'SELECT EXISTS(SELECT 1 FROM children WHERE id = $1) as exists, avatar FROM children WHERE id = $1',
+      const childCheck = await query<{ avatar: string | null }>(
+        'SELECT avatar FROM children WHERE id = $1',
         [childId]
       );
 
-      if (!childCheck.rows[0] || !childCheck.rows[0].exists) {
+      if (childCheck.rows.length === 0) {
         // Delete uploaded file
         await fs.unlink(req.file.path);
         res.status(404).json({
@@ -112,7 +125,7 @@ router.post(
         return;
       }
 
-      const oldAvatar = childCheck.rows[0].avatar;
+      const oldAvatar = childCheck.rows[0]?.avatar ?? null;
 
       // Update child with new avatar
       await query(
@@ -152,11 +165,10 @@ router.post(
 
 router.get(
   '/avatars/:filename',
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const filename = req.params.filename;
 
-      // Basic security: prevent path traversal
       if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
         res.status(400).json({
           error: {
@@ -168,9 +180,23 @@ router.get(
         return;
       }
 
+      const childWithAvatar = await query<{ id: number }>(
+        'SELECT id FROM children WHERE avatar = $1',
+        [filename]
+      );
+      if (childWithAvatar.rows.length === 0 || !(await canAccessChild(req.userId!, childWithAvatar.rows[0].id))) {
+        res.status(404).json({
+          error: {
+            message: 'Avatar not found',
+            type: 'NotFoundError',
+            statusCode: 404,
+          },
+        });
+        return;
+      }
+
       const filePath = path.join(AVATAR_DIR, filename);
 
-      // Check if file exists
       try {
         await fs.access(filePath);
       } catch {
@@ -215,7 +241,7 @@ router.get(
 
 router.delete(
   '/children/:childId/avatar',
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const childId = parseInt(req.params.childId);
 
@@ -229,8 +255,17 @@ router.delete(
         });
         return;
       }
+      if (!(await canAccessChild(req.userId!, childId))) {
+        res.status(404).json({
+          error: {
+            message: 'Child not found',
+            type: 'NotFoundError',
+            statusCode: 404,
+          },
+        });
+        return;
+      }
 
-      // Get child's current avatar
       const result = await query<{ avatar: string | null }>(
         'SELECT avatar FROM children WHERE id = $1',
         [childId]

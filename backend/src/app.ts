@@ -13,6 +13,7 @@ import avatarsRouter from './routes/avatars.js';
 import visitsRouter from './routes/visits.js';
 import illnessesRouter from './routes/illnesses.js';
 import { authRouter } from './routes/auth.js';
+import exportRouter from './routes/export.js';
 import { errorHandler } from './middleware/error-handler.js';
 
 export function createApp(): express.Application {
@@ -37,11 +38,13 @@ export function createApp(): express.Application {
       status: 'ok',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
+      timezone: process.env.TZ || 'UTC',
     });
   });
 
   // API routes
   app.use('/api/auth', authRouter); // Authentication endpoints
+  app.use('/api/export', exportRouter);
   app.use('/api/children', childrenRouter);
   app.use('/api/visits', visitsRouter); // Unified visits endpoint
   app.use('/api/illnesses', illnessesRouter); // Illness tracking

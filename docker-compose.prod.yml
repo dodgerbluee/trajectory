@@ -1,17 +1,17 @@
 services:
   trajectory:
     container_name: trajectory
-    image: ghcr.io/dodgerbluee/trajectory:dev-20260125-045b082
+    image: ghcr.io/dodgerbluee/trajectory:dev
     volumes:
-      - ./uploads_data:/app/uploads
-      - ./avatars_data:/app/avatars
+      - /docker/trajectory/uploads_data:/app/uploads
+      - /docker/trajectory/avatars_data:/app/avatars
     ports:
-      - 3001:3001
+      - 3007:3001
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-trajectory_user}:${DB_PASSWORD}@trajectory-db:5432/${POSTGRES_DB:-trajectory}
-      # Auth (generate strong random secrets for production)
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      TZ: ${TZ:-UTC}
     depends_on:
       trajectory-db:
         condition: service_healthy
@@ -21,25 +21,15 @@ services:
     container_name: trajectory-db
     image: postgres:16-alpine
     volumes:
-      - ./data:/var/lib/postgresql/data
+      - /docker/trajectory/data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-trajectory}
       POSTGRES_USER: ${POSTGRES_USER:-trajectory_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+      TZ: ${TZ:-UTC}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-trajectory_user} -d ${POSTGRES_DB:-trajectory}"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
-
-volumes:
-  postgres_data:
-    name: trajectory_data
-    external: true
-  uploads_data:
-    name: trajectory_uploads
-    external: true
-  avatars_data:
-    name: trajectory_avatars
-    external: true

@@ -9,7 +9,7 @@ import Notification from '../components/Notification';
 import { HiChevronDown, HiChevronUp } from 'react-icons/hi';
 import { FaLock } from 'react-icons/fa';
 import { LuSun, LuMoon, LuLaptop, LuSave, LuDownload, LuSettings, LuUser } from 'react-icons/lu';
-import { ApiClientError } from '../lib/api-client';
+import { ApiClientError, exportApi } from '../lib/api-client';
 import { formatDate } from '../lib/date-utils';
 
 type DateFormat = 'MM/DD/YYYY' | 'DD/MM/YYYY' | 'YYYY-MM-DD';
@@ -40,6 +40,7 @@ function SettingsPage() {
   const [loading, setLoading] = useState({
     username: false,
     password: false,
+    export: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -64,10 +65,23 @@ function SettingsPage() {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const handleExportData = () => {
-    // Placeholder for future export functionality
-    setNotification({ message: 'Export functionality coming soon', type: 'error' });
-    setTimeout(() => setNotification(null), 3000);
+  const handleExportData = async () => {
+    setLoading((l) => ({ ...l, export: true }));
+    setNotification(null);
+    try {
+      await exportApi.download();
+      setNotification({ message: 'Export downloaded (ZIP with JSON, HTML report, and attachments)', type: 'success' });
+      setTimeout(() => setNotification(null), 4000);
+    } catch (err) {
+      if (err instanceof ApiClientError) {
+        setNotification({ message: err.message || 'Export failed', type: 'error' });
+      } else {
+        setNotification({ message: 'Export failed', type: 'error' });
+      }
+      setTimeout(() => setNotification(null), 4000);
+    } finally {
+      setLoading((l) => ({ ...l, export: false }));
+    }
   };
 
   const handleUpdateUsername = async (e: React.FormEvent) => {
@@ -271,8 +285,8 @@ function SettingsPage() {
         <div className="settings-section">
           <label className="settings-label">Export Data</label>
           <p className="settings-description">Download all your data as a JSON file</p>
-          <Button variant="secondary" onClick={handleExportData}>
-            <LuDownload style={{ marginRight: 8 }} /> Export Data
+          <Button variant="secondary" onClick={handleExportData} disabled={loading.export}>
+            <LuDownload style={{ marginRight: 8 }} /> {loading.export ? 'Preparing…' : 'Export my data'}
           </Button>
         </div>
       </Card>

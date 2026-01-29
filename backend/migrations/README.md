@@ -1,34 +1,26 @@
-# Database Migrations
+# Database setup (backend)
 
-This directory contains SQL migration files that are automatically applied on application startup.
+This directory holds the **schema configuration** the app uses to set up the database on startup.
 
-## How It Works
+## SQL / setup files in this repo
 
-1. **Automatic Execution**: Migrations run automatically when the application starts, before serving traffic
-2. **Idempotent**: All migrations use `IF NOT EXISTS` and are safe to run multiple times
-3. **Tracking**: Applied migrations are recorded in the `migrations` table in the database
-4. **Ordering**: Migrations are applied in alphabetical order by filename
+| File | Purpose |
+|------|--------|
+| **backend/migrations/schema.sql** | Full DB schema (tables, indexes, triggers). Applied by the backend on startup via `src/db/migrations.ts`. Idempotent; safe on fresh or existing DB. |
+| **database/init.sql** | Docker Postgres init script. Run by the Postgres container on first start when using `docker-compose` (mounted into `/docker-entrypoint-initdb.d/`). Creates schema for a new container volume. |
 
-## Creating a New Migration
+Use **backend/migrations/schema.sql** as the single source of truth for the current schema. Keep **database/init.sql** in sync if you use Docker init (or point Docker at the same schema).
 
-1. Create a new SQL file with the naming pattern: `YYYYMMDD-HHMMSS-description.sql`
-   - Example: `20250126-143000-add-user-preferences.sql`
-2. Use `IF NOT EXISTS` for all objects (tables, indexes, constraints, etc.)
-3. Test the migration locally before committing
+## How backend setup works
 
-## Example Migration
+1. On startup, the app runs `runMigrations()` in `src/db/migrations.ts`.
+2. It ensures a `migrations` table exists (tracks which setup files have been applied).
+3. It runs each `.sql` file in this directory that hasn’t been applied yet (alphabetically by filename).
+4. `schema.sql` is idempotent (IF NOT EXISTS etc.), so it’s safe on an already-set-up DB.
 
-```sql
--- Add a new column to an existing table
-ALTER TABLE children ADD COLUMN IF NOT EXISTS favorite_color VARCHAR(50);
+## Manual run
 
--- Create a new index
-CREATE INDEX IF NOT EXISTS idx_children_favorite_color ON children(favorite_color);
-```
-
-## Manual Migration
-
-If you need to run migrations manually (without starting the server):
+To run database setup without starting the server:
 
 ```bash
 npm run migrate
@@ -39,11 +31,3 @@ Or in production:
 ```bash
 node dist/cli.js migrate
 ```
-
-## First Run Initialization
-
-On first run against an empty database:
-1. The application creates the `migrations` table
-2. All migration files are applied in order
-3. The database is fully initialized and ready to use
-4. No manual steps required
