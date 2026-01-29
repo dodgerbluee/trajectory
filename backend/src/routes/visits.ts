@@ -7,13 +7,13 @@ import { query } from '../db/connection.js';
 import { createResponse, createPaginatedResponse, parsePaginationParams, type AuditHistoryEvent } from '../types/api.js';
 import { canViewAuditHistory } from '../lib/audit.js';
 import { UnauthorizedError, ConflictError } from '../middleware/error-handler.js';
-import { BadRequestError, NotFoundError } from '../middleware/error-handler.js';
+import { BadRequestError, NotFoundError, ForbiddenError } from '../middleware/error-handler.js';
 import { authenticate, type AuthRequest } from '../middleware/auth.js';
 import type { VisitRow, CreateVisitInput, VisitType, IllnessType } from '../types/database.js';
 import { visitRowToVisit as convertVisitRow } from '../types/database.js';
 import { buildFieldDiff, auditChangesSummary } from '../lib/field-diff.js';
 import { recordAuditEvent } from '../lib/audit.js';
-import { getAccessibleChildIds, canAccessChild } from '../lib/family-access.js';
+import { getAccessibleChildIds, canAccessChild, canEditChild } from '../lib/family-access.js';
 
 const router = Router();
 router.use(authenticate);
@@ -547,6 +547,9 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
     if (!(await canAccessChild(req.userId!, childId))) {
       throw new NotFoundError('Child');
     }
+    if (!(await canEditChild(req.userId!, childId))) {
+      throw new ForbiddenError('You do not have permission to add visits for this child.');
+    }
     const input: CreateVisitInput = {
       child_id: childId,
       visit_date: validateDate(req.body.visit_date, 'visit_date'),
@@ -746,6 +749,9 @@ router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
     const currentRow = currentResult.rows[0];
     if (!(await canAccessChild(req.userId!, currentRow.child_id))) {
       throw new NotFoundError('Visit');
+    }
+    if (!(await canEditChild(req.userId!, currentRow.child_id))) {
+      throw new ForbiddenError('You do not have permission to edit this visit.');
     }
     const currentVisit = convertVisitRow(currentRow);
 
@@ -1190,6 +1196,9 @@ router.delete('/:id', async (req: AuthRequest, res: Response, next: NextFunction
     }
     if (!(await canAccessChild(req.userId!, existing.rows[0].child_id))) {
       throw new NotFoundError('Visit');
+    }
+    if (!(await canEditChild(req.userId!, existing.rows[0].child_id))) {
+      throw new ForbiddenError('You do not have permission to delete this visit.');
     }
 
     await query('DELETE FROM visits WHERE id = $1', [id]);

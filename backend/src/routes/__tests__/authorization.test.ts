@@ -7,9 +7,9 @@ import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import request from 'supertest';
 
 // Mock before importing app (so routes use mocks)
-jest.mock('../../../db/connection.js');
-jest.mock('../../../lib/family-access.js');
-jest.mock('../../../middleware/auth.js', () => {
+jest.mock('../../db/connection.js');
+jest.mock('../../lib/family-access.js');
+jest.mock('../../middleware/auth.js', () => {
   const testAuth = (req: { headers: Record<string, string | undefined>; userId?: number }, _res: unknown, next: () => void) => {
     const id = req.headers['x-test-user-id'];
     (req as { userId?: number }).userId = id ? parseInt(id, 10) : 1;
@@ -18,12 +18,13 @@ jest.mock('../../../middleware/auth.js', () => {
   return {
     authenticate: testAuth,
     optionalAuthenticate: (_req: unknown, _res: unknown, next: () => void) => next(),
+    requireInstanceAdmin: (_req: unknown, _res: unknown, next: () => void) => next(),
   };
 });
 
-import { query } from '../../../db/connection.js';
-import { canAccessChild, getFamilyIdsForUser, getAccessibleChildIds } from '../../../lib/family-access.js';
-import { createApp } from '../../../app.js';
+import { query } from '../../db/connection.js';
+import { canAccessChild, getFamilyIdsForUser, getAccessibleChildIds } from '../../lib/family-access.js';
+import { createApp } from '../../app.js';
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockCanAccessChild = canAccessChild as jest.MockedFunction<typeof canAccessChild>;
@@ -85,8 +86,9 @@ describe('Authorization: user A cannot access user B\'s resources', () => {
 
   describe('GET /api/visits/:id', () => {
     it('returns 404 when user cannot access visit (child belongs to another family)', async () => {
+      const now = new Date();
       mockQuery.mockResolvedValueOnce({
-        rows: [{ id: 100, child_id: 999, visit_date: new Date(), visit_type: 'wellness', updated_at: new Date() }],
+        rows: [{ id: 100, child_id: 999, visit_date: now, visit_type: 'wellness', created_at: now, updated_at: now }],
       } as never);
       mockCanAccessChild.mockResolvedValue(false);
 

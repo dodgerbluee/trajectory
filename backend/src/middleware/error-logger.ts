@@ -89,8 +89,10 @@ export function logError(
     };
   }
 
-  // In production, you might send this to a logging service
-  console.error(JSON.stringify(entry, null, 2));
+  // In production, you might send this to a logging service; skipped in test to keep output clean
+  if (process.env.NODE_ENV !== 'test') {
+    console.error(JSON.stringify(entry, null, 2));
+  }
 }
 
 /**
@@ -103,7 +105,7 @@ export function logWarning(message: string, context?: Record<string, unknown>): 
     message,
   };
 
-  if (shouldLog(LogLevel.WARN)) {
+  if (process.env.NODE_ENV !== 'test' && shouldLog(LogLevel.WARN)) {
     console.warn(JSON.stringify({ ...entry, ...context }, null, 2));
   }
 }
@@ -118,7 +120,7 @@ export function logInfo(message: string, context?: Record<string, unknown>): voi
     message,
   };
 
-  if (shouldLog(LogLevel.INFO)) {
+  if (process.env.NODE_ENV !== 'test' && shouldLog(LogLevel.INFO)) {
     console.log(JSON.stringify({ ...entry, ...context }, null, 2));
   }
 }

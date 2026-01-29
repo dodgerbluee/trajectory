@@ -30,8 +30,21 @@ import { asyncHandler } from '../middleware/error-handler.js';
 import { loginRateLimiter, passwordResetRateLimiter } from '../middleware/rate-limit.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { getOrCreateDefaultFamilyForUser } from '../lib/family-access.js';
+import {
+  initializeRegistrationCode,
+  validateRegistrationCode,
+  clearRegistrationCode,
+  isRegistrationCodeActive,
+} from '../lib/registration-code.js';
 
 export const authRouter = express.Router();
+
+/** True if at least one user exists (first-user flow = no users). */
+async function hasAnyUsers(): Promise<boolean> {
+  const result = await query<{ count: string }>('SELECT COUNT(*)::text as count FROM users');
+  const count = parseInt(result.rows[0]?.count ?? '0', 10);
+  return count > 0;
+}
 
 interface UserRow {
   id: number;
@@ -47,18 +60,83 @@ interface UserRow {
 }
 
 /**
+ * GET /api/auth/registration-code-required
+ * No auth. Returns whether a registration code is required (no users) and if a code is active.
+ */
+authRouter.get(
+  '/registration-code-required',
+  asyncHandler(async (_req: Request, res: Response) => {
+    const hasUsers = await hasAnyUsers();
+    const requiresCode = !hasUsers;
+    const codeActive = isRegistrationCodeActive();
+    res.json(createResponse({ success: true, requiresCode, codeActive }));
+  })
+);
+
+/**
+ * POST /api/auth/generate-registration-code
+ * No auth. Generates a code and logs it to server; only when no users exist.
+ */
+authRouter.post(
+  '/generate-registration-code',
+  asyncHandler(async (_req: Request, res: Response) => {
+    if (await hasAnyUsers()) {
+      throw new BadRequestError('Registration code can only be generated when no users exist.');
+    }
+    initializeRegistrationCode();
+    res.json(createResponse({ message: 'Registration code generated and logged to container logs.' }));
+  })
+);
+
+/**
+ * POST /api/auth/verify-registration-code
+ * No auth. Verifies the code so UI can advance to user form.
+ */
+authRouter.post(
+  '/verify-registration-code',
+  asyncHandler(async (req: Request, res: Response) => {
+    const { registrationCode } = req.body;
+    const code = typeof registrationCode === 'string' ? registrationCode.replace(/-/g, '') : '';
+    if (!code) {
+      throw new BadRequestError('Registration code is required.');
+    }
+    if (!isRegistrationCodeActive()) {
+      throw new BadRequestError('Registration code has not been generated. Please click Create User first.');
+    }
+    if (!validateRegistrationCode(registrationCode as string)) {
+      throw new UnauthorizedError('Invalid registration code. Please check the server logs.');
+    }
+    res.json(createResponse({ success: true }));
+  })
+);
+
+/**
  * POST /api/auth/register
- * Register a new user
+ * Register a new user. When no users exist (first-user setup), requires a valid registration code.
  */
 authRouter.post(
   '/register',
   asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-    const { email, password, name } = req.body;
+    const { email, password, name, registrationCode } = req.body;
 
     // Validate input
     const emailValue = validateRequired(email, 'email');
     const passwordValue = validateRequired(password, 'password');
     const nameValue = validateRequired(name, 'name');
+
+    const isFirstUser = !(await hasAnyUsers());
+    if (isFirstUser) {
+      const code = typeof registrationCode === 'string' ? registrationCode.replace(/-/g, '').trim() : '';
+      if (!code) {
+        throw new BadRequestError('Registration code is required to create the first user.');
+      }
+      if (!isRegistrationCodeActive()) {
+        throw new BadRequestError('Registration code has not been generated. Please generate one first.');
+      }
+      if (!validateRegistrationCode(registrationCode as string)) {
+        throw new UnauthorizedError('Invalid registration code.');
+      }
+    }
 
     // Validate email format
     if (!validateEmail(emailValue)) {
@@ -84,15 +162,19 @@ authRouter.post(
     // Hash password
     const passwordHash = await hashPassword(passwordValue);
 
-    // Create user
+    // Create user (first user gets is_instance_admin = true)
     const result = await query<UserRow>(
-      `INSERT INTO users (email, password_hash, name)
-       VALUES ($1, $2, $3)
+      `INSERT INTO users (email, password_hash, name, is_instance_admin)
+       VALUES ($1, $2, $3, $4)
        RETURNING id, email, name, created_at`,
-      [emailValue.toLowerCase(), passwordHash, nameValue]
+      [emailValue.toLowerCase(), passwordHash, nameValue, isFirstUser]
     );
 
     const user = result.rows[0];
+
+    if (isFirstUser) {
+      clearRegistrationCode();
+    }
 
     // Create default family so the user can add children (foundation for family-based access)
     await getOrCreateDefaultFamilyForUser(user.id);
@@ -316,8 +398,8 @@ authRouter.get(
   '/me',
   authenticate,
   asyncHandler(async (req: AuthRequest, res: Response, _next: NextFunction) => {
-    const userResult = await query<UserRow>(
-      'SELECT id, email, name, email_verified, created_at, last_login_at FROM users WHERE id = $1',
+    const userResult = await query<UserRow & { is_instance_admin: boolean }>(
+      'SELECT id, email, name, email_verified, created_at, last_login_at, is_instance_admin FROM users WHERE id = $1',
       [req.userId]
     );
 
@@ -335,6 +417,7 @@ authRouter.get(
         emailVerified: user.email_verified,
         createdAt: user.created_at.toISOString(),
         lastLoginAt: user.last_login_at?.toISOString() || null,
+        isInstanceAdmin: user.is_instance_admin,
       })
     );
   })

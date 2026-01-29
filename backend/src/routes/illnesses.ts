@@ -8,14 +8,14 @@ import { query } from '../db/connection.js';
 import { createResponse, createPaginatedResponse, parsePaginationParams, type AuditHistoryEvent } from '../types/api.js';
 import { canViewAuditHistory } from '../lib/audit.js';
 import { UnauthorizedError, ConflictError } from '../middleware/error-handler.js';
-import { BadRequestError, NotFoundError } from '../middleware/error-handler.js';
+import { BadRequestError, NotFoundError, ForbiddenError } from '../middleware/error-handler.js';
 import type { IllnessRow, CreateIllnessInput, UpdateIllnessInput, IllnessType, HeatmapData, HeatmapDay } from '../types/database.js';
 import { illnessRowToIllness } from '../types/database.js';
 import { validateOptionalString, validateDate, validateOptionalDate, validateNumber } from '../middleware/validation.js';
 import { buildFieldDiff, auditChangesSummary } from '../lib/field-diff.js';
 import { recordAuditEvent } from '../lib/audit.js';
 import { authenticate, type AuthRequest } from '../middleware/auth.js';
-import { getAccessibleChildIds, canAccessChild } from '../lib/family-access.js';
+import { getAccessibleChildIds, canAccessChild, canEditChild } from '../lib/family-access.js';
 
 const router = Router();
 router.use(authenticate);
@@ -221,6 +221,9 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
     const childId = parseInt(req.body.child_id);
     if (!(await canAccessChild(req.userId!, childId))) {
       throw new NotFoundError('Child');
+    }
+    if (!(await canEditChild(req.userId!, childId))) {
+      throw new ForbiddenError('You do not have permission to add illnesses for this child.');
     }
 
     const input: CreateIllnessInput = {
@@ -488,6 +491,9 @@ router.delete('/:id', async (req: AuthRequest, res: Response, next: NextFunction
     }
     if (!(await canAccessChild(req.userId!, existing.rows[0].child_id))) {
       throw new NotFoundError('Illness');
+    }
+    if (!(await canEditChild(req.userId!, existing.rows[0].child_id))) {
+      throw new ForbiddenError('You do not have permission to delete this illness.');
     }
 
     await query('DELETE FROM illnesses WHERE id = $1', [id]);

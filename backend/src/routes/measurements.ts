@@ -6,7 +6,9 @@ import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import { query } from '../db/connection.js';
 import type { MeasurementRow, CreateMeasurementInput } from '../types/database.js';
-import { NotFoundError } from '../middleware/error-handler.js';
+import { NotFoundError, ForbiddenError } from '../middleware/error-handler.js';
+import type { AuthRequest } from '../middleware/auth.js';
+import { canEditChild } from '../lib/family-access.js';
 import {
   validateDate,
   validateOptionalString,
@@ -107,6 +109,9 @@ measurementsRouter.get('/:id', async (req: Request, res: Response, next: NextFun
 measurementsRouter.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const childId = validatePositiveInteger(req.params.childId, 'childId');
+    if (!(await canEditChild((req as AuthRequest).userId!, childId))) {
+      throw new ForbiddenError('You do not have permission to add measurements for this child.');
+    }
 
     const input: CreateMeasurementInput = {
       child_id: childId,
@@ -171,6 +176,16 @@ measurementsRouter.post('/', async (req: Request, res: Response, next: NextFunct
 measurementsRouter.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = validatePositiveInteger(req.params.id, 'id');
+    const existing = await query<{ child_id: number }>(
+      'SELECT child_id FROM measurements WHERE id = $1',
+      [id]
+    );
+    if (existing.rows.length === 0) {
+      throw new NotFoundError('Measurement');
+    }
+    if (!(await canEditChild((req as AuthRequest).userId!, existing.rows[0].child_id))) {
+      throw new ForbiddenError('You do not have permission to edit this measurement.');
+    }
 
     // Build dynamic update query
     const updates: string[] = [];
@@ -257,6 +272,16 @@ measurementsRouter.put('/:id', async (req: Request, res: Response, next: NextFun
 measurementsRouter.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = validatePositiveInteger(req.params.id, 'id');
+    const existing = await query<{ child_id: number }>(
+      'SELECT child_id FROM measurements WHERE id = $1',
+      [id]
+    );
+    if (existing.rows.length === 0) {
+      throw new NotFoundError('Measurement');
+    }
+    if (!(await canEditChild((req as AuthRequest).userId!, existing.rows[0].child_id))) {
+      throw new ForbiddenError('You do not have permission to delete this measurement.');
+    }
 
     const result = await query(
       'DELETE FROM measurements WHERE id = $1 RETURNING id',

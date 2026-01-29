@@ -10,11 +10,11 @@ import fs from 'fs/promises';
 import { randomUUID } from 'crypto';
 import { query } from '../db/connection.js';
 import { createResponse } from '../types/api.js';
-import { authenticate, type AuthRequest } from '../middleware/auth.js';
-import { canAccessChild } from '../lib/family-access.js';
+import { authenticate, authenticateHeaderOrQuery, type AuthRequest } from '../middleware/auth.js';
+import { canAccessChild, canEditChild } from '../lib/family-access.js';
+import { ForbiddenError } from '../middleware/error-handler.js';
 
 const router = Router();
-router.use(authenticate);
 
 // Avatar storage configuration
 const AVATAR_DIR = process.env.AVATAR_DIR || '/app/avatars';
@@ -69,6 +69,7 @@ const upload = multer({
 
 router.post(
   '/children/:childId/avatar',
+  authenticate,
   upload.single('avatar'),
   async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -94,6 +95,10 @@ router.post(
           },
         });
         return;
+      }
+      if (!(await canEditChild(req.userId!, childId))) {
+        if (req.file) await fs.unlink(req.file.path);
+        throw new ForbiddenError('You do not have permission to update this child\'s avatar.');
       }
 
       if (!req.file) {
@@ -165,6 +170,7 @@ router.post(
 
 router.get(
   '/avatars/:filename',
+  authenticateHeaderOrQuery,
   async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const filename = req.params.filename;
@@ -241,6 +247,7 @@ router.get(
 
 router.delete(
   '/children/:childId/avatar',
+  authenticate,
   async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const childId = parseInt(req.params.childId);
@@ -264,6 +271,9 @@ router.delete(
           },
         });
         return;
+      }
+      if (!(await canEditChild(req.userId!, childId))) {
+        throw new ForbiddenError('You do not have permission to delete this child\'s avatar.');
       }
 
       const result = await query<{ avatar: string | null }>(

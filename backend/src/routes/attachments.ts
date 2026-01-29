@@ -14,7 +14,8 @@ import type { MeasurementAttachmentRow, VisitAttachmentRow, ChildAttachmentRow }
 import { createResponse } from '../types/api.js';
 import { recordAuditEvent } from '../lib/audit.js';
 import { authenticate, type AuthRequest } from '../middleware/auth.js';
-import { canAccessChild } from '../lib/family-access.js';
+import { canAccessChild, canEditChild } from '../lib/family-access.js';
+import { ForbiddenError } from '../middleware/error-handler.js';
 
 // Extend Express Request type to include file (module augmentation; avoids namespaces)
 declare module 'express-serve-static-core' {
@@ -577,6 +578,9 @@ router.delete(
         });
         return;
       }
+      if (!(await canEditChild(req.userId!, childIdForAttachment))) {
+        throw new ForbiddenError('You do not have permission to delete this attachment.');
+      }
 
       // Get attachment info before deleting - check all three tables
       const result = await query<MeasurementAttachmentRow>(
@@ -757,6 +761,10 @@ router.post(
           },
         });
         return;
+      }
+      if (!(await canEditChild(req.userId!, visitCheck.rows[0].child_id))) {
+        await fs.unlink(finalFilePath);
+        throw new ForbiddenError('You do not have permission to add attachments to this visit.');
       }
 
       // Save attachment record to database with verified unique filename
@@ -948,6 +956,9 @@ router.put('/attachments/:id', async (req: AuthRequest, res: Response, next: Nex
       });
       return;
     }
+    if (!(await canEditChild(req.userId!, childIdForAttachment))) {
+      throw new ForbiddenError('You do not have permission to update this attachment.');
+    }
 
     if (!original_filename || typeof original_filename !== 'string' || original_filename.trim().length === 0) {
       res.status(400).json({
@@ -1032,6 +1043,9 @@ router.post(
           },
         });
         return;
+      }
+      if (!(await canEditChild(req.userId!, childId))) {
+        throw new ForbiddenError('You do not have permission to add attachments to this child.');
       }
 
       if (!req.file) {

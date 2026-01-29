@@ -7,7 +7,7 @@ import express from 'express';
 import type { Response, NextFunction } from 'express';
 import { query } from '../db/connection.js';
 import type { ChildRow, CreateChildInput, Gender } from '../types/database.js';
-import { NotFoundError, ValidationError } from '../middleware/error-handler.js';
+import { NotFoundError, ValidationError, ForbiddenError } from '../middleware/error-handler.js';
 import {
   validateRequired,
   validateOptionalString,
@@ -18,7 +18,7 @@ import {
 import { parsePaginationParams } from '../middleware/query-parser.js';
 import { createResponse, createPaginatedResponse } from '../types/api.js';
 import { authenticate, type AuthRequest } from '../middleware/auth.js';
-import { getFamilyIdsForUser, getOrCreateDefaultFamilyForUser, canAccessChild } from '../lib/family-access.js';
+import { getFamilyIdsForUser, getOrCreateDefaultFamilyForUser, canAccessChild, canEditFamily, canEditChild } from '../lib/family-access.js';
 import { measurementsRouter } from './measurements.js';
 import { medicalEventsRouter } from './medical-events.js';
 
@@ -103,7 +103,7 @@ childrenRouter.get('/:id', async (req: AuthRequest, res: Response, next: NextFun
 
 /**
  * POST /api/children
- * Create a new child (in the current user's family).
+ * Create a new child (in the current user's family). Requires owner or parent role.
  */
 childrenRouter.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
@@ -113,6 +113,9 @@ childrenRouter.post('/', async (req: AuthRequest, res: Response, next: NextFunct
     }
 
     const familyId = await getOrCreateDefaultFamilyForUser(req.userId!);
+    if (!(await canEditFamily(req.userId!, familyId))) {
+      throw new ForbiddenError('You do not have permission to add children to this family.');
+    }
 
     const input: CreateChildInput = {
       name: validateRequired(req.body.name, 'name'),
@@ -154,6 +157,9 @@ childrenRouter.put('/:id', async (req: AuthRequest, res: Response, next: NextFun
     const id = validatePositiveInteger(req.params.id, 'id');
     if (!(await canAccessChild(req.userId!, id))) {
       throw new NotFoundError('Child');
+    }
+    if (!(await canEditChild(req.userId!, id))) {
+      throw new ForbiddenError('You do not have permission to edit this child.');
     }
 
     // Build dynamic update query based on provided fields
@@ -236,13 +242,16 @@ childrenRouter.put('/:id', async (req: AuthRequest, res: Response, next: NextFun
 
 /**
  * DELETE /api/children/:id
- * Delete a child (only if user can access).
+ * Delete a child (only if user can access and has edit permission).
  */
 childrenRouter.delete('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const id = validatePositiveInteger(req.params.id, 'id');
     if (!(await canAccessChild(req.userId!, id))) {
       throw new NotFoundError('Child');
+    }
+    if (!(await canEditChild(req.userId!, id))) {
+      throw new ForbiddenError('You do not have permission to delete this child.');
     }
 
     const result = await query(

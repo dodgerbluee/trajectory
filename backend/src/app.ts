@@ -13,6 +13,9 @@ import avatarsRouter from './routes/avatars.js';
 import visitsRouter from './routes/visits.js';
 import illnessesRouter from './routes/illnesses.js';
 import { authRouter } from './routes/auth.js';
+import { usersRouter } from './routes/users.js';
+import { familiesRouter } from './routes/families.js';
+import { invitesRouter } from './routes/invites.js';
 import exportRouter from './routes/export.js';
 import { errorHandler } from './middleware/error-handler.js';
 
@@ -24,11 +27,13 @@ export function createApp(): express.Application {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // Request logging (simple)
-  app.use((req, _res, next) => {
-    console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
-    next();
-  });
+  // Request logging (simple); skipped in test to keep output clean
+  if (process.env.NODE_ENV !== 'test') {
+    app.use((req, _res, next) => {
+      console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
+      next();
+    });
+  }
 
   // Health check endpoint
   // Simple endpoint that always returns 200 once the app is running
@@ -44,6 +49,9 @@ export function createApp(): express.Application {
 
   // API routes
   app.use('/api/auth', authRouter); // Authentication endpoints
+  app.use('/api/users', usersRouter); // User management (instance admin only)
+  app.use('/api/families', familiesRouter); // Family list and invites
+  app.use('/api/invites', invitesRouter); // Accept invite by token
   app.use('/api/export', exportRouter);
   app.use('/api/children', childrenRouter);
   app.use('/api/visits', visitsRouter); // Unified visits endpoint
