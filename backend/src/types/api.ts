@@ -44,6 +44,23 @@ export interface FilterMeta {
 }
 
 /**
+ * Change history (audit) event: one row from audit_events with user info.
+ * Used by GET .../history for visits and illnesses.
+ */
+export interface AuditHistoryEvent {
+  id: number;
+  entity_type: 'visit' | 'illness';
+  entity_id: number;
+  user_id: number | null;
+  user_name: string | null;
+  user_email: string | null;
+  action: 'created' | 'updated' | 'deleted';
+  changed_at: string;
+  changes: Record<string, { before: unknown; after: unknown }>;
+  summary: string | null;
+}
+
+/**
  * Pagination query parameters
  */
 export interface PaginationParams {

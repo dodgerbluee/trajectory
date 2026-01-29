@@ -16,6 +16,7 @@ import FamilyManagementPage from './pages/FamilyManagementPage';
 import SettingsPage from './pages/SettingsPage';
 import AddIllnessPage from './pages/AddIllnessPage';
 import EditIllnessPage from './pages/EditIllnessPage';
+import IllnessDetailPage from './pages/IllnessDetailPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
@@ -48,6 +49,7 @@ function App() {
                   {/* Illnesses: use home page illnesses tab */}
                   <Route path="/illnesses" element={<HomePage />} />
                   <Route path="/illnesses/new" element={<AddIllnessPage />} />
+                  <Route path="/illnesses/:id" element={<IllnessDetailPage />} />
                   <Route path="/illnesses/:id/edit" element={<EditIllnessPage />} />
                   
                   {/* Management & Settings */}

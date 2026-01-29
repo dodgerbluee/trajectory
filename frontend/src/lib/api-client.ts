@@ -31,6 +31,7 @@ import type {
   IllnessType,
   GrowthDataPoint,
   HeatmapData,
+  AuditHistoryEvent,
 } from '../types/api';
 
 // Base API URL - use relative URL in production (served by unified app), absolute for development
@@ -522,18 +523,16 @@ export const visitsApi = {
   },
 
   /**
-   * Get visit history
+   * Get visit history (audit events with field-level changes)
    */
-  async getHistory(id: number): Promise<ApiResponse<Array<{
-    id: number;
-    visit_id: number;
-    user_id: number | null;
-    action: 'created' | 'updated' | 'attachment_uploaded';
-    description: string;
-    created_at: string;
-    user_name: string | null;
-  }>>> {
-    return request(`/api/visits/${id}/history`);
+  async getHistory(id: number, params?: { page?: number; limit?: number }): Promise<ApiResponse<AuditHistoryEvent[]>> {
+    const query = params?.page != null || params?.limit != null
+      ? `?${new URLSearchParams({
+          ...(params.page != null && { page: String(params.page) }),
+          ...(params.limit != null && { limit: String(params.limit) }),
+        }).toString()}`
+      : '';
+    return request<AuditHistoryEvent[]>(`/api/visits/${id}/history${query}`);
   },
 
   /**

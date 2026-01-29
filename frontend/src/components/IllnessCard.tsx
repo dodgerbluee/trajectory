@@ -11,7 +11,7 @@ interface IllnessCardProps {
 }
 
 function IllnessCard({ illness, childName, childId, hasAttachments }: IllnessCardProps) {
-  const url = `/illnesses/${illness.id}/edit`;
+  const url = `/illnesses/${illness.id}`;
   const linkState = { childId: illness.child_id, fromChild: true } as const;
 
   const label = 'Illness';

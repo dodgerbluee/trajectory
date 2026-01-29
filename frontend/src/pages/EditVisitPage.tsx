@@ -1,28 +1,22 @@
-import { useState, FormEvent, useEffect } from 'react';
-import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useState, FormEvent, useEffect, useMemo } from 'react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { visitsApi, childrenApi, ApiClientError } from '../lib/api-client';
 import type { Child, UpdateVisitInput, IllnessType, Visit, VisitAttachment } from '../types/api';
 import { getTodayDate } from '../lib/validation';
 import Card from '../components/Card';
-import FormField from '../components/FormField';
 import Button from '../components/Button';
 import Notification from '../components/Notification';
 import LoadingSpinner from '../components/LoadingSpinner';
-import PrescriptionInput from '../components/PrescriptionInput';
-import VaccineInput from '../components/VaccineInput';
-import IllnessesInput from '../components/IllnessesInput';
-import FileUpload from '../components/FileUpload';
-import VisitAttachmentsList from '../components/VisitAttachmentsList';
-import TagInput from '../components/TagInput';
-import Checkbox from '../components/Checkbox';
-import { VisionRefractionCard, VisionRefraction } from '../components/VisionRefractionCard';
+import { getDefaultSectionsForVisitType } from '../visit-form/visitTypeDefaults';
+import { getSectionById } from '../visit-form/sectionRegistry';
+import { SectionWrapper } from '../visit-form/SectionWrapper';
+import { VisitFormSidebar } from '../visit-form/VisitFormSidebar';
 
 
 
 function EditVisitPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
   
   const [child, setChild] = useState<Child | null>(null);
   const [visit, setVisit] = useState<Visit | null>(null);
@@ -67,6 +61,22 @@ function EditVisitPage() {
   const [attachments, setAttachments] = useState<VisitAttachment[]>([]);
   const [loadingAttachments, setLoadingAttachments] = useState(false);
 
+  /** Step 5: active sections driven by config; no visit-type conditionals in render. */
+  const [activeSections, setActiveSections] = useState<string[]>([]);
+
+  const removeSection = (sectionId: string) => {
+    setActiveSections((prev) => prev.filter((id) => id !== sectionId));
+  };
+
+  const addSection = (sectionId: string) => {
+    setActiveSections((prev) => {
+      if (prev.includes(sectionId)) return prev;
+      const notesIndex = prev.indexOf('notes');
+      const insertAt = notesIndex === -1 ? prev.length : notesIndex;
+      return [...prev.slice(0, insertAt), sectionId, ...prev.slice(insertAt)];
+    });
+  };
+
   useEffect(() => {
     if (id) {
       loadData();
@@ -109,11 +119,11 @@ function EditVisitPage() {
         // illness_type removed; illnesses are handled separately
         symptoms: visitData.symptoms,
         temperature: visitData.temperature,
+        illness_start_date: visitData.illness_start_date ?? null,
         end_date: visitData.end_date,
         injury_type: visitData.injury_type,
         injury_location: visitData.injury_location,
         treatment: visitData.treatment,
-        follow_up_date: visitData.follow_up_date,
         vision_prescription: visitData.vision_prescription,
         vision_refraction: (visitData as any).vision_refraction || { od: { sphere: null, cylinder: null, axis: null }, os: { sphere: null, cylinder: null, axis: null }, notes: undefined },
         ordered_glasses: (visitData as any).ordered_glasses ?? visitData.needs_glasses ?? null,
@@ -135,6 +145,7 @@ function EditVisitPage() {
       const doctors = [...new Set(visitsResponse.data.map(v => v.doctor_name).filter(Boolean))] as string[];
       setRecentLocations(locations);
       setRecentDoctors(doctors);
+      setActiveSections(getDefaultSectionsForVisitType(visitData.visit_type));
     } catch (error) {
       if (error instanceof ApiClientError) {
         setNotification({ message: error.message, type: 'error' });
@@ -158,25 +169,63 @@ function EditVisitPage() {
     }
   };
 
-  const handleFileUpload = async (file: File) => {
+  const handleFileUpload = async (files: File | File[]) => {
     if (!id) return;
-    try {
-      const response = await visitsApi.uploadAttachment(parseInt(id), file);
-      setAttachments([...attachments, response.data]);
-      setNotification({ message: 'File uploaded successfully', type: 'success' });
-    } catch (error) {
-      if (error instanceof ApiClientError) {
-        setNotification({ message: error.message, type: 'error' });
-      } else {
-        setNotification({ message: 'Failed to upload file', type: 'error' });
+    const arr = Array.isArray(files) ? files : [files];
+    for (const file of arr) {
+      try {
+        const response = await visitsApi.uploadAttachment(parseInt(id), file);
+        setAttachments((prev) => [...prev, response.data]);
+        setNotification({ message: 'File uploaded successfully', type: 'success' });
+      } catch (error) {
+        if (error instanceof ApiClientError) {
+          setNotification({ message: error.message, type: 'error' });
+        } else {
+          setNotification({ message: 'Failed to upload file', type: 'error' });
+        }
+        throw error;
       }
-      throw error;
     }
   };
 
   const handleAttachmentDelete = (attachmentId: number) => {
-    setAttachments(attachments.filter(a => a.id !== attachmentId));
+    setAttachments((prev) => prev.filter((a) => a.id !== attachmentId));
   };
+
+  const visitFormContext = useMemo(
+    () => ({
+      mode: 'edit' as const,
+      formData,
+      setFormData,
+      submitting,
+      showTitle: visit?.visit_type === 'wellness',
+      recentLocations,
+      recentDoctors,
+      getTodayDate,
+      selectedIllnesses,
+      setSelectedIllnesses,
+      pendingFiles: [] as File[],
+      handleRemoveFile: () => {},
+      handleFileUpload,
+      visit: visit ?? undefined,
+      visitId: id ? parseInt(id, 10) : undefined,
+      attachments,
+      loadingAttachments,
+      handleAttachmentDelete,
+      onRefreshAttachments: id ? () => loadAttachments(parseInt(id, 10)) : undefined,
+    }),
+    [
+      formData,
+      submitting,
+      visit,
+      id,
+      recentLocations,
+      recentDoctors,
+      selectedIllnesses,
+      attachments,
+      loadingAttachments,
+    ]
+  );
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -226,23 +275,6 @@ function EditVisitPage() {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <div>
-          <Link 
-            to={((location.state as any)?.fromChild && (location.state as any)?.childId)
-              ? `/children/${(location.state as any).childId}` 
-              : `/visits/${id}`} 
-            className="breadcrumb"
-          >
-            ← Back to {((location.state as any)?.fromChild) ? (child?.name || 'Child') : 'Visit'}
-          </Link>
-          <h1>Edit {visit.visit_type === 'wellness' ? 'Wellness' : 
-                   visit.visit_type === 'sick' ? 'Sick' : 
-                   visit.visit_type === 'injury' ? 'Injury' :
-                   'Vision'} Visit for {child.name}</h1>
-        </div>
-      </div>
-
       {notification && (
         <Notification
           message={notification.message}
@@ -253,380 +285,65 @@ function EditVisitPage() {
 
       <form onSubmit={handleSubmit}>
         <Card>
-          <div className="visit-detail-body">
-            {/* Basic Information Section */}
-            <div className="visit-detail-section">
-              <h3 className="visit-detail-section-title">Visit Information</h3>
-              <FormField
-                label="Visit Date"
-                type="date"
-                value={formData.visit_date}
-                onChange={(e) => setFormData({ ...formData, visit_date: e.target.value })}
-                required
-                disabled={submitting}
-                max={getTodayDate()}
-              />
-
-              <FormField
-                label="Location"
-                type="text"
-                value={formData.location || ''}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value || null })}
-                disabled={submitting}
-                placeholder="e.g., Dr. Smith Pediatrics"
-                list="locations"
-              />
-              <datalist id="locations">
-                {recentLocations.map(loc => <option key={loc} value={loc} />)}
-              </datalist>
-
-              <FormField
-                label="Doctor Name"
-                type="text"
-                value={formData.doctor_name || ''}
-                onChange={(e) => setFormData({ ...formData, doctor_name: e.target.value || null })}
-                disabled={submitting}
-                placeholder="e.g., Dr. Sarah Johnson"
-                list="doctors"
-              />
-              <datalist id="doctors">
-                {recentDoctors.map(doc => <option key={doc} value={doc} />)}
-              </datalist>
-
-              {visit.visit_type === 'wellness' && (
-                <FormField
-                  label="Title"
-                  type="text"
-                  value={formData.title || ''}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value || null })}
-                  disabled={submitting}
-                  placeholder="e.g., 1 Year Appointment"
-                />
-              )}
+          <div className="visit-form-page visit-form-layout-grid">
+            <div className="visit-form-back-row">
+              <Link
+                to={`/children/${visit.child_id}`}
+                className="breadcrumb visit-form-back"
+              >
+                ← Back to {child.name}
+              </Link>
+              <div className="visit-detail-actions">
+                <Button type="submit" disabled={submitting} size="sm">
+                  {submitting ? 'Saving...' : 'Save'}
+                </Button>
+                <Link to={`/visits/${id}`}>
+                  <Button type="button" variant="secondary" size="sm" disabled={submitting}>
+                    Cancel
+                  </Button>
+                </Link>
+              </div>
             </div>
-
-            {visit.visit_type === 'sick' && (
-              <div className="visit-detail-section">
-                <h3 className="visit-detail-section-title">Illness Information</h3>
-                <IllnessesInput
-                  value={selectedIllnesses}
-                  onChange={(ills) => setSelectedIllnesses(ills)}
-                  disabled={submitting}
-                />
-
-                <FormField
-                  label="Symptoms"
-                  type="textarea"
-                  value={formData.symptoms || ''}
-                  onChange={(e) => setFormData({ ...formData, symptoms: e.target.value || null })}
-                  disabled={submitting}
-                  placeholder="Describe symptoms..."
-                  rows={3}
-                />
-
-                <FormField
-                  label="Temperature (°F)"
-                  type="number"
-                  value={formData.temperature || ''}
-                  onChange={(e) => setFormData({ ...formData, temperature: e.target.value ? parseFloat(e.target.value) : null })}
-                  disabled={submitting}
-                  placeholder="e.g., 102.5"
-                  step="0.1"
-                  min="95"
-                  max="110"
-                />
-
-                <FormField
-                  label="Illness End Date (if resolved)"
-                  type="date"
-                  value={formData.end_date || ''}
-                  onChange={(e) => setFormData({ ...formData, end_date: e.target.value || null })}
-                  disabled={submitting}
-                  min={formData.visit_date}
-                />
-              </div>
-            )}
-
-            {visit.visit_type === 'injury' && (
-              <div className="visit-detail-section">
-                <h3 className="visit-detail-section-title">Injury Information</h3>
-                <FormField
-                  label="Injury Type"
-                  type="text"
-                  value={formData.injury_type !== undefined ? (formData.injury_type || '') : (visit.injury_type || '')}
-                  onChange={(e) => setFormData({ ...formData, injury_type: e.target.value || null })}
-                  required
-                  disabled={submitting}
-                  placeholder="e.g., sprain, laceration, fracture, bruise, burn"
-                />
-
-                <FormField
-                  label="Injury Location"
-                  type="text"
-                  value={formData.injury_location !== undefined ? (formData.injury_location || '') : (visit.injury_location || '')}
-                  onChange={(e) => setFormData({ ...formData, injury_location: e.target.value || null })}
-                  disabled={submitting}
-                  placeholder="e.g., left ankle, forehead, right arm"
-                />
-
-                <FormField
-                  label="Treatment"
-                  type="textarea"
-                  value={formData.treatment !== undefined ? (formData.treatment || '') : (visit.treatment || '')}
-                  onChange={(e) => setFormData({ ...formData, treatment: e.target.value || null })}
-                  disabled={submitting}
-                  placeholder="e.g., stitches, splint, ice and rest, bandage"
-                  rows={3}
-                />
-
-                <FormField
-                  label="Follow-up Date (optional)"
-                  type="date"
-                  value={formData.follow_up_date !== undefined ? (formData.follow_up_date || '') : (visit.follow_up_date || '')}
-                  onChange={(e) => setFormData({ ...formData, follow_up_date: e.target.value || null })}
-                  disabled={submitting}
-                  min={formData.visit_date || visit.visit_date}
-                />
-              </div>
-            )}
-
-            {visit.visit_type === 'wellness' && (
-              <div className="visit-detail-section">
-                <h3 className="visit-detail-section-title">Measurements</h3>
-                <div className="measurement-grid">
-                  <FormField
-                    label="Weight (lbs)"
-                    type="number"
-                    value={formData.weight_value || ''}
-                    onChange={(e) => setFormData({ ...formData, weight_value: e.target.value ? parseFloat(e.target.value) : null })}
-                    disabled={submitting}
-                    step="0.1"
-                    placeholder="0.0"
-                  />
-                  
-                  <FormField
-                    label="Weight (oz)"
-                    type="number"
-                    value={formData.weight_ounces || ''}
-                    onChange={(e) => setFormData({ ...formData, weight_ounces: e.target.value ? parseInt(e.target.value) : null })}
-                    disabled={submitting}
-                    min="0"
-                    max="15"
-                    placeholder="0-15"
-                  />
-
-                  <FormField
-                    label="Weight %ile"
-                    type="number"
-                    value={formData.weight_percentile || ''}
-                    onChange={(e) => setFormData({ ...formData, weight_percentile: e.target.value ? parseFloat(e.target.value) : null })}
-                    disabled={submitting}
-                    step="0.1"
-                    min="0"
-                    max="100"
-                    placeholder="0-100"
-                  />
-                </div>
-
-                <div className="measurement-grid">
-                  <FormField
-                    label="Height (inches)"
-                    type="number"
-                    value={formData.height_value || ''}
-                    onChange={(e) => setFormData({ ...formData, height_value: e.target.value ? parseFloat(e.target.value) : null })}
-                    disabled={submitting}
-                    step="0.1"
-                    placeholder="0.0"
-                  />
-
-                  <FormField
-                    label="Height %ile"
-                    type="number"
-                    value={formData.height_percentile || ''}
-                    onChange={(e) => setFormData({ ...formData, height_percentile: e.target.value ? parseFloat(e.target.value) : null })}
-                    disabled={submitting}
-                    step="0.1"
-                    min="0"
-                    max="100"
-                    placeholder="0-100"
-                  />
-                </div>
-
-                <div className="measurement-grid">
-                  <FormField
-                    label="Head Circumference (inches)"
-                    type="number"
-                    value={formData.head_circumference_value || ''}
-                    onChange={(e) => setFormData({ ...formData, head_circumference_value: e.target.value ? parseFloat(e.target.value) : null })}
-                    disabled={submitting}
-                    step="0.1"
-                    placeholder="0.0"
-                  />
-
-                  <FormField
-                    label="Head Circ. %ile"
-                    type="number"
-                    value={formData.head_circumference_percentile || ''}
-                    onChange={(e) => setFormData({ ...formData, head_circumference_percentile: e.target.value ? parseFloat(e.target.value) : null })}
-                    disabled={submitting}
-                    step="0.1"
-                    min="0"
-                    max="100"
-                    placeholder="0-100"
-                  />
-                </div>
-
-                <div className="measurement-grid">
-                  <FormField
-                    label="BMI"
-                    type="number"
-                    value={formData.bmi_value || ''}
-                    onChange={(e) => setFormData({ ...formData, bmi_value: e.target.value ? parseFloat(e.target.value) : null })}
-                    disabled={submitting}
-                    step="0.1"
-                    placeholder="0.0"
-                  />
-
-                  <FormField
-                    label="BMI %ile"
-                    type="number"
-                    value={formData.bmi_percentile || ''}
-                    onChange={(e) => setFormData({ ...formData, bmi_percentile: e.target.value ? parseFloat(e.target.value) : null })}
-                    disabled={submitting}
-                    step="0.1"
-                    min="0"
-                    max="100"
-                    placeholder="0-100"
-                  />
-                </div>
-
-                <div className="measurement-grid">
-                  <FormField
-                    label="Blood Pressure"
-                    type="text"
-                    value={formData.blood_pressure !== undefined ? (formData.blood_pressure || '') : (visit.blood_pressure || '')}
-                    onChange={(e) => setFormData({ ...formData, blood_pressure: e.target.value || null })}
-                    disabled={submitting}
-                    placeholder="e.g., 120/80"
-                  />
-
-                  <FormField
-                    label="Heart Rate (bpm)"
-                    type="number"
-                    value={formData.heart_rate !== undefined ? (formData.heart_rate || '') : (visit.heart_rate || '')}
-                    onChange={(e) => setFormData({ ...formData, heart_rate: e.target.value ? parseInt(e.target.value) : null })}
-                    disabled={submitting}
-                    min="40"
-                    max="250"
-                    placeholder="40-250"
-                  />
-                </div>
-              </div>
-            )}
-
-            {visit.visit_type === 'vision' && (
-              <div className="visit-detail-section">
-                <h3 className="visit-detail-section-title">Vision Information</h3>
-                <VisionRefractionCard
-                  value={formData.vision_refraction as any}
-                  onChange={(v: VisionRefraction) => setFormData({ ...formData, vision_refraction: v })}
-                  readOnly={submitting}
-                />
-
-                <div style={{ marginTop: '12px' }}>
-                  <Checkbox
-                    label="Ordered Glasses"
-                    checked={formData.ordered_glasses !== undefined ? (formData.ordered_glasses === true) : ((visit as any).ordered_glasses === true)}
-                    onChange={(checked) => setFormData({ ...formData, ordered_glasses: checked ? true : null })}
-                    disabled={submitting}
-                  />
-                  <div style={{ marginTop: '8px' }}>
-                    <Checkbox
-                      label="Ordered Contacts"
-                      checked={formData.ordered_contacts !== undefined ? (formData.ordered_contacts === true) : ((visit as any).ordered_contacts === true)}
-                      onChange={(checked) => setFormData({ ...formData, ordered_contacts: checked ? true : null })}
-                      disabled={submitting}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {visit.visit_type === 'wellness' && (
-              <div className="visit-detail-section">
-                <h3 className="visit-detail-section-title">Vaccines</h3>
-                <VaccineInput
-                  value={formData.vaccines_administered || []}
-                  onChange={(vaccines) => setFormData({ ...formData, vaccines_administered: vaccines })}
-                  disabled={submitting}
-                />
-              </div>
-            )}
-
-            {(visit.visit_type === 'sick' || visit.visit_type === 'injury') && (
-              <div className="visit-detail-section">
-                <h3 className="visit-detail-section-title">Prescriptions</h3>
-                <PrescriptionInput
-                  value={formData.prescriptions || []}
-                  onChange={(prescriptions) => setFormData({ ...formData, prescriptions: prescriptions })}
-                  disabled={submitting}
-                />
-              </div>
-            )}
-
-            <div className="visit-detail-section">
-              <h3 className="visit-detail-section-title">Tags</h3>
-              <TagInput
-                tags={formData.tags || []}
-                onChange={(tags) => setFormData({ ...formData, tags })}
-                disabled={submitting}
-                placeholder="Add tags (e.g., follow-up, urgent, routine)"
-              />
+            <div className="visit-form-sidebar-cell">
+              <VisitFormSidebar activeSections={activeSections} onAddSection={addSection} />
             </div>
-
-            <div className="visit-detail-section">
-              <h3 className="visit-detail-section-title">Notes</h3>
-              <FormField
-                label="Additional Notes"
-                type="textarea"
-                value={formData.notes || ''}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value || null })}
-                disabled={submitting}
-                placeholder="Any additional notes about this visit..."
-                rows={4}
-              />
+            <div className="visit-form-top-row">
+              <h2 className="visit-header-title">
+                Edit {visit.visit_type === 'wellness' ? 'Wellness' : 
+                     visit.visit_type === 'sick' ? 'Sick' : 
+                     visit.visit_type === 'injury' ? 'Injury' :
+                     'Vision'} Visit
+              </h2>
             </div>
-
-            <div className="visit-detail-section">
-              <h3 className="visit-detail-section-title">Attachments</h3>
-              <FileUpload
-                onUpload={handleFileUpload}
-                disabled={submitting || loadingAttachments}
-              />
-              {loadingAttachments ? (
-                <div className="attachments-loading">Loading attachments...</div>
-              ) : (
-                <VisitAttachmentsList
-                  attachments={attachments}
-                  onDelete={handleAttachmentDelete}
-                  visitId={parseInt(id!)}
-                  onUpdate={() => loadAttachments(parseInt(id!))}
-                />
-              )}
+            <div className="visit-form-body-cell visit-detail-body">
+              {(() => {
+                  type SectionId = import('../visit-form/sectionRegistry').SectionId;
+                  const sectionsToRender: { sectionId: SectionId; entry: NonNullable<ReturnType<typeof getSectionById>> }[] = [];
+                  for (const id of activeSections) {
+                    const entry = getSectionById(id as SectionId);
+                    if (entry) sectionsToRender.push({ sectionId: id as SectionId, entry });
+                  }
+                  return sectionsToRender.map(({ sectionId, entry }, index) => {
+                    const Component = entry.component;
+                    const isLast = index === sectionsToRender.length - 1;
+                    return (
+                      <SectionWrapper
+                        key={sectionId}
+                        sectionId={sectionId}
+                        label={entry.label}
+                        hideTitle={entry.hideTitle}
+                        removable={entry.removable}
+                        onRemove={() => removeSection(sectionId)}
+                        isLast={isLast}
+                      >
+                        <Component sectionId={sectionId} context={visitFormContext} />
+                      </SectionWrapper>
+                    );
+                  });
+                })()}
             </div>
           </div>
         </Card>
-
-        <div className="form-actions">
-          <Button type="submit" disabled={submitting}>
-            {submitting ? 'Updating Visit...' : 'Update Visit'}
-          </Button>
-          <Link to={`/visits/${id}`}>
-            <Button type="button" variant="secondary" disabled={submitting}>
-              Cancel
-            </Button>
-          </Link>
-        </div>
       </form>
     </div>
   );

@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { HiPlus } from 'react-icons/hi';
 import VisitStats from './VisitStats';
 import ChildSelector from './ChildSelector';
 import Button from './Button';
@@ -24,6 +25,14 @@ interface Props {
 }
 
 export default function IllnessesSidebar({ stats, childrenList, selectedChildId, onSelectChild, hideChildFilter = false, addIllnessChildId }: Props) {
+  const navigate = useNavigate();
+
+  const handleAddIllness = () => {
+    const path = addIllnessChildId != null ? `/illnesses/new?child_id=${addIllnessChildId}` : '/illnesses/new';
+    const state = addIllnessChildId != null ? { fromChild: true, childId: addIllnessChildId, fromTab: 'illnesses' } : undefined;
+    navigate(path, { state });
+  };
+
   return (
     <aside className="visits-sidebar">
       <div className="visits-sidebar-inner">
@@ -43,22 +52,20 @@ export default function IllnessesSidebar({ stats, childrenList, selectedChildId,
             <ChildSelector childrenList={childrenList} selectedChildId={selectedChildId} onSelect={onSelectChild} />
 
             <div className="sidebar-action" style={{ marginTop: 12 }}>
-              <Link to="/illnesses/new" className="sidebar-action-link">
-                <Button className="sidebar-add-btn" size="lg">Add Illness</Button>
-              </Link>
+              <Button type="button" onClick={handleAddIllness} className="sidebar-add-visit-btn" size="lg" variant="secondary">
+                <HiPlus className="sidebar-add-visit-btn-icon" aria-hidden />
+                <span>Add Illness</span>
+              </Button>
             </div>
           </div>
         )}
 
         {hideChildFilter && (
           <div className="sidebar-action" style={{ marginTop: 12 }}>
-            <Link
-              to={addIllnessChildId != null ? `/illnesses/new?child_id=${addIllnessChildId}` : '/illnesses/new'}
-              state={addIllnessChildId != null ? { fromChild: true, childId: addIllnessChildId, fromTab: 'illnesses' } : undefined}
-              className="sidebar-action-link"
-            >
-              <Button className="sidebar-add-btn" size="lg">Add Illness</Button>
-            </Link>
+            <Button type="button" onClick={handleAddIllness} className="sidebar-add-visit-btn" size="lg" variant="secondary">
+              <HiPlus className="sidebar-add-visit-btn-icon" aria-hidden />
+              <span>Add Illness</span>
+            </Button>
           </div>
         )}
       </div>

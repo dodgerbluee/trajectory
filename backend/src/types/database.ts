@@ -228,13 +228,13 @@ export interface Visit {
   // illnesses are stored in `visit_illnesses` join table; no single `illness_type` on visits
   symptoms: string | null;
   temperature: number | null;
+  illness_start_date: string | null; // ISO date string
   end_date: string | null; // ISO date string
   
   // Injury visit fields
   injury_type: string | null; // e.g., "sprain", "laceration", "fracture", "bruise", "burn", "other"
   injury_location: string | null; // e.g., "left ankle", "forehead", "right arm"
   treatment: string | null; // e.g., "stitches", "splint", "ice and rest"
-  follow_up_date: string | null; // ISO date string
   
   // Vision visit fields
   vision_prescription: string | null; // Prescription details
@@ -285,15 +285,14 @@ export interface CreateVisitInput {
   
   symptoms?: string | null;
   temperature?: number | null;
+  illness_start_date?: string | null;
   end_date?: string | null;
   
   // Injury visit fields
   injury_type?: string | null;
   injury_location?: string | null;
   treatment?: string | null;
-  follow_up_date?: string | null;
   
-  // Vision visit fields
   // Vision visit fields
   vision_prescription?: string | null;
   vision_refraction?: {
@@ -311,6 +310,7 @@ export interface CreateVisitInput {
   tags?: string[] | null;
   notes?: string | null;
   create_illness?: boolean; // Auto-create illness entry from sick visit
+  illness_severity?: number | null; // Severity (1-10) for illness entry when create_illness is true
 }
 
 export interface UpdateVisitInput {
@@ -332,13 +332,13 @@ export interface UpdateVisitInput {
   
   symptoms?: string | null;
   temperature?: number | null;
+  illness_start_date?: string | null;
   end_date?: string | null;
   
   // Injury visit fields
   injury_type?: string | null;
   injury_location?: string | null;
   treatment?: string | null;
-  follow_up_date?: string | null;
   
   vaccines_administered?: string[] | null;
   prescriptions?: Prescription[] | null;
@@ -370,13 +370,13 @@ export interface VisitRow {
   
   symptoms: string | null;
   temperature: string | null; // Decimal comes as string
+  illness_start_date: Date | null;
   end_date: Date | null;
   
   // Injury visit fields
   injury_type: string | null;
   injury_location: string | null;
   treatment: string | null;
-  follow_up_date: Date | null;
   
   // Vision visit fields
   vision_prescription?: string | null;
@@ -446,13 +446,13 @@ export function visitRowToVisit(row: VisitRow): Visit {
     // visit-level illness_type removed; illnesses are returned separately from visit_illnesses
     symptoms: row.symptoms,
     temperature: row.temperature ? parseFloat(row.temperature) : null,
+    illness_start_date: row.illness_start_date ? row.illness_start_date.toISOString().split('T')[0] : null,
     end_date: row.end_date ? row.end_date.toISOString().split('T')[0] : null,
     
     // Injury visit fields
     injury_type: row.injury_type,
     injury_location: row.injury_location,
     treatment: row.treatment,
-    follow_up_date: row.follow_up_date ? row.follow_up_date.toISOString().split('T')[0] : null,
     
     // Vision visit fields
     vision_prescription: row.vision_prescription ?? null,

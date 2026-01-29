@@ -13,6 +13,7 @@ import VisitTypeModal from '../components/VisitTypeModal';
 import TimelineItem from '../components/TimelineItem';
 import Tabs from '../components/Tabs';
 import DocumentsList from '../components/DocumentsList';
+import DocumentsSidebar, { type DocumentTypeFilter } from '../components/DocumentsSidebar';
 import ImageCropUpload from '../components/ImageCropUpload';
 import VaccineHistory from '../components/VaccineHistory';
 import VisitsSidebar from '../components/VisitsSidebar';
@@ -46,6 +47,7 @@ function ChildDetailPage() {
   const [metricsYear, setMetricsYear] = useState<number>(new Date().getFullYear());
   const [activeTab, setActiveTab] = useState<'visits' | 'illnesses' | 'metrics' | 'documents' | 'vaccines'>('visits');
   const [documents, setDocuments] = useState<Array<(VisitAttachment & { visit: Visit; type: 'visit' }) | (ChildAttachment & { type: 'child' })>>([]);
+  const [documentTypeFilter, setDocumentTypeFilter] = useState<DocumentTypeFilter>('all');
   const [loadingDocuments, setLoadingDocuments] = useState(false);
   const [showAvatarEditor, setShowAvatarEditor] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -303,6 +305,14 @@ function ChildDetailPage() {
     return items;
   }, [illnesses, filterIllnessStatus]);
 
+  const filteredDocuments = useMemo(() => {
+    if (documentTypeFilter === 'visit') return documents.filter((d) => d.type === 'visit');
+    if (documentTypeFilter === 'vaccine') return documents.filter((d) => d.type === 'child');
+    return documents;
+  }, [documents, documentTypeFilter]);
+  const visitDocsCount = documents.filter((d) => d.type === 'visit').length;
+  const vaccineDocsCount = documents.filter((d) => d.type === 'child').length;
+
   // Early returns AFTER all hooks
   if (loading) {
     return <LoadingSpinner message="Loading child details..." />;
@@ -530,6 +540,7 @@ function ChildDetailPage() {
                       selectedChildId={undefined}
                       onSelectChild={() => {}}
                       hideChildFilter
+                      onAddVisitClick={() => setShowVisitTypeModal(true)}
                     />
 
                     <main className="visits-main">
@@ -628,7 +639,18 @@ function ChildDetailPage() {
                 content: loadingDocuments ? (
                   <LoadingSpinner message="Loading documents..." />
                 ) : (
-                  <DocumentsList documents={documents} onUpdate={loadDocuments} showHeader={true} />
+                  <div className="visits-page-layout">
+                    <DocumentsSidebar
+                      total={documents.length}
+                      visitCount={visitDocsCount}
+                      vaccineCount={vaccineDocsCount}
+                      filter={documentTypeFilter}
+                      onFilterChange={setDocumentTypeFilter}
+                    />
+                    <main className="visits-main">
+                      <DocumentsList documents={filteredDocuments} onUpdate={loadDocuments} showHeader={false} />
+                    </main>
+                  </div>
                 ),
               });
 
@@ -653,6 +675,7 @@ function ChildDetailPage() {
                       childrenList={child ? [child] : []}
                       selectedChildId={child?.id}
                       onSelectChild={() => {}}
+                      showChildFilter={false}
                     />
                     <main className="visits-main">
                       <MetricsView

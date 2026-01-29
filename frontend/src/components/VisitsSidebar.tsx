@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
+import { HiPlus } from 'react-icons/hi';
 import VisitStats from './VisitStats';
 import ChildSelector from './ChildSelector';
 import Button from './Button';
@@ -19,9 +20,11 @@ interface Props {
     selectedChildId?: number | undefined;
     onSelectChild: (id?: number) => void;
     hideChildFilter?: boolean;
+    /** When set, Add Visit opens this modal on the current page instead of navigating away. */
+    onAddVisitClick?: () => void;
 }
 
-export default function VisitsSidebar({ stats, childrenList, selectedChildId, onSelectChild, hideChildFilter = false }: Props) {
+export default function VisitsSidebar({ stats, childrenList, selectedChildId, onSelectChild, hideChildFilter = false, onAddVisitClick }: Props) {
     const location = useLocation();
     const isHome = location.pathname === '/';
     const fromPath = isHome ? '/' : `${location.pathname}${location.search}`;
@@ -49,6 +52,7 @@ export default function VisitsSidebar({ stats, childrenList, selectedChildId, on
                                 fromPath={fromPath}
                                 fromTab={fromTab}
                                 currentPath={location.pathname + (location.search || '')}
+                                onAddVisitClick={onAddVisitClick}
                             />
                         </div>
                     </div>
@@ -60,6 +64,7 @@ export default function VisitsSidebar({ stats, childrenList, selectedChildId, on
                             fromPath={fromPath}
                             fromTab={fromTab}
                             currentPath={location.pathname + (location.search || '')}
+                            onAddVisitClick={onAddVisitClick}
                         />
                     </div>
                 )}
@@ -68,9 +73,13 @@ export default function VisitsSidebar({ stats, childrenList, selectedChildId, on
     );
 }
 
-                function AddVisitButton({ fromPath, fromTab, currentPath }: { fromPath: string; fromTab?: string; currentPath: string }) {
+                function AddVisitButton({ fromPath, fromTab, currentPath, onAddVisitClick }: { fromPath: string; fromTab?: string; currentPath: string; onAddVisitClick?: () => void }) {
                     const navigate = useNavigate();
                     const handle = () => {
+                        if (onAddVisitClick) {
+                            onAddVisitClick();
+                            return;
+                        }
                         const state = fromTab ? { openAddVisit: true, from: fromPath, fromTab } : { from: fromPath };
                         if (currentPath === '/') {
                             navigate(currentPath, { state });
@@ -80,8 +89,9 @@ export default function VisitsSidebar({ stats, childrenList, selectedChildId, on
                     };
 
                     return (
-                        <Button type="button" onClick={handle} className="sidebar-add-btn" size="lg">
-                            Add Visit
+                        <Button type="button" onClick={handle} className="sidebar-add-visit-btn" size="lg" variant="secondary">
+                            <HiPlus className="sidebar-add-visit-btn-icon" aria-hidden />
+                            <span>Add Visit</span>
                         </Button>
                     );
                 }

@@ -1,7 +1,7 @@
 import { InputHTMLAttributes, TextareaHTMLAttributes } from 'react';
 
 interface BaseFieldProps {
-  label: string;
+  label?: string;
   error?: string;
   required?: boolean;
 }
@@ -34,14 +34,16 @@ interface TextareaFieldProps extends BaseFieldProps, TextareaHTMLAttributes<HTML
 type FormFieldProps = InputFieldProps | TextareaFieldProps | SelectFieldProps;
 
 function FormField({ label, error, required, type = 'text', ...props }: FormFieldProps) {
-  const inputId = props.id || `field-${label.toLowerCase().replace(/\s+/g, '-')}`;
+  const inputId = props.id || (label ? `field-${label.toLowerCase().replace(/\s+/g, '-')}` : `field-${Math.random().toString(36).substr(2, 9)}`);
   
   return (
     <div className="form-field">
-      <label htmlFor={inputId} className="form-label">
-        {label}
-        {required && <span className="required-indicator">*</span>}
-      </label>
+      {label && (
+        <label htmlFor={inputId} className="form-label">
+          {label}
+          {required && <span className="required-indicator">*</span>}
+        </label>
+      )}
       
       {type === 'select' ? (
         <select

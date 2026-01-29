@@ -93,7 +93,7 @@ function IllnessNotification() {
             {illnesses.map((illness) => (
               <Link
                 key={illness.id}
-                to={`/illnesses/${illness.id}/edit`}
+                to={`/illnesses/${illness.id}`}
                 className="notification-item"
                 onClick={() => setIsOpen(false)}
               >

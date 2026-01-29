@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { visitsApi, childrenApi, ApiClientError } from '../lib/api-client';
 import type { Visit, Child, VisitAttachment } from '../types/api';
-import { formatDate, formatDateTime } from '../lib/date-utils';
+import { formatDate, safeFormatDateTime } from '../lib/date-utils';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import Card from '../components/Card';
@@ -12,6 +12,8 @@ import VisitAttachmentsList from '../components/VisitAttachmentsList';
 import Tabs from '../components/Tabs';
 import { useAuth } from '../contexts/AuthContext';
 import { VisionRefractionCard } from '../components/VisionRefractionCard';
+import AuditDiffView from '../components/AuditDiffView';
+import type { AuditHistoryEvent } from '../types/api';
 
 function VisitDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -35,15 +37,7 @@ function VisitDetailPage() {
       setActiveTab('visit');
     }
   }, [attachments.length, activeTab]);
-  const [history, setHistory] = useState<Array<{
-    id: number;
-    visit_id: number;
-    user_id: number | null;
-    action: 'created' | 'updated' | 'attachment_uploaded';
-    description: string;
-    created_at: string;
-    user_name: string | null;
-  }>>([]);
+  const [history, setHistory] = useState<AuditHistoryEvent[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
@@ -95,9 +89,10 @@ function VisitDetailPage() {
     try {
       setLoadingHistory(true);
       const response = await visitsApi.getHistory(visitId);
-      setHistory(response.data);
+      setHistory(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Failed to load history:', error);
+      setHistory([]);
     } finally {
       setLoadingHistory(false);
     }
@@ -183,7 +178,7 @@ function VisitDetailPage() {
           </div>
 
           {/* Visit Header */}
-          <div className="visit-header-section">
+          <div>
             <h2 className="visit-header-title">
               {visit.visit_type === 'wellness' ? 'Wellness Visit' : 
                visit.visit_type === 'sick' ? 'Sick Visit' : 
@@ -248,6 +243,12 @@ function VisitDetailPage() {
                             <span className="visit-info-value">{visit.temperature}°F</span>
                           </div>
                         )}
+                        {visit.illness_start_date && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Illness start:</span>
+                            <span className="visit-info-value">{formatDate(visit.illness_start_date)}</span>
+                          </div>
+                        )}
                         {visit.end_date && (
                           <div className="visit-info-item">
                             <span className="visit-info-label">Resolved:</span>
@@ -275,12 +276,6 @@ function VisitDetailPage() {
                           <div className="visit-info-item">
                             <span className="visit-info-label">Injury Location:</span>
                             <span className="visit-info-value">{visit.injury_location}</span>
-                          </div>
-                        )}
-                        {visit.follow_up_date && (
-                          <div className="visit-info-item">
-                            <span className="visit-info-label">Follow-up Date:</span>
-                            <span className="visit-info-value">{formatDate(visit.follow_up_date)}</span>
                           </div>
                         )}
                         {visit.treatment && (
@@ -414,7 +409,7 @@ function VisitDetailPage() {
                 id: 'history',
                 label: 'History',
                 content: (
-                  <div className="visit-history-tab">
+                  <div>
                     <VisitHistory history={history} loading={loadingHistory} user={user} />
                   </div>
                 ),
@@ -447,20 +442,25 @@ function VisitDetailPage() {
 }
 
 interface VisitHistoryProps {
-  history: Array<{
-    id: number;
-    visit_id: number;
-    user_id: number | null;
-    action: 'created' | 'updated' | 'attachment_uploaded';
-    description: string;
-    created_at: string;
-    user_name: string | null;
-  }>;
+  history: AuditHistoryEvent[];
   loading: boolean;
   user: { name: string } | null;
 }
 
 function VisitHistory({ history, loading, user }: VisitHistoryProps) {
+  const [selectedEntry, setSelectedEntry] = useState<AuditHistoryEvent | null>(null);
+
+  const handleCloseModal = () => setSelectedEntry(null);
+
+  useEffect(() => {
+    if (!selectedEntry) return;
+    const onEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleCloseModal();
+    };
+    window.addEventListener('keydown', onEscape);
+    return () => window.removeEventListener('keydown', onEscape);
+  }, [selectedEntry]);
+
   if (loading) {
     return <div className="visit-history-loading">Loading history...</div>;
   }
@@ -470,18 +470,75 @@ function VisitHistory({ history, loading, user }: VisitHistoryProps) {
   }
 
   return (
-    <div className="visit-history-list-compact">
-      {history.map((entry) => (
-        <div key={entry.id} className="visit-history-entry-compact">
-          <span className="visit-history-icon-compact">
-            {entry.action === 'created' ? '➕' : entry.action === 'updated' ? '✏️' : '📎'}
-          </span>
-          <span className="visit-history-description-compact">{entry.description}</span>
-          <span className="visit-history-date-compact">{formatDateTime(entry.created_at)}</span>
-          <span className="visit-history-user-compact">{entry.user_name || user?.name || 'Unknown'}</span>
+    <>
+      <div className="visit-history-list-compact" role="list">
+        {history.map((entry) => {
+          const dateDisplay = safeFormatDateTime(entry.changed_at);
+          const summaryDisplay = entry.summary ?? (entry.action === 'created' ? 'Visit created' : entry.action === 'updated' ? 'Updated' : entry.action === 'deleted' ? 'Deleted' : entry.action);
+          return (
+            <button
+              key={entry.id}
+              type="button"
+              className="visit-history-entry-compact visit-history-entry-clickable"
+              onClick={() => setSelectedEntry(entry)}
+              role="listitem"
+            >
+              <span className="visit-history-icon-compact" aria-hidden>
+                {entry.action === 'created' ? '➕' : entry.action === 'updated' ? '✏️' : entry.action === 'deleted' ? '🗑️' : '📎'}
+              </span>
+              <span className="visit-history-description-compact">{summaryDisplay}</span>
+              <span className="visit-history-date-compact">{dateDisplay}</span>
+              <span className="visit-history-user-compact">{entry.user_name || user?.name || 'Unknown'}</span>
+              <span className="visit-history-chevron" aria-hidden>›</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {selectedEntry && (
+        <div
+          className="history-detail-overlay"
+          onClick={handleCloseModal}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="history-detail-title"
+        >
+          <div
+            className="history-detail-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="history-detail-header">
+              <h2 id="history-detail-title" className="history-detail-title">
+                {selectedEntry.summary ?? (selectedEntry.action === 'created' ? 'Visit created' : selectedEntry.action === 'updated' ? 'Updated' : selectedEntry.action === 'deleted' ? 'Deleted' : selectedEntry.action)}
+              </h2>
+              <button
+                type="button"
+                className="history-detail-close"
+                onClick={handleCloseModal}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            <div className="history-detail-meta">
+              <span className="history-detail-date">{safeFormatDateTime(selectedEntry.changed_at)}</span>
+              <span className="history-detail-sep">·</span>
+              <span className="history-detail-user">{selectedEntry.user_name || user?.name || 'Unknown'}</span>
+            </div>
+            <div className="history-detail-body">
+              {selectedEntry.changes && Object.keys(selectedEntry.changes).length > 0 ? (
+                <AuditDiffView
+                  changes={selectedEntry.changes}
+                  fieldLabels={{ _legacy: 'Note' }}
+                />
+              ) : (
+                <p className="history-detail-empty">No field-level changes recorded.</p>
+              )}
+            </div>
+          </div>
         </div>
-      ))}
-    </div>
+      )}
+    </>
   );
 }
 

@@ -198,13 +198,13 @@ export interface Visit {
   illnesses?: IllnessType[] | null;
   symptoms: string | null;
   temperature: number | null;
+  illness_start_date: string | null;
   end_date: string | null;
   
   // Injury visit
   injury_type: string | null;
   injury_location: string | null;
   treatment: string | null;
-  follow_up_date: string | null;
   
   // Vision visit
   vision_prescription: string | null;
@@ -247,13 +247,13 @@ export interface CreateVisitInput {
   illnesses?: IllnessType[] | null;
   symptoms?: string | null;
   temperature?: number | null;
+  illness_start_date?: string | null;
   end_date?: string | null;
   
   // Injury visit fields
   injury_type?: string | null;
   injury_location?: string | null;
   treatment?: string | null;
-  follow_up_date?: string | null;
   
   // Vision visit fields
   vision_prescription?: string | null;
@@ -268,6 +268,7 @@ export interface CreateVisitInput {
   tags?: string[] | null;
   notes?: string | null;
   create_illness?: boolean; // Auto-create illness entry from sick visit
+  illness_severity?: number | null; // Severity (1-10) for illness entry when create_illness is true
 }
 
 export interface UpdateVisitInput {
@@ -293,13 +294,13 @@ export interface UpdateVisitInput {
   illnesses?: IllnessType[] | null;
   symptoms?: string | null;
   temperature?: number | null;
+  illness_start_date?: string | null;
   end_date?: string | null;
   
   // Injury visit fields
   injury_type?: string | null;
   injury_location?: string | null;
   treatment?: string | null;
-  follow_up_date?: string | null;
   
   // Vision visit fields
   vision_prescription?: string | null;
@@ -474,4 +475,21 @@ export interface GrowthDataPoint {
   child_id: number;
   child_name: string;
   gender: Gender;
+}
+
+// ============================================================================
+// Audit History
+// ============================================================================
+
+export interface AuditHistoryEvent {
+  id: number;
+  entity_type: 'visit' | 'illness';
+  entity_id: number;
+  user_id: number | null;
+  user_name: string | null;
+  user_email: string | null;
+  action: 'created' | 'updated' | 'deleted';
+  changed_at: string;
+  changes: Record<string, { before: unknown; after: unknown }>;
+  summary: string | null;
 }
