@@ -6,7 +6,7 @@ import { formatDate } from '../lib/date-utils';
 import { childrenApi, ApiClientError } from '../lib/api-client';
 import FileUpload from './FileUpload';
 import LoadingSpinner from './LoadingSpinner';
-import VaccineSummary from './VaccineSummary';
+import VaccineSidebar from './VaccineSidebar';
 
 interface VaccineHistoryProps {
   visits: Visit[];
@@ -188,14 +188,18 @@ function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProp
     );
   }
 
-  return (
-    <div className="vaccine-history-container">
-      <VaccineSummary
-        totalVaccines={vaccineRecords.length}
-        totalDoses={vaccineRecords.reduce((sum, record) => sum + record.dates.length, 0)}
-      />
+  const totalDoses = vaccineRecords.reduce((sum, record) => sum + record.dates.length, 0);
 
-      <div className="vaccine-history-list">
+  return (
+    <div className="visits-page-layout">
+      <VaccineSidebar
+        vaccineTypesCount={vaccineRecords.length}
+        totalDosesCount={totalDoses}
+        reportsCount={vaccineReports.length}
+      />
+      <main className="visits-main">
+        <div className="vaccine-history-container">
+          <div className="vaccine-history-list">
         {vaccineRecords.map((record) => (
           <div key={record.name} className="vaccine-history-item">
             <div className="vaccine-history-header">
@@ -341,6 +345,8 @@ function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProp
         </p>
         <FileUpload onUpload={handleFileUpload} disabled={uploading} />
       </div>
+        </div>
+      </main>
     </div>
   );
 }

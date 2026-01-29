@@ -10,7 +10,8 @@ interface Props {
   childrenList: Child[];
   selectedChildId?: number | undefined;
   onSelectChild: (id?: number) => void;
-  // year handled inside MetricsView
+  /** When false, hide the Child Filter section (e.g. on child detail page where context is already one child). Default true. */
+  showChildFilter?: boolean;
 }
 
 export default function TrendsSidebar({
@@ -19,6 +20,7 @@ export default function TrendsSidebar({
   childrenList,
   selectedChildId,
   onSelectChild,
+  showChildFilter = true,
 }: Props) {
   return (
     <aside className="visits-sidebar">
@@ -56,10 +58,12 @@ export default function TrendsSidebar({
           </div>
         </div>
 
-        <div className="sidebar-section">
-          <h4 className="sidebar-section-title">Child Filter</h4>
-          <ChildSelector childrenList={childrenList} selectedChildId={selectedChildId} onSelect={onSelectChild} />
-        </div>
+        {showChildFilter && (
+          <div className="sidebar-section">
+            <h4 className="sidebar-section-title">Child Filter</h4>
+            <ChildSelector childrenList={childrenList} selectedChildId={selectedChildId} onSelect={onSelectChild} />
+          </div>
+        )}
       </div>
     </aside>
   );

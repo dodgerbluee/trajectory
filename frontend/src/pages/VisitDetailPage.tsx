@@ -409,7 +409,7 @@ function VisitDetailPage() {
                 id: 'history',
                 label: 'History',
                 content: (
-                  <div className="visit-history-tab">
+                  <div>
                     <VisitHistory history={history} loading={loadingHistory} user={user} />
                   </div>
                 ),

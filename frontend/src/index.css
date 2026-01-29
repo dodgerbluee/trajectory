@@ -192,8 +192,16 @@
 }
 .visit-stats-vertical .visit-stat-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 16px rgba(0,0,0,0.06);
 }
+
+/* Vaccine sidebar: info-only stats (no filter, no hover lift) */
+.vaccine-sidebar--info .visit-stat-card {
+  cursor: default;
+}
+.vaccine-sidebar--info .visit-stat-card:hover {
+  transform: none;
+}
+
 .visit-stats-vertical .visit-stat-icon {
   width: 36px;
   height: 36px;
@@ -1368,7 +1376,6 @@ body {
   width: 220px;
   flex: 0 0 220px;
   position: sticky;
-  top: 20px;
   align-self: stretch;
   height: auto;
 }
@@ -1539,63 +1546,80 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
   .visits-sidebar { position: relative; width: 100%; top: 0; }
 }
 
-/* Create/Edit visit page: back above sidebar, grid layout, compact sidebar (spacing/sizing only) */
+/* Create/Edit visit page: back above sidebar; title + body right of sidebar; Save/Cancel level with title on right */
 .visit-form-page.visit-form-layout-grid {
   display: grid;
-  grid-template-columns: 240px 1fr;
-  grid-template-rows: auto 1fr;
+  grid-template-columns: 300px 1fr;
+  grid-template-rows: auto auto 1fr;
   gap: 12px 24px;
   align-items: stretch;
 }
 
-.visit-form-back {
-  grid-column: 1;
+/* Back link left, Save/Cancel right – same row, level with each other */
+.visit-form-back-row {
+  grid-column: 1 / -1;
   grid-row: 1;
-  align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.visit-form-back-row .visit-form-back {
   margin-bottom: 0;
 }
 
-.visit-form-main-header {
-  grid-column: 2;
-  grid-row: 1;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.visit-form-back-row .visit-detail-actions {
+  flex-shrink: 0;
 }
 
-.visit-form-main-header .visit-detail-actions {
-  margin-left: auto;
-}
-
+/* Sidebar in column 1, starts at row 2 (level with "Add X Visit"), spans to bottom */
 .visit-form-sidebar-cell {
   grid-column: 1;
-  grid-row: 2;
+  grid-row: 2 / -1;
   min-width: 0;
   display: flex;
   flex-direction: column;
 }
 
-.visit-form-page .visit-form-sidebar-cell .visits-sidebar {
-  flex: 1;
-  min-height: 0;
+/* Title row: column 2, row 2; "Add X Visit" level with sidebar (above main body) */
+.visit-form-top-row {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+}
+
+.visit-form-top-row .visit-header-title {
+  margin: 0;
 }
 
 .visit-form-body-cell {
   grid-column: 2;
-  grid-row: 2;
+  grid-row: 3;
   min-width: 0;
+}
+
+.visit-form-page .visit-form-sidebar-cell .visits-sidebar {
+  flex: 1;
+  min-height: 0;
+  align-self: stretch;
 }
 
 .visit-form-page .visits-sidebar {
   width: 100%;
   max-width: 100%;
-  flex: none;
-  position: sticky;
-  top: 20px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .visit-form-page .visits-sidebar-inner {
   padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .visit-form-page .sidebar-divider {
@@ -1636,10 +1660,11 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
     grid-template-rows: auto auto auto 1fr;
   }
 
-  .visit-form-back { grid-row: 1; }
-  .visit-form-main-header { grid-row: 2; }
-  .visit-form-sidebar-cell { grid-row: 3; }
-  .visit-form-body-cell { grid-row: 4; }
+  /* Back first, then header (title + buttons), then sidebar, then body */
+  .visit-form-back-row { grid-column: 1; grid-row: 1; }
+  .visit-form-sidebar-cell { grid-column: 1; grid-row: 3; }
+  .visit-form-top-row { grid-column: 1; grid-row: 2; }
+  .visit-form-body-cell { grid-column: 1; grid-row: 4; }
 }
 
 /* Ensure SVG icons explicitly pick up currentColor for fill/stroke
@@ -3551,7 +3576,6 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
   font-size: 0.9375rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
-  background: var(--color-background);
   color: var(--color-text-primary);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -5309,6 +5333,7 @@ select.form-input:disabled {
   border-radius: var(--radius-sm);
   background-color: var(--color-surface);
   transition: background-color 0.2s;
+  margin-bottom: var(--spacing-md);
 }
 
 .attachment-item-compact:hover {
@@ -6024,7 +6049,7 @@ select.form-input:disabled {
 .visit-detail-body {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-sm);
 }
 
 /* No bottom space after last section in form body */
@@ -6052,7 +6077,7 @@ select.form-input:disabled {
 .visit-tab-content {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-md);
 }
 
 .visit-header-title {
@@ -6092,8 +6117,6 @@ select.form-input:disabled {
 .visit-info-stacked {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-md);
 }
 
 .visit-info-item {
@@ -6130,6 +6153,7 @@ select.form-input:disabled {
   border-radius: var(--radius-md);
   text-align: center;
   transition: all 0.2s ease;
+  margin-bottom: var(--spacing-md);
 }
 
 .measurement-card:hover {
@@ -6233,21 +6257,15 @@ select.form-input:disabled {
   white-space: pre-wrap;
 }
 
-.visit-history-tab {
-  padding: var(--spacing-sm) 0;
-}
-
 .visit-history-list-compact {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
 }
 
 .visit-history-entry-compact {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  padding: var(--spacing-xs) 0;
   font-size: 0.875rem;
   border-bottom: 1px solid var(--color-border);
 }
@@ -6657,6 +6675,24 @@ select.form-input:disabled {
   width: auto;
 }
 
+.prescription-input-modern {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+/* Add Prescription button: same size as Add Vaccine (auto width, not full width) */
+.prescription-input-modern > .measurement-card-add {
+  width: auto;
+  align-self: flex-start;
+}
+
+.prescription-modal-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
 /* Vaccine Input Component */
 /* Modern Vaccine Input */
 .vaccine-input-modern {
@@ -6718,12 +6754,29 @@ select.form-input:disabled {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--spacing-md);
-  padding-bottom: var(--spacing-md);
   margin-bottom: 0;
 }
 
 .illnesses-badges-wrap .vaccine-badges-list {
   margin-bottom: 0;
+  gap: var(--m-space-1);
+}
+
+/* Illness badges: same height/size as Add Illness button */
+.illnesses-badges-wrap .vaccine-badge-item {
+  padding: var(--m-space-1) var(--m-space-2);
+  gap: var(--m-space-1);
+  font-size: 0.8125rem;
+  min-height: 32px;
+  box-sizing: border-box;
+}
+
+.illnesses-badges-wrap .vaccine-badge-icon {
+  font-size: 1rem;
+}
+
+.illnesses-badges-wrap .vaccine-badge-text {
+  font-weight: 500;
 }
 
 /* Small space between Add Illness button and Symptoms field */
@@ -6734,10 +6787,6 @@ select.form-input:disabled {
 /* Create illness entry: checkbox + hint (smaller, off grey, italic) */
 .illness-create-entry-field {
   margin-top: var(--spacing-sm);
-}
-
-.illness-create-entry-field .modern-checkbox-wrapper {
-  margin-bottom: var(--spacing-xs);
 }
 
 .form-field-hint-italic {
@@ -7905,11 +7954,6 @@ select.form-input:disabled {
   margin-top: var(--spacing-md);
   padding-top: var(--spacing-md);
   border-top: 1px solid var(--color-border);
-}
-
-/* Modern Checkbox */
-.modern-checkbox-wrapper {
-  margin-bottom: var(--spacing-md);
 }
 
 .modern-checkbox-label {

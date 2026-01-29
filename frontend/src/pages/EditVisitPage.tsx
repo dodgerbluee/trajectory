@@ -286,19 +286,13 @@ function EditVisitPage() {
       <form onSubmit={handleSubmit}>
         <Card>
           <div className="visit-form-page visit-form-layout-grid">
-            <Link
-              to={`/children/${visit.child_id}`}
-              className="breadcrumb visit-form-back"
-            >
-              ← Back to {child.name}
-            </Link>
-            <div className="visit-form-main-header">
-              <h2 className="visit-header-title">
-                Edit {visit.visit_type === 'wellness' ? 'Wellness' : 
-                     visit.visit_type === 'sick' ? 'Sick' : 
-                     visit.visit_type === 'injury' ? 'Injury' :
-                     'Vision'} Visit
-              </h2>
+            <div className="visit-form-back-row">
+              <Link
+                to={`/children/${visit.child_id}`}
+                className="breadcrumb visit-form-back"
+              >
+                ← Back to {child.name}
+              </Link>
               <div className="visit-detail-actions">
                 <Button type="submit" disabled={submitting} size="sm">
                   {submitting ? 'Saving...' : 'Save'}
@@ -312,6 +306,14 @@ function EditVisitPage() {
             </div>
             <div className="visit-form-sidebar-cell">
               <VisitFormSidebar activeSections={activeSections} onAddSection={addSection} />
+            </div>
+            <div className="visit-form-top-row">
+              <h2 className="visit-header-title">
+                Edit {visit.visit_type === 'wellness' ? 'Wellness' : 
+                     visit.visit_type === 'sick' ? 'Sick' : 
+                     visit.visit_type === 'injury' ? 'Injury' :
+                     'Vision'} Visit
+              </h2>
             </div>
             <div className="visit-form-body-cell visit-detail-body">
               {(() => {
@@ -329,6 +331,7 @@ function EditVisitPage() {
                         key={sectionId}
                         sectionId={sectionId}
                         label={entry.label}
+                        hideTitle={entry.hideTitle}
                         removable={entry.removable}
                         onRemove={() => removeSection(sectionId)}
                         isLast={isLast}

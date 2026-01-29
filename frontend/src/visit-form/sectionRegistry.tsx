@@ -44,6 +44,8 @@ export interface SectionEntry {
   id: SectionId;
   label: string;
   component: ComponentType<SectionContentProps>;
+  /** When true, section header is not rendered (e.g. Notes). */
+  hideTitle?: boolean;
   /** If true, user can remove this section from the page (state only). */
   removable: boolean;
   /** Visit types this section is allowed on. null = all types. */
@@ -65,6 +67,7 @@ const SECTION_REGISTRY: SectionEntry[] = [
     id: 'notes',
     label: 'Notes',
     component: NotesSection as ComponentType<SectionContentProps>,
+    hideTitle: true,
     removable: false,
     allowedVisitTypes: null,
     optional: false,

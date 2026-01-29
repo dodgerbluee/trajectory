@@ -12,8 +12,10 @@ import type { ReactNode } from 'react';
 export interface SectionWrapperProps {
   /** Section id; used for scroll target and data attributes. */
   sectionId: string;
-  /** Header label. */
+  /** Header label. Omit header when hideTitle is true. */
   label: string;
+  /** When true, do not render the section header (e.g. for Notes). */
+  hideTitle?: boolean;
   /** Whether to show the remove (✕) button. */
   removable: boolean;
   /** Called when user clicks remove. Only relevant when removable is true. */
@@ -27,6 +29,7 @@ export interface SectionWrapperProps {
 export function SectionWrapper({
   sectionId,
   label,
+  hideTitle = false,
   removable,
   onRemove,
   children,
@@ -38,6 +41,7 @@ export function SectionWrapper({
       data-section-id={sectionId}
       id={`section-${sectionId}`}
     >
+      {!hideTitle && (
       <div className="visit-detail-section-header">
         <h3 className="visit-detail-section-title">{label}</h3>
         {removable && (
@@ -52,6 +56,7 @@ export function SectionWrapper({
           </button>
         )}
       </div>
+      )}
       <div className="visit-detail-section-body">{children}</div>
     </section>
   );

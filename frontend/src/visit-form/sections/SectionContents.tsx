@@ -9,7 +9,7 @@
 import FormField from '../../components/FormField';
 import TagInput from '../../components/TagInput';
 import VaccineInput from '../../components/VaccineInput';
-import IllnessesInput from '../../components/IllnessesInput';
+import IllnessEntryFormFields from '../../components/IllnessEntryFormFields';
 import MeasurementsInput from '../../components/MeasurementsInput';
 import PrescriptionInput from '../../components/PrescriptionInput';
 import FileUpload from '../../components/FileUpload';
@@ -98,7 +98,7 @@ export function VisitInformationSection({ context }: SectionContentPropsWithCont
               tags={formData.tags || []}
               onChange={(tags) => setForm((prev: any) => ({ ...prev, tags }))}
               disabled={submitting}
-              placeholder="Add tags (e.g., follow-up, urgent, routine)"
+              placeholder="e.g., follow-up, urgent, routine"
             />
           </div>
         </div>
@@ -222,47 +222,22 @@ export function MeasurementsSection({ context }: SectionContentPropsWithContext)
 export function IllnessSection({ context }: SectionContentPropsWithContext) {
   const { formData, setFormData, selectedIllnesses, setSelectedIllnesses, submitting } = context;
   const setForm = setFormData as React.Dispatch<React.SetStateAction<any>>;
+  const value = {
+    ...formData,
+    illness_severity: (formData as any).illness_severity ?? null,
+  };
   return (
     <>
-      <IllnessesInput value={selectedIllnesses} onChange={setSelectedIllnesses} disabled={submitting} />
-      <FormField
-        label="Symptoms"
-        type="textarea"
-        value={formData.symptoms || ''}
-        onChange={(e) => setForm((prev: any) => ({ ...prev, symptoms: e.target.value || null }))}
+      <IllnessEntryFormFields
+        value={value}
+        onChange={(next) => setForm((prev: any) => ({ ...prev, ...next }))}
+        selectedIllnesses={selectedIllnesses}
+        onSelectedIllnessesChange={setSelectedIllnesses}
         disabled={submitting}
-        placeholder="Describe symptoms..."
-        rows={3}
+        dateMode="visit"
+        maxStartDate={formData.visit_date ?? undefined}
+        minEndDate={formData.illness_start_date || formData.visit_date || undefined}
       />
-      <FormField
-        label="Temperature (°F)"
-        type="number"
-        value={formData.temperature || ''}
-        onChange={(e) => setForm((prev: any) => ({ ...prev, temperature: e.target.value ? parseFloat(e.target.value) : null }))}
-        disabled={submitting}
-        placeholder="e.g., 102.5"
-        step="0.1"
-        min="95"
-        max="110"
-      />
-      <div className="form-row">
-        <FormField
-          label="Illness Start Date"
-          type="date"
-          value={formData.illness_start_date || ''}
-          onChange={(e) => setForm((prev: any) => ({ ...prev, illness_start_date: e.target.value || null }))}
-          disabled={submitting}
-          max={formData.visit_date || undefined}
-        />
-        <FormField
-          label="Illness End Date (if resolved)"
-          type="date"
-          value={formData.end_date || ''}
-          onChange={(e) => setForm((prev: any) => ({ ...prev, end_date: e.target.value || null }))}
-          disabled={submitting}
-          min={formData.illness_start_date || formData.visit_date}
-        />
-      </div>
       {selectedIllnesses.length > 0 && (
         <div className="form-field illness-create-entry-field">
           <Checkbox

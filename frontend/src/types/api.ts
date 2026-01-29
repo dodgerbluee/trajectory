@@ -268,6 +268,7 @@ export interface CreateVisitInput {
   tags?: string[] | null;
   notes?: string | null;
   create_illness?: boolean; // Auto-create illness entry from sick visit
+  illness_severity?: number | null; // Severity (1-10) for illness entry when create_illness is true
 }
 
 export interface UpdateVisitInput {

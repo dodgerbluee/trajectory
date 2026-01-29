@@ -560,6 +560,8 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
       prescriptions: req.body.prescriptions,
 
       notes: validateOptionalString(req.body.notes),
+      create_illness: req.body.create_illness === true,
+      illness_severity: validateOptionalNumber(req.body.illness_severity, 1, 10) ?? null,
     };
 
     // Support illnesses array (multiple illnesses)
@@ -664,11 +666,14 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
         // Create illness entries for each illness selected (if multiple)
         const toCreate = illnesses && illnesses.length > 0 ? illnesses : [];
         const illnessStartDate = input.illness_start_date ?? input.visit_date;
+        const severity = input.illness_severity != null && input.illness_severity >= 1 && input.illness_severity <= 10
+          ? input.illness_severity
+          : null;
         for (const ill of toCreate) {
           await query(
             `INSERT INTO illnesses (
-              child_id, illness_type, start_date, end_date, symptoms, temperature, visit_id, notes
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+              child_id, illness_type, start_date, end_date, symptoms, temperature, severity, visit_id, notes
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
             [
               input.child_id,
               ill,
@@ -676,6 +681,7 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
               input.end_date,
               input.symptoms,
               input.temperature,
+              severity,
               visit.id,
               input.notes,
             ]

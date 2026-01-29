@@ -187,25 +187,22 @@ export function buildFieldDiff(
 /**
  * Build a short summary string from the changes object.
  * Filters out effectively empty changes (e.g., vision_refraction with all null values) before generating summary.
- * 
+ * When we have field-level change data, returns a detailed description (e.g. "Updated visit_date, notes").
+ * When we have no usable keys (e.g. legacy entry), returns empty; API can fall back to stored summary or "Updated visit".
+ *
  * @param changes - The audit changes object
- * @param entityType - Optional entity type ('visit' or 'illness') to generate a simplified summary like "Updated visit"
+ * @param _entityType - Optional entity type ('visit' or 'illness'); reserved for future fallback when no keys
  */
-export function auditChangesSummary(changes: AuditChanges, entityType?: 'visit' | 'illness'): string {
+export function auditChangesSummary(changes: AuditChanges, _entityType?: 'visit' | 'illness'): string {
   // Filter out effectively empty changes before generating summary
   const filteredKeys = Object.keys(changes).filter(key => {
     const change = changes[key];
     return !shouldFilterChange(change.before, change.after);
   });
-  
+
   if (filteredKeys.length === 0) return '';
-  
-  // If entity type is provided, use simplified summary
-  if (entityType) {
-    return `Updated ${entityType}`;
-  }
-  
-  // Otherwise, use detailed summary (for backward compatibility or when entity type unknown)
+
+  // When we have change data, show what was updated (not generic "Updated visit")
   if (filteredKeys.length <= 3) {
     return `Updated ${filteredKeys.join(', ')}`;
   }

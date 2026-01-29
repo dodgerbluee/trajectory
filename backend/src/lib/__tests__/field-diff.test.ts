@@ -397,13 +397,13 @@ describe('auditChangesSummary', () => {
     expect(auditChangesSummary({})).toBe('');
   });
 
-  it('returns simplified summary when entity type provided', () => {
+  it('returns detailed summary when we have change data (entity type does not override)', () => {
     const changes: AuditChanges = {
       visit_date: { before: '2026-01-15', after: '2026-01-16' },
       notes: { before: 'Old', after: 'New' },
     };
-    expect(auditChangesSummary(changes, 'visit')).toBe('Updated visit');
-    expect(auditChangesSummary(changes, 'illness')).toBe('Updated illness');
+    expect(auditChangesSummary(changes, 'visit')).toBe('Updated visit_date, notes');
+    expect(auditChangesSummary(changes, 'illness')).toBe('Updated visit_date, notes');
   });
 
   it('returns detailed summary when entity type not provided (backward compatibility)', () => {
@@ -439,9 +439,8 @@ describe('auditChangesSummary', () => {
       tags: { before: null, after: null },
       notes: { before: 'Old', after: 'New' },
     };
-    // With entity type, should return simplified summary
-    expect(auditChangesSummary(changes, 'visit')).toBe('Updated visit');
-    // Without entity type, should filter effectively empty and show only notes
+    // With or without entity type, should filter effectively empty and show only notes
+    expect(auditChangesSummary(changes, 'visit')).toBe('Updated notes');
     expect(auditChangesSummary(changes)).toBe('Updated notes');
   });
 

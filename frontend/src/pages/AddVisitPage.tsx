@@ -65,6 +65,7 @@ function AddVisitPage() {
     tags: [],
     notes: null,
     create_illness: false,
+    illness_severity: null,
   });
 
   // Support multiple illnesses client-side (kept simple and compatible)
@@ -310,13 +311,13 @@ function AddVisitPage() {
       <form onSubmit={handleSubmit}>
         <Card>
           <div className="visit-form-page visit-form-layout-grid">
-            <Link
-              to={selectedChildId ? `/children/${selectedChildId}` : '/'}
-              className="breadcrumb visit-form-back"
-            >
-              ← Back to {childName}
-            </Link>
-            <div className="visit-form-main-header">
+            <div className="visit-form-back-row">
+              <Link
+                to={selectedChildId ? `/children/${selectedChildId}` : '/'}
+                className="breadcrumb visit-form-back"
+              >
+                ← Back to {childName}
+              </Link>
               <div className="visit-detail-actions">
                 <Button type="submit" disabled={submitting} size="sm">
                   {submitting ? 'Saving...' : 'Save'}
@@ -329,13 +330,15 @@ function AddVisitPage() {
             <div className="visit-form-sidebar-cell">
               <VisitFormSidebar activeSections={activeSections} onAddSection={addSection} />
             </div>
-            <div className="visit-form-body-cell visit-detail-body">
+            <div className="visit-form-top-row">
               <h2 className="visit-header-title">
                 Add {formData.visit_type === 'wellness' ? 'Wellness' :
                   formData.visit_type === 'sick' ? 'Sick' :
                     formData.visit_type === 'injury' ? 'Injury' :
                       'Vision'} Visit
               </h2>
+            </div>
+            <div className="visit-form-body-cell visit-detail-body">
               {(() => {
                 type SectionId = import('../visit-form/sectionRegistry').SectionId;
                 const sectionsToRender: { sectionId: SectionId; entry: NonNullable<ReturnType<typeof getSectionById>> }[] = [];
@@ -351,6 +354,7 @@ function AddVisitPage() {
                       key={sectionId}
                       sectionId={sectionId}
                       label={entry.label}
+                      hideTitle={entry.hideTitle}
                       removable={entry.removable}
                       onRemove={() => removeSection(sectionId)}
                       isLast={isLast}
