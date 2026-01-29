@@ -1,8 +1,9 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { HomeTabRequestProvider } from './contexts/HomeTabRequestContext';
+import { FamilyPermissionsProvider } from './contexts/FamilyPermissionsContext';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -12,8 +13,8 @@ import EditChildPage from './pages/EditChildPage';
 import AddVisitPage from './pages/AddVisitPage';
 import EditVisitPage from './pages/EditVisitPage';
 import VisitDetailPage from './pages/VisitDetailPage';
-import FamilyManagementPage from './pages/FamilyManagementPage';
 import SettingsPage from './pages/SettingsPage';
+import InviteAcceptPage from './pages/InviteAcceptPage';
 import AddIllnessPage from './pages/AddIllnessPage';
 import EditIllnessPage from './pages/EditIllnessPage';
 import IllnessDetailPage from './pages/IllnessDetailPage';
@@ -26,13 +27,15 @@ function App() {
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/invite" element={<InviteAcceptPage />} />
         
         {/* Protected routes */}
         <Route
           path="/*"
           element={
             <ProtectedRoute>
-              <HomeTabRequestProvider>
+              <FamilyPermissionsProvider>
+                <HomeTabRequestProvider>
                 <Layout>
                   <Routes>
                   <Route path="/" element={<HomePage />} />
@@ -52,14 +55,15 @@ function App() {
                   <Route path="/illnesses/:id" element={<IllnessDetailPage />} />
                   <Route path="/illnesses/:id/edit" element={<EditIllnessPage />} />
                   
-                  {/* Management & Settings */}
-                  <Route path="/family" element={<FamilyManagementPage />} />
+                  {/* Family management moved to Settings > Family > Members; redirect /family to settings */}
+                  <Route path="/family" element={<Navigate to="/settings" replace state={{ tab: 'family', familySubTab: 'members' }} />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   
                   <Route path="*" element={<NotFoundPage />} />
                   </Routes>
                 </Layout>
               </HomeTabRequestProvider>
+              </FamilyPermissionsProvider>
             </ProtectedRoute>
           }
         />

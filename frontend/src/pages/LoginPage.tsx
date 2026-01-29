@@ -1,10 +1,12 @@
 import { useState, FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { LuEye, LuEyeOff } from 'react-icons/lu';
 import { useAuth } from '../contexts/AuthContext';
 import FormField from '../components/FormField';
 import Button from '../components/Button';
 import ErrorMessage from '../components/ErrorMessage';
 import Card from '../components/Card';
+import CreateUserModal from '../components/CreateUserModal';
 import { ApiClientError } from '../lib/api-client';
 
 function LoginPage() {
@@ -14,13 +16,16 @@ function LoginPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [createUserOpen, setCreateUserOpen] = useState(false);
 
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from ?? '/';
 
   // Redirect if already authenticated
   if (isAuthenticated) {
-    navigate('/', { replace: true });
+    navigate(from, { replace: true });
     return null;
   }
 
@@ -54,7 +59,7 @@ function LoginPage() {
 
     try {
       await login(email, password);
-      navigate('/', { replace: true });
+      navigate(from, { replace: true });
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.statusCode === 401) {
@@ -131,7 +136,11 @@ function LoginPage() {
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                   tabIndex={-1}
                 >
-                  {showPassword ? '👁️' : '👁️‍🗨️'}
+                  {showPassword ? (
+                    <LuEyeOff className="password-toggle-icon" size={20} aria-hidden />
+                  ) : (
+                    <LuEye className="password-toggle-icon" size={20} aria-hidden />
+                  )}
                 </button>
               </div>
               {errors.password && (
@@ -161,13 +170,23 @@ function LoginPage() {
           <div className="login-footer">
             <p>
               Don't have an account?{' '}
-              <Link to="/register" className="register-link">
-                Sign up
-              </Link>
+              <button
+                type="button"
+                className="register-link button-as-link"
+                onClick={() => setCreateUserOpen(true)}
+              >
+                Create account
+              </button>
             </p>
           </div>
         </Card>
       </div>
+
+      <CreateUserModal
+        isOpen={createUserOpen}
+        onClose={() => setCreateUserOpen(false)}
+        onSuccess={() => setCreateUserOpen(false)}
+      />
     </div>
   );
 }

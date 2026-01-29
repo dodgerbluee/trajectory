@@ -6,12 +6,15 @@ import { calculateAge, formatAge, formatDate } from '../lib/date-utils';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import Card from '../components/Card';
+import ChildAvatar from '../components/ChildAvatar';
 import Button from '../components/Button';
 import Notification from '../components/Notification';
 import Tabs from '../components/Tabs';
 import GrowthChartTab from '../components/GrowthChartTab';
+import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
 
 function FamilyManagementPage() {
+  const { canEdit } = useFamilyPermissions();
   const [children, setChildren] = useState<Child[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -103,10 +106,6 @@ function FamilyManagementPage() {
         </div>
         <div className="family-list">
           {sortedChildren.map((child: Child) => {
-              const avatarUrl = child.avatar
-                ? childrenApi.getAvatarUrl(child.avatar)
-                : childrenApi.getDefaultAvatarUrl(child.gender);
-
               const age = calculateAge(child.date_of_birth);
               const ageText = formatAge(age.years, age.months);
 
@@ -114,8 +113,9 @@ function FamilyManagementPage() {
                 <Card key={child.id} className="family-card">
                   <div className="family-content">
                     <div className="family-avatar">
-                      <img
-                        src={avatarUrl}
+                      <ChildAvatar
+                        avatar={child.avatar}
+                        gender={child.gender}
                         alt={`${child.name}'s avatar`}
                         className="family-avatar-img"
                       />
@@ -128,6 +128,7 @@ function FamilyManagementPage() {
                         <span>{formatDate(child.date_of_birth)}</span>
                       </div>
                     </div>
+                    {canEdit && (
                     <div className="family-actions">
                       <Link to={`/children/${child.id}/edit`}>
                         <Button variant="secondary" size="sm">Edit</Button>
@@ -141,12 +142,14 @@ function FamilyManagementPage() {
                         {deletingId === child.id ? 'Deleting...' : 'Delete'}
                       </Button>
                     </div>
+                    )}
                   </div>
                 </Card>
               );
             })}
 
           {/* Add Child Card */}
+          {canEdit && (
           <Link to="/children/new" className="family-add-link">
             <Card className="family-card family-add-card">
               <div className="family-content">
@@ -162,6 +165,7 @@ function FamilyManagementPage() {
               </div>
             </Card>
           </Link>
+          )}
         </div>
       </div>
     </Card>

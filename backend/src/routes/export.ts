@@ -9,7 +9,8 @@ import path from 'path';
 
 import { query } from '../db/connection.js';
 import { authenticate, type AuthRequest } from '../middleware/auth.js';
-import { getAccessibleChildIds } from '../lib/family-access.js';
+import { getAccessibleChildIds, canExportData } from '../lib/family-access.js';
+import { ForbiddenError } from '../middleware/error-handler.js';
 
 const router = Router();
 router.use(authenticate);
@@ -31,6 +32,10 @@ type AttachmentWithSource = ExportRow & { stored_filename: string; _source: 'vis
 router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const userId = req.userId!;
+    const allowed = await canExportData(userId);
+    if (!allowed) {
+      throw new ForbiddenError('Only parents and owners can export data. Read-only members cannot export.');
+    }
     const childIds = await getAccessibleChildIds(userId);
     if (childIds.length === 0) {
       const date = new Date().toISOString().slice(0, 10);

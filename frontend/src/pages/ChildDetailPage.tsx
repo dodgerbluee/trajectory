@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { LuActivity, LuHeart, LuThermometer } from 'react-icons/lu';
 import { childrenApi, visitsApi, illnessesApi, ApiClientError } from '../lib/api-client';
+import ChildAvatar from '../components/ChildAvatar';
 import type { Child, Visit, VisitType, Illness, VisitAttachment, ChildAttachment } from '../types/api';
 import { calculateAge, formatAge, formatDate } from '../lib/date-utils';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -23,6 +24,7 @@ import MetricsView from '../components/MetricsView';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
 import { LuPill } from 'react-icons/lu';
 import { LuEye } from 'react-icons/lu';
+import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
 // replaced local mask icon with Lucide thermometer for illness
 
 function ChildDetailPage() {
@@ -52,6 +54,7 @@ function ChildDetailPage() {
   const [showAvatarEditor, setShowAvatarEditor] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const { canEdit } = useFamilyPermissions();
   const [notification, setNotification] = useState<{
     message: string;
     type: 'success' | 'error';
@@ -347,21 +350,33 @@ function ChildDetailPage() {
             <div className="overview-header">
               <div className="overview-main">
                 <div className="overview-avatar">
-                  <button
-                    type="button"
-                    onClick={() => setShowAvatarEditor(true)}
-                    className="overview-avatar-button"
-                    title="Click to edit avatar"
-                  >
-                    <img
-                      src={child.avatar ? childrenApi.getAvatarUrl(child.avatar) : childrenApi.getDefaultAvatarUrl(child.gender)}
-                      alt={`${child.name}'s avatar`}
-                      className="overview-avatar-img"
-                    />
-                    <div className="overview-avatar-overlay">
-                      <span className="overview-avatar-edit-icon">✏️</span>
+                  {canEdit ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowAvatarEditor(true)}
+                      className="overview-avatar-button"
+                      title="Click to edit avatar"
+                    >
+                      <ChildAvatar
+                        avatar={child.avatar}
+                        gender={child.gender}
+                        alt={`${child.name}'s avatar`}
+                        className="overview-avatar-img"
+                      />
+                      <div className="overview-avatar-overlay">
+                        <span className="overview-avatar-edit-icon">✏️</span>
+                      </div>
+                    </button>
+                  ) : (
+                    <div className="overview-avatar-static">
+                      <ChildAvatar
+                        avatar={child.avatar}
+                        gender={child.gender}
+                        alt={`${child.name}'s avatar`}
+                        className="overview-avatar-img"
+                      />
                     </div>
-                  </button>
+                  )}
                 </div>
                 <div className="overview-info">
                   <h1 className="overview-name">{child.name}</h1>

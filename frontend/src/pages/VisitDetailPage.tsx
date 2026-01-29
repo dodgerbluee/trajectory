@@ -11,6 +11,7 @@ import Notification from '../components/Notification';
 import VisitAttachmentsList from '../components/VisitAttachmentsList';
 import Tabs from '../components/Tabs';
 import { useAuth } from '../contexts/AuthContext';
+import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
 import { VisionRefractionCard } from '../components/VisionRefractionCard';
 import AuditDiffView from '../components/AuditDiffView';
 import type { AuditHistoryEvent } from '../types/api';
@@ -20,6 +21,7 @@ function VisitDetailPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { canEdit } = useFamilyPermissions();
   
   const [visit, setVisit] = useState<Visit | null>(null);
   const [child, setChild] = useState<Child | null>(null);
@@ -164,6 +166,7 @@ function VisitDetailPage() {
             <Link to={`/children/${visit.child_id}`} className="breadcrumb">
               ← Back to {child.name}
             </Link>
+            {canEdit && (
             <div className="visit-detail-actions">
               <Link 
                 to={`/visits/${visit.id}/edit`}
@@ -175,6 +178,7 @@ function VisitDetailPage() {
                 {deleting ? 'Deleting...' : 'Delete Visit'}
               </Button>
             </div>
+            )}
           </div>
 
           {/* Visit Header */}

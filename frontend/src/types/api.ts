@@ -32,6 +32,37 @@ export interface FilterMeta {
   end_date?: string;
 }
 
+export type FamilyRole = 'owner' | 'parent' | 'read_only';
+
+export interface Family {
+  id: number;
+  name: string;
+  role?: FamilyRole;
+}
+
+export interface FamilyMember {
+  user_id: number;
+  name: string;
+  email: string;
+  role: string;
+}
+
+export interface FamilyInvite {
+  id: number;
+  role: string;
+  expires_at: string;
+  created_at: string;
+  created_by?: number;
+}
+
+export interface CreateInviteResponse {
+  id: number;
+  token: string;
+  role: string;
+  expires_at: string;
+  created_at: string;
+}
+
 export interface ApiError {
   error: {
     message: string;

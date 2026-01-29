@@ -37,6 +37,31 @@
 .summary-section .summary-children {
   margin-left: auto;
 }
+
+/* Family role badges */
+.role-badge {
+  display: inline-block;
+  padding: 0.2em 0.5em;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius-sm);
+  text-transform: capitalize;
+}
+.role-badge--owner {
+  background: var(--color-primary);
+  color: var(--color-text-inverse, #fff);
+}
+.role-badge--parent {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+}
+.role-badge--read-only {
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
 /* Modern summary card used for documents and vaccines */
 .summary-card-modern {
   display: flex;
@@ -933,7 +958,7 @@ body {
 }
 
 .settings-main {
-  display: flex;
+  display: block;
   flex-direction: column;
   gap: var(--spacing-md);
 }
@@ -2231,6 +2256,15 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
   font-size: var(--font-size-sm);
 }
 
+.about-dropdown-menu button.about-dropdown-item {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+}
+
 .about-dropdown-item:hover {
   background-color: var(--color-surface);
 }
@@ -2558,6 +2592,15 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
   color: var(--color-text-primary);
 }
 
+/* Family home tab: header spacing */
+.home-family-tab-title {
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: 1.375rem;
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.3;
+  color: var(--color-text-primary);
+}
+
 .family-details {
   display: flex;
   align-items: center;
@@ -2809,6 +2852,15 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
 
 .overview-avatar-button:hover .overview-avatar-overlay {
   opacity: 1;
+}
+
+.overview-avatar-static {
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.overview-avatar-static .overview-avatar-img {
+  display: block;
 }
 
 .overview-avatar-img {
@@ -3173,6 +3225,43 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
   margin-bottom: 0;
 }
 
+/* Support section (General tab) */
+.support-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.support-section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-sm);
+}
+
+.support-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+}
+
+.support-coffee-link {
+  display: inline-block;
+  line-height: 0;
+}
+
+.support-coffee-button {
+  height: 52px;
+  width: auto;
+  display: block;
+}
+
+.support-text {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.4;
+}
+
 .settings-label {
   display: block;
   font-weight: var(--font-weight-semibold);
@@ -3195,18 +3284,18 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
 }
 
 .theme-selector {
-  display: flex;
-  gap: var(--spacing-md);
+  display: inline-flex;
+  gap: var(--spacing-sm);
   flex-wrap: wrap;
 }
 
 .theme-option {
-  flex: 1;
-  min-width: 100px;
-  padding: var(--spacing-md);
+  flex: 0 0 auto;
+  min-width: 0;
+  padding: var(--spacing-sm) var(--spacing-md);
   border: 2px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-background);
+  border-radius: var(--radius-md);
+  background: var(--color-background-card);
   cursor: pointer;
   transition: all var(--transition-base);
   display: flex;
@@ -3218,7 +3307,7 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
 
 .theme-option:hover {
   border-color: var(--color-primary);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow: var(--elevation-2);
 }
 
@@ -3229,7 +3318,7 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
 }
 
 .theme-option-icon {
-  font-size: 2rem;
+  font-size: 1.25rem;
   line-height: 1;
 }
 
@@ -3383,6 +3472,311 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
 
 [data-theme="dark"] .user-info-card {
   background: var(--color-background-card);
+}
+
+/* ============================================================================
+   Family Settings page (8px grid, max-width layout, 4-card structure)
+   ============================================================================ */
+.family-settings-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 16px 32px;
+}
+
+.family-settings-page-subtitle {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 24px;
+}
+
+.family-settings-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.family-settings-family-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.family-settings-family-section + .family-settings-family-section {
+  margin-top: 16px;
+  padding-top: 24px;
+  border-top: 1px solid var(--color-border);
+}
+
+.family-settings-card {
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.family-settings-card .card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  padding: 16px 20px;
+  margin: 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.family-settings-card .card-content {
+  padding: 20px;
+}
+
+.family-settings-card--overview .card-content {
+  padding: 16px 20px;
+}
+
+/* Overview card: subtle, compact */
+.family-settings-overview {
+  display: grid;
+  gap: 12px;
+}
+
+.family-settings-overview-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.family-settings-overview-label {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.family-settings-overview-value {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.family-settings-overview-edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.family-settings-overview-edit-input {
+  min-width: 160px;
+  max-width: 100%;
+}
+
+.family-settings-overview-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+/* Members card: structured rows */
+.family-settings-members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.family-settings-member-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color 0.15s ease;
+}
+
+.family-settings-member-row:last-child {
+  border-bottom: none;
+}
+
+.family-settings-member-row:hover {
+  background: var(--color-surface);
+}
+
+.family-settings-member-row__main {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  flex: 1;
+}
+
+.family-settings-member-row__avatar {
+  flex-shrink: 0;
+}
+
+.family-settings-member-row__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.family-settings-member-row__name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.family-settings-member-row__you {
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+.family-settings-member-row__email {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.family-settings-member-row__badge {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.family-settings-member-row__role-select {
+  flex-shrink: 0;
+  margin-left: auto;
+  width: auto;
+  min-width: 120px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}
+
+.family-settings-member-row__actions {
+  flex-shrink: 0;
+}
+
+.family-settings-btn-remove {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+  background: transparent;
+}
+
+.family-settings-btn-remove:hover {
+  background: var(--color-danger-light);
+  border-color: var(--color-danger);
+}
+
+/* Invite card: role + CTA, then link reveal */
+.family-settings-invite-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 0;
+}
+
+.family-settings-invite-form .form-field {
+  margin-bottom: 0;
+}
+
+.family-settings-invite-helper {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  margin-top: 12px;
+  line-height: 1.4;
+}
+
+.family-settings-invite-link-box {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.family-settings-invite-link-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+  display: block;
+}
+
+.family-settings-invite-link-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.family-settings-invite-link-code {
+  font-size: 0.8125rem;
+  font-family: ui-monospace, monospace;
+  word-break: break-all;
+  color: var(--color-text-primary);
+  line-height: 1.5;
+}
+
+/* Pending invites: rows */
+.family-settings-invites-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.family-settings-invite-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color 0.15s ease;
+}
+
+.family-settings-invite-row:last-child {
+  border-bottom: none;
+}
+
+.family-settings-invite-row:hover {
+  background: var(--color-surface);
+}
+
+.family-settings-invite-row__main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.family-settings-invite-row__badge {
+  flex-shrink: 0;
+}
+
+.family-settings-invite-row__expires {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.family-settings-invite-row__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.family-settings-empty {
+  text-align: center;
+  padding: 32px 20px;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.family-settings-loading {
+  padding: 24px 20px;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
 }
 
 .section-nav {
@@ -4217,7 +4611,7 @@ select.form-input {
   background-position: right 0.75rem center;
   padding-right: 2.5rem;
   cursor: pointer;
-  background-color: var(--color-background);
+  background-color: var(--color-background-card);
   color: var(--color-text-primary);
 }
 
@@ -7112,6 +7506,15 @@ select.form-input:disabled {
   width: 100%;
   max-height: 98vh;
   overflow-y: auto;
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-lg);
+}
+
+.modal-content.card {
+  padding: 0;
 }
 
 .modal-content-large {
@@ -7171,6 +7574,30 @@ select.form-input:disabled {
   gap: var(--spacing-md);
   padding-top: var(--spacing-md);
   border-top: 1px solid var(--color-border);
+}
+
+/* Delete family confirmation modal */
+.delete-family-modal {
+  max-width: 440px;
+}
+
+.delete-family-modal-alert {
+  color: var(--color-danger);
+  font-size: 1rem;
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+.delete-family-modal-instruction {
+  color: var(--color-text-secondary);
+  font-size: 0.9375rem;
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+.delete-family-modal-input {
+  width: 100%;
+  margin-top: 4px;
 }
 
 .modal-title {
@@ -8720,50 +9147,57 @@ select.form-input:disabled {
    Login Page
    ============================================================================ */
 
+/* Login page: uniform spacing (8px grid), centered card */
 .login-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-lg);
+  padding: 24px;
   background: var(--color-background);
 }
 
 .login-container {
   width: 100%;
-  max-width: 420px;
+  max-width: 400px;
 }
 
 .login-card {
-  background: var(--color-background);
+  background: var(--color-background-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  padding: var(--spacing-2xl);
-  box-shadow: var(--elevation-4);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  box-shadow: var(--shadow-lg);
   width: 100%;
 }
 
-.login-header {
+.login-card .login-header {
   text-align: center;
-  margin-bottom: var(--spacing-2xl);
+  margin-bottom: 24px;
+}
+
+.login-card .login-header + * {
+  margin-top: 0;
 }
 
 .login-logo {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto var(--spacing-md);
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
   display: block;
+  object-fit: contain;
 }
 
 .login-title {
-  font-size: var(--font-size-3xl);
-  font-weight: var(--font-weight-bold);
+  font-size: 1.5rem;
+  font-weight: 700;
   color: var(--color-text-primary);
-  margin-bottom: var(--spacing-sm);
+  margin: 0 0 4px;
+  letter-spacing: -0.02em;
 }
 
 .login-subtitle {
-  font-size: var(--font-size-base);
+  font-size: 0.875rem;
   color: var(--color-text-secondary);
   margin: 0;
 }
@@ -8771,98 +9205,139 @@ select.form-input:disabled {
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: 16px;
 }
 
 .login-form .form-field {
   margin-bottom: 0;
 }
 
+.login-form .form-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.login-form .form-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .login-actions {
   display: flex;
   justify-content: flex-end;
-  margin-top: calc(var(--spacing-xs) * -1);
-  margin-bottom: var(--spacing-xs);
+  margin: -4px 0 0;
 }
 
 .forgot-password-link {
   color: var(--color-primary);
   text-decoration: none;
-  font-size: var(--font-size-sm);
-  transition: opacity 0.2s;
+  font-size: 0.875rem;
+  transition: color 0.2s;
 }
 
 .forgot-password-link:hover {
-  opacity: 0.8;
+  color: var(--color-primary-hover, var(--color-primary));
   text-decoration: underline;
 }
 
 .login-button {
-  margin-top: var(--spacing-xs);
+  margin-top: 8px;
 }
 
 .login-footer {
-  margin-top: var(--spacing-xl);
-  text-align: center;
-  padding-top: var(--spacing-xl);
+  margin-top: 24px;
+  padding-top: 24px;
   border-top: 1px solid var(--color-border);
+  text-align: center;
 }
 
 .login-footer p {
   color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
+  font-size: 0.875rem;
   margin: 0;
 }
 
 .register-link {
   color: var(--color-primary);
   text-decoration: none;
-  font-weight: var(--font-weight-medium);
-  transition: opacity 0.2s;
+  font-weight: 500;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  cursor: pointer;
+  transition: color 0.2s;
 }
 
 .register-link:hover {
-  opacity: 0.8;
+  color: var(--color-primary-hover, var(--color-primary));
   text-decoration: underline;
 }
 
+.button-as-link {
+  color: inherit;
+}
+
+.register-link.button-as-link {
+  color: var(--color-primary);
+}
+
+.register-link.button-as-link:hover {
+  color: var(--color-primary-hover, var(--color-primary));
+}
+
+/* Password field: same structure as other form fields */
 .password-input-wrapper {
   position: relative;
-  display: flex;
-  align-items: center;
+  display: block;
 }
 
 .password-input-wrapper .form-input {
-  padding-right: 48px;
+  padding-right: 44px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .password-toggle {
   position: absolute;
-  right: var(--spacing-sm);
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
   background: none;
   border: none;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  padding: var(--spacing-xs);
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--color-text-secondary);
-  font-size: var(--font-size-lg);
-  transition: color 0.2s;
+  transition: color 0.2s, background 0.2s;
   z-index: 1;
 }
 
 .password-toggle:hover {
   color: var(--color-text-primary);
+  background: var(--color-surface);
 }
 
 .password-toggle:focus {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
-  border-radius: var(--radius-sm);
 }
 
-/* Dark mode adjustments */
+.password-toggle-icon {
+  flex-shrink: 0;
+}
+
+/* Login: error message spacing */
+.login-card .error-message {
+  margin-bottom: 16px;
+}
+
+/* Dark mode */
 [data-theme="dark"] .login-page {
   background: var(--color-background);
 }
@@ -8872,18 +9347,18 @@ select.form-input:disabled {
   border-color: var(--color-border);
 }
 
-/* Responsive adjustments */
+/* Responsive */
 @media (max-width: 480px) {
   .login-page {
-    padding: var(--spacing-md);
+    padding: 16px;
   }
 
   .login-card {
-    padding: var(--spacing-xl);
+    padding: 24px;
   }
 
   .login-title {
-    font-size: var(--font-size-2xl);
+    font-size: 1.375rem;
   }
 }
 

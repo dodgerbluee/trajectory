@@ -1,8 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { PreferencesProvider } from './contexts/PreferencesContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { ConfigProvider } from './contexts/ConfigContext';
 import App from './App';
 import './index.css';
@@ -14,13 +15,15 @@ const BASE_PATH = import.meta.env.VITE_BASE_PATH || '';
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter basename={BASE_PATH}>
-      <ThemeProvider>
-        <ConfigProvider>
-          <AuthProvider>
-            <App />
-          </AuthProvider>
-        </ConfigProvider>
-      </ThemeProvider>
+      <AuthProvider>
+        <PreferencesProvider>
+          <ThemeProvider>
+            <ConfigProvider>
+              <App />
+            </ConfigProvider>
+          </ThemeProvider>
+        </PreferencesProvider>
+      </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

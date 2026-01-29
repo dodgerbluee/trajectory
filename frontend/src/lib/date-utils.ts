@@ -1,12 +1,24 @@
 // App timezone from server (/health); used for date/time formatting. Default UTC until loaded.
 let appTimezone = 'UTC';
 
+export type DateFormat = 'MM/DD/YYYY' | 'DD/MM/YYYY' | 'YYYY-MM-DD';
+
+let currentDateFormat: DateFormat = 'MM/DD/YYYY';
+
 export function setAppTimezone(tz: string): void {
   appTimezone = tz || 'UTC';
 }
 
 export function getAppTimezone(): string {
   return appTimezone;
+}
+
+export function getDateFormat(): DateFormat {
+  return currentDateFormat;
+}
+
+export function setDateFormat(format: DateFormat): void {
+  currentDateFormat = format;
 }
 
 /**
@@ -55,34 +67,48 @@ export function formatAge(years: number, months: number): string {
 }
 
 /**
- * Format date for display
- * Parses YYYY-MM-DD string directly to avoid timezone issues
+ * Format date for display using the current user preference (MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD).
+ * Parses YYYY-MM-DD string directly to avoid timezone issues.
  */
 export function formatDate(dateString: string): string {
-  // Parse YYYY-MM-DD format directly to avoid timezone conversion
   const parts = dateString.split('T')[0].split('-');
   if (parts.length !== 3) {
-    // Fallback to Date object if format is unexpected
-    const date = new Date(dateString + 'T12:00:00'); // Use noon to avoid timezone edge cases
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: getAppTimezone(),
-    });
+    const date = new Date(dateString + 'T12:00:00');
+    return formatDateWithFormat(date, currentDateFormat);
   }
-  
   const year = parseInt(parts[0], 10);
-  const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+  const month = parseInt(parts[1], 10);
   const day = parseInt(parts[2], 10);
-  
-  const date = new Date(year, month, day);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    timeZone: getAppTimezone(),
-  });
+  const monthStr = String(month).padStart(2, '0');
+  const dayStr = String(day).padStart(2, '0');
+  const yearStr = String(year);
+  switch (currentDateFormat) {
+    case 'MM/DD/YYYY':
+      return `${monthStr}/${dayStr}/${yearStr}`;
+    case 'DD/MM/YYYY':
+      return `${dayStr}/${monthStr}/${yearStr}`;
+    case 'YYYY-MM-DD':
+      return `${yearStr}-${monthStr}-${dayStr}`;
+    default:
+      return `${monthStr}/${dayStr}/${yearStr}`;
+  }
+}
+
+/** Format a Date using a specific format (for one-off display). */
+export function formatDateWithFormat(date: Date, format: DateFormat): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  switch (format) {
+    case 'MM/DD/YYYY':
+      return `${month}/${day}/${year}`;
+    case 'DD/MM/YYYY':
+      return `${day}/${month}/${year}`;
+    case 'YYYY-MM-DD':
+      return `${year}-${month}-${day}`;
+    default:
+      return `${month}/${day}/${year}`;
+  }
 }
 
 /**

@@ -9,6 +9,7 @@ export interface User {
   emailVerified?: boolean;
   createdAt?: string;
   lastLoginAt?: string | null;
+  isInstanceAdmin?: boolean;
 }
 
 interface AuthContextType {
@@ -17,7 +18,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  register: (email: string, password: string, name: string, registrationCode?: string) => Promise<void>;
   refreshToken: () => Promise<void>;
   checkAuth: () => Promise<void>;
   updateUsername: (newUsername: string, currentPassword: string) => Promise<void>;
@@ -175,14 +176,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(USER_KEY, JSON.stringify(response.data.user));
   };
 
-  const register = async (email: string, password: string, name: string) => {
+  const register = async (
+    email: string,
+    password: string,
+    name: string,
+    registrationCode?: string
+  ) => {
+    const body: { email: string; password: string; name: string; registrationCode?: string } = {
+      email,
+      password,
+      name,
+    };
+    if (registrationCode != null && registrationCode.trim() !== '') {
+      body.registrationCode = registrationCode.trim();
+    }
     const response = await apiRequest<{
       user: User;
       accessToken: string;
       refreshToken: string;
     }>('/api/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ email, password, name }),
+      body: JSON.stringify(body),
     });
 
     setTokens(response.data.accessToken, response.data.refreshToken);

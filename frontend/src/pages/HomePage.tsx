@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { childrenApi } from '../lib/api-client';
-import type { Child } from '../types/api';
+import { childrenApi, familiesApi } from '../lib/api-client';
+import type { Child, Family } from '../types/api';
+import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
 import { calculateAge, formatAge, formatDate } from '../lib/date-utils';
 import { useHomeTabRequest } from '../contexts/HomeTabRequestContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import Card from '../components/Card';
+import ChildAvatar from '../components/ChildAvatar';
 import Tabs from '../components/Tabs';
 import AllIllnessesView from '../components/AllIllnessesView';
 import AllVisitsView from '../components/AllVisitsView';
@@ -22,13 +24,17 @@ function HomePage() {
   const location = useLocation();
   const homeTabRequest = useHomeTabRequest();
   const stateTab = (location.state as { tab?: HomeTab } | null)?.tab;
+  const stateMessage = (location.state as { message?: string } | null)?.message;
   const [activeTab, setActiveTab] = useState<HomeTab>(stateTab ?? 'family');
+  const [successMessage, setSuccessMessage] = useState<string | null>(stateMessage ?? null);
   const [children, setChildren] = useState<Child[]>([]);
+  const [families, setFamilies] = useState<Family[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [metricsActiveTab, setMetricsActiveTab] = useState<'illness' | 'growth'>('illness');
   const [metricsYear, setMetricsYear] = useState<number>(new Date().getFullYear());
   const [metricsFilterChildId, setMetricsFilterChildId] = useState<number | undefined>(undefined);
+  const { canEdit } = useFamilyPermissions();
 
   const loadChildren = async () => {
     try {
@@ -53,9 +59,19 @@ function HomePage() {
     }
   };
 
+  const loadFamilies = async () => {
+    try {
+      const response = await familiesApi.getAll();
+      setFamilies(response.data);
+    } catch {
+      setFamilies([]);
+    }
+  };
+
   useEffect(() => {
-    if ((activeTab === 'family' || activeTab === 'trends') && children.length === 0) {
-      loadChildren();
+    if (activeTab === 'family' || activeTab === 'trends') {
+      if (children.length === 0) loadChildren();
+      if (families.length === 0) loadFamilies();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
@@ -66,6 +82,13 @@ function HomePage() {
     }
   }, [stateTab]);
 
+  useEffect(() => {
+    if (stateMessage) {
+      setSuccessMessage(stateMessage);
+      navigate(location.pathname, { replace: true, state: { tab: stateTab } });
+    }
+  }, [stateMessage]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Logo click requests Family tab via context (works every time, even when already on home)
   useEffect(() => {
     if (homeTabRequest?.requestId != null && homeTabRequest.requestId > 0) {
@@ -73,8 +96,11 @@ function HomePage() {
     }
   }, [homeTabRequest?.requestId]);
 
+  const familyName = families.length > 0 ? families[0].name : null;
+
   const familyContent = (
-    <div>
+    <div className="card home-family-tab">
+      {familyName && <h1 className="home-family-tab-title">{familyName}</h1>}
       {loading && <LoadingSpinner message="Loading family..." />}
       {error && <ErrorMessage message={error} onRetry={loadChildren} />}
       {!loading && !error && (
@@ -82,16 +108,14 @@ function HomePage() {
           {children.length === 0 ? (
             <Card>
               <p className="empty-state">
-                No children added yet. Click "Add Child" to get started.
+                {canEdit
+                  ? 'No children added yet. Click "Add Child" to get started.'
+                  : 'No children added yet.'}
               </p>
             </Card>
           ) : (
             <div className="children-grid-cards">
               {children.map((child) => {
-                const avatarUrl = child.avatar
-                  ? childrenApi.getAvatarUrl(child.avatar)
-                  : childrenApi.getDefaultAvatarUrl(child.gender);
-                
                 const age = calculateAge(child.date_of_birth);
                 const ageText = formatAge(age.years, age.months);
                 const birthdateText = formatDate(child.date_of_birth);
@@ -100,8 +124,9 @@ function HomePage() {
                   <Link key={child.id} to={`/children/${child.id}`} className="child-card-link">
                     <Card className="child-card-compact">
                       <div className="child-card-avatar">
-                        <img
-                          src={avatarUrl}
+                        <ChildAvatar
+                          avatar={child.avatar}
+                          gender={child.gender}
                           alt={`${child.name}'s avatar`}
                           className="child-avatar-large"
                         />
@@ -180,6 +205,33 @@ function HomePage() {
 
   return (
     <div className="page-container">
+      {successMessage && (
+        <div
+          role="alert"
+          className="success-banner"
+          style={{
+            marginBottom: '1rem',
+            padding: '0.75rem 1rem',
+            background: 'var(--color-success-bg, #d4edda)',
+            color: 'var(--color-success-text, #155724)',
+            borderRadius: 'var(--radius-md, 6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.5rem',
+          }}
+        >
+          <span>{successMessage}</span>
+          <button
+            type="button"
+            onClick={() => setSuccessMessage(null)}
+            aria-label="Dismiss"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.25rem', lineHeight: 1 }}
+          >
+            ×
+          </button>
+        </div>
+      )}
       <Card>
         <Tabs
           tabs={tabs}

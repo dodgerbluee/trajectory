@@ -2,13 +2,16 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { childrenApi, ApiClientError } from '../lib/api-client';
 import type { Child } from '../types/api';
+import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
 import { calculateAge, formatAge, formatDate } from '../lib/date-utils';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import Card from '../components/Card';
+import ChildAvatar from '../components/ChildAvatar';
 import Button from '../components/Button';
 
 function ChildrenListPage() {
+  const { canEdit } = useFamilyPermissions();
   const [children, setChildren] = useState<Child[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,16 +67,14 @@ function ChildrenListPage() {
       {children.length === 0 ? (
         <Card>
           <p className="empty-state">
-            No children added yet. Click "Add Child" to get started.
+            {canEdit
+              ? 'No children added yet. Click "Add Child" to get started.'
+              : 'No children added yet.'}
           </p>
         </Card>
       ) : (
         <div className="children-grid-cards">
           {children.map((child) => {
-            const avatarUrl = child.avatar
-              ? childrenApi.getAvatarUrl(child.avatar)
-              : childrenApi.getDefaultAvatarUrl(child.gender);
-            
             const age = calculateAge(child.date_of_birth);
             const ageText = formatAge(age.years, age.months);
             const birthdateText = formatDate(child.date_of_birth);
@@ -82,8 +83,9 @@ function ChildrenListPage() {
               <Link key={child.id} to={`/children/${child.id}`} className="child-card-link">
                 <Card className="child-card-compact">
                   <div className="child-card-avatar">
-                    <img
-                      src={avatarUrl}
+                    <ChildAvatar
+                      avatar={child.avatar}
+                      gender={child.gender}
                       alt={`${child.name}'s avatar`}
                       className="child-avatar-large"
                     />

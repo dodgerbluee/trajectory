@@ -32,6 +32,10 @@ import type {
   GrowthDataPoint,
   HeatmapData,
   AuditHistoryEvent,
+  Family,
+  FamilyInvite,
+  FamilyMember,
+  CreateInviteResponse,
 } from '../types/api';
 
 // Base API URL - use relative URL in production (served by unified app), absolute for development
@@ -228,10 +232,29 @@ export const childrenApi = {
   },
 
   /**
-   * Get avatar URL for child
+   * Get avatar URL for child (with token in query for img src).
+   * Prefer fetchAvatarBlobUrl() for reliable loading across accounts.
    */
   getAvatarUrl(avatar: string): string {
-    return `${API_BASE_URL}/api/avatars/${avatar}`;
+    const base = `${API_BASE_URL}/api/avatars/${avatar}`;
+    const token = getAccessToken();
+    return token ? `${base}?token=${encodeURIComponent(token)}` : base;
+  },
+
+  /**
+   * Fetch avatar image with auth and return a blob URL (no token in URL).
+   * Caller must revoke the URL when done: URL.revokeObjectURL(url).
+   */
+  async fetchAvatarBlobUrl(avatar: string): Promise<string | null> {
+    const token = getAccessToken();
+    if (!token) return null;
+    const url = `${API_BASE_URL}/api/avatars/${avatar}`;
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
   },
 
   /**
@@ -740,6 +763,154 @@ export const exportApi = {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(objectUrl);
+  },
+};
+
+// ============================================================================
+// Auth (unauthenticated registration-code flow)
+// ============================================================================
+
+/** Unauthenticated request for registration-code flow (no auth header). */
+async function requestPublic<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+  const url = `${API_BASE_URL}${endpoint}`;
+  const config: RequestInit = {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...(options.headers as Record<string, string> || {}) },
+  };
+  const response = await fetch(url, config);
+  const data = await response.json();
+  if (!response.ok) {
+    const err = data as ApiError;
+    throw new ApiClientError(
+      err.error?.message || 'Request failed',
+      err.error?.statusCode ?? response.status,
+      err.error?.type ?? 'RequestError',
+      err.error?.details
+    );
+  }
+  return data as ApiResponse<T>;
+}
+
+export const authApi = {
+  /**
+   * Check if a registration code is required (no users) and if one is active.
+   */
+  async getRegistrationCodeRequired(): Promise<
+    ApiResponse<{ success: boolean; requiresCode: boolean; codeActive: boolean }>
+  > {
+    return requestPublic<{ success: boolean; requiresCode: boolean; codeActive: boolean }>(
+      '/api/auth/registration-code-required'
+    );
+  },
+
+  /**
+   * Verify the registration code (so UI can advance to user form).
+   */
+  async verifyRegistrationCode(registrationCode: string): Promise<ApiResponse<{ success: boolean }>> {
+    return requestPublic<{ success: boolean }>('/api/auth/verify-registration-code', {
+      method: 'POST',
+      body: JSON.stringify({ registrationCode }),
+    });
+  },
+};
+
+// ============================================================================
+// User preferences (theme, date_format)
+// ============================================================================
+
+export type UserPreferences = { theme: string; date_format: string };
+
+export const preferencesApi = {
+  async get(): Promise<ApiResponse<UserPreferences>> {
+    return request<UserPreferences>('/api/users/me/preferences');
+  },
+
+  async update(body: { theme?: string; date_format?: string }): Promise<ApiResponse<UserPreferences>> {
+    return request<UserPreferences>('/api/users/me/preferences', {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    });
+  },
+};
+
+// ============================================================================
+// Families & Invites
+// ============================================================================
+
+export const familiesApi = {
+  async getAll(): Promise<ApiResponse<Family[]>> {
+    return request<Family[]>('/api/families');
+  },
+
+  async updateFamily(familyId: number, name: string): Promise<void> {
+    await request<void>(`/api/families/${familyId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ name }),
+    });
+  },
+
+  async deleteFamily(familyId: number): Promise<void> {
+    await request<void>(`/api/families/${familyId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async getMembers(familyId: number): Promise<ApiResponse<FamilyMember[]>> {
+    return request<FamilyMember[]>(`/api/families/${familyId}/members`);
+  },
+
+  async getInvites(familyId: number): Promise<ApiResponse<FamilyInvite[]>> {
+    return request<FamilyInvite[]>(`/api/families/${familyId}/invites`);
+  },
+
+  async updateMemberRole(
+    familyId: number,
+    userId: number,
+    role: 'parent' | 'read_only'
+  ): Promise<ApiResponse<{ user_id: number; role: string }>> {
+    return request<{ user_id: number; role: string }>(
+      `/api/families/${familyId}/members/${userId}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ role }),
+      }
+    );
+  },
+
+  async removeMember(familyId: number, userId: number): Promise<void> {
+    await request<void>(`/api/families/${familyId}/members/${userId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async createInvite(
+    familyId: number,
+    role: 'parent' | 'read_only'
+  ): Promise<ApiResponse<CreateInviteResponse>> {
+    return request<CreateInviteResponse>(`/api/families/${familyId}/invites`, {
+      method: 'POST',
+      body: JSON.stringify({ role }),
+    });
+  },
+
+  async revokeInvite(familyId: number, inviteId: number): Promise<void> {
+    await request<void>(`/api/families/${familyId}/invites/${inviteId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+export const invitesApi = {
+  async accept(token: string): Promise<
+    ApiResponse<{ success: boolean; family_id: number; family_name: string; role: string }>
+  > {
+    return request<{ success: boolean; family_id: number; family_name: string; role: string }>(
+      '/api/invites/accept',
+      {
+        method: 'POST',
+        body: JSON.stringify({ token }),
+      }
+    );
   },
 };
 

@@ -8,6 +8,7 @@ import ErrorMessage from '../components/ErrorMessage';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Notification from '../components/Notification';
+import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
 
 const SEVERITY_LABELS: Record<number, string> = {
   1: '1 - Barely noticeable',
@@ -25,6 +26,7 @@ const SEVERITY_LABELS: Record<number, string> = {
 function IllnessDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { canEdit } = useFamilyPermissions();
 
   const [illness, setIllness] = useState<Illness | null>(null);
   const [child, setChild] = useState<Child | null>(null);
@@ -126,6 +128,7 @@ function IllnessDetailPage() {
             <Link to={`/children/${illness.child_id}`} className="breadcrumb">
               ← Back to {child.name}
             </Link>
+            {canEdit && (
             <div className="visit-detail-actions">
               <Link to={`/illnesses/${illness.id}/edit`} state={{ childId: illness.child_id, fromChild: true }}>
                 <Button variant="secondary" size="sm">Edit Illness</Button>
@@ -134,6 +137,7 @@ function IllnessDetailPage() {
                 {deleting ? 'Deleting...' : 'Delete Illness'}
               </Button>
             </div>
+            )}
           </div>
 
           {/* Illness Header */}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { illnessesApi, childrenApi, ApiClientError } from '../lib/api-client';
+import ChildAvatar from './ChildAvatar';
 import type { HeatmapData, Child } from '../types/api';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
@@ -116,34 +117,27 @@ function MetricsView({
           <div className="summary-avatars">
             {filterChildId ? (
               (() => {
-                const child = children.find(c => c.id === filterChildId);
+                const child = children.find((c) => c.id === filterChildId);
                 if (!child) return null;
-                const avatarUrl = child.avatar
-                  ? childrenApi.getAvatarUrl(child.avatar)
-                  : childrenApi.getDefaultAvatarUrl(child.gender);
                 return (
-                  <img
-                    src={avatarUrl}
+                  <ChildAvatar
+                    avatar={child.avatar}
+                    gender={child.gender}
                     alt={child.name}
                     className="summary-avatar-single"
                   />
                 );
               })()
             ) : (
-              children.slice(0, 6).map((child) => {
-                const avatarUrl = child.avatar
-                  ? childrenApi.getAvatarUrl(child.avatar)
-                  : childrenApi.getDefaultAvatarUrl(child.gender);
-                return (
-                  <img
-                    key={child.id}
-                    src={avatarUrl}
-                    alt={child.name}
-                    className="summary-avatar-item"
-                    title={child.name}
-                  />
-                );
-              })
+              children.slice(0, 6).map((child) => (
+                <ChildAvatar
+                  key={child.id}
+                  avatar={child.avatar}
+                  gender={child.gender}
+                  alt={child.name}
+                  className="summary-avatar-item"
+                />
+              ))
             )}
           </div>
           <div className="summary-label">

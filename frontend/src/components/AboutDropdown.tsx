@@ -1,10 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { HiChevronDown } from 'react-icons/hi';
+import { useAuth } from '../contexts/AuthContext';
 
 function AboutDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    setIsOpen(false);
+    await logout();
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -35,19 +42,19 @@ function AboutDropdown() {
       {isOpen && (
         <div className="about-dropdown-menu">
           <Link
-            to="/family"
-            className="about-dropdown-item"
-            onClick={() => setIsOpen(false)}
-          >
-            Family
-          </Link>
-          <Link
             to="/settings"
             className="about-dropdown-item"
             onClick={() => setIsOpen(false)}
           >
             Settings
           </Link>
+          <button
+            type="button"
+            className="about-dropdown-item"
+            onClick={handleLogout}
+          >
+            Logout
+          </button>
         </div>
       )}
     </div>

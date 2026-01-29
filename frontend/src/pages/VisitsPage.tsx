@@ -11,11 +11,13 @@ import VisitTypeModal from '../components/VisitTypeModal';
 import VisitsSidebar from '../components/VisitsSidebar';
 import { LuActivity, LuHeart, LuPill, LuEye } from 'react-icons/lu';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
+import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
 
 function VisitsPage() {
   const { childId } = useParams<{ childId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { canEdit } = useFamilyPermissions();
   const [child, setChild] = useState<Child | null>(null);
   const [allVisits, setAllVisits] = useState<Visit[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,7 +99,7 @@ function VisitsPage() {
           </Link>
           <h1>Visits for {child.name}</h1>
         </div>
-        <Button onClick={() => setShowVisitTypeModal(true)}>+ Add Visit</Button>
+        {canEdit && <Button onClick={() => setShowVisitTypeModal(true)}>+ Add Visit</Button>}
       </div>
 
       <div className="visits-page-layout">
@@ -107,8 +109,12 @@ function VisitsPage() {
         <Card>
           <p className="empty-state">
             No {filterVisitType ? `${filterVisitType} ` : ''}visits recorded yet.
-            <br />
-            <Link to={`/children/${childId}/visits/new`}>Add the first visit</Link>
+            {canEdit && (
+              <>
+                <br />
+                <Link to={`/children/${childId}/visits/new`}>Add the first visit</Link>
+              </>
+            )}
           </p>
         </Card>
           ) : (

@@ -107,3 +107,15 @@ export async function canEditChild(userId: number, childId: number): Promise<boo
   if (familyId == null) return false;
   return canEditFamily(userId, familyId);
 }
+
+/**
+ * True if the user can export data (owner or parent in at least one family).
+ * Read-only members cannot export.
+ */
+export async function canExportData(userId: number): Promise<boolean> {
+  const result = await query<{ role: string }>(
+    `SELECT role FROM family_members WHERE user_id = $1 AND role IN ('owner', 'parent') LIMIT 1`,
+    [userId]
+  );
+  return result.rows.length > 0;
+}
