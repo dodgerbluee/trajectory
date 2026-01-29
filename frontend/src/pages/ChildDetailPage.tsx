@@ -530,6 +530,7 @@ function ChildDetailPage() {
                       selectedChildId={undefined}
                       onSelectChild={() => {}}
                       hideChildFilter
+                      onAddVisitClick={() => setShowVisitTypeModal(true)}
                     />
 
                     <main className="visits-main">

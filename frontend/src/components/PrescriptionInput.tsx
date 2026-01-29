@@ -60,32 +60,30 @@ function PrescriptionInput({ value, onChange, disabled }: PrescriptionInputProps
   };
 
   return (
-    <div className="prescription-input">
-      <label className="form-label">Prescriptions</label>
-      
-      {value.length === 0 && editingIndex === null && (
-        <p className="empty-state">No prescriptions added yet.</p>
+    <div>
+      {value.length > 0 && (
+        <div className="prescription-list">
+          {value.map((rx, index) => (
+            editingIndex === index ? null : (
+              <div key={index} className="prescription-item">
+                <div className="prescription-details">
+                  <strong>{rx.medication}</strong>
+                  <span> - {rx.dosage}, {rx.duration}</span>
+                  {rx.notes && <div className="prescription-notes">{rx.notes}</div>}
+                </div>
+                <div className="prescription-actions">
+                  <Button variant="secondary" onClick={() => handleEdit(index)} disabled={disabled}>
+                    Edit
+                  </Button>
+                  <Button variant="danger" onClick={() => handleDelete(index)} disabled={disabled}>
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            )
+          ))}
+        </div>
       )}
-
-      {value.map((rx, index) => (
-        editingIndex === index ? null : (
-          <div key={index} className="prescription-item">
-            <div className="prescription-details">
-              <strong>{rx.medication}</strong>
-              <span> - {rx.dosage}, {rx.duration}</span>
-              {rx.notes && <div className="prescription-notes">{rx.notes}</div>}
-            </div>
-            <div className="prescription-actions">
-              <Button variant="secondary" onClick={() => handleEdit(index)} disabled={disabled}>
-                Edit
-              </Button>
-              <Button variant="danger" onClick={() => handleDelete(index)} disabled={disabled}>
-                Delete
-              </Button>
-            </div>
-          </div>
-        )
-      ))}
 
       {editingIndex !== null && (
         <div className="prescription-editor">
@@ -137,9 +135,18 @@ function PrescriptionInput({ value, onChange, disabled }: PrescriptionInputProps
       )}
 
       {editingIndex === null && (
-        <Button onClick={handleAdd} disabled={disabled} variant="secondary">
-          + Add Prescription
-        </Button>
+        <div className={value.length === 0 ? 'prescription-empty' : 'prescription-add-wrap'}>
+          <button
+            type="button"
+            onClick={handleAdd}
+            disabled={disabled}
+            className="measurement-card-add"
+            title="Add Prescription"
+          >
+            <span className="measurement-card-icon" aria-hidden>💊</span>
+            <span className="measurement-card-add-label">Add Prescription</span>
+          </button>
+        </div>
       )}
     </div>
   );

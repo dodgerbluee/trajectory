@@ -5,11 +5,15 @@
 import { Router, Response, NextFunction } from 'express';
 import type { Request as ExpressRequest } from 'express';
 import { query } from '../db/connection.js';
-import { createResponse } from '../types/api.js';
+import { createResponse, createPaginatedResponse, parsePaginationParams, type AuditHistoryEvent } from '../types/api.js';
+import { canViewAuditHistory } from '../lib/audit.js';
+import { UnauthorizedError, ConflictError } from '../middleware/error-handler.js';
 import { BadRequestError, NotFoundError } from '../middleware/error-handler.js';
-import type { AuthRequest } from '../middleware/auth.js';
+import { authenticate, type AuthRequest } from '../middleware/auth.js';
 import type { VisitRow, CreateVisitInput, VisitType, IllnessType } from '../types/database.js';
 import { visitRowToVisit as convertVisitRow } from '../types/database.js';
+import { buildFieldDiff, auditChangesSummary } from '../lib/field-diff.js';
+import { recordAuditEvent } from '../lib/audit.js';
 
 const router = Router();
 
@@ -538,13 +542,13 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
       bmi_percentile: validateOptionalNumber(req.body.bmi_percentile, 0, 100),
       symptoms: validateOptionalString(req.body.symptoms),
       temperature: validateOptionalNumber(req.body.temperature, 95, 110),
+      illness_start_date: validateOptionalDate(req.body.illness_start_date),
       end_date: validateOptionalDate(req.body.end_date),
       
       // Injury visit fields
       injury_type: validateOptionalString(req.body.injury_type),
       injury_location: validateOptionalString(req.body.injury_location),
       treatment: validateOptionalString(req.body.treatment),
-      follow_up_date: validateOptionalDate(req.body.follow_up_date),
       
       // Vision fields
       vision_prescription: validateOptionalString(req.body.vision_prescription),
@@ -589,8 +593,8 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
           head_circumference_value, head_circumference_percentile,
           bmi_value, bmi_percentile,
           blood_pressure, heart_rate,
-            symptoms, temperature, end_date, injury_type,
-          injury_location, treatment, follow_up_date,
+          symptoms, temperature, illness_start_date, end_date, injury_type,
+          injury_location, treatment,
           vision_prescription, vision_refraction, ordered_glasses, ordered_contacts,
           vaccines_administered, prescriptions, tags, notes
         ) VALUES (
@@ -600,8 +604,8 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
           $12, $13,
           $14, $15,
           $16, $17,
-          $18, $19, $20, $21,
-          $22, $23, $24,
+          $18, $19, $20, $21, $22,
+          $23, $24,
           $25, $26, $27, $28,
           $29, $30, $31, $32
         ) RETURNING *`,
@@ -612,8 +616,8 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
           input.head_circumference_value, input.head_circumference_percentile,
           input.bmi_value, input.bmi_percentile,
           input.blood_pressure, input.heart_rate,
-          input.symptoms, input.temperature, input.end_date, input.injury_type,
-          input.injury_location, input.treatment, input.follow_up_date,
+          input.symptoms, input.temperature, input.illness_start_date ?? null, input.end_date ?? null, input.injury_type,
+          input.injury_location, input.treatment,
           input.vision_prescription, input.vision_refraction ? JSON.stringify(input.vision_refraction) : null, input.ordered_glasses, input.ordered_contacts,
           vaccines, prescriptions ? JSON.stringify(prescriptions) : null, tagsJson, input.notes,
         ]
@@ -659,6 +663,7 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
       try {
         // Create illness entries for each illness selected (if multiple)
         const toCreate = illnesses && illnesses.length > 0 ? illnesses : [];
+        const illnessStartDate = input.illness_start_date ?? input.visit_date;
         for (const ill of toCreate) {
           await query(
             `INSERT INTO illnesses (
@@ -667,7 +672,7 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
             [
               input.child_id,
               ill,
-              input.visit_date,
+              illnessStartDate,
               input.end_date,
               input.symptoms,
               input.temperature,
@@ -699,178 +704,274 @@ router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
       throw new BadRequestError('Invalid visit ID');
     }
 
-    // Build dynamic update query
+    // Load current visit for audit diff (previous persisted state) and optimistic locking
+    const currentResult = await query<VisitRow & { updated_at: Date }>(
+      'SELECT *, updated_at FROM visits WHERE id = $1',
+      [id]
+    );
+    if (currentResult.rows.length === 0) {
+      throw new NotFoundError('Visit');
+    }
+    const currentRow = currentResult.rows[0];
+    const currentVisit = convertVisitRow(currentRow);
+
+    // Optimistic locking: check if client's version matches server's version
+    const clientUpdatedAt = req.body.updated_at;
+    if (clientUpdatedAt) {
+      const clientTime = new Date(clientUpdatedAt);
+      const serverTime = currentRow.updated_at;
+      
+      // Check for conflicts (client's version is stale)
+      if (Math.abs(clientTime.getTime() - serverTime.getTime()) > 1000) { // 1 second tolerance
+        throw new ConflictError(
+          'Visit was modified by another user. Please refresh and try again.',
+          { 
+            currentVersion: serverTime.toISOString(),
+            yourVersion: clientUpdatedAt 
+          }
+        );
+      }
+    }
+    const illResCurrent = await query<{ illness_type: IllnessType }>(
+      `SELECT illness_type FROM visit_illnesses WHERE visit_id = $1`,
+      [id]
+    );
+    currentVisit.illnesses = illResCurrent.rows.length > 0 ? illResCurrent.rows.map((r) => r.illness_type) : null;
+
+    // Build dynamic update query and payload for audit diff.
+    // Only add to payload when req.body.X !== undefined so omitted fields are never tracked (partial updates / multiple forms).
     const updates: string[] = [];
     const values: unknown[] = [];
+    const payload: Record<string, unknown> = {};
     let paramCount = 1;
 
     if (req.body.visit_date !== undefined) {
+      const v = validateDate(req.body.visit_date, 'visit_date');
+      payload.visit_date = v;
       updates.push(`visit_date = $${paramCount++}`);
-      values.push(validateDate(req.body.visit_date, 'visit_date'));
+      values.push(v);
     }
 
     if (req.body.visit_type !== undefined) {
+      const v = validateVisitType(req.body.visit_type);
+      payload.visit_type = v;
       updates.push(`visit_type = $${paramCount++}`);
-      values.push(validateVisitType(req.body.visit_type));
+      values.push(v);
     }
 
     if (req.body.location !== undefined) {
+      const v = validateOptionalString(req.body.location);
+      payload.location = v;
       updates.push(`location = $${paramCount++}`);
-      values.push(validateOptionalString(req.body.location));
+      values.push(v);
     }
 
     if (req.body.doctor_name !== undefined) {
+      const v = validateOptionalString(req.body.doctor_name);
+      payload.doctor_name = v;
       updates.push(`doctor_name = $${paramCount++}`);
-      values.push(validateOptionalString(req.body.doctor_name));
+      values.push(v);
     }
 
     if (req.body.title !== undefined) {
+      const v = validateOptionalString(req.body.title);
+      payload.title = v;
       updates.push(`title = $${paramCount++}`);
-      values.push(validateOptionalString(req.body.title));
+      values.push(v);
     }
 
     if (req.body.weight_value !== undefined) {
+      const v = validateOptionalNumber(req.body.weight_value);
+      payload.weight_value = v;
       updates.push(`weight_value = $${paramCount++}`);
-      values.push(validateOptionalNumber(req.body.weight_value));
+      values.push(v);
     }
 
     if (req.body.weight_ounces !== undefined) {
+      const v = validateOptionalNumber(req.body.weight_ounces, 0, 15);
+      payload.weight_ounces = v;
       updates.push(`weight_ounces = $${paramCount++}`);
-      values.push(validateOptionalNumber(req.body.weight_ounces, 0, 15));
+      values.push(v);
     }
 
     if (req.body.weight_percentile !== undefined) {
+      const v = validateOptionalNumber(req.body.weight_percentile, 0, 100);
+      payload.weight_percentile = v;
       updates.push(`weight_percentile = $${paramCount++}`);
-      values.push(validateOptionalNumber(req.body.weight_percentile, 0, 100));
+      values.push(v);
     }
 
     if (req.body.height_value !== undefined) {
+      const v = validateOptionalNumber(req.body.height_value);
+      payload.height_value = v;
       updates.push(`height_value = $${paramCount++}`);
-      values.push(validateOptionalNumber(req.body.height_value));
+      values.push(v);
     }
 
     if (req.body.height_percentile !== undefined) {
+      const v = validateOptionalNumber(req.body.height_percentile, 0, 100);
+      payload.height_percentile = v;
       updates.push(`height_percentile = $${paramCount++}`);
-      values.push(validateOptionalNumber(req.body.height_percentile, 0, 100));
+      values.push(v);
     }
 
     if (req.body.head_circumference_value !== undefined) {
+      const v = validateOptionalNumber(req.body.head_circumference_value);
+      payload.head_circumference_value = v;
       updates.push(`head_circumference_value = $${paramCount++}`);
-      values.push(validateOptionalNumber(req.body.head_circumference_value));
+      values.push(v);
     }
 
     if (req.body.head_circumference_percentile !== undefined) {
+      const v = validateOptionalNumber(req.body.head_circumference_percentile, 0, 100);
+      payload.head_circumference_percentile = v;
       updates.push(`head_circumference_percentile = $${paramCount++}`);
-      values.push(validateOptionalNumber(req.body.head_circumference_percentile, 0, 100));
+      values.push(v);
     }
 
     if (req.body.bmi_value !== undefined) {
+      const v = validateOptionalNumber(req.body.bmi_value);
+      payload.bmi_value = v;
       updates.push(`bmi_value = $${paramCount++}`);
-      values.push(validateOptionalNumber(req.body.bmi_value));
+      values.push(v);
     }
 
     if (req.body.bmi_percentile !== undefined) {
+      const v = validateOptionalNumber(req.body.bmi_percentile, 0, 100);
+      payload.bmi_percentile = v;
       updates.push(`bmi_percentile = $${paramCount++}`);
-      values.push(validateOptionalNumber(req.body.bmi_percentile, 0, 100));
+      values.push(v);
     }
 
     if (req.body.blood_pressure !== undefined) {
+      const v = validateOptionalString(req.body.blood_pressure);
+      payload.blood_pressure = v;
       updates.push(`blood_pressure = $${paramCount++}`);
-      values.push(validateOptionalString(req.body.blood_pressure));
+      values.push(v);
     }
 
     if (req.body.heart_rate !== undefined) {
+      const v = validateOptionalNumber(req.body.heart_rate, 40, 250);
+      payload.heart_rate = v;
       updates.push(`heart_rate = $${paramCount++}`);
-      values.push(validateOptionalNumber(req.body.heart_rate, 40, 250));
+      values.push(v);
     }
 
     // If illnesses array is provided, we'll update the join table after the main update completes
     let illnessesToSet: IllnessType[] | null = null;
     if (req.body.illnesses !== undefined) {
       illnessesToSet = validateIllnessesArray(req.body.illnesses);
+      payload.illnesses = illnessesToSet;
     }
 
     if (req.body.symptoms !== undefined) {
+      const v = validateOptionalString(req.body.symptoms);
+      payload.symptoms = v;
       updates.push(`symptoms = $${paramCount++}`);
-      values.push(validateOptionalString(req.body.symptoms));
+      values.push(v);
     }
 
     if (req.body.temperature !== undefined) {
+      const v = validateOptionalNumber(req.body.temperature, 95, 110);
+      payload.temperature = v;
       updates.push(`temperature = $${paramCount++}`);
-      values.push(validateOptionalNumber(req.body.temperature, 95, 110));
+      values.push(v);
+    }
+
+    if (req.body.illness_start_date !== undefined) {
+      const v = validateOptionalDate(req.body.illness_start_date);
+      payload.illness_start_date = v;
+      updates.push(`illness_start_date = $${paramCount++}`);
+      values.push(v);
     }
 
     if (req.body.end_date !== undefined) {
+      const v = validateOptionalDate(req.body.end_date);
+      payload.end_date = v;
       updates.push(`end_date = $${paramCount++}`);
-      values.push(validateOptionalDate(req.body.end_date));
+      values.push(v);
     }
 
     // Injury visit fields
     if (req.body.injury_type !== undefined) {
+      const v = validateOptionalString(req.body.injury_type);
+      payload.injury_type = v;
       updates.push(`injury_type = $${paramCount++}`);
-      values.push(validateOptionalString(req.body.injury_type));
+      values.push(v);
     }
 
     if (req.body.injury_location !== undefined) {
+      const v = validateOptionalString(req.body.injury_location);
+      payload.injury_location = v;
       updates.push(`injury_location = $${paramCount++}`);
-      values.push(validateOptionalString(req.body.injury_location));
+      values.push(v);
     }
 
     if (req.body.treatment !== undefined) {
+      const v = validateOptionalString(req.body.treatment);
+      payload.treatment = v;
       updates.push(`treatment = $${paramCount++}`);
-      values.push(validateOptionalString(req.body.treatment));
-    }
-
-    if (req.body.follow_up_date !== undefined) {
-      updates.push(`follow_up_date = $${paramCount++}`);
-      values.push(validateOptionalDate(req.body.follow_up_date));
+      values.push(v);
     }
 
     // Vision visit fields
     if (req.body.vision_prescription !== undefined) {
+      const v = validateOptionalString(req.body.vision_prescription);
+      payload.vision_prescription = v;
       updates.push(`vision_prescription = $${paramCount++}`);
-      values.push(validateOptionalString(req.body.vision_prescription));
+      values.push(v);
     }
 
     if (req.body.vision_refraction !== undefined) {
+      const vr = req.body.vision_refraction ? validateVisionRefraction(req.body.vision_refraction) : null;
+      payload.vision_refraction = vr;
       updates.push(`vision_refraction = $${paramCount++}`);
-      values.push(req.body.vision_refraction ? JSON.stringify(validateVisionRefraction(req.body.vision_refraction)) : null);
+      values.push(vr ? JSON.stringify(vr) : null);
     }
 
     if (req.body.ordered_glasses !== undefined) {
+      const v = req.body.ordered_glasses === true ? true : (req.body.ordered_glasses === false ? false : null);
+      payload.ordered_glasses = v;
       updates.push(`ordered_glasses = $${paramCount++}`);
-      values.push(req.body.ordered_glasses === true ? true : (req.body.ordered_glasses === false ? false : null));
+      values.push(v);
     }
 
     if (req.body.ordered_contacts !== undefined) {
+      const v = req.body.ordered_contacts === true ? true : (req.body.ordered_contacts === false ? false : null);
+      payload.ordered_contacts = v;
       updates.push(`ordered_contacts = $${paramCount++}`);
-      values.push(req.body.ordered_contacts === true ? true : (req.body.ordered_contacts === false ? false : null));
+      values.push(v);
     }
 
     if (req.body.vaccines_administered !== undefined) {
+      const v = validateVaccines(req.body.vaccines_administered);
+      payload.vaccines_administered = v ? v.split(',').map(s => s.trim()).filter(Boolean) : null;
       updates.push(`vaccines_administered = $${paramCount++}`);
-      values.push(validateVaccines(req.body.vaccines_administered));
+      values.push(v);
     }
 
     if (req.body.prescriptions !== undefined) {
-      updates.push(`prescriptions = $${paramCount++}`);
       const prescriptions = validatePrescriptions(req.body.prescriptions);
+      payload.prescriptions = prescriptions;
+      updates.push(`prescriptions = $${paramCount++}`);
       values.push(prescriptions ? JSON.stringify(prescriptions) : null);
     }
 
     if (req.body.tags !== undefined) {
-      updates.push(`tags = $${paramCount++}`);
       const tagsArray = Array.isArray(req.body.tags) ? req.body.tags : [];
-      values.push(
-        tagsArray.length > 0
-          ? JSON.stringify(tagsArray.filter((t: unknown) => t && String(t).trim()))
-          : null
-      );
+      const tagsVal = tagsArray.length > 0
+        ? JSON.stringify(tagsArray.filter((t: unknown) => t && String(t).trim()))
+        : null;
+      payload.tags = tagsArray.filter((t: unknown) => t && String(t).trim());
+      updates.push(`tags = $${paramCount++}`);
+      values.push(tagsVal);
     }
 
     if (req.body.notes !== undefined) {
+      const v = validateOptionalString(req.body.notes);
+      payload.notes = v;
       updates.push(`notes = $${paramCount++}`);
-      values.push(validateOptionalString(req.body.notes));
+      values.push(v);
     }
 
     if (updates.length === 0) {
@@ -878,16 +979,30 @@ router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
     }
 
     values.push(id);
+    
+    // Include updated_at in WHERE clause for optimistic locking
+    const whereClause = clientUpdatedAt
+      ? `WHERE id = $${paramCount} AND updated_at = $${paramCount + 1}`
+      : `WHERE id = $${paramCount}`;
+    const whereParams = clientUpdatedAt
+      ? [...values, currentRow.updated_at]
+      : values;
 
     const result = await query<VisitRow>(
       `UPDATE visits
        SET ${updates.join(', ')}, updated_at = NOW()
-       WHERE id = $${paramCount}
+       ${whereClause}
        RETURNING *`,
-      values
+      whereParams
     );
 
     if (result.rows.length === 0) {
+      // No rows updated = conflict detected (if optimistic locking was used) or not found
+      if (clientUpdatedAt) {
+        throw new ConflictError(
+          'Visit was modified by another user. Please refresh and try again.'
+        );
+      }
       throw new NotFoundError('Visit');
     }
 
@@ -911,7 +1026,23 @@ router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
       visit.illnesses = existing.rows.length > 0 ? existing.rows.map((r) => r.illness_type) : null;
     }
 
-    // Insert history entry for visit update
+    // Field-level audit: diff previous state vs incoming payload, persist to audit_events
+    const changes = buildFieldDiff(
+      currentVisit as unknown as Record<string, unknown>,
+      payload,
+      { excludeKeys: ['child_id'] }
+    );
+    if (Object.keys(changes).length > 0) {
+      await recordAuditEvent({
+        entityType: 'visit',
+        entityId: id,
+        userId: req.userId ?? null,
+        action: 'updated',
+        changes,
+      });
+    }
+
+    // Insert history entry for visit update (legacy)
     await query(
       `INSERT INTO visit_history (visit_id, user_id, action, description)
        VALUES ($1, $2, 'updated', 'Visit updated')`,
@@ -925,49 +1056,91 @@ router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
 });
 
 // ============================================================================
-// GET /api/visits/:id/history - Get visit history
+// GET /api/visits/:id/history - Get change history (audit_events) for a visit
 // ============================================================================
-
-router.get('/:id/history', async (req: AuthRequest, res: Response, next: NextFunction) => {
+// Requires auth so req.userId is set for canViewAuditHistory; without it, 401 is returned and frontend logs user out.
+router.get('/:id/history', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
       throw new BadRequestError('Invalid visit ID');
     }
 
-    const result = await query<{
-      id: number;
-      visit_id: number;
-      user_id: number | null;
-      action: string;
-      description: string;
-      created_at: Date;
-      user_name: string | null;
-    }>(
-      `SELECT 
-        vh.id,
-        vh.visit_id,
-        vh.user_id,
-        vh.action,
-        vh.description,
-        vh.created_at,
-        u.name as user_name
-       FROM visit_history vh
-       LEFT JOIN users u ON vh.user_id = u.id
-       WHERE vh.visit_id = $1
-       ORDER BY vh.created_at DESC`,
+    // Check permissions
+    if (!await canViewAuditHistory('visit', id, req.userId ?? null)) {
+      throw new UnauthorizedError('You do not have permission to view this history');
+    }
+
+    // Parse pagination params (default: page=1, limit=50, max=200)
+    const pagination = parsePaginationParams(req.query);
+    const maxLimit = 200; // Higher limit for history than default
+    const limit = Math.min(maxLimit, pagination.limit);
+    const offset = (pagination.page - 1) * limit;
+
+    // Get total count for pagination metadata
+    const countResult = await query<{ count: string }>(
+      `SELECT COUNT(*) as count
+       FROM audit_events
+       WHERE entity_type = 'visit' AND entity_id = $1`,
       [id]
     );
+    const total = parseInt(countResult.rows[0].count);
 
-    res.json(createResponse(result.rows.map(row => ({
-      id: row.id,
-      visit_id: row.visit_id,
-      user_id: row.user_id,
-      action: row.action,
-      description: row.description,
-      created_at: row.created_at.toISOString(),
-      user_name: row.user_name,
-    }))));
+    // Get paginated results
+    const result = await query<{
+      id: string;
+      entity_type: string;
+      entity_id: number;
+      user_id: number | null;
+      action: string;
+      changed_at: Date;
+      changes: unknown;
+      summary: string | null;
+      user_name: string | null;
+      user_email: string | null;
+    }>(
+      `SELECT 
+        ae.id,
+        ae.entity_type,
+        ae.entity_id,
+        ae.user_id,
+        ae.action,
+        ae.changed_at,
+        ae.changes,
+        ae.summary,
+        u.name as user_name,
+        u.email as user_email
+       FROM audit_events ae
+       LEFT JOIN users u ON ae.user_id = u.id
+       WHERE ae.entity_type = 'visit' AND ae.entity_id = $1
+       ORDER BY ae.changed_at DESC
+       LIMIT $2 OFFSET $3`,
+      [id, limit, offset]
+    );
+
+    const data: AuditHistoryEvent[] = result.rows.map(row => {
+      const changes = (row.changes as Record<string, { before: unknown; after: unknown }>) ?? {};
+      // Regenerate summary from changes to filter out effectively empty changes
+      // This fixes old audit events that were created before the filtering logic
+      const regeneratedSummary = auditChangesSummary(changes, 'visit');
+      // Use regenerated summary if available, otherwise fall back to stored summary
+      const summary = regeneratedSummary || row.summary;
+      
+      return {
+        id: Number(row.id),
+        entity_type: 'visit' as const,
+        entity_id: row.entity_id,
+        user_id: row.user_id,
+        user_name: row.user_name,
+        user_email: row.user_email,
+        action: row.action as AuditHistoryEvent['action'],
+        changed_at: row.changed_at.toISOString(),
+        changes,
+        summary,
+      };
+    });
+
+    res.json(createPaginatedResponse(data, total, { ...pagination, limit, offset }));
   } catch (error) {
     next(error);
   }

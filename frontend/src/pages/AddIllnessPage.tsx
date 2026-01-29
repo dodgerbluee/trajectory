@@ -144,7 +144,7 @@ function AddIllnessPage() {
       )}
 
       <form onSubmit={handleSubmit}>
-        <Card title="Illness Information">
+        <Card title="Illness">
           {!initialChildId && (
             <FormField
               label="Child"

@@ -86,3 +86,26 @@ export function formatDateTime(dateString: string): string {
     hour12: true
   });
 }
+
+/**
+ * Format date/time for display; never returns "Invalid Date".
+ * Use for audit history and any external/API date values.
+ */
+export function safeFormatDateTime(value: string | number | null | undefined): string {
+  if (value === null || value === undefined || value === '') {
+    return '—';
+  }
+  const date = new Date(value as string | number);
+  if (Number.isNaN(date.getTime())) {
+    return typeof value === 'string' ? value : String(value);
+  }
+  const formatted = date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
+  return formatted === 'Invalid Date' ? String(value) : formatted;
+}

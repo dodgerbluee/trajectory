@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { HiPlus, HiX } from 'react-icons/hi';
+import { HiX } from 'react-icons/hi';
 
 interface VaccineInputProps {
   value: string[];
@@ -70,35 +70,34 @@ function VaccineInput({ value, onChange, disabled }: VaccineInputProps) {
 
   return (
     <div className="vaccine-input-modern">
-      {value.length > 0 && (
-        <div className="vaccine-badges-list">
-          {value.map((vaccine) => (
-            <span key={vaccine} className="vaccine-badge-item">
-              <span className="vaccine-badge-icon">💉</span>
-              <span className="vaccine-badge-text">{vaccine}</span>
-              {!disabled && (
-                <button
-                  type="button"
-                  onClick={() => handleRemove(vaccine)}
-                  className="vaccine-badge-remove"
-                  title="Remove vaccine"
-                >
-                  <HiX />
-                </button>
-              )}
-            </span>
-          ))}
-          <button
-            type="button"
-            onClick={() => setIsModalOpen(true)}
-            disabled={disabled}
-            className="vaccine-add-button"
-            title="Add vaccines"
-          >
-            <HiPlus />
-          </button>
-        </div>
-      )}
+      <div className="vaccine-badges-list">
+        {value.map((vaccine) => (
+          <span key={vaccine} className="vaccine-badge-item">
+            <span className="vaccine-badge-icon">💉</span>
+            <span className="vaccine-badge-text">{vaccine}</span>
+            {!disabled && (
+              <button
+                type="button"
+                onClick={() => handleRemove(vaccine)}
+                className="vaccine-badge-remove"
+                title="Remove vaccine"
+              >
+                <HiX />
+              </button>
+            )}
+          </span>
+        ))}
+        <button
+          type="button"
+          onClick={() => setIsModalOpen(true)}
+          disabled={disabled}
+          className="measurement-card-add"
+          title="Add Vaccine"
+        >
+          <span className="measurement-card-icon" aria-hidden>💉</span>
+          <span className="measurement-card-add-label">Add Vaccine</span>
+        </button>
+      </div>
 
       {isModalOpen && (
         <div className="vaccine-modal-overlay">

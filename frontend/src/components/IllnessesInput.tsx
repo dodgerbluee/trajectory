@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { HiPlus, HiX } from 'react-icons/hi';
+import { HiX } from 'react-icons/hi';
 import type { IllnessType } from '../types/api';
 
 interface IllnessesInputProps {
@@ -61,30 +61,34 @@ function IllnessesInput({ value, onChange, disabled }: IllnessesInputProps) {
     return (
         <div className="illnesses-input-modern" ref={ref}>
             {value.length > 0 ? (
-                <div className="vaccine-badges-list">
-                    {value.map((v) => (
-                        <span key={v} className="vaccine-badge-item">
-                            <span className="vaccine-badge-icon">🤒</span>
-                            <span className="vaccine-badge-text">{titleCase(v)}</span>
-                            {!disabled && (
-                                <button
-                                    type="button"
-                                    onClick={() => handleRemove(v)}
-                                    className="vaccine-badge-remove"
-                                    title="Remove illness"
-                                >
-                                    <HiX />
-                                </button>
-                            )}
-                        </span>
-                    ))}
+                <div className="illnesses-badges-wrap">
+                    <div className="vaccine-badges-list">
+                        {value.map((v) => (
+                            <span key={v} className="vaccine-badge-item">
+                                <span className="vaccine-badge-icon">🤒</span>
+                                <span className="vaccine-badge-text">{titleCase(v)}</span>
+                                {!disabled && (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemove(v)}
+                                        className="vaccine-badge-remove"
+                                        title="Remove illness"
+                                    >
+                                        <HiX />
+                                    </button>
+                                )}
+                            </span>
+                        ))}
+                    </div>
                     <button
                         type="button"
                         onClick={() => setOpen(true)}
                         disabled={disabled}
-                        className="vaccine-add-button"
-                        title="Add illnesses">
-                        <HiPlus />
+                        className="measurement-card-add"
+                        title="Add Illness"
+                    >
+                        <span className="measurement-card-icon" aria-hidden>🤒</span>
+                        <span className="measurement-card-add-label">Add Illness</span>
                     </button>
                 </div>
             ) : (
@@ -93,9 +97,11 @@ function IllnessesInput({ value, onChange, disabled }: IllnessesInputProps) {
                         type="button"
                         onClick={() => setOpen(true)}
                         disabled={disabled}
-                        className="vaccine-add-button"
+                        className="measurement-card-add"
+                        title="Add Illness"
                     >
-                        <HiPlus /> Add illnesses
+                        <span className="measurement-card-icon" aria-hidden>🤒</span>
+                        <span className="measurement-card-add-label">Add Illness</span>
                     </button>
                 </div>
             )}

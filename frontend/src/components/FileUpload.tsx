@@ -10,6 +10,7 @@ interface FileUploadProps {
   accept?: string;
   maxSize?: number;
   disabled?: boolean;
+  multiple?: boolean;
 }
 
 function FileUpload({
@@ -17,21 +18,16 @@ function FileUpload({
   accept = 'image/*,.pdf',
   maxSize = 10 * 1024 * 1024, // 10MB
   disabled = false,
+  multiple = false,
 }: FileUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setError(null);
-
+  const validateFile = (file: File): string | null => {
     // Validate file size
     if (file.size > maxSize) {
-      setError(`File too large. Maximum size: ${(maxSize / 1024 / 1024).toFixed(0)}MB`);
-      return;
+      return `File "${file.name}" is too large. Maximum size: ${(maxSize / 1024 / 1024).toFixed(0)}MB`;
     }
 
     // Validate file type
@@ -41,14 +37,40 @@ function FileUpload({
     const isSpecificType = acceptedTypes.includes(file.type);
 
     if (!isImage && !isPdf && !isSpecificType) {
-      setError('File type not allowed. Please upload an image or PDF.');
+      return `File "${file.name}" type not allowed. Please upload an image or PDF.`;
+    }
+
+    return null;
+  };
+
+  const handleFileSelect = async (e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setError(null);
+
+    // Validate all files first
+    const errors: string[] = [];
+    files.forEach(file => {
+      const error = validateFile(file);
+      if (error) errors.push(error);
+    });
+
+    if (errors.length > 0) {
+      setError(errors.join(' '));
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       return;
     }
 
     try {
       setUploading(true);
-      await onUpload(file);
-      // Clear the input so the same file can be uploaded again
+      // Upload files sequentially to avoid overwhelming the server
+      for (const file of files) {
+        await onUpload(file);
+      }
+      // Clear the input so the same files can be uploaded again
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -71,6 +93,7 @@ function FileUpload({
         accept={accept}
         onChange={handleFileSelect}
         disabled={disabled || uploading}
+        multiple={multiple}
         style={{ display: 'none' }}
       />
       

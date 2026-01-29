@@ -143,7 +143,7 @@ function EditIllnessPage() {
       )}
 
       <form onSubmit={handleSubmit}>
-        <Card title="Illness Information">
+        <Card title="Illness">
           <div className="form-field">
             <label className="form-label">Child</label>
             <div className="form-readonly">{child?.name || `Child #${illness.child_id}`}</div>

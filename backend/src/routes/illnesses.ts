@@ -4,11 +4,15 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { query } from '../db/connection.js';
-import { createResponse } from '../types/api.js';
+import { createResponse, createPaginatedResponse, parsePaginationParams, type AuditHistoryEvent } from '../types/api.js';
+import { canViewAuditHistory } from '../lib/audit.js';
+import { UnauthorizedError, ConflictError } from '../middleware/error-handler.js';
 import { BadRequestError, NotFoundError } from '../middleware/error-handler.js';
 import type { IllnessRow, CreateIllnessInput, UpdateIllnessInput, IllnessType, HeatmapData, HeatmapDay } from '../types/database.js';
 import { illnessRowToIllness } from '../types/database.js';
 import { validateOptionalString, validateDate, validateOptionalDate, validateNumber } from '../middleware/validation.js';
+import { buildFieldDiff, auditChangesSummary } from '../lib/field-diff.js';
+import { recordAuditEvent } from '../lib/audit.js';
 
 const router = Router();
 
@@ -71,6 +75,98 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const illnesses = result.rows.map(illnessRowToIllness);
 
     res.json(createResponse(illnesses));
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ============================================================================
+// GET /api/illnesses/:id/history - Get change history (audit_events) for an illness
+// ============================================================================
+
+router.get('/:id/history', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new BadRequestError('Invalid illness ID');
+    }
+
+    // Check permissions (extract userId from request if available)
+    const reqWithAuth = req as Request & { userId?: number };
+    if (!await canViewAuditHistory('illness', id, reqWithAuth.userId ?? null)) {
+      throw new UnauthorizedError('You do not have permission to view this history');
+    }
+
+    // Parse pagination params (default: page=1, limit=50, max=200)
+    const pagination = parsePaginationParams(req.query);
+    const maxLimit = 200; // Higher limit for history than default
+    const limit = Math.min(maxLimit, pagination.limit);
+    const offset = (pagination.page - 1) * limit;
+
+    // Get total count for pagination metadata
+    const countResult = await query<{ count: string }>(
+      `SELECT COUNT(*) as count
+       FROM audit_events
+       WHERE entity_type = 'illness' AND entity_id = $1`,
+      [id]
+    );
+    const total = parseInt(countResult.rows[0].count);
+
+    // Get paginated results
+    const result = await query<{
+      id: string;
+      entity_type: string;
+      entity_id: number;
+      user_id: number | null;
+      action: string;
+      changed_at: Date;
+      changes: unknown;
+      summary: string | null;
+      user_name: string | null;
+      user_email: string | null;
+    }>(
+      `SELECT 
+        ae.id,
+        ae.entity_type,
+        ae.entity_id,
+        ae.user_id,
+        ae.action,
+        ae.changed_at,
+        ae.changes,
+        ae.summary,
+        u.name as user_name,
+        u.email as user_email
+       FROM audit_events ae
+       LEFT JOIN users u ON ae.user_id = u.id
+       WHERE ae.entity_type = 'illness' AND ae.entity_id = $1
+       ORDER BY ae.changed_at DESC
+       LIMIT $2 OFFSET $3`,
+      [id, limit, offset]
+    );
+
+    const data: AuditHistoryEvent[] = result.rows.map(row => {
+      const changes = (row.changes as Record<string, { before: unknown; after: unknown }>) ?? {};
+      // Regenerate summary from changes to filter out effectively empty changes
+      // This fixes old audit events that were created before the filtering logic
+      const regeneratedSummary = auditChangesSummary(changes, 'illness');
+      // Use regenerated summary if available, otherwise fall back to stored summary
+      const summary = regeneratedSummary || row.summary;
+      
+      return {
+        id: Number(row.id),
+        entity_type: 'illness' as const,
+        entity_id: row.entity_id,
+        user_id: row.user_id,
+        user_name: row.user_name,
+        user_email: row.user_email,
+        action: row.action as AuditHistoryEvent['action'],
+        changed_at: row.changed_at.toISOString(),
+        changes,
+        summary,
+      };
+    });
+
+    res.json(createPaginatedResponse(data, total, { ...pagination, limit, offset }));
   } catch (error) {
     next(error);
   }
@@ -184,16 +280,36 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
       throw new BadRequestError('Invalid illness ID');
     }
 
-    // Check illness exists
-    const existing = await query<IllnessRow>(
-      'SELECT * FROM illnesses WHERE id = $1',
+    // Check illness exists and load updated_at for optimistic locking
+    const existing = await query<IllnessRow & { updated_at: Date }>(
+      'SELECT *, updated_at FROM illnesses WHERE id = $1',
       [id]
     );
     if (existing.rows.length === 0) {
       throw new NotFoundError('Illness');
     }
 
-    const existingIllness = illnessRowToIllness(existing.rows[0]);
+    const existingRow = existing.rows[0];
+    const existingIllness = illnessRowToIllness(existingRow);
+
+    // Optimistic locking: check if client's version matches server's version
+    const clientUpdatedAt = req.body.updated_at;
+    if (clientUpdatedAt) {
+      const clientTime = new Date(clientUpdatedAt);
+      const serverTime = existingRow.updated_at;
+      
+      // Check for conflicts (client's version is stale)
+      if (Math.abs(clientTime.getTime() - serverTime.getTime()) > 1000) { // 1 second tolerance
+        throw new ConflictError(
+          'Illness was modified by another user. Please refresh and try again.',
+          { 
+            currentVersion: serverTime.toISOString(),
+            yourVersion: clientUpdatedAt 
+          }
+        );
+      }
+    }
+    // Only add to input when req.body.X !== undefined so omitted fields are never tracked (partial updates / multiple forms).
     const input: UpdateIllnessInput = {};
 
     if (req.body.illness_type !== undefined) {
@@ -288,10 +404,48 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
     }
 
     values.push(id);
-    const queryText = `UPDATE illnesses SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING *`;
+    
+    // Include updated_at in WHERE clause for optimistic locking
+    const whereClause = clientUpdatedAt
+      ? `WHERE id = $${paramCount} AND updated_at = $${paramCount + 1}`
+      : `WHERE id = $${paramCount}`;
+    const whereParams = clientUpdatedAt
+      ? [...values, existingRow.updated_at]
+      : values;
+    
+    const queryText = `UPDATE illnesses SET ${updates.join(', ')}, updated_at = NOW() ${whereClause} RETURNING *`;
 
-    const result = await query<IllnessRow>(queryText, values);
-    res.json(createResponse(illnessRowToIllness(result.rows[0])));
+    const result = await query<IllnessRow>(queryText, whereParams);
+    
+    if (result.rows.length === 0) {
+      // No rows updated = conflict detected (if optimistic locking was used) or not found
+      if (clientUpdatedAt) {
+        throw new ConflictError(
+          'Illness was modified by another user. Please refresh and try again.'
+        );
+      }
+      throw new NotFoundError('Illness');
+    }
+    const updatedIllness = illnessRowToIllness(result.rows[0]);
+
+    // Field-level audit: diff previous state vs incoming update, persist to audit_events
+    const changes = buildFieldDiff(
+      existingIllness as unknown as Record<string, unknown>,
+      input as unknown as Record<string, unknown>,
+      { excludeKeys: ['child_id'] }
+    );
+    if (Object.keys(changes).length > 0) {
+      const reqWithAuth = req as Request & { userId?: number };
+      await recordAuditEvent({
+        entityType: 'illness',
+        entityId: id,
+        userId: reqWithAuth.userId ?? null,
+        action: 'updated',
+        changes,
+      });
+    }
+
+    res.json(createResponse(updatedIllness));
   } catch (error) {
     next(error);
   }
