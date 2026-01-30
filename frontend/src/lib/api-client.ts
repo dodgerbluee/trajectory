@@ -837,9 +837,24 @@ export const preferencesApi = {
 // Families & Invites
 // ============================================================================
 
+// Users "me" onboarding (no dedicated usersApi namespace; used by AuthContext / Welcome)
+export async function completeOnboarding(): Promise<ApiResponse<{ onboarding_completed: boolean }>> {
+  return request<{ onboarding_completed: boolean }>('/api/users/me/onboarding', {
+    method: 'PATCH',
+    body: JSON.stringify({ onboarding_completed: true }),
+  });
+}
+
 export const familiesApi = {
   async getAll(): Promise<ApiResponse<Family[]>> {
     return request<Family[]>('/api/families');
+  },
+
+  async create(name: string): Promise<ApiResponse<Family>> {
+    return request<Family>('/api/families', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    });
   },
 
   async updateFamily(familyId: number, name: string): Promise<void> {

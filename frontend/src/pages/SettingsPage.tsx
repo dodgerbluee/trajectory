@@ -27,7 +27,7 @@ function SettingsPage() {
   const { user, updateUsername, updatePassword, checkAuth } = useAuth();
   const { canEdit, refreshPermissions } = useFamilyPermissions();
   const [activeTab, setActiveTab] = useState<'general' | 'user' | 'data' | 'family'>('general');
-  const [familySubTab, setFamilySubTab] = useState<'management' | 'members'>('management');
+  const [familySubTab, setFamilySubTab] = useState<'management' | 'members'>('members');
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   
   // User management state
@@ -84,12 +84,13 @@ function SettingsPage() {
   // Saving member role (familyId + userId) for inline role edit
   const [savingMemberRole, setSavingMemberRole] = useState<{ familyId: number; userId: number } | null>(null);
 
-  // Open Family tab + Members sub-tab when navigating from dropdown (e.g. Family link)
+  // Open Family tab + sub-tab when navigating from dropdown (e.g. Family link)
   useEffect(() => {
     const state = location.state as { tab?: string; familySubTab?: string } | null;
     if (state?.tab === 'family') {
       setActiveTab('family');
-      if (state.familySubTab === 'members') setFamilySubTab('members');
+      if (state.familySubTab === 'management') setFamilySubTab('management');
+      else if (state.familySubTab === 'members') setFamilySubTab('members');
     }
   }, [location.state]);
 
@@ -179,11 +180,21 @@ function SettingsPage() {
     }
   };
 
-  const sortedChildren = useMemo(() => {
-    return [...childrenList].sort((a, b) =>
-      new Date(a.date_of_birth).getTime() - new Date(b.date_of_birth).getTime()
-    );
-  }, [childrenList]);
+  /** Children grouped by family_id for Members tab. Fallback: missing family_id → first family. */
+  const childrenByFamilyId = useMemo(() => {
+    const map: Record<number, Child[]> = {};
+    for (const f of families) map[f.id] = [];
+    for (const c of childrenList) {
+      const fid = c.family_id ?? families[0]?.id;
+      if (fid != null && map[fid]) map[fid].push(c);
+    }
+    for (const id of Object.keys(map)) {
+      map[Number(id)].sort(
+        (a, b) => new Date(a.date_of_birth).getTime() - new Date(b.date_of_birth).getTime()
+      );
+    }
+    return map;
+  }, [families, childrenList]);
 
   const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
     setTheme(newTheme);
@@ -559,6 +570,12 @@ function SettingsPage() {
           </div>
         </div>
 
+        <div className="settings-save-row">
+          <Button variant="primary" type="button" onClick={() => { setNotification({ message: 'Settings saved', type: 'success' }); setTimeout(() => setNotification(null), 3000); }}>
+            <LuSave style={{ marginRight: 8 }} /> Save
+          </Button>
+        </div>
+
         <div className="settings-section">
           <FormField
             label="Date Format"
@@ -571,12 +588,6 @@ function SettingsPage() {
               { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD (ISO)' },
             ]}
           />
-        </div>
-
-        <div className="settings-save-row">
-          <Button variant="primary" onClick={() => { setNotification({ message: 'Settings saved', type: 'success' }); setTimeout(() => setNotification(null), 3000); }}>
-            <LuSave style={{ marginRight: 8 }} /> Save
-          </Button>
         </div>
 
         <div className="support-section">
@@ -809,11 +820,6 @@ function SettingsPage() {
         onTabChange={(id) => setFamilySubTab(id as 'management' | 'members')}
         tabs={[
           {
-            id: 'management',
-            label: 'Management',
-            content: familyManagementContent,
-          },
-          {
             id: 'members',
             label: 'Members',
             content: (
@@ -821,69 +827,93 @@ function SettingsPage() {
                 {loadingKids && <LoadingSpinner message="Loading children…" />}
                 {errorKids && <ErrorMessage message={errorKids} onRetry={loadChildren} />}
                 {!loadingKids && !errorKids && (
-                  <div className="family-list">
-                    {sortedChildren.map((child) => {
-                      const age = calculateAge(child.date_of_birth);
-                      const ageText = formatAge(age.years, age.months);
-                      return (
-                        <Card key={child.id} className="family-card">
-                          <div className="family-content">
-                            <div className="family-avatar">
-                              <ChildAvatar
-                                avatar={child.avatar}
-                                gender={child.gender}
-                                alt={`${child.name}'s avatar`}
-                                className="family-avatar-img"
-                              />
-                            </div>
-                            <div className="family-info">
-                              <h2 className="family-name">{child.name}</h2>
-                              <div className="family-details">
-                                <span>{ageText}</span>
-                                <span>•</span>
-                                <span>{formatDate(child.date_of_birth)}</span>
-                              </div>
-                            </div>
-                            {canEdit && (
-                              <div className="family-actions">
-                                <Link to={`/children/${child.id}/edit`}>
-                                  <Button variant="secondary" size="sm">Edit</Button>
-                                </Link>
-                                <Button
-                                  variant="danger"
-                                  size="sm"
-                                  onClick={() => handleDeleteChild(child)}
-                                  disabled={deletingChildId === child.id}
+                  <div className="family-members-by-family">
+                    {[...families]
+                      .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+                      .map((family) => {
+                        const kids = childrenByFamilyId[family.id] ?? [];
+                        const canEditFamily = family.role === 'owner' || family.role === 'parent';
+                        return (
+                          <section key={family.id} className="family-members-section" aria-labelledby={`family-heading-${family.id}`}>
+                            <h2 id={`family-heading-${family.id}`} className="family-members-section-title">
+                              {family.name}
+                            </h2>
+                            <div className="family-list">
+                              {kids.map((child) => {
+                                const age = calculateAge(child.date_of_birth);
+                                const ageText = formatAge(age.years, age.months);
+                                return (
+                                  <Card key={child.id} className="family-card">
+                                    <div className="family-content">
+                                      <div className="family-avatar">
+                                        <ChildAvatar
+                                          avatar={child.avatar}
+                                          gender={child.gender}
+                                          alt={`${child.name}'s avatar`}
+                                          className="family-avatar-img"
+                                        />
+                                      </div>
+                                      <div className="family-info">
+                                        <h2 className="family-name">{child.name}</h2>
+                                        <div className="family-details">
+                                          <span>{ageText}</span>
+                                          <span>•</span>
+                                          <span>{formatDate(child.date_of_birth)}</span>
+                                        </div>
+                                      </div>
+                                      {canEditFamily && (
+                                        <div className="family-actions">
+                                          <Link to={`/children/${child.id}/edit`}>
+                                            <Button variant="secondary" size="sm">Edit</Button>
+                                          </Link>
+                                          <Button
+                                            variant="danger"
+                                            size="sm"
+                                            onClick={() => handleDeleteChild(child)}
+                                            disabled={deletingChildId === child.id}
+                                          >
+                                            {deletingChildId === child.id ? 'Deleting…' : 'Delete'}
+                                          </Button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </Card>
+                                );
+                              })}
+                              {canEditFamily && (
+                                <Link
+                                  to="/children/new"
+                                  state={{ familyId: family.id }}
+                                  className="family-add-link"
                                 >
-                                  {deletingChildId === child.id ? 'Deleting…' : 'Delete'}
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        </Card>
-                      );
-                    })}
-                    {canEdit && (
-                      <Link to="/children/new" className="family-add-link">
-                        <Card className="family-card family-add-card">
-                          <div className="family-content">
-                            <div className="family-avatar">
-                              <div className="family-add-avatar">+</div>
+                                  <Card className="family-card family-add-card">
+                                    <div className="family-content">
+                                      <div className="family-avatar">
+                                        <div className="family-add-avatar">+</div>
+                                      </div>
+                                      <div className="family-info">
+                                        <h2 className="family-name">Add Child</h2>
+                                        <div className="family-details">
+                                          <span>Add a child to {family.name}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </Card>
+                                </Link>
+                              )}
                             </div>
-                            <div className="family-info">
-                              <h2 className="family-name">Add Child</h2>
-                              <div className="family-details">
-                                <span>Click to add a new child</span>
-                              </div>
-                            </div>
-                          </div>
-                        </Card>
-                      </Link>
-                    )}
+                          </section>
+                        );
+                      })}
                   </div>
                 )}
               </div>
             ),
+          },
+          {
+            id: 'management',
+            label: 'Management',
+            content: familyManagementContent,
           },
         ]}
       />
@@ -897,7 +927,7 @@ function SettingsPage() {
         <div className="user-info-card">
           <div className="user-info-row">
             <span className="user-info-label">Username:</span>
-            <span className="user-info-value">{user?.name || 'N/A'}</span>
+            <span className="user-info-value">{user?.username || 'N/A'}</span>
           </div>
           <div className="user-info-row">
             <span className="user-info-label">Email:</span>
@@ -1148,6 +1178,10 @@ function SettingsPage() {
                 <LuSettings className="sidebar-icon" />
                 <span>General</span>
               </button>
+              <button className={`sidebar-item ${activeTab === 'family' ? 'active' : ''}`} onClick={() => setActiveTab('family')}>
+                <LuUsers className="sidebar-icon" />
+                <span>Family</span>
+              </button>
               <button className={`sidebar-item ${activeTab === 'user' ? 'active' : ''}`} onClick={() => setActiveTab('user')}>
                 <LuUser className="sidebar-icon" />
                 <span>User</span>
@@ -1155,10 +1189,6 @@ function SettingsPage() {
               <button className={`sidebar-item ${activeTab === 'data' ? 'active' : ''}`} onClick={() => setActiveTab('data')}>
                 <LuDownload className="sidebar-icon" />
                 <span>Data</span>
-              </button>
-              <button className={`sidebar-item ${activeTab === 'family' ? 'active' : ''}`} onClick={() => setActiveTab('family')}>
-                <LuUsers className="sidebar-icon" />
-                <span>Family</span>
               </button>
             </aside>
 

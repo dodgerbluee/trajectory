@@ -1,4 +1,5 @@
 import { useState, FormEvent, useEffect } from 'react';
+import { LuEye, LuEyeOff } from 'react-icons/lu';
 import { useAuth } from '../contexts/AuthContext';
 import { authApi, ApiClientError } from '../lib/api-client';
 import FormField from './FormField';
@@ -22,7 +23,7 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
   const [registrationCode, setRegistrationCode] = useState('');
   const [verifiedCode, setVerifiedCode] = useState<string | null>(null);
 
-  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -38,7 +39,7 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
     setError(null);
     setRegistrationCode('');
     setVerifiedCode(null);
-    setName('');
+    setUsername('');
     setEmail('');
     setPassword('');
     setConfirmPassword('');
@@ -88,10 +89,10 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-    if (!name.trim()) {
-      newErrors.name = 'Name is required';
-    } else if (name.trim().length < 2) {
-      newErrors.name = 'Name must be at least 2 characters';
+    if (!username.trim()) {
+      newErrors.username = 'Username is required';
+    } else if (username.trim().length < 2) {
+      newErrors.username = 'Username must be at least 2 characters';
     }
     if (!email.trim()) {
       newErrors.email = 'Email is required';
@@ -131,7 +132,7 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
       await register(
         email,
         password,
-        name,
+        username,
         verifiedCode ?? undefined
       );
       onSuccess?.();
@@ -166,7 +167,7 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
 
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="create-user-modal-title">
-      <div className="modal-content card" style={{ maxWidth: '440px' }}>
+      <div className="modal-content card create-user-modal">
         <div className="modal-header">
           <h2 id="create-user-modal-title">
             {step === 'code' || step === 'code-required'
@@ -194,8 +195,8 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
           )}
 
           {step === 'code' && (
-            <form onSubmit={handleVerifyCode} className="login-form" noValidate>
-              <p className="modal-subtitle" style={{ marginBottom: '1rem' }}>
+            <form onSubmit={handleVerifyCode} className="create-user-modal-form" noValidate>
+              <p className="modal-subtitle">
                 Enter the registration code to create the first account.
               </p>
               {error && (
@@ -212,7 +213,7 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
                 autoComplete="one-time-code"
                 disabled={loading}
               />
-              <div className="modal-footer" style={{ border: 'none', paddingBottom: 0 }}>
+              <div className="create-user-modal-footer">
                 <Button type="button" variant="secondary" onClick={onClose}>
                   Cancel
                 </Button>
@@ -224,18 +225,18 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
           )}
 
           {step === 'form' && (
-            <form onSubmit={handleSubmitForm} className="login-form" noValidate>
+            <form onSubmit={handleSubmitForm} className="create-user-modal-form" noValidate>
               {error && (
                 <ErrorMessage message={error} onRetry={() => setError(null)} />
               )}
               <FormField
-                label="Name"
+                label="Username"
                 type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                error={errors.name}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                error={errors.username}
                 required
-                autoComplete="name"
+                autoComplete="username"
                 autoFocus
                 disabled={loading}
               />
@@ -271,7 +272,11 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                     tabIndex={-1}
                   >
-                    {showPassword ? '👁️' : '👁️‍🗨️'}
+                    {showPassword ? (
+                      <LuEyeOff className="password-toggle-icon" size={20} aria-hidden />
+                    ) : (
+                      <LuEye className="password-toggle-icon" size={20} aria-hidden />
+                    )}
                   </button>
                 </div>
                 {errors.password && (
@@ -303,14 +308,18 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
                     aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                     tabIndex={-1}
                   >
-                    {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
+                    {showConfirmPassword ? (
+                      <LuEyeOff className="password-toggle-icon" size={20} aria-hidden />
+                    ) : (
+                      <LuEye className="password-toggle-icon" size={20} aria-hidden />
+                    )}
                   </button>
                 </div>
                 {errors.confirmPassword && (
                   <span className="form-error">{errors.confirmPassword}</span>
                 )}
               </div>
-              <div className="modal-footer" style={{ border: 'none', paddingBottom: 0 }}>
+              <div className="create-user-modal-footer">
                 <Button type="button" variant="secondary" onClick={onClose}>
                   Cancel
                 </Button>
@@ -322,7 +331,7 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
           )}
 
           {step === 'code-required' && (
-            <div className="modal-footer" style={{ border: 'none', paddingBottom: 0 }}>
+            <div className="create-user-modal-footer">
               <Button type="button" variant="primary" onClick={onClose}>
                 Close
               </Button>

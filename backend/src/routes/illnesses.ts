@@ -144,7 +144,7 @@ router.get('/:id/history', async (req: AuthRequest, res: Response, next: NextFun
         ae.changed_at,
         ae.changes,
         ae.summary,
-        u.name as user_name,
+        u.username as user_name,
         u.email as user_email
        FROM audit_events ae
        LEFT JOIN users u ON ae.user_id = u.id

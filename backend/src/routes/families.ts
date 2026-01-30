@@ -20,6 +20,42 @@ export const familiesRouter = Router();
 familiesRouter.use(authenticate);
 
 /**
+ * POST /api/families
+ * Create a new family and add the current user as owner.
+ * Body: { name: string }
+ */
+familiesRouter.post('/', async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const userId = req.userId!;
+    const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+    if (!name) {
+      throw new BadRequestError('Family name is required.');
+    }
+    if (name.length > 255) {
+      throw new BadRequestError('Family name must be 255 characters or less.');
+    }
+    const insert = await query<{ id: number; name: string }>(
+      'INSERT INTO families (name) VALUES ($1) RETURNING id, name',
+      [name]
+    );
+    const familyId = insert.rows[0].id;
+    await query(
+      'INSERT INTO family_members (family_id, user_id, role) VALUES ($1, $2, $3)',
+      [familyId, userId, 'owner']
+    );
+    res.status(201).json(
+      createResponse({
+        id: familyId,
+        name: insert.rows[0].name ?? name,
+        role: 'owner',
+      })
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
  * GET /api/families
  * List families the user is a member of (id, name, role).
  */
@@ -134,21 +170,21 @@ familiesRouter.get(
 
       const result = await query<{
         user_id: number;
-        name: string;
+        username: string;
         email: string;
         role: string;
       }>(
-        `SELECT fm.user_id, u.name, u.email, fm.role
+        `SELECT fm.user_id, u.username, u.email, fm.role
          FROM family_members fm
          INNER JOIN users u ON u.id = fm.user_id
          WHERE fm.family_id = $1
-         ORDER BY fm.role = 'owner' DESC, u.name ASC`,
+         ORDER BY fm.role = 'owner' DESC, u.username ASC`,
         [familyId]
       );
 
       const members = result.rows.map((row) => ({
         user_id: row.user_id,
-        name: row.name,
+        username: row.username,
         email: row.email,
         role: row.role,
       }));

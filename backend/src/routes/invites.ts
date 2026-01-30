@@ -71,6 +71,8 @@ invitesRouter.post(
         [row.id]
       );
 
+      await query('UPDATE users SET onboarding_completed = true WHERE id = $1', [userId]);
+
       const familyRow = await query<{ name: string | null }>(
         'SELECT name FROM families WHERE id = $1',
         [row.family_id]

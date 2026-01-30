@@ -103,7 +103,8 @@ childrenRouter.get('/:id', async (req: AuthRequest, res: Response, next: NextFun
 
 /**
  * POST /api/children
- * Create a new child (in the current user's family). Requires owner or parent role.
+ * Create a new child. Optional body.family_id: create in that family (user must be owner/parent).
+ * If omitted, uses default (first owner) family.
  */
 childrenRouter.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
@@ -112,9 +113,18 @@ childrenRouter.post('/', async (req: AuthRequest, res: Response, next: NextFunct
       throw new ValidationError('gender must be male or female');
     }
 
-    const familyId = await getOrCreateDefaultFamilyForUser(req.userId!);
-    if (!(await canEditFamily(req.userId!, familyId))) {
-      throw new ForbiddenError('You do not have permission to add children to this family.');
+    let familyId: number;
+    if (req.body.family_id !== undefined && req.body.family_id !== null) {
+      const requestedFamilyId = validatePositiveInteger(req.body.family_id, 'family_id');
+      if (!(await canEditFamily(req.userId!, requestedFamilyId))) {
+        throw new ForbiddenError('You do not have permission to add children to this family.');
+      }
+      familyId = requestedFamilyId;
+    } else {
+      familyId = await getOrCreateDefaultFamilyForUser(req.userId!);
+      if (!(await canEditFamily(req.userId!, familyId))) {
+        throw new ForbiddenError('You do not have permission to add children to this family.');
+      }
     }
 
     const input: CreateChildInput = {
@@ -282,6 +292,7 @@ function formatChildForResponse(row: ChildRow) {
 
   return {
     id: row.id,
+    family_id: row.family_id,
     name: row.name,
     date_of_birth: row.date_of_birth.toISOString().split('T')[0],
     gender: row.gender,

@@ -4,13 +4,12 @@ import { LuEye, LuEyeOff } from 'react-icons/lu';
 import { useAuth } from '../contexts/AuthContext';
 import FormField from '../components/FormField';
 import Button from '../components/Button';
-import ErrorMessage from '../components/ErrorMessage';
 import Card from '../components/Card';
 import CreateUserModal from '../components/CreateUserModal';
 import { ApiClientError } from '../lib/api-client';
 
 function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -32,10 +31,8 @@ function LoginPage() {
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'Invalid email format';
+    if (!username.trim()) {
+      newErrors.username = 'Username is required';
     }
 
     if (!password) {
@@ -58,12 +55,12 @@ function LoginPage() {
     setLoading(true);
 
     try {
-      await login(email, password);
+      await login(username, password);
       navigate(from, { replace: true });
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.statusCode === 401) {
-          setError('Invalid email or password');
+          setError('Invalid username or password');
         } else if (err.statusCode === 429) {
           setError('Too many login attempts. Please try again later.');
         } else {
@@ -92,24 +89,23 @@ function LoginPage() {
           </div>
 
           {error && (
-            <ErrorMessage 
-              message={error} 
-              onRetry={() => setError(null)}
-            />
+            <div role="alert" className="login-alert">
+              {error}
+            </div>
           )}
 
           <form onSubmit={handleSubmit} className="login-form" noValidate>
             <FormField
-              label="Email Address"
-              type="email"
-              value={email}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-              error={errors.email}
+              label="Username"
+              type="text"
+              value={username}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
+              error={errors.username}
               required
-              autoComplete="email"
+              autoComplete="username"
               autoFocus
               disabled={loading}
-              aria-describedby={errors.email ? 'email-error' : undefined}
+              aria-describedby={errors.username ? 'username-error' : undefined}
             />
 
             <div className="form-field">

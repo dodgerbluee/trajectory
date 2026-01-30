@@ -42,7 +42,7 @@ export interface Family {
 
 export interface FamilyMember {
   user_id: number;
-  name: string;
+  username: string;
   email: string;
   role: string;
 }
@@ -86,6 +86,7 @@ export type Gender = 'male' | 'female';
 
 export interface Child {
   id: number;
+  family_id?: number; // present when backend supports multi-family; used for grouping
   name: string;
   date_of_birth: string; // YYYY-MM-DD
   gender: Gender;
@@ -100,6 +101,7 @@ export interface Child {
 }
 
 export interface CreateChildInput {
+  family_id?: number;
   name: string;
   date_of_birth: string;
   gender: Gender;

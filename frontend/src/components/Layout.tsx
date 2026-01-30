@@ -5,6 +5,7 @@ import { useHomeTabRequest } from '../contexts/HomeTabRequestContext';
 import ThemeToggle from './ThemeToggle';
 import AboutDropdown from './AboutDropdown';
 import IllnessNotification from './IllnessNotification';
+import VersionFooter from './VersionFooter';
 
 interface LayoutProps {
   children: ReactNode;
@@ -36,7 +37,7 @@ function Layout({ children }: LayoutProps) {
           <div className="header-actions">
             {user && (
               <span className="user-name" title={user.email}>
-                {user.name}
+                {user.username}
               </span>
             )}
             <IllnessNotification />
@@ -51,6 +52,7 @@ function Layout({ children }: LayoutProps) {
           {children}
         </div>
       </main>
+      <VersionFooter />
     </div>
   );
 }

@@ -15,6 +15,7 @@ import EditVisitPage from './pages/EditVisitPage';
 import VisitDetailPage from './pages/VisitDetailPage';
 import SettingsPage from './pages/SettingsPage';
 import InviteAcceptPage from './pages/InviteAcceptPage';
+import WelcomePage from './pages/WelcomePage';
 import AddIllnessPage from './pages/AddIllnessPage';
 import EditIllnessPage from './pages/EditIllnessPage';
 import IllnessDetailPage from './pages/IllnessDetailPage';
@@ -36,33 +37,31 @@ function App() {
             <ProtectedRoute>
               <FamilyPermissionsProvider>
                 <HomeTabRequestProvider>
-                <Layout>
                   <Routes>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/children/new" element={<AddChildPage />} />
-                  <Route path="/children/:id" element={<ChildDetailPage />} />
-                  <Route path="/children/:id/edit" element={<EditChildPage />} />
-                  
-                  {/* Unified Visit Routes */}
-                  <Route path="/visits/new" element={<AddVisitPage />} />
-                  <Route path="/children/:childId/visits/new" element={<AddVisitPage />} />
-                  <Route path="/visits/:id" element={<VisitDetailPage />} />
-                  <Route path="/visits/:id/edit" element={<EditVisitPage />} />
-                  
-                  {/* Illnesses: use home page illnesses tab */}
-                  <Route path="/illnesses" element={<HomePage />} />
-                  <Route path="/illnesses/new" element={<AddIllnessPage />} />
-                  <Route path="/illnesses/:id" element={<IllnessDetailPage />} />
-                  <Route path="/illnesses/:id/edit" element={<EditIllnessPage />} />
-                  
-                  {/* Family management moved to Settings > Family > Members; redirect /family to settings */}
-                  <Route path="/family" element={<Navigate to="/settings" replace state={{ tab: 'family', familySubTab: 'members' }} />} />
-                  <Route path="/settings" element={<SettingsPage />} />
-                  
-                  <Route path="*" element={<NotFoundPage />} />
+                    <Route path="/welcome" element={<WelcomePage />} />
+                    <Route path="/*" element={
+                      <Layout>
+                        <Routes>
+                          <Route path="/" element={<HomePage />} />
+                          <Route path="/children/new" element={<AddChildPage />} />
+                          <Route path="/children/:id" element={<ChildDetailPage />} />
+                          <Route path="/children/:id/edit" element={<EditChildPage />} />
+                          <Route path="/visits/new" element={<AddVisitPage />} />
+                          <Route path="/children/:childId/visits/new" element={<AddVisitPage />} />
+                          <Route path="/visits/:id" element={<VisitDetailPage />} />
+                          <Route path="/visits/:id/edit" element={<EditVisitPage />} />
+                          <Route path="/illnesses" element={<HomePage />} />
+                          <Route path="/illnesses/new" element={<AddIllnessPage />} />
+                          <Route path="/illnesses/:id" element={<IllnessDetailPage />} />
+                          <Route path="/illnesses/:id/edit" element={<EditIllnessPage />} />
+                          <Route path="/family" element={<Navigate to="/settings" replace state={{ tab: 'family', familySubTab: 'members' }} />} />
+                          <Route path="/settings" element={<SettingsPage />} />
+                          <Route path="*" element={<NotFoundPage />} />
+                        </Routes>
+                      </Layout>
+                    } />
                   </Routes>
-                </Layout>
-              </HomeTabRequestProvider>
+                </HomeTabRequestProvider>
               </FamilyPermissionsProvider>
             </ProtectedRoute>
           }

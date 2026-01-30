@@ -14,7 +14,7 @@ import { createResponse } from '../types/api.js';
 interface UserListRow {
   id: number;
   email: string;
-  name: string;
+  username: string;
   is_instance_admin: boolean;
 }
 
@@ -123,21 +123,39 @@ usersRouter.patch('/me/preferences', async (req: AuthRequest, res: Response, nex
   }
 });
 
+/**
+ * PATCH /api/users/me/onboarding
+ * Set onboarding_completed to true. Authenticated only.
+ */
+usersRouter.patch('/me/onboarding', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.userId!;
+    const onboardingCompleted = req.body?.onboarding_completed;
+    if (onboardingCompleted !== true) {
+      throw new BadRequestError('onboarding_completed must be true');
+    }
+    await query('UPDATE users SET onboarding_completed = true WHERE id = $1', [userId]);
+    res.json(createResponse({ onboarding_completed: true }));
+  } catch (error) {
+    next(error);
+  }
+});
+
 usersRouter.use(requireInstanceAdmin);
 
 /**
  * GET /api/users
- * List all users (id, email, name, is_instance_admin). Instance admin only.
+ * List all users (id, email, username, is_instance_admin). Instance admin only.
  */
 usersRouter.get('/', async (_req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const result = await query<UserListRow>(
-      'SELECT id, email, name, is_instance_admin FROM users ORDER BY id'
+      'SELECT id, email, username, is_instance_admin FROM users ORDER BY id'
     );
     const users = result.rows.map((row) => ({
       id: row.id,
       email: row.email,
-      name: row.name,
+      username: row.username,
       is_instance_admin: row.is_instance_admin,
     }));
     res.json(createResponse(users));

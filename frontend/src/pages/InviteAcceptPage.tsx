@@ -53,7 +53,7 @@ function InviteAcceptPage() {
     try {
       const res = await invitesApi.accept(parsedToken);
       const familyName = res.data.family_name ?? 'Family';
-      navigate('/', { replace: true, state: { message: `You've joined the ${familyName} family!` } });
+      navigate('/', { replace: true, state: { fromInvite: true, message: `You've joined the ${familyName} family!` } });
     } catch (err) {
       if (err instanceof ApiClientError) {
         setError(err.message || 'Failed to accept invite');
@@ -72,7 +72,7 @@ function InviteAcceptPage() {
     try {
       const res = await invitesApi.accept(trimmed);
       const familyName = res.data.family_name ?? 'Family';
-      navigate('/', { replace: true, state: { message: `You've joined the ${familyName} family!` } });
+      navigate('/', { replace: true, state: { fromInvite: true, message: `You've joined the ${familyName} family!` } });
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Failed to join family');
     }

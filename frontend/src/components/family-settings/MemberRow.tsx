@@ -39,10 +39,10 @@ function MemberRow({
   return (
     <div className="family-settings-member-row" role="row">
       <div className="family-settings-member-row__main">
-        <InitialsAvatar name={member.name} className="family-settings-member-row__avatar" size={40} />
+        <InitialsAvatar name={member.username} className="family-settings-member-row__avatar" size={40} />
         <div className="family-settings-member-row__info">
           <span className="family-settings-member-row__name">
-            {member.name}
+            {member.username}
             {isCurrentUser && (
               <span className="family-settings-member-row__you" aria-label="You"> (you)</span>
             )}
@@ -57,7 +57,7 @@ function MemberRow({
             value={displayRole}
             onChange={handleRoleSelect}
             disabled={isSaving}
-            aria-label={`Role for ${member.name}`}
+            aria-label={`Role for ${member.username}`}
           >
             <option value="parent">Parent</option>
             <option value="read_only">Read only</option>

@@ -82,7 +82,7 @@ function FamilyOverviewCard({
         </div>
         <div className="family-settings-overview-row">
           <span className="family-settings-overview-label">Owner</span>
-          <span className="family-settings-overview-value">{owner?.name ?? '—'}</span>
+          <span className="family-settings-overview-value">{owner?.username ?? '—'}</span>
         </div>
         <div className="family-settings-overview-row">
           <span className="family-settings-overview-label">Members</span>

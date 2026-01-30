@@ -8,7 +8,7 @@ import Card from '../components/Card';
 import { ApiClientError } from '../lib/api-client';
 
 function RegisterPage() {
-  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -30,10 +30,10 @@ function RegisterPage() {
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!name.trim()) {
-      newErrors.name = 'Name is required';
-    } else if (name.trim().length < 2) {
-      newErrors.name = 'Name must be at least 2 characters';
+    if (!username.trim()) {
+      newErrors.username = 'Username is required';
+    } else if (username.trim().length < 2) {
+      newErrors.username = 'Username must be at least 2 characters';
     }
 
     if (!email.trim()) {
@@ -80,8 +80,8 @@ function RegisterPage() {
     setLoading(true);
 
     try {
-      await register(email, password, name);
-      navigate('/', { replace: true });
+      await register(email, password, username);
+      navigate('/welcome', { replace: true });
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.statusCode === 409) {
@@ -124,14 +124,14 @@ function RegisterPage() {
             <FormField
               label="Username"
               type="text"
-              value={name}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
-              error={errors.name}
+              value={username}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
+              error={errors.username}
               required
               autoComplete="username"
               autoFocus
               disabled={loading}
-              aria-describedby={errors.name ? 'name-error' : undefined}
+              aria-describedby={errors.username ? 'username-error' : undefined}
             />
 
             <FormField

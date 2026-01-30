@@ -448,7 +448,7 @@ function VisitDetailPage() {
 interface VisitHistoryProps {
   history: AuditHistoryEvent[];
   loading: boolean;
-  user: { name: string } | null;
+  user: { username: string } | null;
 }
 
 function VisitHistory({ history, loading, user }: VisitHistoryProps) {
@@ -492,7 +492,7 @@ function VisitHistory({ history, loading, user }: VisitHistoryProps) {
               </span>
               <span className="visit-history-description-compact">{summaryDisplay}</span>
               <span className="visit-history-date-compact">{dateDisplay}</span>
-              <span className="visit-history-user-compact">{entry.user_name || user?.name || 'Unknown'}</span>
+              <span className="visit-history-user-compact">{entry.user_name || user?.username || 'Unknown'}</span>
               <span className="visit-history-chevron" aria-hidden>›</span>
             </button>
           );
@@ -527,7 +527,7 @@ function VisitHistory({ history, loading, user }: VisitHistoryProps) {
             <div className="history-detail-meta">
               <span className="history-detail-date">{safeFormatDateTime(selectedEntry.changed_at)}</span>
               <span className="history-detail-sep">·</span>
-              <span className="history-detail-user">{selectedEntry.user_name || user?.name || 'Unknown'}</span>
+              <span className="history-detail-user">{selectedEntry.user_name || user?.username || 'Unknown'}</span>
             </div>
             <div className="history-detail-body">
               {selectedEntry.changes && Object.keys(selectedEntry.changes).length > 0 ? (

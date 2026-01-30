@@ -2335,7 +2335,7 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
   margin-top: auto;
 }
 
-/* Version footer - fixed to bottom right */
+/* Version footer - fixed to bottom right (matches Docked style) */
 .version-footer {
   position: fixed;
   bottom: 16px;
@@ -2361,8 +2361,8 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
   color: var(--color-primary);
 }
 
-.github-link {
-  display: flex;
+.version-footer-link {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   color: inherit;
@@ -2370,22 +2370,27 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
   transition: color 0.2s ease;
 }
 
-.github-link:hover {
+.version-footer-link:hover {
   color: var(--color-primary);
 }
 
-.github-link-icon {
-  width: 18px;
-  height: 18px;
+.version-footer-link svg {
+  width: 14px;
+  height: 14px;
   flex-shrink: 0;
 }
 
-.footer-separator {
+.version-footer-separator {
   color: inherit;
   opacity: 0.5;
+  user-select: none;
 }
 
-.footer-version {
+.version-footer-text {
+  color: inherit;
+}
+
+.version-footer-version {
   color: inherit;
 }
 
@@ -2558,6 +2563,25 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
   gap: var(--spacing-md);
 }
 
+.family-members-by-family {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.family-members-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.family-members-section-title {
+  margin: 0 0 var(--spacing-xs) 0;
+  font-size: 1.125rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
 .family-card {
   padding: var(--spacing-lg);
 }
@@ -2599,6 +2623,49 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
   font-weight: var(--font-weight-semibold);
   line-height: 1.3;
   color: var(--color-text-primary);
+}
+
+.home-family-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.home-family-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.child-card-add-wrap {
+  text-decoration: none;
+  color: inherit;
+}
+
+.child-card-add {
+  border: 2px dashed var(--color-border);
+  background: var(--color-surface);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+}
+
+.child-card-add:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light, rgba(0 0 0 / 0.03));
+}
+
+.child-add-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: var(--color-text-secondary);
 }
 
 .family-details {
@@ -3878,7 +3945,7 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
 .form {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  /* gap: var(--spacing-lg); */
 }
 
 .form-field {
@@ -3896,6 +3963,13 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
   font-weight: 600;
   font-size: 0.875rem;
   color: var(--color-text-primary);
+}
+
+.form-label.gender {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  padding-bottom: 20px
 }
 
 /* Visit Information Form – modern data entry */
@@ -4620,7 +4694,7 @@ select.form-input {
 }
 
 select.form-input option {
-  background-color: var(--color-background);
+  background-color: var(--color-background-card);
   color: var(--color-text-primary);
 }
 
@@ -7514,7 +7588,7 @@ select.form-input:disabled {
 }
 
 .modal-content.card {
-  padding: 0;
+  padding: 20px;
 }
 
 .modal-content-large {
@@ -7576,6 +7650,104 @@ select.form-input:disabled {
   border-top: 1px solid var(--color-border);
 }
 
+/* Create user modal: uniform layout, spacing, and buttons */
+.create-user-modal {
+  max-width: 440px;
+  width: 100%;
+  padding: var(--spacing-lg);
+}
+
+.create-user-modal .modal-header {
+  padding-top: 0;
+  padding-left: 0;
+  padding-right: 0;
+  margin-left: 0;
+  margin-right: 0;
+  margin-bottom: var(--spacing-md);
+}
+
+.create-user-modal .modal-body {
+  padding-left: 0;
+  padding-right: 0;
+  margin-left: 0;
+  margin-right: 0;
+  margin-bottom: 0;
+}
+
+.create-user-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.create-user-modal-form .form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-bottom: 0;
+}
+
+.create-user-modal-form .form-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.create-user-modal-form .form-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 1rem;
+  min-height: 40px;
+}
+
+.create-user-modal-form .password-input-wrapper .form-input {
+  padding-right: 48px;
+}
+
+.create-user-modal-form .password-toggle {
+  right: 10px;
+}
+
+.create-user-modal-form .form-hint {
+  margin-top: var(--spacing-xs);
+  margin-bottom: 0;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.create-user-modal-form .form-error {
+  margin-top: var(--spacing-xs);
+  margin-bottom: 0;
+}
+
+.create-user-modal-footer {
+  display: flex;
+  justify-content: stretch;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.create-user-modal-footer .btn {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+}
+
+.create-user-modal .modal-subtitle {
+  margin-bottom: var(--spacing-md);
+  color: var(--color-text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.create-user-modal-form .error-message {
+  margin-bottom: 0;
+}
+
 /* Delete family confirmation modal */
 .delete-family-modal {
   max-width: 440px;
@@ -7610,6 +7782,277 @@ select.form-input:disabled {
 .modal-subtitle {
   color: var(--color-text-secondary);
   margin-bottom: var(--spacing-lg);
+}
+
+/* ============================================================================
+   Add Child Modal (popup) – uniform spacing, dark theme, toggle gender
+   ============================================================================ */
+
+/* ~1.5x vertical spacing between rows */
+.add-child-form-row-gap {
+  margin-bottom: var(--spacing-md);
+}
+
+.add-child-modal-header {
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.add-child-form .form-field {
+  margin-bottom: 0;
+}
+
+.add-child-form .form-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+/* Uniform padding for all inputs and buttons in add-child form */
+.add-child-form .form-input,
+.add-child-form .form-textarea,
+.add-child-form .add-child-gender-option,
+.add-child-form .add-child-actions button {
+  padding: 0.625rem 0.875rem;
+  min-height: 2.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+}
+
+.add-child-form .form-textarea {
+  min-height: 4rem;
+  resize: vertical;
+}
+
+/* Top row: avatar slightly left, more space before name, name tall and aligned */
+.add-child-top-row {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--spacing-md) * 2);
+}
+
+.add-child-top-row .form-field {
+  flex: 1;
+  margin-bottom: 40px;
+}
+
+.add-child-top-row .form-input {
+  min-height: 2.75rem;
+}
+
+.add-child-avatar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-shrink: 0;
+  margin-bottom: 0;
+  margin-right: 0;
+  padding: 20px
+}
+
+.add-child-avatar-button {
+  position: relative;
+  display: block;
+}
+
+.add-child-avatar-img {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: var(--elevation-2);
+  display: block;
+  border: 2px solid var(--color-border);
+}
+
+.add-child-avatar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.add-child-avatar-button:hover .add-child-avatar-overlay {
+  opacity: 1;
+}
+
+.add-child-avatar-hint {
+  margin: var(--spacing-xs) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+/* DOB and Gender side by side, equal spacing */
+.add-child-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  align-items: start;
+}
+
+.add-child-row-half {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* Align DOB input with gender toggle */
+.add-child-row-half > .form-field:first-child {
+  margin-top: 10px;
+}
+
+.add-child-gender-field {
+  margin-bottom: 0;
+}
+
+/* Gender as toggle with clear selection highlight */
+.add-child-gender-toggle {
+  display: inline-flex;
+  gap: 0;
+  padding: 2px;
+}
+
+.add-child-gender-option {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: calc(var(--radius-md) - 1px);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.add-child-gender-option:hover:not(:disabled) {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.add-child-gender-option.selected {
+  background: var(--color-primary);
+  color: white;
+}
+
+.add-child-gender-option-icon {
+  font-size: 1.125rem;
+  flex-shrink: 0;
+}
+
+/* Keep labels same height so controls align */
+.add-child-form .add-child-row-half .form-label,
+.add-child-form .add-child-birth-row .form-label {
+  min-height: 1.5em;
+  display: block;
+}
+
+/* Birth details section title */
+.add-child-section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 calc(var(--spacing-xs) * 1.5) 0;
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 2px solid var(--color-primary);
+  display: inline-block;
+  width: fit-content;
+}
+
+.add-child-birth-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--spacing-lg);
+  align-items: start;
+  margin-bottom: var(--spacing-md);
+}
+
+.add-child-number-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.add-child-lb-oz {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+/* Same width and height for weight/height inputs */
+.add-child-lb-oz .form-input,
+.add-child-height-in .form-input {
+  width: 4.5rem;
+  min-width: 4.5rem;
+  min-height: 2.5rem;
+  text-align: center;
+}
+
+.add-child-unit {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.add-child-height-in {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* Notes: full width, matching row spacing */
+.add-child-notes-wrap {
+  margin-bottom: var(--spacing-md);
+}
+
+.add-child-notes-wrap .form-field {
+  margin-bottom: 0;
+}
+
+.add-child-notes-wrap .form-textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Hide number input spinners */
+.input-no-spinner {
+  -moz-appearance: textfield;
+}
+.input-no-spinner::-webkit-inner-spin-button,
+.input-no-spinner::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Cancel and Add Child right-aligned with equal spacing */
+.add-child-actions {
+  padding-top: calc(var(--spacing-md) * 1.5);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+}
+
+.add-child-actions button {
+  min-height: 2.5rem;
+}
+
+.add-child-avatar-modal-overlay {
+  padding: var(--spacing-md);
 }
 
 .visit-type-selection {
@@ -9332,9 +9775,18 @@ select.form-input:disabled {
   flex-shrink: 0;
 }
 
-/* Login: error message spacing */
-.login-card .error-message {
+/* Login: inline alert (industry-standard, no emoji, no retry) */
+.login-alert {
   margin-bottom: 16px;
+  padding: 12px 16px;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--color-danger);
+  background: var(--color-danger-light);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius-md);
+  border-left-width: 4px;
+  border-left-color: var(--color-danger);
 }
 
 /* Dark mode */
@@ -9525,4 +9977,250 @@ select.form-input:disabled {
   color: var(--color-text-secondary);
   margin-top: var(--spacing-xs);
   line-height: var(--line-height-normal);
+}
+
+/* ============================================================================
+   Welcome / Onboarding Page
+   ============================================================================ */
+
+.welcome-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-streamers {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9998;
+  overflow: hidden;
+}
+
+.welcome-streamer {
+  position: absolute;
+  top: -100px;
+  width: 4px;
+  height: 100px;
+  transform-origin: top center;
+  animation: welcome-streamer-fall linear infinite;
+}
+
+@keyframes welcome-streamer-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(calc(100vh + 100px)) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.welcome-page-inner {
+  position: relative;
+  z-index: 9999;
+  width: 100%;
+  max-width: 560px;
+}
+
+.welcome-card {
+  padding: var(--spacing-xl);
+  animation: welcome-card-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes welcome-card-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.welcome-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.welcome-progress {
+  margin-top: var(--spacing-xl);
+  margin-bottom: 0;
+  width: 100%;
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.welcome-progress-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.welcome-progress-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.welcome-skip-in-progress {
+  flex-shrink: 0;
+}
+
+.welcome-progress-dots {
+  display: flex;
+  gap: var(--spacing-xs);
+  justify-content: center;
+}
+
+.welcome-progress-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-border);
+  transition: background 0.2s;
+}
+
+.welcome-progress-dot.active {
+  background: var(--color-primary);
+}
+
+.welcome-step {
+  width: 100%;
+  text-align: center;
+}
+
+.welcome-logo-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.welcome-logo {
+  height: 72px;
+  width: auto;
+  object-fit: contain;
+}
+
+.welcome-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-md);
+  line-height: 1.2;
+}
+
+.welcome-subtitle,
+.welcome-step-copy {
+  color: var(--color-text-secondary);
+  font-size: 1rem;
+  line-height: 1.5;
+  margin: 0 0 var(--spacing-lg);
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.welcome-step-title {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-sm);
+}
+
+.welcome-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  justify-content: center;
+  align-items: center;
+  margin-top: var(--spacing-lg);
+}
+
+.welcome-actions .welcome-skip {
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+}
+
+.welcome-btn-icon {
+  margin-right: var(--spacing-xs);
+  vertical-align: middle;
+  display: inline-block;
+}
+
+.welcome-whats-next {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: var(--spacing-lg) 0 var(--spacing-md);
+  letter-spacing: -0.01em;
+  text-align: center;
+  position: relative;
+}
+
+.welcome-whats-next::after {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 3px;
+  background: var(--color-primary);
+  border-radius: 2px;
+  margin: var(--spacing-sm) auto 0;
+}
+
+.welcome-feature-list {
+  width: 100%;
+  text-align: left;
+  margin: 0 0 var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.welcome-feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.welcome-feature-icon {
+  flex-shrink: 0;
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.welcome-loading,
+.welcome-error {
+  margin: var(--spacing-md) 0;
+  font-size: 0.95rem;
+}
+
+.welcome-error {
+  color: var(--color-danger);
+}
+
+.welcome-step .form-field {
+  text-align: left;
+  margin: var(--spacing-md) 0;
+  max-width: 320px;
+  margin-left: auto;
+  margin-right: auto;
 }
