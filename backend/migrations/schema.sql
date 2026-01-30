@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS visits (
     id SERIAL PRIMARY KEY,
     child_id INTEGER NOT NULL REFERENCES children(id) ON DELETE CASCADE,
     visit_date DATE NOT NULL,
-    visit_type VARCHAR(50) NOT NULL CHECK (visit_type IN ('wellness', 'sick', 'injury', 'vision')),
+    visit_type VARCHAR(50) NOT NULL CHECK (visit_type IN ('wellness', 'sick', 'injury', 'vision', 'dental')),
     location VARCHAR(255),
     doctor_name VARCHAR(255),
     title VARCHAR(255),
@@ -99,6 +99,16 @@ CREATE TABLE IF NOT EXISTS visits (
     ordered_glasses BOOLEAN,
     ordered_contacts BOOLEAN,
     vision_refraction JSONB,
+    dental_procedure_type VARCHAR(100),
+    dental_notes TEXT,
+    cleaning_type VARCHAR(50),
+    cavities_found INTEGER,
+    cavities_filled INTEGER,
+    xrays_taken BOOLEAN,
+    fluoride_treatment BOOLEAN,
+    sealants_applied BOOLEAN,
+    next_appointment_date DATE,
+    dental_procedures JSONB,
     vaccines_administered TEXT,
     prescriptions JSONB,
     tags TEXT,
@@ -115,7 +125,15 @@ CREATE TABLE IF NOT EXISTS visits (
     CONSTRAINT check_visits_temperature CHECK (temperature IS NULL OR (temperature >= 95.0 AND temperature <= 110.0)),
     CONSTRAINT check_visits_illness_start_date CHECK (illness_start_date IS NULL OR illness_start_date <= visit_date),
     CONSTRAINT check_visits_end_date CHECK (end_date IS NULL OR end_date >= COALESCE(illness_start_date, visit_date)),
-    CONSTRAINT check_heart_rate_range CHECK (heart_rate IS NULL OR (heart_rate >= 40 AND heart_rate <= 250))
+    CONSTRAINT check_heart_rate_range CHECK (heart_rate IS NULL OR (heart_rate >= 40 AND heart_rate <= 250)),
+    CONSTRAINT check_cavities_found CHECK (cavities_found IS NULL OR cavities_found >= 0),
+    CONSTRAINT check_cavities_filled CHECK (cavities_filled IS NULL OR cavities_filled >= 0),
+    CONSTRAINT check_cavities_filled_vs_found CHECK (
+        cavities_filled IS NULL OR cavities_found IS NULL OR cavities_filled <= cavities_found
+    ),
+    CONSTRAINT check_next_appointment_date CHECK (
+        next_appointment_date IS NULL OR next_appointment_date >= visit_date
+    )
 );
 
 -- Visit–illness join (illnesses recorded at a visit)

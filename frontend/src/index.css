@@ -579,6 +579,9 @@
   /* Vision (purple) */
   --color-vision: #7c3aed;
   --color-vision-light: rgba(124, 58, 237, 0.08);
+  /* Dental (teal) */
+  --color-dental: #06b6d4;
+  --color-dental-light: rgba(6, 182, 212, 0.08);
   --color-info: #06b6d4;
   --color-info-light: #cffafe;
   --color-danger: #ef4444;
@@ -1383,6 +1386,7 @@ body {
 .visit-icon--sick { color: var(--color-danger); }
 .visit-icon--injury { color: var(--color-visit-accent); }
 .visit-icon--vision { color: var(--color-vision); }
+.visit-icon--dental { color: var(--color-dental); }
 .visit-type-button .visit-icon-outline:hover {
   /* hover lift removed in favor of glow on the icon to avoid layout shift */
 }
@@ -1825,6 +1829,7 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
 [data-theme="dark"] .visit-icon--sick { color: var(--color-danger); }
 [data-theme="dark"] .visit-icon--injury { color: var(--color-visit-accent); }
 [data-theme="dark"] .visit-icon--vision { color: var(--color-vision); }
+[data-theme="dark"] .visit-icon--dental { color: var(--color-dental); }
 
 /* Per-type overrides: some icon libraries are filled by default
    (Material / Phosphor). Ensure those icons render as intended
@@ -1875,7 +1880,9 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
 }
 /* Vision icons should be outline/stroke-only like other lucide icons */
 .visit-icon--vision .visit-type-svg,
-.visit-icon--vision .visit-type-svg svg {
+.visit-icon--vision .visit-type-svg svg,
+.visit-icon--dental .visit-type-svg,
+.visit-icon--dental .visit-type-svg svg {
   stroke: currentColor;
   fill: none;
   vector-effect: non-scaling-stroke;
@@ -8284,6 +8291,10 @@ select.form-input:disabled {
   background: var(--color-surface);
   border-color: var(--color-vision);
 }
+.visit-type-button.dental:hover {
+  background: var(--color-dental-light);
+  border-color: var(--color-dental);
+}
 
 /* Dark mode specific hover adjustments */
 [data-theme="dark"] .visit-type-button.wellness:hover {
@@ -8300,6 +8311,9 @@ select.form-input:disabled {
 
 [data-theme="dark"] .visit-type-button.vision:hover {
   background: var(--color-vision-light);
+}
+[data-theme="dark"] .visit-type-button.dental:hover {
+  background: var(--color-dental-light);
 }
 
 .visit-type-icon {

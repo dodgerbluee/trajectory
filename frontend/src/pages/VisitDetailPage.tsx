@@ -187,7 +187,8 @@ function VisitDetailPage() {
               {visit.visit_type === 'wellness' ? 'Wellness Visit' : 
                visit.visit_type === 'sick' ? 'Sick Visit' : 
                visit.visit_type === 'injury' ? 'Injury Visit' :
-               'Vision Visit'}
+               visit.visit_type === 'vision' ? 'Vision Visit' :
+               visit.visit_type === 'dental' ? 'Dental Visit' : 'Visit'}
             </h2>
             <p className="visit-header-date">{formatDate(visit.visit_date)}</p>
           </div>
@@ -311,6 +312,59 @@ function VisitDetailPage() {
                           <span className="visit-info-label">Ordered Contacts:</span>
                           <span className="visit-info-value">{(visit as any).ordered_contacts ? 'Yes' : 'No'}</span>
                         </div>
+                      </div>
+                    )}
+
+                    {visit.visit_type === 'dental' && (
+                      <div className="visit-info-stacked">
+                        {(visit as any).dental_procedure_type && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Procedure Type:</span>
+                            <span className="visit-info-value">{(visit as any).dental_procedure_type}</span>
+                          </div>
+                        )}
+                        {(visit as any).cleaning_type && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Cleaning Type:</span>
+                            <span className="visit-info-value">{(visit as any).cleaning_type}</span>
+                          </div>
+                        )}
+                        {(visit as any).cavities_found !== null && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Cavities Found:</span>
+                            <span className="visit-info-value">{(visit as any).cavities_found}</span>
+                          </div>
+                        )}
+                        {(visit as any).cavities_filled !== null && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Cavities Filled:</span>
+                            <span className="visit-info-value">{(visit as any).cavities_filled}</span>
+                          </div>
+                        )}
+                        <div className="visit-info-item">
+                          <span className="visit-info-label">X-Rays Taken:</span>
+                          <span className="visit-info-value">{(visit as any).xrays_taken ? 'Yes' : 'No'}</span>
+                        </div>
+                        <div className="visit-info-item">
+                          <span className="visit-info-label">Fluoride Treatment:</span>
+                          <span className="visit-info-value">{(visit as any).fluoride_treatment ? 'Yes' : 'No'}</span>
+                        </div>
+                        <div className="visit-info-item">
+                          <span className="visit-info-label">Sealants Applied:</span>
+                          <span className="visit-info-value">{(visit as any).sealants_applied ? 'Yes' : 'No'}</span>
+                        </div>
+                        {(visit as any).next_appointment_date && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Next Appointment:</span>
+                            <span className="visit-info-value">{formatDate((visit as any).next_appointment_date)}</span>
+                          </div>
+                        )}
+                        {(visit as any).dental_notes && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Notes:</span>
+                            <span className="visit-info-value">{(visit as any).dental_notes}</span>
+                          </div>
+                        )}
                       </div>
                     )}
 

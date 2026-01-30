@@ -1,7 +1,7 @@
 import type { VisitType } from '../types/api';
 import Button from './Button';
 import Card from './Card';
-import { LuClipboard, LuEye, LuPill } from 'react-icons/lu';
+import { LuClipboard, LuEye, LuPill, LuSmile } from 'react-icons/lu';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
 // removed phosphor-react Pill import; using Lucide `LuPill` instead
 
@@ -72,6 +72,19 @@ function VisitTypeModal({ isOpen, onSelect, onClose }: VisitTypeModalProps) {
               </div>
               <div className="visit-type-label">Vision Visit</div>
               <div className="visit-type-description">Eye exams, prescriptions, and vision care</div>
+            </button>
+            
+            <button
+              className="visit-type-button dental"
+              onClick={() => onSelect('dental')}
+            >
+              <div className="visit-type-icon">
+                <div className="visit-icon-outline visit-icon--dental">
+                  <LuSmile className="visit-type-svg" />
+                </div>
+              </div>
+              <div className="visit-type-label">Dental Visit</div>
+              <div className="visit-type-description">Cleanings, checkups, and dental procedures</div>
             </button>
           </div>
           

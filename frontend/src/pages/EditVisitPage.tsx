@@ -48,6 +48,16 @@ function EditVisitPage() {
     vision_refraction: { od: { sphere: null, cylinder: null, axis: null }, os: { sphere: null, cylinder: null, axis: null }, notes: undefined } as any,
     ordered_glasses: null,
     ordered_contacts: null,
+    dental_procedure_type: null,
+    dental_notes: null,
+    cleaning_type: null,
+    cavities_found: null,
+    cavities_filled: null,
+    xrays_taken: null,
+    fluoride_treatment: null,
+    sealants_applied: null,
+    next_appointment_date: null,
+    dental_procedures: null,
     vaccines_administered: [],
     prescriptions: [],
     tags: [],
@@ -141,6 +151,16 @@ function EditVisitPage() {
         vision_refraction: (visitData as any).vision_refraction || { od: { sphere: null, cylinder: null, axis: null }, os: { sphere: null, cylinder: null, axis: null }, notes: undefined },
         ordered_glasses: (visitData as any).ordered_glasses ?? visitData.needs_glasses ?? null,
         ordered_contacts: (visitData as any).ordered_contacts ?? null,
+        dental_procedure_type: (visitData as any).dental_procedure_type ?? null,
+        dental_notes: (visitData as any).dental_notes ?? null,
+        cleaning_type: (visitData as any).cleaning_type ?? null,
+        cavities_found: (visitData as any).cavities_found ?? null,
+        cavities_filled: (visitData as any).cavities_filled ?? null,
+        xrays_taken: (visitData as any).xrays_taken ?? null,
+        fluoride_treatment: (visitData as any).fluoride_treatment ?? null,
+        sealants_applied: (visitData as any).sealants_applied ?? null,
+        next_appointment_date: (visitData as any).next_appointment_date ?? null,
+        dental_procedures: (visitData as any).dental_procedures ?? null,
         vaccines_administered: visitData.vaccines_administered || [],
         prescriptions: visitData.prescriptions || [],
         tags: visitData.tags || [],
@@ -326,7 +346,8 @@ function EditVisitPage() {
                 Edit {visit.visit_type === 'wellness' ? 'Wellness' : 
                      visit.visit_type === 'sick' ? 'Sick' : 
                      visit.visit_type === 'injury' ? 'Injury' :
-                     'Vision'} Visit
+                     visit.visit_type === 'vision' ? 'Vision' :
+                     visit.visit_type === 'dental' ? 'Dental' : 'Visit'} Visit
               </h2>
             </div>
             <div className="visit-form-body-cell visit-detail-body">

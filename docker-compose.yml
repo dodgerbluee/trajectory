@@ -60,10 +60,7 @@ networks:
 volumes:
   postgres_data:
     name: trajectory_data
-    external: true
   uploads_data:
     name: trajectory_uploads
-    external: true
   avatars_data:
     name: trajectory_avatars
-    external: true

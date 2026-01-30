@@ -23,8 +23,8 @@ router.use(authenticate);
 // ============================================================================
 
 function validateVisitType(value: unknown): VisitType {
-  if (typeof value !== 'string' || !['wellness', 'sick', 'injury', 'vision'].includes(value)) {
-    throw new BadRequestError('visit_type must be "wellness", "sick", "injury", or "vision"');
+  if (typeof value !== 'string' || !['wellness', 'sick', 'injury', 'vision', 'dental'].includes(value)) {
+    throw new BadRequestError('visit_type must be "wellness", "sick", "injury", "vision", or "dental"');
   }
   return value as VisitType;
 }
@@ -158,6 +158,41 @@ function validatePrescriptions(value: unknown): PrescriptionInput[] | null {
     }
   });
   return value as PrescriptionInput[];
+}
+
+type DentalProcedure = {
+  procedure: string;
+  tooth_number?: string | null;
+  location?: string | null;
+  notes?: string | null;
+};
+
+function validateDentalProcedures(value: unknown): DentalProcedure[] | null {
+  if (value === undefined || value === null) return null;
+  if (!Array.isArray(value)) {
+    throw new BadRequestError('dental_procedures must be an array');
+  }
+  return value.map((v: unknown, idx: number) => {
+    if (typeof v !== 'object' || v === null) {
+      throw new BadRequestError(`dental_procedures[${idx}] must be an object`);
+    }
+    const proc = v as Record<string, unknown>;
+    if (typeof proc.procedure !== 'string') {
+      throw new BadRequestError(`dental_procedures[${idx}].procedure must be a string`);
+    }
+    return {
+      procedure: proc.procedure,
+      tooth_number: proc.tooth_number === undefined || proc.tooth_number === null 
+        ? null 
+        : String(proc.tooth_number),
+      location: proc.location === undefined || proc.location === null 
+        ? null 
+        : String(proc.location),
+      notes: proc.notes === undefined || proc.notes === null 
+        ? null 
+        : String(proc.notes),
+    };
+  });
 }
 
 type VisionEye = { sphere: number | null; cylinder: number | null; axis: number | null };
@@ -582,6 +617,18 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
       vision_refraction: validateVisionRefraction(req.body.vision_refraction),
       ordered_glasses: req.body.ordered_glasses === true ? true : (req.body.ordered_glasses === false ? false : null),
       ordered_contacts: req.body.ordered_contacts === true ? true : (req.body.ordered_contacts === false ? false : null),
+      
+      // Dental fields
+      dental_procedure_type: validateOptionalString(req.body.dental_procedure_type),
+      dental_notes: validateOptionalString(req.body.dental_notes),
+      cleaning_type: validateOptionalString(req.body.cleaning_type),
+      cavities_found: validateOptionalNumber(req.body.cavities_found, 0),
+      cavities_filled: validateOptionalNumber(req.body.cavities_filled, 0),
+      xrays_taken: req.body.xrays_taken === true ? true : (req.body.xrays_taken === false ? false : null),
+      fluoride_treatment: req.body.fluoride_treatment === true ? true : (req.body.fluoride_treatment === false ? false : null),
+      sealants_applied: req.body.sealants_applied === true ? true : (req.body.sealants_applied === false ? false : null),
+      next_appointment_date: validateOptionalDate(req.body.next_appointment_date),
+      dental_procedures: validateDentalProcedures(req.body.dental_procedures),
 
       vaccines_administered: req.body.vaccines_administered,
       prescriptions: req.body.prescriptions,
@@ -625,6 +672,8 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
           symptoms, temperature, illness_start_date, end_date, injury_type,
           injury_location, treatment,
           vision_prescription, vision_refraction, ordered_glasses, ordered_contacts,
+          dental_procedure_type, dental_notes, cleaning_type, cavities_found, cavities_filled,
+          xrays_taken, fluoride_treatment, sealants_applied, next_appointment_date, dental_procedures,
           vaccines_administered, prescriptions, tags, notes
         ) VALUES (
           $1, $2, $3, $4, $5, $6,
@@ -636,7 +685,8 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
           $18, $19, $20, $21, $22,
           $23, $24,
           $25, $26, $27, $28,
-          $29, $30, $31, $32
+          $29, $30, $31, $32, $33, $34, $35, $36, $37, $38,
+          $39, $40, $41, $42
         ) RETURNING *`,
         [
           input.child_id, input.visit_date, input.visit_type, input.location, input.doctor_name, input.title,
@@ -648,6 +698,8 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
           input.symptoms, input.temperature, input.illness_start_date ?? null, input.end_date ?? null, input.injury_type,
           input.injury_location, input.treatment,
           input.vision_prescription, input.vision_refraction ? JSON.stringify(input.vision_refraction) : null, input.ordered_glasses, input.ordered_contacts,
+          input.dental_procedure_type, input.dental_notes, input.cleaning_type, input.cavities_found, input.cavities_filled,
+          input.xrays_taken, input.fluoride_treatment, input.sealants_applied, input.next_appointment_date ?? null, input.dental_procedures ? JSON.stringify(input.dental_procedures) : null,
           vaccines, prescriptions ? JSON.stringify(prescriptions) : null, tagsJson, input.notes,
         ]
       );
@@ -981,6 +1033,77 @@ router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
       payload.ordered_contacts = v;
       updates.push(`ordered_contacts = $${paramCount++}`);
       values.push(v);
+    }
+
+    // Dental visit fields
+    if (req.body.dental_procedure_type !== undefined) {
+      const v = validateOptionalString(req.body.dental_procedure_type);
+      payload.dental_procedure_type = v;
+      updates.push(`dental_procedure_type = $${paramCount++}`);
+      values.push(v);
+    }
+
+    if (req.body.dental_notes !== undefined) {
+      const v = validateOptionalString(req.body.dental_notes);
+      payload.dental_notes = v;
+      updates.push(`dental_notes = $${paramCount++}`);
+      values.push(v);
+    }
+
+    if (req.body.cleaning_type !== undefined) {
+      const v = validateOptionalString(req.body.cleaning_type);
+      payload.cleaning_type = v;
+      updates.push(`cleaning_type = $${paramCount++}`);
+      values.push(v);
+    }
+
+    if (req.body.cavities_found !== undefined) {
+      const v = validateOptionalNumber(req.body.cavities_found, 0);
+      payload.cavities_found = v;
+      updates.push(`cavities_found = $${paramCount++}`);
+      values.push(v);
+    }
+
+    if (req.body.cavities_filled !== undefined) {
+      const v = validateOptionalNumber(req.body.cavities_filled, 0);
+      payload.cavities_filled = v;
+      updates.push(`cavities_filled = $${paramCount++}`);
+      values.push(v);
+    }
+
+    if (req.body.xrays_taken !== undefined) {
+      const v = req.body.xrays_taken === true ? true : (req.body.xrays_taken === false ? false : null);
+      payload.xrays_taken = v;
+      updates.push(`xrays_taken = $${paramCount++}`);
+      values.push(v);
+    }
+
+    if (req.body.fluoride_treatment !== undefined) {
+      const v = req.body.fluoride_treatment === true ? true : (req.body.fluoride_treatment === false ? false : null);
+      payload.fluoride_treatment = v;
+      updates.push(`fluoride_treatment = $${paramCount++}`);
+      values.push(v);
+    }
+
+    if (req.body.sealants_applied !== undefined) {
+      const v = req.body.sealants_applied === true ? true : (req.body.sealants_applied === false ? false : null);
+      payload.sealants_applied = v;
+      updates.push(`sealants_applied = $${paramCount++}`);
+      values.push(v);
+    }
+
+    if (req.body.next_appointment_date !== undefined) {
+      const v = validateOptionalDate(req.body.next_appointment_date);
+      payload.next_appointment_date = v;
+      updates.push(`next_appointment_date = $${paramCount++}`);
+      values.push(v);
+    }
+
+    if (req.body.dental_procedures !== undefined) {
+      const v = req.body.dental_procedures ? validateDentalProcedures(req.body.dental_procedures) : null;
+      payload.dental_procedures = v;
+      updates.push(`dental_procedures = $${paramCount++}`);
+      values.push(v ? JSON.stringify(v) : null);
     }
 
     if (req.body.vaccines_administered !== undefined) {

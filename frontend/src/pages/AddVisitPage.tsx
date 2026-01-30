@@ -60,6 +60,16 @@ function AddVisitPage() {
     ordered_glasses: null,
     ordered_contacts: null,
     vision_refraction: { od: { sphere: null, cylinder: null, axis: null }, os: { sphere: null, cylinder: null, axis: null }, notes: undefined } as any,
+    dental_procedure_type: null,
+    dental_notes: null,
+    cleaning_type: null,
+    cavities_found: null,
+    cavities_filled: null,
+    xrays_taken: null,
+    fluoride_treatment: null,
+    sealants_applied: null,
+    next_appointment_date: null,
+    dental_procedures: null,
     vaccines_administered: [],
     prescriptions: [],
     tags: [],
@@ -351,7 +361,8 @@ function AddVisitPage() {
                 Add {formData.visit_type === 'wellness' ? 'Wellness' :
                   formData.visit_type === 'sick' ? 'Sick' :
                     formData.visit_type === 'injury' ? 'Injury' :
-                      'Vision'} Visit
+                      formData.visit_type === 'vision' ? 'Vision' :
+                        formData.visit_type === 'dental' ? 'Dental' : 'Visit'} Visit
               </h2>
             </div>
             <div className="visit-form-body-cell visit-detail-body">

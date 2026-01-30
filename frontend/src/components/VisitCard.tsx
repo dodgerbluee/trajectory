@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { LuPaperclip, LuActivity, LuHeart, LuPill, LuEye } from 'react-icons/lu';
+import { LuPaperclip, LuActivity, LuHeart, LuPill, LuEye, LuSmile } from 'react-icons/lu';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
 import type { Visit } from '../types/api';
 import { formatDate } from '../lib/date-utils';
@@ -21,6 +21,7 @@ function VisitCard({ visit, childName, childId, hasAttachments }: VisitCardProps
             case 'sick': return 'Sick Visit';
             case 'injury': return 'Injury Visit';
             case 'vision': return 'Vision Visit';
+            case 'dental': return 'Dental Visit';
             default: return 'Visit';
         }
     })();
@@ -30,6 +31,7 @@ function VisitCard({ visit, childName, childId, hasAttachments }: VisitCardProps
         if (visit.visit_type === 'sick') return <LuPill className="visit-type-svg" />;
         if (visit.visit_type === 'injury') return <MdOutlinePersonalInjury className="visit-type-svg visit-type-svg--filled" />;
         if (visit.visit_type === 'vision') return <LuEye className="visit-type-svg" />;
+        if (visit.visit_type === 'dental') return <LuSmile className="visit-type-svg" />;
         return <LuActivity className="visit-type-svg" />;
     };
 

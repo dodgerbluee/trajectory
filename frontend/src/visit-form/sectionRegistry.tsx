@@ -18,6 +18,7 @@ import {
   IllnessSection,
   InjurySection,
   VisionSection,
+  DentalSection,
   VaccinesSection,
   PrescriptionsSection,
 } from './sections/SectionContents';
@@ -31,6 +32,7 @@ export type SectionId =
   | 'illness'
   | 'injury'
   | 'vision'
+  | 'dental'
   | 'vaccines'
   | 'prescriptions';
 
@@ -113,6 +115,14 @@ const SECTION_REGISTRY: SectionEntry[] = [
     optional: false,
   },
   {
+    id: 'dental',
+    label: 'Dental',
+    component: DentalSection as ComponentType<SectionContentProps>,
+    removable: true,
+    allowedVisitTypes: null,
+    optional: false,
+  },
+  {
     id: 'vaccines',
     label: 'Vaccines',
     component: VaccinesSection as ComponentType<SectionContentProps>,
@@ -148,6 +158,7 @@ const ADDABLE_SECTION_IDS: SectionId[] = [
   'illness',
   'injury',
   'vision',
+  'dental',
   'vaccines',
   'prescriptions',
 ];
