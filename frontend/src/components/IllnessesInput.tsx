@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type MouseEvent as ReactMouseEvent } from 'react';
 import { HiX } from 'react-icons/hi';
 import type { IllnessType } from '../types/api';
 
@@ -27,15 +27,18 @@ function IllnessesInput({ value, onChange, disabled }: IllnessesInputProps) {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
     const [selectedLocal, setSelectedLocal] = useState<IllnessType[]>([]);
-    const ref = useRef<HTMLDivElement | null>(null);
+    const outerRef = useRef<HTMLDivElement | null>(null);
+    const modalRef = useRef<HTMLDivElement | null>(null);
+
+    // Sync from parent only when modal is closed so we don't overwrite in-progress multi-select
+    useEffect(() => {
+        if (!open) setSelectedLocal([...value]);
+    }, [value, open]);
 
     useEffect(() => {
-        setSelectedLocal([...value]);
-    }, [value]);
-
-    useEffect(() => {
-        const onDoc = (e: MouseEvent) => {
-            if (open && ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        const onDoc = (e: globalThis.MouseEvent) => {
+            const target = e.target as Node;
+            if (open && modalRef.current && !modalRef.current.contains(target)) setOpen(false);
         };
         if (open) document.addEventListener('mousedown', onDoc);
         return () => document.removeEventListener('mousedown', onDoc);
@@ -47,9 +50,13 @@ function IllnessesInput({ value, onChange, disabled }: IllnessesInputProps) {
         setSelectedLocal(prev => prev.includes(ill) ? prev.filter(i => i !== ill) : [...prev, ill]);
     };
 
-    const handleSave = () => {
-        onChange(selectedLocal);
-        setOpen(false);
+    const handleSave = (e: ReactMouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const toSave = [...selectedLocal];
+        onChange(toSave);
+        // Defer closing so this click cannot hit elements that appear when modal unmounts
+        window.setTimeout(() => setOpen(false), 0);
     };
 
     const handleRemove = (ill: IllnessType) => {
@@ -59,7 +66,7 @@ function IllnessesInput({ value, onChange, disabled }: IllnessesInputProps) {
     const filtered = COMMON_ILLNESSES.filter(i => i.label.toLowerCase().includes(search.toLowerCase()));
 
     return (
-        <div className="illnesses-input-modern" ref={ref}>
+        <div className="illnesses-input-modern" ref={outerRef}>
             {value.length > 0 ? (
                 <div className="illnesses-badges-wrap">
                     <div className="vaccine-badges-list">
@@ -107,7 +114,7 @@ function IllnessesInput({ value, onChange, disabled }: IllnessesInputProps) {
             )}
             {open && (
                 <div className="vaccine-modal-overlay">
-                    <div className="vaccine-modal-content" ref={ref}>
+                    <div className="vaccine-modal-content" ref={modalRef}>
                         <div className="vaccine-modal-header">
                             <h3 className="vaccine-modal-title">Select Illnesses</h3>
                             <button

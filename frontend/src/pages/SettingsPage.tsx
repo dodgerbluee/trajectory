@@ -1,26 +1,34 @@
-import { useState, useEffect } from 'react';
-// breadcrumb removed; no Link needed
+import { useState, useEffect, useMemo } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
+import { usePreferences } from '../contexts/PreferencesContext';
 import { useAuth } from '../contexts/AuthContext';
 import Card from '../components/Card';
 import FormField from '../components/FormField';
 import Button from '../components/Button';
 import Notification from '../components/Notification';
+import Tabs from '../components/Tabs';
+import ChildAvatar from '../components/ChildAvatar';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorMessage from '../components/ErrorMessage';
 import { HiChevronDown, HiChevronUp } from 'react-icons/hi';
 import { FaLock } from 'react-icons/fa';
-import { LuSun, LuMoon, LuLaptop, LuSave, LuDownload, LuSettings, LuUser } from 'react-icons/lu';
-import { ApiClientError } from '../lib/api-client';
-import { formatDate } from '../lib/date-utils';
-
-type DateFormat = 'MM/DD/YYYY' | 'DD/MM/YYYY' | 'YYYY-MM-DD';
+import { LuSun, LuMoon, LuLaptop, LuSave, LuDownload, LuSettings, LuUser, LuUsers, LuUserPlus } from 'react-icons/lu';
+import { ApiClientError, exportApi, familiesApi, childrenApi } from '../lib/api-client';
+import type { Family, FamilyInvite, FamilyMember, Child } from '../types/api';
+import { FamilyOverviewCard, MemberRow, InviteRow } from '../components/family-settings';
+import RoleBadge from '../components/RoleBadge';
+import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
+import { formatDate, calculateAge, formatAge, type DateFormat } from '../lib/date-utils';
 
 function SettingsPage() {
+  const location = useLocation();
   const { theme, setTheme } = useTheme();
+  const { dateFormat, setDateFormat } = usePreferences();
   const { user, updateUsername, updatePassword, checkAuth } = useAuth();
-  const [activeTab, setActiveTab] = useState<'general' | 'user' | 'data'>('general');
-  const [dateFormat, setDateFormat] = useState<DateFormat>(() => {
-    return (localStorage.getItem('dateFormat') as DateFormat) || 'MM/DD/YYYY';
-  });
+  const { canEdit, refreshPermissions } = useFamilyPermissions();
+  const [activeTab, setActiveTab] = useState<'general' | 'user' | 'data' | 'family'>('general');
+  const [familySubTab, setFamilySubTab] = useState<'management' | 'members'>('members');
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   
   // User management state
@@ -40,17 +48,210 @@ function SettingsPage() {
   const [loading, setLoading] = useState({
     username: false,
     password: false,
+    export: false,
+    family: false,
+    familyCreate: false,
+    invite: false,
+    familyRename: false,
+    familyDelete: false,
+    familyLeave: false,
   });
+  const [familyActionId, setFamilyActionId] = useState<number | null>(null);
+  const [deleteConfirmFamily, setDeleteConfirmFamily] = useState<Family | null>(null);
+  const [confirmDeleteInput, setConfirmDeleteInput] = useState('');
+  const [deleteConfirmChild, setDeleteConfirmChild] = useState<Child | null>(null);
+  const [confirmDeleteChildInput, setConfirmDeleteChildInput] = useState('');
+  const [leaveConfirmFamily, setLeaveConfirmFamily] = useState<Family | null>(null);
+  const [showAddFamilyModal, setShowAddFamilyModal] = useState(false);
+  const [newFamilyName, setNewFamilyName] = useState('');
+  const [newFamilyNameError, setNewFamilyNameError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Family state
+  const INVITE_TOKENS_KEY = 'trajectory_invite_tokens';
+  const [families, setFamilies] = useState<Family[]>([]);
+  const [membersByFamily, setMembersByFamily] = useState<Record<number, FamilyMember[]>>({});
+  const [invitesByFamily, setInvitesByFamily] = useState<Record<number, FamilyInvite[]>>({});
+  const [newInviteToken, setNewInviteToken] = useState<{ familyId: number; token: string; role: string } | null>(null);
+  const [createInviteRole, setCreateInviteRole] = useState<'parent' | 'read_only'>('parent');
+  const [inviteTokens, setInviteTokens] = useState<Record<number, string>>(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem(INVITE_TOKENS_KEY) || '{}');
+    } catch {
+      return {};
+    }
+  });
+
+  // Kids (Members tab): list of children + Add Child
+  const [childrenList, setChildrenList] = useState<Child[]>([]);
+  const [loadingKids, setLoadingKids] = useState(false);
+  const [errorKids, setErrorKids] = useState<string | null>(null);
+  const [deletingChildId, setDeletingChildId] = useState<number | null>(null);
+
+  // Saving member role (familyId + userId) for inline role edit
+  const [savingMemberRole, setSavingMemberRole] = useState<{ familyId: number; userId: number } | null>(null);
+
+  // Open Family tab + sub-tab when navigating from dropdown (e.g. Family link)
   useEffect(() => {
-    localStorage.setItem('dateFormat', dateFormat);
-  }, [dateFormat]);
+    const state = location.state as { tab?: string; familySubTab?: string } | null;
+    if (state?.tab === 'family') {
+      setActiveTab('family');
+      if (state.familySubTab === 'management') setFamilySubTab('management');
+      else if (state.familySubTab === 'members') setFamilySubTab('members');
+    }
+  }, [location.state]);
 
   useEffect(() => {
     // Refresh user data when component mounts
     checkAuth();
   }, [checkAuth]);
+
+  useEffect(() => {
+    if (activeTab !== 'family') return;
+    let cancelled = false;
+    setLoading((l) => ({ ...l, family: true }));
+    familiesApi
+      .getAll()
+      .then((res) => {
+        if (cancelled) return;
+        setFamilies(res.data);
+        return Promise.all([
+          ...res.data.map((f) =>
+            familiesApi.getMembers(f.id).then((memRes) => {
+              if (!cancelled) setMembersByFamily((prev) => ({ ...prev, [f.id]: memRes.data }));
+            })
+          ),
+          ...res.data
+            .filter((f) => f.role === 'owner' || f.role === 'parent')
+            .map((f) =>
+              familiesApi.getInvites(f.id).then((invRes) => {
+                if (!cancelled) setInvitesByFamily((prev) => ({ ...prev, [f.id]: invRes.data }));
+              })
+            ),
+        ]);
+      })
+      .catch(() => {
+        if (!cancelled) setNotification({ message: 'Failed to load families', type: 'error' });
+      })
+      .finally(() => {
+        if (!cancelled) setLoading((l) => ({ ...l, family: false }));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab]);
+
+  const loadFamilies = async () => {
+    setLoading((l) => ({ ...l, family: true }));
+    try {
+      const res = await familiesApi.getAll();
+      setFamilies(res.data);
+      await Promise.all([
+        ...res.data.map((f) =>
+          familiesApi.getMembers(f.id).then((memRes) =>
+            setMembersByFamily((prev) => ({ ...prev, [f.id]: memRes.data }))
+          )
+        ),
+        ...res.data
+          .filter((f) => f.role === 'owner' || f.role === 'parent')
+          .map((f) =>
+            familiesApi.getInvites(f.id).then((invRes) =>
+              setInvitesByFamily((prev) => ({ ...prev, [f.id]: invRes.data }))
+            )
+          ),
+      ]);
+    } catch {
+      setNotification({ message: 'Failed to load families', type: 'error' });
+    } finally {
+      setLoading((l) => ({ ...l, family: false }));
+    }
+  };
+
+  const handleAddFamily = async (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setNewFamilyNameError('Family name is required');
+      return;
+    }
+    setNewFamilyNameError(null);
+    setLoading((l) => ({ ...l, familyCreate: true }));
+    try {
+      await familiesApi.create(trimmed);
+      setNotification({ message: 'Family created.', type: 'success' });
+      setShowAddFamilyModal(false);
+      setNewFamilyName('');
+      await loadFamilies();
+      await loadChildren();
+    } catch (err) {
+      setNotification({
+        message: err instanceof ApiClientError ? err.message : 'Failed to create family',
+        type: 'error',
+      });
+    } finally {
+      setLoading((l) => ({ ...l, familyCreate: false }));
+    }
+  };
+
+  const loadChildren = async () => {
+    setLoadingKids(true);
+    setErrorKids(null);
+    try {
+      const res = await childrenApi.getAll();
+      setChildrenList(res.data);
+    } catch (err) {
+      if (err instanceof ApiClientError) {
+        setErrorKids(err.message);
+      } else {
+        setErrorKids('Failed to load children');
+      }
+    } finally {
+      setLoadingKids(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'family' && familySubTab === 'members') {
+      loadChildren();
+    }
+  }, [activeTab, familySubTab]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleDeleteChild = async (child: Child) => {
+    setDeletingChildId(child.id);
+    setNotification(null);
+    try {
+      await childrenApi.delete(child.id);
+      setChildrenList((prev) => prev.filter((c) => c.id !== child.id));
+      setNotification({ message: `${child.name} has been deleted`, type: 'success' });
+      setTimeout(() => setNotification(null), 3000);
+      setDeleteConfirmChild(null);
+      setConfirmDeleteChildInput('');
+    } catch (err) {
+      if (err instanceof ApiClientError) {
+        setNotification({ message: err.message || 'Failed to delete child', type: 'error' });
+      } else {
+        setNotification({ message: 'Failed to delete child', type: 'error' });
+      }
+      setTimeout(() => setNotification(null), 4000);
+    } finally {
+      setDeletingChildId(null);
+    }
+  };
+
+  /** Children grouped by family_id for Members tab. Fallback: missing family_id → first family. */
+  const childrenByFamilyId = useMemo(() => {
+    const map: Record<number, Child[]> = {};
+    for (const f of families) map[f.id] = [];
+    for (const c of childrenList) {
+      const fid = c.family_id ?? families[0]?.id;
+      if (fid != null && map[fid]) map[fid].push(c);
+    }
+    for (const id of Object.keys(map)) {
+      map[Number(id)].sort(
+        (a, b) => new Date(a.date_of_birth).getTime() - new Date(b.date_of_birth).getTime()
+      );
+    }
+    return map;
+  }, [families, childrenList]);
 
   const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
     setTheme(newTheme);
@@ -64,10 +265,23 @@ function SettingsPage() {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const handleExportData = () => {
-    // Placeholder for future export functionality
-    setNotification({ message: 'Export functionality coming soon', type: 'error' });
-    setTimeout(() => setNotification(null), 3000);
+  const handleExportData = async () => {
+    setLoading((l) => ({ ...l, export: true }));
+    setNotification(null);
+    try {
+      await exportApi.download();
+      setNotification({ message: 'Export downloaded (ZIP with JSON, HTML report, and attachments)', type: 'success' });
+      setTimeout(() => setNotification(null), 4000);
+    } catch (err) {
+      if (err instanceof ApiClientError) {
+        setNotification({ message: err.message || 'Export failed', type: 'error' });
+      } else {
+        setNotification({ message: 'Export failed', type: 'error' });
+      }
+      setTimeout(() => setNotification(null), 4000);
+    } finally {
+      setLoading((l) => ({ ...l, export: false }));
+    }
   };
 
   const handleUpdateUsername = async (e: React.FormEvent) => {
@@ -175,26 +389,210 @@ function SettingsPage() {
     }
   };
 
-  const formatAccountDate = (dateString?: string) => {
-    if (!dateString) return 'N/A';
+  const handleCreateInvite = async (familyId: number) => {
+    setLoading((l) => ({ ...l, invite: true }));
+    setNewInviteToken(null);
+    setNotification(null);
     try {
-      const date = new Date(dateString);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      
-      switch (dateFormat) {
-        case 'MM/DD/YYYY':
-          return `${month}/${day}/${year}`;
-        case 'DD/MM/YYYY':
-          return `${day}/${month}/${year}`;
-        case 'YYYY-MM-DD':
-          return `${year}-${month}-${day}`;
-        default:
-          return formatDate(dateString);
+      const res = await familiesApi.createInvite(familyId, createInviteRole);
+      setNewInviteToken({
+        familyId,
+        token: res.data.token,
+        role: res.data.role,
+      });
+      setInviteTokens((prev) => {
+        const next = { ...prev, [res.data.id]: res.data.token };
+        sessionStorage.setItem(INVITE_TOKENS_KEY, JSON.stringify(next));
+        return next;
+      });
+      setInvitesByFamily((prev) => ({
+        ...prev,
+        [familyId]: [
+          {
+            id: res.data.id,
+            role: res.data.role,
+            expires_at: res.data.expires_at,
+            created_at: res.data.created_at,
+          },
+          ...(prev[familyId] || []),
+        ],
+      }));
+    } catch (err) {
+      if (err instanceof ApiClientError) {
+        setNotification({ message: err.message || 'Failed to create invite', type: 'error' });
+      } else {
+        setNotification({ message: 'Failed to create invite', type: 'error' });
       }
-    } catch {
-      return dateString;
+      setTimeout(() => setNotification(null), 4000);
+    } finally {
+      setLoading((l) => ({ ...l, invite: false }));
+    }
+  };
+
+  const handleRoleChange = async (
+    familyId: number,
+    userId: number,
+    newRole: 'parent' | 'read_only'
+  ) => {
+    setSavingMemberRole({ familyId, userId });
+    setNotification(null);
+    try {
+      await familiesApi.updateMemberRole(familyId, userId, newRole);
+      setMembersByFamily((prev) => ({
+        ...prev,
+        [familyId]: (prev[familyId] || []).map((m) =>
+          m.user_id === userId ? { ...m, role: newRole } : m
+        ),
+      }));
+      if (userId === user?.id) {
+        await refreshPermissions();
+      }
+      setNotification({ message: 'Role updated', type: 'success' });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (err) {
+      if (err instanceof ApiClientError) {
+        setNotification({ message: err.message || 'Failed to update role', type: 'error' });
+      } else {
+        setNotification({ message: 'Failed to update role', type: 'error' });
+      }
+      setTimeout(() => setNotification(null), 4000);
+    } finally {
+      setSavingMemberRole(null);
+    }
+  };
+
+  const handleRemoveMember = async (familyId: number, userId: number) => {
+    setNotification(null);
+    try {
+      await familiesApi.removeMember(familyId, userId);
+      setMembersByFamily((prev) => ({
+        ...prev,
+        [familyId]: (prev[familyId] || []).filter((m) => m.user_id !== userId),
+      }));
+      setNotification({ message: 'Member removed from family', type: 'success' });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (err) {
+      if (err instanceof ApiClientError) {
+        setNotification({ message: err.message || 'Failed to remove member', type: 'error' });
+      } else {
+        setNotification({ message: 'Failed to remove member', type: 'error' });
+      }
+      setTimeout(() => setNotification(null), 4000);
+    }
+  };
+
+  const handleRevokeInvite = async (familyId: number, inviteId: number) => {
+    setNotification(null);
+    try {
+      await familiesApi.revokeInvite(familyId, inviteId);
+      setInviteTokens((prev) => {
+        const next = { ...prev };
+        delete next[inviteId];
+        sessionStorage.setItem(INVITE_TOKENS_KEY, JSON.stringify(next));
+        return next;
+      });
+      setInvitesByFamily((prev) => ({
+        ...prev,
+        [familyId]: (prev[familyId] || []).filter((inv) => inv.id !== inviteId),
+      }));
+      setNotification({ message: 'Invite revoked', type: 'success' });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (err) {
+      if (err instanceof ApiClientError) {
+        setNotification({ message: err.message || 'Failed to revoke invite', type: 'error' });
+      } else {
+        setNotification({ message: 'Failed to revoke invite', type: 'error' });
+      }
+      setTimeout(() => setNotification(null), 4000);
+    }
+  };
+
+  const handleRenameFamily = async (familyId: number, name: string) => {
+    setFamilyActionId(familyId);
+    setLoading((l) => ({ ...l, familyRename: true }));
+    setNotification(null);
+    try {
+      await familiesApi.updateFamily(familyId, name);
+      setFamilies((prev) =>
+        prev.map((f) => (f.id === familyId ? { ...f, name } : f))
+      );
+      setNotification({ message: 'Family renamed', type: 'success' });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (err) {
+      if (err instanceof ApiClientError) {
+        setNotification({ message: err.message || 'Failed to rename family', type: 'error' });
+      } else {
+        setNotification({ message: 'Failed to rename family', type: 'error' });
+      }
+      setTimeout(() => setNotification(null), 4000);
+    } finally {
+      setLoading((l) => ({ ...l, familyRename: false }));
+      setFamilyActionId(null);
+    }
+  };
+
+  const handleDeleteFamily = async (familyId: number) => {
+    setFamilyActionId(familyId);
+    setLoading((l) => ({ ...l, familyDelete: true }));
+    setNotification(null);
+    try {
+      await familiesApi.deleteFamily(familyId);
+      setFamilies((prev) => prev.filter((f) => f.id !== familyId));
+      setMembersByFamily((prev) => {
+        const next = { ...prev };
+        delete next[familyId];
+        return next;
+      });
+      setInvitesByFamily((prev) => {
+        const next = { ...prev };
+        delete next[familyId];
+        return next;
+      });
+      setNotification({ message: 'Family deleted', type: 'success' });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (err) {
+      if (err instanceof ApiClientError) {
+        setNotification({ message: err.message || 'Failed to delete family', type: 'error' });
+      } else {
+        setNotification({ message: 'Failed to delete family', type: 'error' });
+      }
+      setTimeout(() => setNotification(null), 4000);
+    } finally {
+      setLoading((l) => ({ ...l, familyDelete: false }));
+      setFamilyActionId(null);
+    }
+  };
+
+  const handleLeaveFamily = async (familyId: number) => {
+    if (!user?.id) return;
+    setFamilyActionId(familyId);
+    setLoading((l) => ({ ...l, familyLeave: true }));
+    setNotification(null);
+    try {
+      await familiesApi.removeMember(familyId, user.id);
+      setFamilies((prev) => prev.filter((f) => f.id !== familyId));
+      setMembersByFamily((prev) => {
+        const next = { ...prev };
+        delete next[familyId];
+        return next;
+      });
+      setInvitesByFamily((prev) => {
+        const next = { ...prev };
+        delete next[familyId];
+        return next;
+      });
+      setNotification({ message: 'Left family', type: 'success' });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (err) {
+      if (err instanceof ApiClientError) {
+        setNotification({ message: err.message || 'Failed to leave family', type: 'error' });
+      } else {
+        setNotification({ message: 'Failed to leave family', type: 'error' });
+      }
+      setTimeout(() => setNotification(null), 4000);
+    } finally {
+      setLoading((l) => ({ ...l, familyLeave: false }));
+      setFamilyActionId(null);
     }
   };
 
@@ -229,6 +627,12 @@ function SettingsPage() {
           </div>
         </div>
 
+        <div className="settings-save-row">
+          <Button variant="primary" type="button" onClick={() => { setNotification({ message: 'Settings saved', type: 'success' }); setTimeout(() => setNotification(null), 3000); }}>
+            <LuSave style={{ marginRight: 8 }} /> Save
+          </Button>
+        </div>
+
         <div className="settings-section">
           <FormField
             label="Date Format"
@@ -243,6 +647,27 @@ function SettingsPage() {
           />
         </div>
 
+        <div className="support-section">
+          <h4 className="support-section-title">Support</h4>
+          <div className="support-content">
+            <a
+              href="https://www.buymeacoffee.com/dodgerbluel"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="support-coffee-link"
+            >
+              <img
+                src="https://cdn.buymeacoffee.com/buttons/v2/default-blue.png"
+                alt="Buy Me A Coffee"
+                className="support-coffee-button"
+              />
+            </a>
+            <p className="support-text">
+              Enjoying Trajectory? Consider supporting the project to help keep it running and improving.
+            </p>
+          </div>
+        </div>
+
         <Card title="About">
           <div className="settings-section">
             <div className="about-item">
@@ -255,12 +680,6 @@ function SettingsPage() {
             </div>
           </div>
         </Card>
-
-        <div className="settings-save-row">
-          <Button variant="primary" onClick={() => { setNotification({ message: 'Settings saved', type: 'success' }); setTimeout(() => setNotification(null), 3000); }}>
-            <LuSave style={{ marginRight: 8 }} /> Save
-          </Button>
-        </div>
       </Card>
     </div>
   );
@@ -270,12 +689,330 @@ function SettingsPage() {
       <Card title="Data Management">
         <div className="settings-section">
           <label className="settings-label">Export Data</label>
-          <p className="settings-description">Download all your data as a JSON file</p>
-          <Button variant="secondary" onClick={handleExportData}>
-            <LuDownload style={{ marginRight: 8 }} /> Export Data
-          </Button>
+          <p className="settings-description">
+            {canEdit
+              ? 'Download all your data as a ZIP (JSON, HTML report, and attachments). Only parents and owners can export.'
+              : 'Only parents and owners can export data. Read-only members do not have export access.'}
+          </p>
+          {canEdit && (
+            <Button variant="secondary" onClick={handleExportData} disabled={loading.export}>
+              <LuDownload style={{ marginRight: 8 }} /> {loading.export ? 'Preparing…' : 'Export my data'}
+            </Button>
+          )}
         </div>
       </Card>
+    </div>
+  );
+
+  const familyManagementContent = loading.family ? (
+    <div className="family-settings-loading">Loading…</div>
+  ) : families.length === 0 ? (
+    <div className="family-settings-empty">No families found.</div>
+  ) : (
+    <div className="family-management-list">
+      {families.map((family) => (
+        <Card key={family.id} className="family-management-family-card">
+          <header className="family-management-family-header" aria-label={`Family: ${family.name}`}>
+            <h2 id={`family-management-heading-${family.id}`} className="family-management-family-name">
+              {family.name}
+            </h2>
+            {family.role && <RoleBadge role={family.role} />}
+          </header>
+          <div className="family-management-family-body">
+            <FamilyOverviewCard
+              familyName={family.name}
+              members={membersByFamily[family.id] ?? []}
+              isOwner={family.role === 'owner'}
+              onRename={
+                family.role === 'owner'
+                  ? (name) => handleRenameFamily(family.id, name)
+                  : undefined
+              }
+              onRequestDelete={
+                family.role === 'owner'
+                  ? () => {
+                      setDeleteConfirmFamily(family);
+                      setConfirmDeleteInput('');
+                    }
+                  : undefined
+              }
+              onLeave={
+                family.role !== 'owner'
+                  ? () => setLeaveConfirmFamily(family)
+                  : undefined
+              }
+              isRenaming={loading.familyRename && familyActionId === family.id}
+              isDeleting={loading.familyDelete && familyActionId === family.id}
+              isLeaving={loading.familyLeave && familyActionId === family.id}
+              noCard
+            />
+
+            <section className="family-management-section" aria-labelledby={`family-members-heading-${family.id}`}>
+              <h3 id={`family-members-heading-${family.id}`} className="family-management-section-title">
+                Members
+              </h3>
+              <div className="family-management-section-content">
+                {!(membersByFamily[family.id]?.length) ? (
+                  <div className="family-settings-loading">Loading members…</div>
+                ) : (
+                  <div className="family-settings-members-list" role="list">
+                    {(membersByFamily[family.id] || []).map((member) => (
+                      <MemberRow
+                        key={member.user_id}
+                        member={member}
+                        currentUserId={user?.id}
+                        canEdit={family.role === 'owner' || family.role === 'parent'}
+                        canRemove={family.role === 'owner' || family.role === 'parent'}
+                        onRemove={() => handleRemoveMember(family.id, member.user_id)}
+                        onRoleChange={(userId, newRole) => handleRoleChange(family.id, userId, newRole)}
+                        savingUserId={
+                          savingMemberRole?.familyId === family.id ? savingMemberRole.userId : null
+                        }
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {(family.role === 'owner' || family.role === 'parent') && (
+              <>
+                <section className="family-management-section" aria-labelledby={`family-invite-heading-${family.id}`}>
+                  <h3 id={`family-invite-heading-${family.id}`} className="family-management-section-title">
+                    Invite member
+                  </h3>
+                  <div className="family-management-section-content">
+                    <div className="family-settings-invite-form">
+                    <div className="form-field" style={{ marginBottom: 0 }}>
+                      <label htmlFor={`invite-role-${family.id}`} className="form-label">
+                        Role
+                      </label>
+                      <select
+                        id={`invite-role-${family.id}`}
+                        className="form-input"
+                        value={createInviteRole}
+                        onChange={(e) => setCreateInviteRole(e.target.value as 'parent' | 'read_only')}
+                        style={{ width: 'auto', minWidth: 160 }}
+                        aria-label="Invite role"
+                      >
+                        <option value="parent">Parent (can edit)</option>
+                        <option value="read_only">View only</option>
+                      </select>
+                    </div>
+                    <button
+                      type="button"
+                      className="measurement-card-add"
+                      disabled={loading.invite}
+                      onClick={() => handleCreateInvite(family.id)}
+                      title="Create invite"
+                    >
+                      <LuUserPlus className="measurement-card-icon" size={18} aria-hidden />
+                      <span className="measurement-card-add-label">
+                        {loading.invite ? 'Creating…' : 'Create invite'}
+                      </span>
+                    </button>
+                  </div>
+                  <p className="family-settings-invite-helper">
+                    Share the invite link with the person you want to add. They'll need to sign in or create an account to join.
+                  </p>
+                  {newInviteToken?.familyId === family.id && (
+                    <div className="family-settings-invite-link-box">
+                      <span className="family-settings-invite-link-label">Invite link — copy and share</span>
+                      <div className="family-settings-invite-link-code">
+                        {typeof window !== 'undefined'
+                          ? `${window.location.origin}/invite?token=${newInviteToken.token}`
+                          : `/invite?token=${newInviteToken.token}`}
+                      </div>
+                      <div className="family-settings-invite-link-actions">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => {
+                            const inviteUrl =
+                              typeof window !== 'undefined'
+                                ? `${window.location.origin}/invite?token=${newInviteToken.token}`
+                                : `/invite?token=${newInviteToken.token}`;
+                            navigator.clipboard.writeText(inviteUrl);
+                            setNotification({ message: 'Invite link copied to clipboard', type: 'success' });
+                            setTimeout(() => setNotification(null), 2000);
+                          }}
+                        >
+                          Copy link
+                        </Button>
+                        <Button variant="secondary" size="sm" onClick={() => setNewInviteToken(null)}>
+                          Dismiss
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  </div>
+                </section>
+
+                <section className="family-management-section" aria-labelledby={`family-pending-heading-${family.id}`}>
+                  <h3 id={`family-pending-heading-${family.id}`} className="family-management-section-title">
+                    Pending invites
+                  </h3>
+                  <div className="family-management-section-content">
+                  {(invitesByFamily[family.id]?.length ?? 0) === 0 ? (
+                    <div className="family-settings-empty">No pending invites.</div>
+                  ) : (
+                    <div className="family-settings-invites-list" role="list">
+                      {(invitesByFamily[family.id] || []).map((inv) => (
+                        <InviteRow
+                          key={inv.id}
+                          invite={inv}
+                          hasToken={!!inviteTokens[inv.id]}
+                          onCopyLink={() => {
+                            const url =
+                              typeof window !== 'undefined'
+                                ? `${window.location.origin}/invite?token=${encodeURIComponent(inviteTokens[inv.id])}`
+                                : `/invite?token=${encodeURIComponent(inviteTokens[inv.id])}`;
+                            navigator.clipboard.writeText(url);
+                            setNotification({ message: 'Invite link copied', type: 'success' });
+                            setTimeout(() => setNotification(null), 2000);
+                          }}
+                          onRevoke={() => handleRevokeInvite(family.id, inv.id)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  </div>
+                </section>
+              </>
+            )}
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+
+  const familyContent = (
+    <div className="card">
+      <h1 className="card-title">Family Settings</h1>
+      <p className="family-settings-page-subtitle">
+        See who's in your family, invite others, and manage access.
+      </p>
+      <Tabs
+        activeTab={familySubTab}
+        onTabChange={(id) => setFamilySubTab(id as 'management' | 'members')}
+        tabs={[
+          {
+            id: 'members',
+            label: 'Members',
+            content: (
+              <div className="family-members-tab">
+                {loadingKids && <LoadingSpinner message="Loading children…" />}
+                {errorKids && <ErrorMessage message={errorKids} onRetry={loadChildren} />}
+                {!loadingKids && !errorKids && (
+                  <div className="family-members-by-family">
+                    {[...families]
+                      .sort((a, b) => a.id - b.id)
+                      .map((family) => {
+                        const kids = childrenByFamilyId[family.id] ?? [];
+                        const canEditFamily = family.role === 'owner' || family.role === 'parent';
+                        return (
+                          <Card key={family.id} title={family.name} className="family-members-family-card">
+                            <div className="family-members-kids-grid">
+                              {kids.map((child) => {
+                                const age = calculateAge(child.date_of_birth);
+                                const ageText = formatAge(age.years, age.months);
+                                return (
+                                  <Card key={child.id} className="family-card">
+                                    <div className="family-content">
+                                      <div className="family-avatar">
+                                        <ChildAvatar
+                                          avatar={child.avatar}
+                                          gender={child.gender}
+                                          alt={`${child.name}'s avatar`}
+                                          className="family-avatar-img"
+                                        />
+                                      </div>
+                                      <div className="family-info">
+                                        <h2 className="family-name">{child.name}</h2>
+                                        <div className="family-details">
+                                          <span>{ageText}</span>
+                                          <span>•</span>
+                                          <span>{formatDate(child.date_of_birth)}</span>
+                                        </div>
+                                      </div>
+                                      {canEditFamily && (
+                                        <div className="family-actions">
+                                          <Link to={`/children/${child.id}/edit`}>
+                                            <Button variant="secondary" size="sm">Edit</Button>
+                                          </Link>
+                                          <Button
+                                            variant="danger"
+                                            size="sm"
+                                            onClick={() => {
+                                              setDeleteConfirmChild(child);
+                                              setConfirmDeleteChildInput('');
+                                            }}
+                                            disabled={deletingChildId === child.id}
+                                          >
+                                            {deletingChildId === child.id ? 'Deleting…' : 'Delete'}
+                                          </Button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </Card>
+                                );
+                              })}
+                              {canEditFamily && (
+                                <Link
+                                  to="/children/new"
+                                  state={{ familyId: family.id }}
+                                  className="family-add-link"
+                                >
+                                  <Card className="family-card family-add-card">
+                                    <div className="family-content">
+                                      <div className="family-avatar">
+                                        <div className="family-add-avatar">+</div>
+                                      </div>
+                                      <div className="family-info">
+                                        <h2 className="family-name">Add Child</h2>
+                                        <div className="family-details">
+                                          <span>Add a child to {family.name}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </Card>
+                                </Link>
+                              )}
+                            </div>
+                          </Card>
+                        );
+                      })}
+                    <button
+                      type="button"
+                      onClick={() => setShowAddFamilyModal(true)}
+                      className="family-add-family-button"
+                    >
+                      <Card className="family-card family-add-card">
+                        <div className="family-content">
+                          <div className="family-avatar">
+                            <div className="family-add-avatar">+</div>
+                          </div>
+                          <div className="family-info">
+                            <h2 className="family-name">Add Family</h2>
+                            <div className="family-details">
+                              <span>Create a new family</span>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ),
+          },
+          {
+            id: 'management',
+            label: 'Management',
+            content: familyManagementContent,
+          },
+        ]}
+      />
     </div>
   );
 
@@ -286,7 +1023,7 @@ function SettingsPage() {
         <div className="user-info-card">
           <div className="user-info-row">
             <span className="user-info-label">Username:</span>
-            <span className="user-info-value">{user?.name || 'N/A'}</span>
+            <span className="user-info-value">{user?.username || 'N/A'}</span>
           </div>
           <div className="user-info-row">
             <span className="user-info-label">Email:</span>
@@ -294,7 +1031,7 @@ function SettingsPage() {
           </div>
           <div className="user-info-row">
             <span className="user-info-label">Account Created:</span>
-            <span className="user-info-value">{formatAccountDate(user?.createdAt)}</span>
+            <span className="user-info-value">{user?.createdAt ? formatDate(user.createdAt) : 'N/A'}</span>
           </div>
         </div>
 
@@ -537,6 +1274,10 @@ function SettingsPage() {
                 <LuSettings className="sidebar-icon" />
                 <span>General</span>
               </button>
+              <button className={`sidebar-item ${activeTab === 'family' ? 'active' : ''}`} onClick={() => setActiveTab('family')}>
+                <LuUsers className="sidebar-icon" />
+                <span>Family</span>
+              </button>
               <button className={`sidebar-item ${activeTab === 'user' ? 'active' : ''}`} onClick={() => setActiveTab('user')}>
                 <LuUser className="sidebar-icon" />
                 <span>User</span>
@@ -548,12 +1289,306 @@ function SettingsPage() {
             </aside>
 
                 <main className="settings-main">
-                  {activeTab === 'general' ? generalContent : activeTab === 'user' ? userContent : dataContent}
+                  {activeTab === 'general' && generalContent}
+                  {activeTab === 'user' && userContent}
+                  {activeTab === 'data' && dataContent}
+                  {activeTab === 'family' && familyContent}
                 </main>
           </div>
 
           {/* footer removed - Save moved into General preferences */}
         </Card>
+
+      {leaveConfirmFamily && (
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="leave-family-modal-title"
+          onClick={() => setLeaveConfirmFamily(null)}
+        >
+          <div
+            className="modal-content delete-family-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h2 id="leave-family-modal-title">
+                ⚠️ Leave family
+              </h2>
+              <button
+                type="button"
+                className="modal-close"
+                aria-label="Close"
+                onClick={() => setLeaveConfirmFamily(null)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <p className="delete-family-modal-alert">
+                🚨 You will lose access to <strong>{leaveConfirmFamily.name}</strong> and all of its data. You can only rejoin if someone invites you again.
+              </p>
+              <p className="delete-family-modal-instruction">
+                Are you sure you want to leave this family?
+              </p>
+            </div>
+            <div className="modal-footer">
+              <Button
+                variant="secondary"
+                onClick={() => setLeaveConfirmFamily(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                disabled={loading.familyLeave}
+                onClick={() => {
+                  handleLeaveFamily(leaveConfirmFamily.id);
+                  setLeaveConfirmFamily(null);
+                }}
+              >
+                {loading.familyLeave ? 'Leaving…' : 'Leave family'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteConfirmFamily && (
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-family-modal-title"
+          onClick={() => {
+            setDeleteConfirmFamily(null);
+            setConfirmDeleteInput('');
+          }}
+        >
+          <div
+            className="modal-content delete-family-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h2 id="delete-family-modal-title">
+                ⚠️ Delete family
+              </h2>
+              <button
+                type="button"
+                className="modal-close"
+                aria-label="Close"
+                onClick={() => {
+                  setDeleteConfirmFamily(null);
+                  setConfirmDeleteInput('');
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <p className="delete-family-modal-alert">
+                🚨 <strong>This action cannot be undone.</strong> All members will lose access to this family and its data.
+              </p>
+              <p className="delete-family-modal-instruction">
+                Type <strong>delete {deleteConfirmFamily.name}</strong> below to confirm.
+              </p>
+              <input
+                type="text"
+                className="form-input delete-family-modal-input"
+                value={confirmDeleteInput}
+                onChange={(e) => setConfirmDeleteInput(e.target.value)}
+                placeholder={`delete ${deleteConfirmFamily.name}`}
+                aria-label="Type confirmation phrase"
+                autoComplete="off"
+              />
+            </div>
+            <div className="modal-footer">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setDeleteConfirmFamily(null);
+                  setConfirmDeleteInput('');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                disabled={
+                  confirmDeleteInput.trim() !== `delete ${deleteConfirmFamily.name}` ||
+                  loading.familyDelete
+                }
+                onClick={() => {
+                  handleDeleteFamily(deleteConfirmFamily.id);
+                  setDeleteConfirmFamily(null);
+                  setConfirmDeleteInput('');
+                }}
+              >
+                {loading.familyDelete ? 'Deleting…' : 'Delete family'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteConfirmChild && (
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-child-modal-title"
+          onClick={() => {
+            setDeleteConfirmChild(null);
+            setConfirmDeleteChildInput('');
+          }}
+        >
+          <div
+            className="modal-content delete-family-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h2 id="delete-child-modal-title">
+                ⚠️ Delete {deleteConfirmChild.name}
+              </h2>
+              <button
+                type="button"
+                className="modal-close"
+                aria-label="Close"
+                onClick={() => {
+                  setDeleteConfirmChild(null);
+                  setConfirmDeleteChildInput('');
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <p className="delete-family-modal-alert">
+                🚨 <strong>This action cannot be undone.</strong> All associated visits and data will be permanently deleted.
+              </p>
+              <p className="delete-family-modal-instruction">
+                Type <strong>delete {deleteConfirmChild.name}</strong> below to confirm.
+              </p>
+              <input
+                type="text"
+                className="form-input delete-family-modal-input"
+                value={confirmDeleteChildInput}
+                onChange={(e) => setConfirmDeleteChildInput(e.target.value)}
+                placeholder={`delete ${deleteConfirmChild.name}`}
+                aria-label="Type confirmation phrase"
+                autoComplete="off"
+              />
+            </div>
+            <div className="modal-footer">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setDeleteConfirmChild(null);
+                  setConfirmDeleteChildInput('');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                disabled={
+                  confirmDeleteChildInput.trim() !== `delete ${deleteConfirmChild.name}` ||
+                  deletingChildId === deleteConfirmChild.id
+                }
+                onClick={() => handleDeleteChild(deleteConfirmChild)}
+              >
+                {deletingChildId === deleteConfirmChild.id ? 'Deleting…' : 'Delete'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAddFamilyModal && (
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="add-family-modal-title"
+          onClick={() => {
+            if (!loading.familyCreate) {
+              setShowAddFamilyModal(false);
+              setNewFamilyName('');
+              setNewFamilyNameError(null);
+            }
+          }}
+        >
+          <div
+            className="modal-content delete-family-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h2 id="add-family-modal-title">Create family</h2>
+              <button
+                type="button"
+                className="modal-close"
+                aria-label="Close"
+                disabled={loading.familyCreate}
+                onClick={() => {
+                  setShowAddFamilyModal(false);
+                  setNewFamilyName('');
+                  setNewFamilyNameError(null);
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="form-field">
+                <label htmlFor="new-family-name" className="form-label">
+                  Family name
+                </label>
+                <input
+                  id="new-family-name"
+                  type="text"
+                  className={`form-input ${newFamilyNameError ? 'error' : ''}`}
+                  value={newFamilyName}
+                  onChange={(e) => {
+                    setNewFamilyName(e.target.value);
+                    setNewFamilyNameError(null);
+                  }}
+                  placeholder="e.g. Smith Family"
+                  disabled={loading.familyCreate}
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddFamily(newFamilyName);
+                    }
+                  }}
+                />
+                {newFamilyNameError && (
+                  <span className="form-error">{newFamilyNameError}</span>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <Button
+                variant="secondary"
+                disabled={loading.familyCreate}
+                onClick={() => {
+                  setShowAddFamilyModal(false);
+                  setNewFamilyName('');
+                  setNewFamilyNameError(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                disabled={loading.familyCreate || !newFamilyName.trim()}
+                onClick={() => handleAddFamily(newFamilyName)}
+              >
+                {loading.familyCreate ? 'Creating…' : 'Create'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );

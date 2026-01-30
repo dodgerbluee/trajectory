@@ -11,6 +11,7 @@ import Notification from '../components/Notification';
 import VisitAttachmentsList from '../components/VisitAttachmentsList';
 import Tabs from '../components/Tabs';
 import { useAuth } from '../contexts/AuthContext';
+import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
 import { VisionRefractionCard } from '../components/VisionRefractionCard';
 import AuditDiffView from '../components/AuditDiffView';
 import type { AuditHistoryEvent } from '../types/api';
@@ -20,6 +21,7 @@ function VisitDetailPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { canEdit } = useFamilyPermissions();
   
   const [visit, setVisit] = useState<Visit | null>(null);
   const [child, setChild] = useState<Child | null>(null);
@@ -164,6 +166,7 @@ function VisitDetailPage() {
             <Link to={`/children/${visit.child_id}`} className="breadcrumb">
               ← Back to {child.name}
             </Link>
+            {canEdit && (
             <div className="visit-detail-actions">
               <Link 
                 to={`/visits/${visit.id}/edit`}
@@ -175,6 +178,7 @@ function VisitDetailPage() {
                 {deleting ? 'Deleting...' : 'Delete Visit'}
               </Button>
             </div>
+            )}
           </div>
 
           {/* Visit Header */}
@@ -183,7 +187,8 @@ function VisitDetailPage() {
               {visit.visit_type === 'wellness' ? 'Wellness Visit' : 
                visit.visit_type === 'sick' ? 'Sick Visit' : 
                visit.visit_type === 'injury' ? 'Injury Visit' :
-               'Vision Visit'}
+               visit.visit_type === 'vision' ? 'Vision Visit' :
+               visit.visit_type === 'dental' ? 'Dental Visit' : 'Visit'}
             </h2>
             <p className="visit-header-date">{formatDate(visit.visit_date)}</p>
           </div>
@@ -307,6 +312,59 @@ function VisitDetailPage() {
                           <span className="visit-info-label">Ordered Contacts:</span>
                           <span className="visit-info-value">{(visit as any).ordered_contacts ? 'Yes' : 'No'}</span>
                         </div>
+                      </div>
+                    )}
+
+                    {visit.visit_type === 'dental' && (
+                      <div className="visit-info-stacked">
+                        {(visit as any).dental_procedure_type && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Dental Visit Type:</span>
+                            <span className="visit-info-value">{(visit as any).dental_procedure_type}</span>
+                          </div>
+                        )}
+                        {(visit as any).cleaning_type && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Cleaning Type:</span>
+                            <span className="visit-info-value">{(visit as any).cleaning_type}</span>
+                          </div>
+                        )}
+                        {(visit as any).cavities_found !== null && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Cavities Found:</span>
+                            <span className="visit-info-value">{(visit as any).cavities_found}</span>
+                          </div>
+                        )}
+                        {(visit as any).cavities_filled !== null && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Cavities Filled:</span>
+                            <span className="visit-info-value">{(visit as any).cavities_filled}</span>
+                          </div>
+                        )}
+                        <div className="visit-info-item">
+                          <span className="visit-info-label">X-Rays Taken:</span>
+                          <span className="visit-info-value">{(visit as any).xrays_taken ? 'Yes' : 'No'}</span>
+                        </div>
+                        <div className="visit-info-item">
+                          <span className="visit-info-label">Fluoride Treatment:</span>
+                          <span className="visit-info-value">{(visit as any).fluoride_treatment ? 'Yes' : 'No'}</span>
+                        </div>
+                        <div className="visit-info-item">
+                          <span className="visit-info-label">Sealants Applied:</span>
+                          <span className="visit-info-value">{(visit as any).sealants_applied ? 'Yes' : 'No'}</span>
+                        </div>
+                        {(visit as any).next_appointment_date && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Next Appointment:</span>
+                            <span className="visit-info-value">{formatDate((visit as any).next_appointment_date)}</span>
+                          </div>
+                        )}
+                        {(visit as any).dental_notes && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Notes:</span>
+                            <span className="visit-info-value">{(visit as any).dental_notes}</span>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -444,7 +502,7 @@ function VisitDetailPage() {
 interface VisitHistoryProps {
   history: AuditHistoryEvent[];
   loading: boolean;
-  user: { name: string } | null;
+  user: { username: string } | null;
 }
 
 function VisitHistory({ history, loading, user }: VisitHistoryProps) {
@@ -488,7 +546,7 @@ function VisitHistory({ history, loading, user }: VisitHistoryProps) {
               </span>
               <span className="visit-history-description-compact">{summaryDisplay}</span>
               <span className="visit-history-date-compact">{dateDisplay}</span>
-              <span className="visit-history-user-compact">{entry.user_name || user?.name || 'Unknown'}</span>
+              <span className="visit-history-user-compact">{entry.user_name || user?.username || 'Unknown'}</span>
               <span className="visit-history-chevron" aria-hidden>›</span>
             </button>
           );
@@ -523,7 +581,7 @@ function VisitHistory({ history, loading, user }: VisitHistoryProps) {
             <div className="history-detail-meta">
               <span className="history-detail-date">{safeFormatDateTime(selectedEntry.changed_at)}</span>
               <span className="history-detail-sep">·</span>
-              <span className="history-detail-user">{selectedEntry.user_name || user?.name || 'Unknown'}</span>
+              <span className="history-detail-user">{selectedEntry.user_name || user?.username || 'Unknown'}</span>
             </div>
             <div className="history-detail-body">
               {selectedEntry.changes && Object.keys(selectedEntry.changes).length > 0 ? (

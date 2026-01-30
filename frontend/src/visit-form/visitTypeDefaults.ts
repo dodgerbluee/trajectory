@@ -19,6 +19,7 @@ export const VISIT_TYPE_DEFAULTS: Record<VisitType, SectionId[]> = {
   sick: ['visit-information', 'illness', 'notes', 'attachments'],
   injury: ['visit-information', 'injury', 'notes', 'attachments'],
   vision: ['visit-information', 'vision', 'notes', 'attachments'],
+  dental: ['visit-information', 'dental', 'notes', 'attachments'],
 };
 
 /**

@@ -1,4 +1,4 @@
-import { childrenApi } from '../lib/api-client';
+import ChildAvatar from './ChildAvatar';
 import type { Child } from '../types/api';
 import { useMemo } from 'react';
 
@@ -21,37 +21,32 @@ function ChildPills({ childrenList, selectedChildId, onSelect }: Props) {
           title="All Children"
         >
           <div className="all-avatars">
-            {childrenList.slice(0, 4).map((c, i) => {
-              const avatarUrl = c.avatar ? childrenApi.getAvatarUrl(c.avatar) : childrenApi.getDefaultAvatarUrl(c.gender);
-              return (
-                <img
-                  key={c.id}
-                  src={avatarUrl}
-                  alt={c.name}
-                  className="all-avatar-item"
-                  style={{ marginLeft: i === 0 ? 0 : -25, zIndex: 10 - i }}
-                />
-              );
-            })}
+            {childrenList.slice(0, 4).map((c, i) => (
+              <ChildAvatar
+                key={c.id}
+                avatar={c.avatar}
+                gender={c.gender}
+                alt={c.name}
+                className="all-avatar-item"
+                style={{ marginLeft: i === 0 ? 0 : -25, zIndex: 10 - i }}
+              />
+            ))}
           </div>
           <span className="pill-label">All</span>
         </button>
 
-        {options.map((c) => {
-          const avatarUrl = c.avatar ? childrenApi.getAvatarUrl(c.avatar) : childrenApi.getDefaultAvatarUrl(c.gender);
-          return (
-            <button
-              key={c.id}
-              type="button"
-              className={`pill ${selectedChildId === c.id ? 'active' : ''}`}
-              onClick={() => onSelect(c.id)}
-              title={c.name}
-            >
-              <img src={avatarUrl} alt={c.name} className="pill-avatar" />
-              <span className="pill-label">{c.name}</span>
-            </button>
-          );
-        })}
+        {options.map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            className={`pill ${selectedChildId === c.id ? 'active' : ''}`}
+            onClick={() => onSelect(c.id)}
+            title={c.name}
+          >
+            <ChildAvatar avatar={c.avatar} gender={c.gender} alt={c.name} className="pill-avatar" />
+            <span className="pill-label">{c.name}</span>
+          </button>
+        ))}
       </div>
 
       <div className="child-combobox">

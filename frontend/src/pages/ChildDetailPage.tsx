@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { LuActivity, LuHeart, LuThermometer } from 'react-icons/lu';
 import { childrenApi, visitsApi, illnessesApi, ApiClientError } from '../lib/api-client';
+import ChildAvatar from '../components/ChildAvatar';
 import type { Child, Visit, VisitType, Illness, VisitAttachment, ChildAttachment } from '../types/api';
 import { calculateAge, formatAge, formatDate } from '../lib/date-utils';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -22,7 +23,8 @@ import TrendsSidebar from '../components/TrendsSidebar';
 import MetricsView from '../components/MetricsView';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
 import { LuPill } from 'react-icons/lu';
-import { LuEye } from 'react-icons/lu';
+import { LuEye, LuSmile } from 'react-icons/lu';
+import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
 // replaced local mask icon with Lucide thermometer for illness
 
 function ChildDetailPage() {
@@ -36,12 +38,13 @@ function ChildDetailPage() {
   const [lastWellnessVisit, setLastWellnessVisit] = useState<Visit | null>(null);
   const [lastSickVisit, setLastSickVisit] = useState<Visit | null>(null);
   const [lastVisionVisit, setLastVisionVisit] = useState<Visit | null>(null);
+  const [lastDentalVisit, setLastDentalVisit] = useState<Visit | null>(null);
   const [lastInjuryVisit, setLastInjuryVisit] = useState<Visit | null>(null);
   const [lastIllness, setLastIllness] = useState<Illness | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showVisitTypeModal, setShowVisitTypeModal] = useState(false);
-  const [visitTypeFilter, setVisitTypeFilter] = useState<'all' | 'wellness' | 'sick' | 'injury' | 'vision'>('all');
+  const [visitTypeFilter, setVisitTypeFilter] = useState<'all' | 'wellness' | 'sick' | 'injury' | 'vision' | 'dental'>('all');
   const [filterIllnessStatus, setFilterIllnessStatus] = useState<'ongoing' | 'ended' | undefined>(undefined);
   const [metricsActiveTab, setMetricsActiveTab] = useState<'illness' | 'growth'>('illness');
   const [metricsYear, setMetricsYear] = useState<number>(new Date().getFullYear());
@@ -52,6 +55,7 @@ function ChildDetailPage() {
   const [showAvatarEditor, setShowAvatarEditor] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const { canEdit } = useFamilyPermissions();
   const [notification, setNotification] = useState<{
     message: string;
     type: 'success' | 'error';
@@ -76,12 +80,13 @@ function ChildDetailPage() {
     try {
       setLoading(true);
       setError(null);
-      const [childResponse, allVisitsResponse, wellnessVisitsResponse, sickVisitsResponse, visionVisitsResponse, illnessesResponse] = await Promise.all([
+      const [childResponse, allVisitsResponse, wellnessVisitsResponse, sickVisitsResponse, visionVisitsResponse, dentalVisitsResponse, illnessesResponse] = await Promise.all([
         childrenApi.getById(childId),
         visitsApi.getAll({ child_id: childId }),
         visitsApi.getAll({ child_id: childId, visit_type: 'wellness' }),
         visitsApi.getAll({ child_id: childId, visit_type: 'sick' }),
         visitsApi.getAll({ child_id: childId, visit_type: 'vision' }),
+        visitsApi.getAll({ child_id: childId, visit_type: 'dental' }),
         illnessesApi.getAll({ child_id: childId }),
       ]);
       
@@ -132,6 +137,11 @@ function ChildDetailPage() {
       // Get most recent vision visit
       if (visionVisitsResponse.data.length > 0) {
         setLastVisionVisit(visionVisitsResponse.data[0]);
+      }
+      
+      // Get most recent dental visit
+      if (dentalVisitsResponse.data.length > 0) {
+        setLastDentalVisit(dentalVisitsResponse.data[0]);
       }
     } catch (err) {
       if (err instanceof ApiClientError) {
@@ -347,21 +357,33 @@ function ChildDetailPage() {
             <div className="overview-header">
               <div className="overview-main">
                 <div className="overview-avatar">
-                  <button
-                    type="button"
-                    onClick={() => setShowAvatarEditor(true)}
-                    className="overview-avatar-button"
-                    title="Click to edit avatar"
-                  >
-                    <img
-                      src={child.avatar ? childrenApi.getAvatarUrl(child.avatar) : childrenApi.getDefaultAvatarUrl(child.gender)}
-                      alt={`${child.name}'s avatar`}
-                      className="overview-avatar-img"
-                    />
-                    <div className="overview-avatar-overlay">
-                      <span className="overview-avatar-edit-icon">✏️</span>
+                  {canEdit ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowAvatarEditor(true)}
+                      className="overview-avatar-button"
+                      title="Click to edit avatar"
+                    >
+                      <ChildAvatar
+                        avatar={child.avatar}
+                        gender={child.gender}
+                        alt={`${child.name}'s avatar`}
+                        className="overview-avatar-img"
+                      />
+                      <div className="overview-avatar-overlay">
+                        <span className="overview-avatar-edit-icon">✏️</span>
+                      </div>
+                    </button>
+                  ) : (
+                    <div className="overview-avatar-static">
+                      <ChildAvatar
+                        avatar={child.avatar}
+                        gender={child.gender}
+                        alt={`${child.name}'s avatar`}
+                        className="overview-avatar-img"
+                      />
                     </div>
-                  </button>
+                  )}
                 </div>
                 <div className="overview-info">
                   <h1 className="overview-name">{child.name}</h1>
@@ -450,6 +472,19 @@ function ChildDetailPage() {
                   </div>
                 </Link>
               )}
+              {lastDentalVisit && (
+                <Link to={`/visits/${lastDentalVisit.id}`} className="overview-last-visit-link">
+                  <div className="overview-last-visit">
+                    <div className={`visit-icon-outline visit-icon--dental`} aria-hidden="true">
+                      <LuSmile className="visit-type-svg" />
+                    </div>
+                    <div className="overview-visit-info">
+                      <span className="overview-visit-label">Last Dental Visit:</span>
+                      <span className="overview-visit-date">{formatDate(lastDentalVisit.visit_date)}</span>
+                    </div>
+                  </div>
+                </Link>
+              )}
               {lastInjuryVisit && (
                 <Link to={`/visits/${lastInjuryVisit.id}`} className="overview-last-visit-link">
                   <div className="overview-last-visit">
@@ -476,7 +511,7 @@ function ChildDetailPage() {
                   </div>
                 </Link>
               )}
-              {!lastWellnessVisit && !lastSickVisit && !lastVisionVisit && (
+              {!lastWellnessVisit && !lastSickVisit && !lastVisionVisit && !lastDentalVisit && (
                 <div className="overview-no-visits">No visits recorded yet</div>
               )}
             </div>
@@ -533,6 +568,14 @@ function ChildDetailPage() {
                           color: 'purple',
                           onClick: () => setVisitTypeFilter('vision'),
                           active: visitTypeFilter === 'vision',
+                        },
+                        {
+                          label: 'Dental',
+                          value: visits.filter((v) => v.visit_type === 'dental').length,
+                          icon: LuSmile,
+                          color: 'teal',
+                          onClick: () => setVisitTypeFilter('dental'),
+                          active: visitTypeFilter === 'dental',
                         },
                       ]}
                       // Child detail page already implies the child; hide selector.

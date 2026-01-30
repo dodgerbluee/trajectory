@@ -68,6 +68,11 @@ jobs:
         working-directory: ${{ matrix.component }}
         run: npm run lint
       
+      - name: Test (backend only)
+        if: matrix.component == 'backend'
+        working-directory: ${{ matrix.component }}
+        run: npm test
+      
       - name: Build
         working-directory: ${{ matrix.component }}
         run: npm run build

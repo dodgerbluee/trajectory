@@ -1,4 +1,4 @@
-import { useState, FormEvent, useEffect, useMemo } from 'react';
+import { useState, FormEvent, useEffect, useMemo, useRef, type Dispatch, type SetStateAction } from 'react';
 import { Link, useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { visitsApi, childrenApi, ApiClientError } from '../lib/api-client';
 import type { Child, CreateVisitInput, VisitType, IllnessType } from '../types/api';
@@ -60,6 +60,16 @@ function AddVisitPage() {
     ordered_glasses: null,
     ordered_contacts: null,
     vision_refraction: { od: { sphere: null, cylinder: null, axis: null }, os: { sphere: null, cylinder: null, axis: null }, notes: undefined } as any,
+    dental_procedure_type: null,
+    dental_notes: null,
+    cleaning_type: null,
+    cavities_found: null,
+    cavities_filled: null,
+    xrays_taken: null,
+    fluoride_treatment: null,
+    sealants_applied: null,
+    next_appointment_date: null,
+    dental_procedures: null,
     vaccines_administered: [],
     prescriptions: [],
     tags: [],
@@ -70,6 +80,21 @@ function AddVisitPage() {
 
   // Support multiple illnesses client-side (kept simple and compatible)
   const [selectedIllnesses, setSelectedIllnesses] = useState<IllnessType[]>([]);
+  // Ref so submit always sees latest (avoids stale closure when user clicks Save then Submit quickly)
+  // Ref updated only in setter so we never overwrite with stale state (e.g. after Save in popup + formData update)
+  const selectedIllnessesRef = useRef<IllnessType[]>([]);
+  const setSelectedIllnessesAndRef: Dispatch<SetStateAction<IllnessType[]>> = (value) => {
+    if (typeof value === 'function') {
+      setSelectedIllnesses((prev) => {
+        const next = value(prev);
+        selectedIllnessesRef.current = next;
+        return next;
+      });
+    } else {
+      selectedIllnessesRef.current = value;
+      setSelectedIllnesses(value);
+    }
+  };
 
   const [recentLocations, setRecentLocations] = useState<string[]>([]);
   const [recentDoctors, setRecentDoctors] = useState<string[]>([]);
@@ -184,7 +209,7 @@ function AddVisitPage() {
       recentDoctors,
       getTodayDate,
       selectedIllnesses,
-      setSelectedIllnesses,
+      setSelectedIllnesses: setSelectedIllnessesAndRef,
       pendingFiles,
       handleRemoveFile,
       handleFileUpload,
@@ -207,8 +232,9 @@ function AddVisitPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    // Validation
-    if (formData.visit_type === 'sick' && selectedIllnesses.length === 0) {
+    // Use ref so we always have latest illnesses (avoids stale closure when Save then Submit quickly)
+    const illnessesToSend = formData.visit_type === 'sick' ? selectedIllnessesRef.current : null;
+    if (formData.visit_type === 'sick' && (!illnessesToSend || illnessesToSend.length === 0)) {
       setNotification({ message: 'Please select at least one illness for sick visits', type: 'error' });
       return;
     }
@@ -221,13 +247,13 @@ function AddVisitPage() {
     setSubmitting(true);
 
     try {
-      // ensure formData.illness_type remains compatible with API (use first selected illness)
-      if (formData.visit_type === 'sick') {
-        // send full illnesses array (no legacy `illness_type`)
-        (formData as any).illnesses = selectedIllnesses.length > 0 ? selectedIllnesses : null;
+      // Build payload with full illnesses array from ref (not stale state)
+      const payload = { ...formData };
+      if (formData.visit_type === 'sick' && illnessesToSend && illnessesToSend.length > 0) {
+        (payload as any).illnesses = illnessesToSend;
       }
       // Create the visit first
-      const response = await visitsApi.create(formData);
+      const response = await visitsApi.create(payload);
       const visitId = response.data.id;
 
       // Upload all pending files
@@ -335,7 +361,8 @@ function AddVisitPage() {
                 Add {formData.visit_type === 'wellness' ? 'Wellness' :
                   formData.visit_type === 'sick' ? 'Sick' :
                     formData.visit_type === 'injury' ? 'Injury' :
-                      'Vision'} Visit
+                      formData.visit_type === 'vision' ? 'Vision' :
+                        formData.visit_type === 'dental' ? 'Dental' : 'Visit'} Visit
               </h2>
             </div>
             <div className="visit-form-body-cell visit-detail-body">

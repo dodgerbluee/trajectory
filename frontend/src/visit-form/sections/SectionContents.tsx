@@ -323,6 +323,104 @@ export function VisionSection({ context }: SectionContentPropsWithContext) {
   );
 }
 
+export function DentalSection({ context }: SectionContentPropsWithContext) {
+  const { formData, setFormData, submitting } = context;
+  const setForm = setFormData as React.Dispatch<React.SetStateAction<any>>;
+  const fd = formData as any;
+  
+  const procedureTypes = [
+    { value: '', label: 'Select dental visit type...' },
+    { value: 'checkup', label: 'Checkup' },
+    { value: 'cleaning', label: 'Cleaning' },
+    { value: 'filling', label: 'Filling' },
+    { value: 'extraction', label: 'Extraction' },
+    { value: 'xray', label: 'X-Ray' },
+    { value: 'fluoride', label: 'Fluoride Treatment' },
+    { value: 'sealant', label: 'Sealant' },
+    { value: 'orthodontic', label: 'Orthodontic' },
+    { value: 'emergency', label: 'Emergency' },
+    { value: 'other', label: 'Other' },
+  ];
+  
+  const cleaningTypes = [
+    { value: '', label: 'Select cleaning type...' },
+    { value: 'routine', label: 'Routine' },
+    { value: 'deep', label: 'Deep' },
+    { value: 'polish', label: 'Polish' },
+  ];
+  
+  return (
+    <div className="dental-ui">
+      <div className="dental-form-fields">
+        <FormField
+          label="Dental Visit Type"
+          type="select"
+          value={fd.dental_procedure_type || ''}
+          onChange={(e) => setForm((prev: any) => ({ ...prev, dental_procedure_type: e.target.value || null }))}
+          options={procedureTypes}
+          disabled={submitting}
+        />
+        
+        {fd.dental_procedure_type === 'cleaning' && (
+          <FormField
+            label="Cleaning Type"
+            type="select"
+            value={fd.cleaning_type || ''}
+            onChange={(e) => setForm((prev: any) => ({ ...prev, cleaning_type: e.target.value || null }))}
+            options={cleaningTypes}
+            disabled={submitting}
+          />
+        )}
+        
+        <div className="dental-checkboxes" style={{ display: 'flex', gap: 'var(--spacing-md)', flexWrap: 'wrap', marginBottom: 'var(--spacing-md)' }}>
+          <Checkbox
+            label="X-Rays Taken"
+            checked={fd.xrays_taken || false}
+            onChange={(checked) => setForm((prev: any) => ({ ...prev, xrays_taken: checked }))}
+            disabled={submitting}
+          />
+          <Checkbox
+            label="Fluoride Treatment"
+            checked={fd.fluoride_treatment || false}
+            onChange={(checked) => setForm((prev: any) => ({ ...prev, fluoride_treatment: checked }))}
+            disabled={submitting}
+          />
+          <Checkbox
+            label="Sealants Applied"
+            checked={fd.sealants_applied || false}
+            onChange={(checked) => setForm((prev: any) => ({ ...prev, sealants_applied: checked }))}
+            disabled={submitting}
+          />
+        </div>
+        
+        <div className="dental-numbers" style={{ display: 'flex', gap: '16px' }}>
+          <div style={{ flex: 1 }}>
+            <FormField
+              label="Cavities Found"
+              type="number"
+              value={fd.cavities_found ?? ''}
+              onChange={(e) => setForm((prev: any) => ({ ...prev, cavities_found: e.target.value === '' ? null : parseInt(e.target.value) || null }))}
+              min="0"
+              disabled={submitting}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <FormField
+              label="Cavities Filled"
+              type="number"
+              value={fd.cavities_filled ?? ''}
+              onChange={(e) => setForm((prev: any) => ({ ...prev, cavities_filled: e.target.value === '' ? null : parseInt(e.target.value) || null }))}
+              min="0"
+              max={fd.cavities_found ?? undefined}
+              disabled={submitting}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function VaccinesSection({ context }: SectionContentPropsWithContext) {
   const { formData, setFormData, submitting } = context;
   const setForm = setFormData as React.Dispatch<React.SetStateAction<any>>;

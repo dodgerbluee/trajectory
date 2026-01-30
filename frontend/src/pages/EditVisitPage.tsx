@@ -1,4 +1,4 @@
-import { useState, FormEvent, useEffect, useMemo } from 'react';
+import { useState, FormEvent, useEffect, useMemo, useRef, type Dispatch, type SetStateAction } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { visitsApi, childrenApi, ApiClientError } from '../lib/api-client';
 import type { Child, UpdateVisitInput, IllnessType, Visit, VisitAttachment } from '../types/api';
@@ -48,6 +48,16 @@ function EditVisitPage() {
     vision_refraction: { od: { sphere: null, cylinder: null, axis: null }, os: { sphere: null, cylinder: null, axis: null }, notes: undefined } as any,
     ordered_glasses: null,
     ordered_contacts: null,
+    dental_procedure_type: null,
+    dental_notes: null,
+    cleaning_type: null,
+    cavities_found: null,
+    cavities_filled: null,
+    xrays_taken: null,
+    fluoride_treatment: null,
+    sealants_applied: null,
+    next_appointment_date: null,
+    dental_procedures: null,
     vaccines_administered: [],
     prescriptions: [],
     tags: [],
@@ -55,6 +65,19 @@ function EditVisitPage() {
   });
 
   const [selectedIllnesses, setSelectedIllnesses] = useState<IllnessType[]>([]);
+  const selectedIllnessesRef = useRef<IllnessType[]>([]);
+  const setSelectedIllnessesAndRef: Dispatch<SetStateAction<IllnessType[]>> = (value) => {
+    if (typeof value === 'function') {
+      setSelectedIllnesses((prev) => {
+        const next = value(prev);
+        selectedIllnessesRef.current = next;
+        return next;
+      });
+    } else {
+      selectedIllnessesRef.current = value;
+      setSelectedIllnesses(value);
+    }
+  };
 
   const [recentLocations, setRecentLocations] = useState<string[]>([]);
   const [recentDoctors, setRecentDoctors] = useState<string[]>([]);
@@ -128,16 +151,27 @@ function EditVisitPage() {
         vision_refraction: (visitData as any).vision_refraction || { od: { sphere: null, cylinder: null, axis: null }, os: { sphere: null, cylinder: null, axis: null }, notes: undefined },
         ordered_glasses: (visitData as any).ordered_glasses ?? visitData.needs_glasses ?? null,
         ordered_contacts: (visitData as any).ordered_contacts ?? null,
+        dental_procedure_type: (visitData as any).dental_procedure_type ?? null,
+        dental_notes: (visitData as any).dental_notes ?? null,
+        cleaning_type: (visitData as any).cleaning_type ?? null,
+        cavities_found: (visitData as any).cavities_found ?? null,
+        cavities_filled: (visitData as any).cavities_filled ?? null,
+        xrays_taken: (visitData as any).xrays_taken ?? null,
+        fluoride_treatment: (visitData as any).fluoride_treatment ?? null,
+        sealants_applied: (visitData as any).sealants_applied ?? null,
+        next_appointment_date: (visitData as any).next_appointment_date ?? null,
+        dental_procedures: (visitData as any).dental_procedures ?? null,
         vaccines_administered: visitData.vaccines_administered || [],
         prescriptions: visitData.prescriptions || [],
         tags: visitData.tags || [],
         notes: visitData.notes,
       });
 
-      // Initialize selected illnesses from new `illnesses` array or legacy `illness_type`
-      setSelectedIllnesses((visitData as any).illnesses && (visitData as any).illnesses.length > 0
+      // Initialize selected illnesses from new `illnesses` array or legacy `illness_type` (use setter so ref is set)
+      const loadedIllnesses = (visitData as any).illnesses && (visitData as any).illnesses.length > 0
         ? (visitData as any).illnesses as IllnessType[]
-        : []);
+        : [];
+      setSelectedIllnessesAndRef(loadedIllnesses);
       
       // Load recent data for autocomplete
       const visitsResponse = await visitsApi.getAll({ child_id: visitData.child_id });
@@ -203,7 +237,7 @@ function EditVisitPage() {
       recentDoctors,
       getTodayDate,
       selectedIllnesses,
-      setSelectedIllnesses,
+      setSelectedIllnesses: setSelectedIllnessesAndRef,
       pendingFiles: [] as File[],
       handleRemoveFile: () => {},
       handleFileUpload,
@@ -232,8 +266,8 @@ function EditVisitPage() {
 
     if (!id || !visit) return;
 
-    // Validation (require at least one selected illness for sick visits)
-    if (visit.visit_type === 'sick' && selectedIllnesses.length === 0) {
+    const illnessesToSend = visit.visit_type === 'sick' ? selectedIllnessesRef.current : null;
+    if (visit.visit_type === 'sick' && (!illnessesToSend || illnessesToSend.length === 0)) {
       setNotification({ message: 'Please select at least one illness for sick visits', type: 'error' });
       return;
     }
@@ -246,11 +280,11 @@ function EditVisitPage() {
     setSubmitting(true);
 
     try {
-      // Send illnesses array and keep `illness_type` for backward compatibility
-      if (visit.visit_type === 'sick') {
-        (formData as any).illnesses = selectedIllnesses.length > 0 ? selectedIllnesses : null;
+      const payload = { ...formData } as any;
+      if (visit.visit_type === 'sick' && illnessesToSend && illnessesToSend.length > 0) {
+        payload.illnesses = illnessesToSend;
       }
-      await visitsApi.update(parseInt(id), formData as any);
+      await visitsApi.update(parseInt(id), payload);
       setNotification({ message: 'Visit updated successfully!', type: 'success' });
       setTimeout(() => {
         navigate(`/visits/${id}`);
@@ -312,7 +346,8 @@ function EditVisitPage() {
                 Edit {visit.visit_type === 'wellness' ? 'Wellness' : 
                      visit.visit_type === 'sick' ? 'Sick' : 
                      visit.visit_type === 'injury' ? 'Injury' :
-                     'Vision'} Visit
+                     visit.visit_type === 'vision' ? 'Vision' :
+                     visit.visit_type === 'dental' ? 'Dental' : 'Visit'} Visit
               </h2>
             </div>
             <div className="visit-form-body-cell visit-detail-body">

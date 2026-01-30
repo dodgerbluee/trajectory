@@ -76,13 +76,12 @@ export function normalizeForCompare(value: unknown): unknown {
     
     // Normalize date-like strings to YYYY-MM-DD so "2026-01-15" and "2026-01-15T00:00:00.000Z" compare equal
     if (DATE_ONLY_REGEX.test(normalized)) return normalized;
+    // Try to parse as number before treating as date (so "100" and "24.5" become numbers, not year 100)
+    const n = parseFloat(normalized);
+    if (!Number.isNaN(n) && /^-?\d+(\.\d+)?$/.test(normalized)) return n;
     const asDate = new Date(normalized);
     if (!Number.isNaN(asDate.getTime())) return asDate.toISOString().split('T')[0];
-    
-    // Try to parse as number for consistent compare (e.g. "24.5" vs 24.5)
-    const n = parseFloat(normalized);
-    if (!Number.isNaN(n) && String(n) === normalized) return n;
-    
+
     return normalized;
   }
   if (typeof value === 'number') {
@@ -112,6 +111,16 @@ export function normalizeForCompare(value: unknown): unknown {
     if (Object.keys(obj).length === 0) return null;
     return JSON.stringify(obj);
   }
+  return value;
+}
+
+/**
+ * Normalize only "empty" values to null for diff storage (so after: null for removal).
+ * Leaves arrays and objects as-is; used for the "after" field so tests and API get raw values.
+ */
+function emptyToNull(value: unknown): unknown {
+  if (value === undefined || value === null) return null;
+  if (typeof value === 'string' && value.trim() === '') return null;
   return value;
 }
 
@@ -177,7 +186,7 @@ export function buildFieldDiff(
 
     changes[key] = {
       before: beforeVal === undefined ? null : beforeVal,
-      after: afterVal === undefined ? null : afterVal,
+      after: emptyToNull(afterVal),
     };
   }
 

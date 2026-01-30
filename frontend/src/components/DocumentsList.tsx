@@ -8,6 +8,7 @@ import { HiPencil, HiTrash, HiDownload } from 'react-icons/hi';
 import { LuFileText, LuImage } from 'react-icons/lu';
 import type { VisitAttachment, ChildAttachment, Visit } from '../types/api';
 import { visitsApi, childrenApi, ApiClientError } from '../lib/api-client';
+import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
 // formatDate not needed here; document entries show visit type and title instead of date
 import LoadingSpinner from './LoadingSpinner';
 import DocumentsSummary from './DocumentsSummary';
@@ -30,6 +31,7 @@ interface DocumentsListProps {
 }
 
 function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsListProps) {
+  const { canEdit } = useFamilyPermissions();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValue, setEditValue] = useState<string>('');
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -232,29 +234,33 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
                 >
                   <HiDownload />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleEditStart(doc)}
-                  className="btn-icon-action btn-edit"
-                  title="Rename document"
-                >
-                  <HiPencil />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(doc.id, doc.type)}
-                  disabled={deletingId === doc.id}
-                  className="btn-icon-action btn-delete"
-                  title="Delete document"
-                >
-                  {deletingId === doc.id ? (
-                    <div className="btn-spinner-wrapper">
-                      <LoadingSpinner message="" />
-                    </div>
-                  ) : (
-                    <HiTrash />
-                  )}
-                </button>
+                {canEdit && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleEditStart(doc)}
+                      className="btn-icon-action btn-edit"
+                      title="Rename document"
+                    >
+                      <HiPencil />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(doc.id, doc.type)}
+                      disabled={deletingId === doc.id}
+                      className="btn-icon-action btn-delete"
+                      title="Delete document"
+                    >
+                      {deletingId === doc.id ? (
+                        <div className="btn-spinner-wrapper">
+                          <LoadingSpinner message="" />
+                        </div>
+                      ) : (
+                        <HiTrash />
+                      )}
+                    </button>
+                  </>
+                )}
               </>
             )}
           </div>

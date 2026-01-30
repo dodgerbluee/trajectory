@@ -20,10 +20,15 @@ Tests are organized into:
 
 ## Running Tests
 
-```bash
-# Install Jest (if not already installed)
-npm install --save-dev jest @jest/globals ts-jest @types/jest
+**Prerequisite:** Install all dependencies (including `supertest` for route/authorization tests):
 
+```bash
+npm install
+```
+
+Then:
+
+```bash
 # Run all tests
 npm test
 

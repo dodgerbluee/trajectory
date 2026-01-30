@@ -1,12 +1,13 @@
 /**
  * Children routes
+ * All endpoints require auth; data is scoped to the user's family (children they can access).
  */
 
 import express from 'express';
-import type { Request, Response, NextFunction } from 'express';
+import type { Response, NextFunction } from 'express';
 import { query } from '../db/connection.js';
 import type { ChildRow, CreateChildInput, Gender } from '../types/database.js';
-import { NotFoundError, ValidationError } from '../middleware/error-handler.js';
+import { NotFoundError, ValidationError, ForbiddenError } from '../middleware/error-handler.js';
 import {
   validateRequired,
   validateOptionalString,
@@ -16,53 +17,74 @@ import {
 } from '../middleware/validation.js';
 import { parsePaginationParams } from '../middleware/query-parser.js';
 import { createResponse, createPaginatedResponse } from '../types/api.js';
+import { authenticate, type AuthRequest } from '../middleware/auth.js';
+import { getFamilyIdsForUser, getOrCreateDefaultFamilyForUser, canAccessChild, canEditFamily, canEditChild } from '../lib/family-access.js';
 import { measurementsRouter } from './measurements.js';
+import { medicalEventsRouter } from './medical-events.js';
 
 export const childrenRouter = express.Router();
 
-// Nest measurements under children
-childrenRouter.use('/:childId/measurements', measurementsRouter);
+childrenRouter.use(authenticate);
 
-// Nest medical events under children
-import { medicalEventsRouter } from './medical-events.js';
-childrenRouter.use('/:childId/medical-events', medicalEventsRouter);
+/** Ensure the authenticated user can access the child in req.params.childId; 404 otherwise. */
+async function requireChildAccess(req: AuthRequest, _res: Response, next: NextFunction): Promise<void> {
+  try {
+    const childId = validatePositiveInteger(req.params.childId, 'childId');
+    if (!(await canAccessChild(req.userId!, childId))) {
+      next(new NotFoundError('Child'));
+      return;
+    }
+    next();
+  } catch (e) {
+    next(e);
+  }
+}
+
+childrenRouter.use('/:childId/measurements', requireChildAccess, measurementsRouter);
+childrenRouter.use('/:childId/medical-events', requireChildAccess, medicalEventsRouter);
 
 /**
  * GET /api/children
- * Get all children with pagination
- * Query params: page, limit
+ * Get children the user can access (their family's children), with pagination.
  */
-childrenRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
+childrenRouter.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    const userId = req.userId!;
+    const familyIds = await getFamilyIdsForUser(userId);
     const pagination = parsePaginationParams(req.query);
 
-    // Get total count
+    if (familyIds.length === 0) {
+      return res.json(createPaginatedResponse([], 0, pagination));
+    }
+
     const countResult = await query<{ count: string }>(
-      'SELECT COUNT(*) as count FROM children'
+      'SELECT COUNT(*) as count FROM children WHERE family_id = ANY($1::int[])',
+      [familyIds]
     );
     const total = parseInt(countResult.rows[0].count);
 
-    // Get paginated results
     const result = await query<ChildRow>(
-      'SELECT * FROM children ORDER BY name ASC LIMIT $1 OFFSET $2',
-      [pagination.limit, pagination.offset]
+      'SELECT * FROM children WHERE family_id = ANY($1::int[]) ORDER BY name ASC LIMIT $2 OFFSET $3',
+      [familyIds, pagination.limit, pagination.offset]
     );
 
     const children = result.rows.map(formatChildForResponse);
-
-    res.json(createPaginatedResponse(children, total, pagination));
+    return res.json(createPaginatedResponse(children, total, pagination));
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
 /**
  * GET /api/children/:id
- * Get a single child by ID
+ * Get a single child by ID (only if user can access).
  */
-childrenRouter.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
+childrenRouter.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const id = validatePositiveInteger(req.params.id, 'id');
+    if (!(await canAccessChild(req.userId!, id))) {
+      throw new NotFoundError('Child');
+    }
 
     const result = await query<ChildRow>(
       'SELECT * FROM children WHERE id = $1',
@@ -81,15 +103,28 @@ childrenRouter.get('/:id', async (req: Request, res: Response, next: NextFunctio
 
 /**
  * POST /api/children
- * Create a new child
+ * Create a new child. Optional body.family_id: create in that family (user must be owner/parent).
+ * If omitted, uses default (first owner) family.
  */
-childrenRouter.post('/', async (req: Request, res: Response, next: NextFunction) => {
+childrenRouter.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const gender = validateRequired(req.body.gender, 'gender') as Gender;
-    
-    // Validate gender
     if (!['male', 'female'].includes(gender)) {
       throw new ValidationError('gender must be male or female');
+    }
+
+    let familyId: number;
+    if (req.body.family_id !== undefined && req.body.family_id !== null) {
+      const requestedFamilyId = validatePositiveInteger(req.body.family_id, 'family_id');
+      if (!(await canEditFamily(req.userId!, requestedFamilyId))) {
+        throw new ForbiddenError('You do not have permission to add children to this family.');
+      }
+      familyId = requestedFamilyId;
+    } else {
+      familyId = await getOrCreateDefaultFamilyForUser(req.userId!);
+      if (!(await canEditFamily(req.userId!, familyId))) {
+        throw new ForbiddenError('You do not have permission to add children to this family.');
+      }
     }
 
     const input: CreateChildInput = {
@@ -111,10 +146,10 @@ childrenRouter.post('/', async (req: Request, res: Response, next: NextFunction)
     };
 
     const result = await query<ChildRow>(
-      `INSERT INTO children (name, date_of_birth, gender, avatar, notes, due_date, birth_weight, birth_weight_ounces, birth_height)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `INSERT INTO children (family_id, name, date_of_birth, gender, avatar, notes, due_date, birth_weight, birth_weight_ounces, birth_height)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
-      [input.name, input.date_of_birth, input.gender, input.avatar, input.notes, input.due_date, input.birth_weight, input.birth_weight_ounces, input.birth_height]
+      [familyId, input.name, input.date_of_birth, input.gender, input.avatar, input.notes, input.due_date, input.birth_weight, input.birth_weight_ounces, input.birth_height]
     );
 
     res.status(201).json(createResponse(formatChildForResponse(result.rows[0])));
@@ -125,11 +160,17 @@ childrenRouter.post('/', async (req: Request, res: Response, next: NextFunction)
 
 /**
  * PUT /api/children/:id
- * Update a child
+ * Update a child (only if user can access).
  */
-childrenRouter.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
+childrenRouter.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const id = validatePositiveInteger(req.params.id, 'id');
+    if (!(await canAccessChild(req.userId!, id))) {
+      throw new NotFoundError('Child');
+    }
+    if (!(await canEditChild(req.userId!, id))) {
+      throw new ForbiddenError('You do not have permission to edit this child.');
+    }
 
     // Build dynamic update query based on provided fields
     const updates: string[] = [];
@@ -211,11 +252,17 @@ childrenRouter.put('/:id', async (req: Request, res: Response, next: NextFunctio
 
 /**
  * DELETE /api/children/:id
- * Delete a child (cascades to measurements and events)
+ * Delete a child (only if user can access and has edit permission).
  */
-childrenRouter.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+childrenRouter.delete('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const id = validatePositiveInteger(req.params.id, 'id');
+    if (!(await canAccessChild(req.userId!, id))) {
+      throw new NotFoundError('Child');
+    }
+    if (!(await canEditChild(req.userId!, id))) {
+      throw new ForbiddenError('You do not have permission to delete this child.');
+    }
 
     const result = await query(
       'DELETE FROM children WHERE id = $1 RETURNING id',
@@ -245,6 +292,7 @@ function formatChildForResponse(row: ChildRow) {
 
   return {
     id: row.id,
+    family_id: row.family_id,
     name: row.name,
     date_of_birth: row.date_of_birth.toISOString().split('T')[0],
     gender: row.gender,

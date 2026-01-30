@@ -32,6 +32,37 @@ export interface FilterMeta {
   end_date?: string;
 }
 
+export type FamilyRole = 'owner' | 'parent' | 'read_only';
+
+export interface Family {
+  id: number;
+  name: string;
+  role?: FamilyRole;
+}
+
+export interface FamilyMember {
+  user_id: number;
+  username: string;
+  email: string;
+  role: string;
+}
+
+export interface FamilyInvite {
+  id: number;
+  role: string;
+  expires_at: string;
+  created_at: string;
+  created_by?: number;
+}
+
+export interface CreateInviteResponse {
+  id: number;
+  token: string;
+  role: string;
+  expires_at: string;
+  created_at: string;
+}
+
 export interface ApiError {
   error: {
     message: string;
@@ -55,6 +86,7 @@ export type Gender = 'male' | 'female';
 
 export interface Child {
   id: number;
+  family_id?: number; // present when backend supports multi-family; used for grouping
   name: string;
   date_of_birth: string; // YYYY-MM-DD
   gender: Gender;
@@ -69,6 +101,7 @@ export interface Child {
 }
 
 export interface CreateChildInput {
+  family_id?: number;
   name: string;
   date_of_birth: string;
   gender: Gender;
@@ -136,7 +169,7 @@ export interface UpdateMeasurementInput {
 // Visits (Unified wellness and sick visits)
 // ============================================================================
 
-export type VisitType = 'wellness' | 'sick' | 'injury' | 'vision';
+export type VisitType = 'wellness' | 'sick' | 'injury' | 'vision' | 'dental';
 
 export type IllnessType = 
   | 'flu'
@@ -168,6 +201,13 @@ export type VisionRefraction = {
   od: EyeRefraction;
   os: EyeRefraction;
   notes?: string;
+};
+
+export type DentalProcedure = {
+  procedure: string;
+  tooth_number?: string | null;
+  location?: string | null;
+  notes?: string | null;
 };
 
 export interface Visit {
@@ -212,6 +252,18 @@ export interface Visit {
   ordered_glasses: boolean | null;
   ordered_contacts: boolean | null;
   needs_glasses: boolean | null;
+  
+  // Dental visit
+  dental_procedure_type: string | null;
+  dental_notes: string | null;
+  cleaning_type: string | null;
+  cavities_found: number | null;
+  cavities_filled: number | null;
+  xrays_taken: boolean | null;
+  fluoride_treatment: boolean | null;
+  sealants_applied: boolean | null;
+  next_appointment_date: string | null;
+  dental_procedures?: DentalProcedure[] | null;
   
   // Medical
   vaccines_administered: string[] | null;
@@ -262,6 +314,18 @@ export interface CreateVisitInput {
   ordered_contacts?: boolean | null;
   needs_glasses?: boolean | null;
   
+  // Dental visit fields
+  dental_procedure_type?: string | null;
+  dental_notes?: string | null;
+  cleaning_type?: string | null;
+  cavities_found?: number | null;
+  cavities_filled?: number | null;
+  xrays_taken?: boolean | null;
+  fluoride_treatment?: boolean | null;
+  sealants_applied?: boolean | null;
+  next_appointment_date?: string | null;
+  dental_procedures?: DentalProcedure[] | null;
+  
   vaccines_administered?: string[] | null;
   prescriptions?: Prescription[] | null;
   
@@ -308,6 +372,18 @@ export interface UpdateVisitInput {
   ordered_glasses?: boolean | null;
   ordered_contacts?: boolean | null;
   needs_glasses?: boolean | null;
+  
+  // Dental visit fields
+  dental_procedure_type?: string | null;
+  dental_notes?: string | null;
+  cleaning_type?: string | null;
+  cavities_found?: number | null;
+  cavities_filled?: number | null;
+  xrays_taken?: boolean | null;
+  fluoride_treatment?: boolean | null;
+  sealants_applied?: boolean | null;
+  next_appointment_date?: string | null;
+  dental_procedures?: DentalProcedure[] | null;
   
   vaccines_administered?: string[] | null;
   prescriptions?: Prescription[] | null;
@@ -407,7 +483,7 @@ export interface MeasurementAttachment {
 export interface Illness {
   id: number;
   child_id: number;
-  illness_type: IllnessType;
+  illness_types: IllnessType[];
   start_date: string;
   end_date: string | null;
   symptoms: string | null;
@@ -421,7 +497,7 @@ export interface Illness {
 
 export interface CreateIllnessInput {
   child_id: number;
-  illness_type: IllnessType;
+  illness_types: IllnessType[];
   start_date: string;
   end_date?: string | null;
   symptoms?: string | null;
@@ -432,7 +508,7 @@ export interface CreateIllnessInput {
 }
 
 export interface UpdateIllnessInput {
-  illness_type?: IllnessType;
+  illness_types?: IllnessType[];
   start_date?: string;
   end_date?: string | null;
   symptoms?: string | null;

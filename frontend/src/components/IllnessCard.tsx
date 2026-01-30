@@ -17,12 +17,9 @@ function IllnessCard({ illness, childName, childId, hasAttachments }: IllnessCar
   const label = 'Illness';
 
   const headerBadges = [] as string[];
-  // Show a single comma-separated illness label. Prefer `illnesses` array if present,
-  // otherwise fall back to legacy `illness_type`.
-  const illnessesArr = (illness as any).illnesses;
-  const illnessLabel = Array.isArray(illnessesArr) && illnessesArr.length > 0
-    ? illnessesArr.map((i: string) => i.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())).join(', ')
-    : (illness.illness_type ? illness.illness_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : null);
+  const illnessLabel = illness.illness_types?.length
+    ? illness.illness_types.map((i) => i.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())).join(', ')
+    : null;
   if (illnessLabel) headerBadges.push(`🤒 ${illnessLabel}`);
   if (illness.severity) headerBadges.push(`⚠️ ${illness.severity}/10`);
   if (illness.temperature) headerBadges.push('🌡️ Fever');

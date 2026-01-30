@@ -5,19 +5,21 @@ import { ApiClientError } from '../lib/api-client';
 export interface User {
   id: number;
   email: string;
-  name: string;
+  username: string;
   emailVerified?: boolean;
   createdAt?: string;
   lastLoginAt?: string | null;
+  isInstanceAdmin?: boolean;
+  onboardingCompleted?: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  register: (email: string, password: string, username: string, registrationCode?: string) => Promise<void>;
   refreshToken: () => Promise<void>;
   checkAuth: () => Promise<void>;
   updateUsername: (newUsername: string, currentPassword: string) => Promise<void>;
@@ -160,14 +162,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth();
   }, [checkAuth]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (username: string, password: string) => {
     const response = await apiRequest<{
       user: User;
       accessToken: string;
       refreshToken: string;
     }>('/api/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ username, password }),
     });
 
     setTokens(response.data.accessToken, response.data.refreshToken);
@@ -175,14 +177,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(USER_KEY, JSON.stringify(response.data.user));
   };
 
-  const register = async (email: string, password: string, name: string) => {
+  const register = async (
+    email: string,
+    password: string,
+    username: string,
+    registrationCode?: string
+  ) => {
+    const body: { email: string; password: string; username: string; registrationCode?: string } = {
+      email,
+      password,
+      username,
+    };
+    if (registrationCode != null && registrationCode.trim() !== '') {
+      body.registrationCode = registrationCode.trim();
+    }
     const response = await apiRequest<{
       user: User;
       accessToken: string;
       refreshToken: string;
     }>('/api/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ email, password, name }),
+      body: JSON.stringify(body),
     });
 
     setTokens(response.data.accessToken, response.data.refreshToken);

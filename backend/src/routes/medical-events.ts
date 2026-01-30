@@ -6,7 +6,9 @@ import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import { query } from '../db/connection.js';
 import type { MedicalEventRow, CreateMedicalEventInput, EventType } from '../types/database.js';
-import { NotFoundError } from '../middleware/error-handler.js';
+import { NotFoundError, ForbiddenError } from '../middleware/error-handler.js';
+import type { AuthRequest } from '../middleware/auth.js';
+import { canEditChild } from '../lib/family-access.js';
 import {
   validateRequired,
   validateDate,
@@ -120,6 +122,9 @@ medicalEventsRouter.get('/:id', async (req: Request, res: Response, next: NextFu
 medicalEventsRouter.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const childId = validatePositiveInteger(req.params.childId, 'childId');
+    if (!(await canEditChild((req as AuthRequest).userId!, childId))) {
+      throw new ForbiddenError('You do not have permission to add medical events for this child.');
+    }
 
     const input: CreateMedicalEventInput = {
       child_id: childId,
@@ -160,6 +165,16 @@ medicalEventsRouter.post('/', async (req: Request, res: Response, next: NextFunc
 medicalEventsRouter.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = validatePositiveInteger(req.params.id, 'id');
+    const existing = await query<{ child_id: number }>(
+      'SELECT child_id FROM medical_events WHERE id = $1',
+      [id]
+    );
+    if (existing.rows.length === 0) {
+      throw new NotFoundError('Medical event');
+    }
+    if (!(await canEditChild((req as AuthRequest).userId!, existing.rows[0].child_id))) {
+      throw new ForbiddenError('You do not have permission to edit this medical event.');
+    }
 
     // Build dynamic update query
     const updates: string[] = [];
@@ -217,6 +232,16 @@ medicalEventsRouter.put('/:id', async (req: Request, res: Response, next: NextFu
 medicalEventsRouter.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = validatePositiveInteger(req.params.id, 'id');
+    const existing = await query<{ child_id: number }>(
+      'SELECT child_id FROM medical_events WHERE id = $1',
+      [id]
+    );
+    if (existing.rows.length === 0) {
+      throw new NotFoundError('Medical event');
+    }
+    if (!(await canEditChild((req as AuthRequest).userId!, existing.rows[0].child_id))) {
+      throw new ForbiddenError('You do not have permission to delete this medical event.');
+    }
 
     const result = await query(
       'DELETE FROM medical_events WHERE id = $1 RETURNING id',
