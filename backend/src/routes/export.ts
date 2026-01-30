@@ -57,6 +57,17 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
       query<ExportRow>('SELECT * FROM measurements WHERE child_id = ANY($1::int[]) ORDER BY measurement_date DESC', [childIds]),
       query<ExportRow>('SELECT * FROM medical_events WHERE child_id = ANY($1::int[]) ORDER BY start_date DESC', [childIds]),
     ]);
+    const illnessIds = illnessesRes.rows.map((r) => r.id as number);
+    const illnessTypesRes = illnessIds.length > 0
+      ? await query<{ illness_id: number; illness_type: string }>('SELECT illness_id, illness_type FROM illness_illness_types WHERE illness_id = ANY($1::int[]) ORDER BY illness_id, illness_type', [illnessIds])
+      : { rows: [] };
+    const typesByIllnessId = new Map<number, string[]>();
+    for (const row of illnessTypesRes.rows) {
+      const arr = typesByIllnessId.get(row.illness_id) ?? [];
+      arr.push(row.illness_type);
+      typesByIllnessId.set(row.illness_id, arr);
+    }
+    const illnessesForExport = illnessesRes.rows.map((r) => ({ ...r, illness_types: typesByIllnessId.get(r.id as number) ?? [] }));
 
     const visitIds = visitsRes.rows.map((r) => r.id as number);
     const measurementIds = measurementsRes.rows.map((r) => r.id as number);
@@ -81,7 +92,7 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
       exported_at: new Date().toISOString(),
       children: childrenRes.rows,
       visits: visitsRes.rows,
-      illnesses: illnessesRes.rows,
+      illnesses: illnessesForExport,
       measurements: measurementsRes.rows,
       medical_events: eventsRes.rows,
       attachments: attachments.map(({ _source, ...r }) => r),
@@ -143,8 +154,8 @@ function buildExportHtml(data: { children: ExportRow[]; visits: ExportRow[]; ill
   body += `<h2>Visits (${data.visits.length})</h2><table border="1"><tr><th>id</th><th>child_id</th><th>visit_date</th><th>visit_type</th><th>notes</th></tr>`;
   body += rows(data.visits, ['id', 'child_id', 'visit_date', 'visit_type', 'notes']);
   body += '</table>';
-  body += `<h2>Illnesses (${data.illnesses.length})</h2><table border="1"><tr><th>id</th><th>child_id</th><th>illness_type</th><th>start_date</th><th>notes</th></tr>`;
-  body += rows(data.illnesses, ['id', 'child_id', 'illness_type', 'start_date', 'notes']);
+  body += `<h2>Illnesses (${data.illnesses.length})</h2><table border="1"><tr><th>id</th><th>child_id</th><th>illness_types</th><th>start_date</th><th>notes</th></tr>`;
+  body += rows(data.illnesses, ['id', 'child_id', 'illness_types', 'start_date', 'notes']);
   body += '</table>';
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Trajectory export</title></head><body>${body}</body></html>`;
 }

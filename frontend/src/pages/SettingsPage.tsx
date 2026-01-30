@@ -59,6 +59,8 @@ function SettingsPage() {
   const [familyActionId, setFamilyActionId] = useState<number | null>(null);
   const [deleteConfirmFamily, setDeleteConfirmFamily] = useState<Family | null>(null);
   const [confirmDeleteInput, setConfirmDeleteInput] = useState('');
+  const [deleteConfirmChild, setDeleteConfirmChild] = useState<Child | null>(null);
+  const [confirmDeleteChildInput, setConfirmDeleteChildInput] = useState('');
   const [leaveConfirmFamily, setLeaveConfirmFamily] = useState<Family | null>(null);
   const [showAddFamilyModal, setShowAddFamilyModal] = useState(false);
   const [newFamilyName, setNewFamilyName] = useState('');
@@ -214,9 +216,6 @@ function SettingsPage() {
   }, [activeTab, familySubTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDeleteChild = async (child: Child) => {
-    if (!window.confirm(`Are you sure you want to delete ${child.name}? This will permanently delete all associated visits. This action cannot be undone.`)) {
-      return;
-    }
     setDeletingChildId(child.id);
     setNotification(null);
     try {
@@ -224,6 +223,8 @@ function SettingsPage() {
       setChildrenList((prev) => prev.filter((c) => c.id !== child.id));
       setNotification({ message: `${child.name} has been deleted`, type: 'success' });
       setTimeout(() => setNotification(null), 3000);
+      setDeleteConfirmChild(null);
+      setConfirmDeleteChildInput('');
     } catch (err) {
       if (err instanceof ApiClientError) {
         setNotification({ message: err.message || 'Failed to delete child', type: 'error' });
@@ -942,7 +943,10 @@ function SettingsPage() {
                                           <Button
                                             variant="danger"
                                             size="sm"
-                                            onClick={() => handleDeleteChild(child)}
+                                            onClick={() => {
+                                              setDeleteConfirmChild(child);
+                                              setConfirmDeleteChildInput('');
+                                            }}
                                             disabled={deletingChildId === child.id}
                                           >
                                             {deletingChildId === child.id ? 'Deleting…' : 'Delete'}
@@ -1386,14 +1390,14 @@ function SettingsPage() {
                 🚨 <strong>This action cannot be undone.</strong> All members will lose access to this family and its data.
               </p>
               <p className="delete-family-modal-instruction">
-                Type <strong>confirm delete {deleteConfirmFamily.name}</strong> below to confirm.
+                Type <strong>delete {deleteConfirmFamily.name}</strong> below to confirm.
               </p>
               <input
                 type="text"
                 className="form-input delete-family-modal-input"
                 value={confirmDeleteInput}
                 onChange={(e) => setConfirmDeleteInput(e.target.value)}
-                placeholder={`confirm delete ${deleteConfirmFamily.name}`}
+                placeholder={`delete ${deleteConfirmFamily.name}`}
                 aria-label="Type confirmation phrase"
                 autoComplete="off"
               />
@@ -1411,7 +1415,7 @@ function SettingsPage() {
               <Button
                 variant="danger"
                 disabled={
-                  confirmDeleteInput.trim() !== `confirm delete ${deleteConfirmFamily.name}` ||
+                  confirmDeleteInput.trim() !== `delete ${deleteConfirmFamily.name}` ||
                   loading.familyDelete
                 }
                 onClick={() => {
@@ -1421,6 +1425,79 @@ function SettingsPage() {
                 }}
               >
                 {loading.familyDelete ? 'Deleting…' : 'Delete family'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteConfirmChild && (
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-child-modal-title"
+          onClick={() => {
+            setDeleteConfirmChild(null);
+            setConfirmDeleteChildInput('');
+          }}
+        >
+          <div
+            className="modal-content delete-family-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h2 id="delete-child-modal-title">
+                ⚠️ Delete {deleteConfirmChild.name}
+              </h2>
+              <button
+                type="button"
+                className="modal-close"
+                aria-label="Close"
+                onClick={() => {
+                  setDeleteConfirmChild(null);
+                  setConfirmDeleteChildInput('');
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <p className="delete-family-modal-alert">
+                🚨 <strong>This action cannot be undone.</strong> All associated visits and data will be permanently deleted.
+              </p>
+              <p className="delete-family-modal-instruction">
+                Type <strong>delete {deleteConfirmChild.name}</strong> below to confirm.
+              </p>
+              <input
+                type="text"
+                className="form-input delete-family-modal-input"
+                value={confirmDeleteChildInput}
+                onChange={(e) => setConfirmDeleteChildInput(e.target.value)}
+                placeholder={`delete ${deleteConfirmChild.name}`}
+                aria-label="Type confirmation phrase"
+                autoComplete="off"
+              />
+            </div>
+            <div className="modal-footer">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setDeleteConfirmChild(null);
+                  setConfirmDeleteChildInput('');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                disabled={
+                  confirmDeleteChildInput.trim() !== `delete ${deleteConfirmChild.name}` ||
+                  deletingChildId === deleteConfirmChild.id
+                }
+                onClick={() => handleDeleteChild(deleteConfirmChild)}
+              >
+                {deletingChildId === deleteConfirmChild.id ? 'Deleting…' : 'Delete'}
               </Button>
             </div>
           </div>

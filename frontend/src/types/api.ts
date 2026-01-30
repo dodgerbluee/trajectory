@@ -440,7 +440,7 @@ export interface MeasurementAttachment {
 export interface Illness {
   id: number;
   child_id: number;
-  illness_type: IllnessType;
+  illness_types: IllnessType[];
   start_date: string;
   end_date: string | null;
   symptoms: string | null;
@@ -454,7 +454,7 @@ export interface Illness {
 
 export interface CreateIllnessInput {
   child_id: number;
-  illness_type: IllnessType;
+  illness_types: IllnessType[];
   start_date: string;
   end_date?: string | null;
   symptoms?: string | null;
@@ -465,7 +465,7 @@ export interface CreateIllnessInput {
 }
 
 export interface UpdateIllnessInput {
-  illness_type?: IllnessType;
+  illness_types?: IllnessType[];
   start_date?: string;
   end_date?: string | null;
   symptoms?: string | null;

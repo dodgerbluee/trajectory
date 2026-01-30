@@ -688,32 +688,32 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
       summary: 'Visit created',
     });
 
-    // Auto-create illness entry if requested and visit is sick
+    // Auto-create one illness entry (with multiple types) if requested and visit is sick
     if (input.create_illness && input.visit_type === 'sick' && (Array.isArray(illnesses) && illnesses.length > 0)) {
       try {
-        // Create illness entries for each illness selected (if multiple)
-        const toCreate = illnesses && illnesses.length > 0 ? illnesses : [];
         const illnessStartDate = input.illness_start_date ?? input.visit_date;
         const severity = input.illness_severity != null && input.illness_severity >= 1 && input.illness_severity <= 10
           ? input.illness_severity
           : null;
-        for (const ill of toCreate) {
-          await query(
-            `INSERT INTO illnesses (
-              child_id, illness_type, start_date, end_date, symptoms, temperature, severity, visit_id, notes
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-            [
-              input.child_id,
-              ill,
-              illnessStartDate,
-              input.end_date,
-              input.symptoms,
-              input.temperature,
-              severity,
-              visit.id,
-              input.notes,
-            ]
-          );
+        const illResult = await query<{ id: number }>(
+          `INSERT INTO illnesses (
+            child_id, start_date, end_date, symptoms, temperature, severity, visit_id, notes
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          RETURNING id`,
+          [
+            input.child_id,
+            illnessStartDate,
+            input.end_date,
+            input.symptoms,
+            input.temperature,
+            severity,
+            visit.id,
+            input.notes,
+          ]
+        );
+        const illnessId = illResult.rows[0].id;
+        for (const t of illnesses) {
+          await query('INSERT INTO illness_illness_types (illness_id, illness_type) VALUES ($1, $2)', [illnessId, t]);
         }
       } catch (illnessError) {
         // Log error but don't fail the visit creation

@@ -24,15 +24,32 @@ router.use(authenticate);
 // Validation helpers
 // ============================================================================
 
+const VALID_ILLNESS_TYPES = ['flu', 'strep', 'rsv', 'covid', 'cold', 'stomach_bug', 'ear_infection', 'hand_foot_mouth', 'croup', 'pink_eye', 'other'] as const;
+
 function validateIllnessType(value: unknown): IllnessType {
   if (typeof value !== 'string') {
     throw new BadRequestError('illness_type must be a string');
   }
-  const validTypes = ['flu', 'strep', 'rsv', 'covid', 'cold', 'stomach_bug', 'ear_infection', 'hand_foot_mouth', 'croup', 'pink_eye', 'other'];
-  if (!validTypes.includes(value)) {
-    throw new BadRequestError(`illness_type must be one of: ${validTypes.join(', ')}`);
+  if (!VALID_ILLNESS_TYPES.includes(value as IllnessType)) {
+    throw new BadRequestError(`illness_type must be one of: ${VALID_ILLNESS_TYPES.join(', ')}`);
   }
   return value as IllnessType;
+}
+
+function validateIllnessTypesArray(value: unknown): IllnessType[] {
+  if (value === undefined || value === null) {
+    throw new BadRequestError('illness_types is required');
+  }
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new BadRequestError('illness_types must be a non-empty array of strings');
+  }
+  return value.map((v: unknown, idx: number) => {
+    try {
+      return validateIllnessType(v);
+    } catch {
+      throw new BadRequestError(`illness_types[${idx}] is invalid`);
+    }
+  });
 }
 
 // ============================================================================
@@ -53,38 +70,51 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 100;
     const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
 
-    let queryText = 'SELECT * FROM illnesses WHERE child_id = ANY($1::int[])';
+    let queryText = 'SELECT i.* FROM illnesses i';
     const queryParams: unknown[] = [accessibleChildIds];
     let paramCount = 2;
+    if (illnessType) {
+      queryText += ' INNER JOIN illness_illness_types it ON it.illness_id = i.id AND it.illness_type = $' + paramCount++;
+      queryParams.push(illnessType);
+    }
+    queryText += ' WHERE i.child_id = ANY($1::int[])';
 
     if (childId) {
       if (!accessibleChildIds.includes(childId)) {
         return res.json(createResponse([]));
       }
-      queryText += ` AND child_id = $${paramCount++}`;
+      queryText += ` AND i.child_id = $${paramCount++}`;
       queryParams.push(childId);
     }
 
-    if (illnessType) {
-      queryText += ` AND illness_type = $${paramCount++}`;
-      queryParams.push(illnessType);
-    }
-
     if (startDate) {
-      queryText += ` AND start_date >= $${paramCount++}`;
+      queryText += ` AND i.start_date >= $${paramCount++}`;
       queryParams.push(startDate);
     }
 
     if (endDate) {
-      queryText += ` AND (end_date IS NULL OR end_date <= $${paramCount++})`;
+      queryText += ` AND (i.end_date IS NULL OR i.end_date <= $${paramCount++})`;
       queryParams.push(endDate);
     }
 
-    queryText += ` ORDER BY start_date DESC, id DESC LIMIT $${paramCount++} OFFSET $${paramCount++}`;
+    queryText += ` ORDER BY i.start_date DESC, i.id DESC LIMIT $${paramCount++} OFFSET $${paramCount++}`;
     queryParams.push(limit, offset);
 
     const result = await query<IllnessRow>(queryText, queryParams);
-    const illnesses = result.rows.map(illnessRowToIllness);
+    const illnessIds = result.rows.map((r) => r.id);
+    const typesResult = illnessIds.length > 0
+      ? await query<{ illness_id: number; illness_type: IllnessType }>(
+          'SELECT illness_id, illness_type FROM illness_illness_types WHERE illness_id = ANY($1::int[]) ORDER BY illness_id, illness_type',
+          [illnessIds]
+        )
+      : { rows: [] };
+    const typesByIllnessId = new Map<number, IllnessType[]>();
+    for (const row of typesResult.rows) {
+      const arr = typesByIllnessId.get(row.illness_id) ?? [];
+      arr.push(row.illness_type);
+      typesByIllnessId.set(row.illness_id, arr);
+    }
+    const illnesses = result.rows.map((row) => illnessRowToIllness(row, typesByIllnessId.get(row.id) ?? []));
 
     return res.json(createResponse(illnesses));
   } catch (error) {
@@ -201,12 +231,17 @@ router.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
     if (result.rows.length === 0) {
       throw new NotFoundError('Illness');
     }
-    const illness = result.rows[0];
-    if (!(await canAccessChild(req.userId!, illness.child_id))) {
+    const row = result.rows[0];
+    if (!(await canAccessChild(req.userId!, row.child_id))) {
       throw new NotFoundError('Illness');
     }
+    const typesResult = await query<{ illness_type: IllnessType }>(
+      'SELECT illness_type FROM illness_illness_types WHERE illness_id = $1 ORDER BY illness_type',
+      [id]
+    );
+    const illnessTypes = typesResult.rows.map((r) => r.illness_type);
 
-    res.json(createResponse(illnessRowToIllness(illness)));
+    res.json(createResponse(illnessRowToIllness(row, illnessTypes)));
   } catch (error) {
     next(error);
   }
@@ -226,9 +261,10 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
       throw new ForbiddenError('You do not have permission to add illnesses for this child.');
     }
 
+    const illnessTypes = validateIllnessTypesArray(req.body.illness_types);
     const input: CreateIllnessInput = {
       child_id: childId,
-      illness_type: validateIllnessType(req.body.illness_type),
+      illness_types: illnessTypes,
       start_date: validateDate(req.body.start_date, 'start_date'),
       end_date: validateOptionalDate(req.body.end_date, 'end_date'),
       symptoms: validateOptionalString(req.body.symptoms),
@@ -269,12 +305,11 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
 
     const result = await query<IllnessRow>(
       `INSERT INTO illnesses (
-        child_id, illness_type, start_date, end_date, symptoms, temperature, severity, visit_id, notes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        child_id, start_date, end_date, symptoms, temperature, severity, visit_id, notes
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *`,
       [
         input.child_id,
-        input.illness_type,
         input.start_date,
         input.end_date,
         input.symptoms,
@@ -284,8 +319,16 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
         input.notes,
       ]
     );
+    const illnessId = result.rows[0].id;
+    for (const t of input.illness_types) {
+      await query('INSERT INTO illness_illness_types (illness_id, illness_type) VALUES ($1, $2)', [illnessId, t]);
+    }
 
-    res.status(201).json(createResponse(illnessRowToIllness(result.rows[0])));
+    const typesResult = await query<{ illness_type: IllnessType }>(
+      'SELECT illness_type FROM illness_illness_types WHERE illness_id = $1 ORDER BY illness_type',
+      [illnessId]
+    );
+    res.status(201).json(createResponse(illnessRowToIllness(result.rows[0], typesResult.rows.map((r) => r.illness_type))));
   } catch (error) {
     next(error);
   }
@@ -314,7 +357,11 @@ router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
     if (!(await canAccessChild(req.userId!, existingRow.child_id))) {
       throw new NotFoundError('Illness');
     }
-    const existingIllness = illnessRowToIllness(existingRow);
+    const existingTypesRes = await query<{ illness_type: IllnessType }>(
+      'SELECT illness_type FROM illness_illness_types WHERE illness_id = $1 ORDER BY illness_type',
+      [id]
+    );
+    const existingIllness = illnessRowToIllness(existingRow, existingTypesRes.rows.map((r) => r.illness_type));
 
     // Optimistic locking: check if client's version matches server's version
     const clientUpdatedAt = req.body.updated_at;
@@ -336,8 +383,17 @@ router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
     // Only add to input when req.body.X !== undefined so omitted fields are never tracked (partial updates / multiple forms).
     const input: UpdateIllnessInput = {};
 
-    if (req.body.illness_type !== undefined) {
-      input.illness_type = validateIllnessType(req.body.illness_type);
+    if (req.body.illness_types !== undefined) {
+      if (!Array.isArray(req.body.illness_types) || req.body.illness_types.length === 0) {
+        throw new BadRequestError('illness_types must be a non-empty array');
+      }
+      input.illness_types = req.body.illness_types.map((v: unknown, idx: number) => {
+        try {
+          return validateIllnessType(v);
+        } catch {
+          throw new BadRequestError(`illness_types[${idx}] is invalid`);
+        }
+      });
     }
     if (req.body.start_date !== undefined) {
       input.start_date = validateDate(req.body.start_date, 'start_date');
@@ -388,10 +444,6 @@ router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
     const values: unknown[] = [];
     let paramCount = 1;
 
-    if (input.illness_type !== undefined) {
-      updates.push(`illness_type = $${paramCount++}`);
-      values.push(input.illness_type);
-    }
     if (input.start_date !== undefined) {
       updates.push(`start_date = $${paramCount++}`);
       values.push(input.start_date);
@@ -421,36 +473,51 @@ router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
       values.push(input.notes);
     }
 
-    if (updates.length === 0) {
-      // No updates provided, return existing
-      res.json(createResponse(existingIllness));
+    if (updates.length === 0 && input.illness_types === undefined) {
+      // No updates provided, return existing (with types)
+      const existingTypesRes = await query<{ illness_type: IllnessType }>(
+        'SELECT illness_type FROM illness_illness_types WHERE illness_id = $1 ORDER BY illness_type',
+        [id]
+      );
+      res.json(createResponse(illnessRowToIllness(existingRow, existingTypesRes.rows.map((r) => r.illness_type))));
       return;
     }
 
-    values.push(id);
-    
-    // Include updated_at in WHERE clause for optimistic locking
+    if (updates.length > 0) {
+      values.push(id);
+    }
     const whereClause = clientUpdatedAt
       ? `WHERE id = $${paramCount} AND updated_at = $${paramCount + 1}`
       : `WHERE id = $${paramCount}`;
     const whereParams = clientUpdatedAt
       ? [...values, existingRow.updated_at]
       : values;
-    
-    const queryText = `UPDATE illnesses SET ${updates.join(', ')}, updated_at = NOW() ${whereClause} RETURNING *`;
 
-    const result = await query<IllnessRow>(queryText, whereParams);
-    
-    if (result.rows.length === 0) {
-      // No rows updated = conflict detected (if optimistic locking was used) or not found
-      if (clientUpdatedAt) {
-        throw new ConflictError(
-          'Illness was modified by another user. Please refresh and try again.'
-        );
+    let row = existingRow;
+    if (updates.length > 0) {
+      const queryText = `UPDATE illnesses SET ${updates.join(', ')}, updated_at = NOW() ${whereClause} RETURNING *`;
+      const result = await query<IllnessRow>(queryText, whereParams);
+      if (result.rows.length === 0) {
+        if (clientUpdatedAt) {
+          throw new ConflictError(
+            'Illness was modified by another user. Please refresh and try again.'
+          );
+        }
+        throw new NotFoundError('Illness');
       }
-      throw new NotFoundError('Illness');
+      row = result.rows[0];
     }
-    const updatedIllness = illnessRowToIllness(result.rows[0]);
+    if (input.illness_types !== undefined) {
+      await query('DELETE FROM illness_illness_types WHERE illness_id = $1', [id]);
+      for (const t of input.illness_types) {
+        await query('INSERT INTO illness_illness_types (illness_id, illness_type) VALUES ($1, $2)', [id, t]);
+      }
+    }
+    const typesResult = await query<{ illness_type: IllnessType }>(
+      'SELECT illness_type FROM illness_illness_types WHERE illness_id = $1 ORDER BY illness_type',
+      [id]
+    );
+    const updatedIllness = illnessRowToIllness(row, typesResult.rows.map((r) => r.illness_type));
 
     // Field-level audit: diff previous state vs incoming update, persist to audit_events
     const changes = buildFieldDiff(

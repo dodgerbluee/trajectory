@@ -1,4 +1,4 @@
-import { useState, FormEvent, useEffect, useMemo } from 'react';
+import { useState, FormEvent, useEffect, useMemo, useRef, type Dispatch, type SetStateAction } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { visitsApi, childrenApi, ApiClientError } from '../lib/api-client';
 import type { Child, UpdateVisitInput, IllnessType, Visit, VisitAttachment } from '../types/api';
@@ -55,6 +55,19 @@ function EditVisitPage() {
   });
 
   const [selectedIllnesses, setSelectedIllnesses] = useState<IllnessType[]>([]);
+  const selectedIllnessesRef = useRef<IllnessType[]>([]);
+  const setSelectedIllnessesAndRef: Dispatch<SetStateAction<IllnessType[]>> = (value) => {
+    if (typeof value === 'function') {
+      setSelectedIllnesses((prev) => {
+        const next = value(prev);
+        selectedIllnessesRef.current = next;
+        return next;
+      });
+    } else {
+      selectedIllnessesRef.current = value;
+      setSelectedIllnesses(value);
+    }
+  };
 
   const [recentLocations, setRecentLocations] = useState<string[]>([]);
   const [recentDoctors, setRecentDoctors] = useState<string[]>([]);
@@ -134,10 +147,11 @@ function EditVisitPage() {
         notes: visitData.notes,
       });
 
-      // Initialize selected illnesses from new `illnesses` array or legacy `illness_type`
-      setSelectedIllnesses((visitData as any).illnesses && (visitData as any).illnesses.length > 0
+      // Initialize selected illnesses from new `illnesses` array or legacy `illness_type` (use setter so ref is set)
+      const loadedIllnesses = (visitData as any).illnesses && (visitData as any).illnesses.length > 0
         ? (visitData as any).illnesses as IllnessType[]
-        : []);
+        : [];
+      setSelectedIllnessesAndRef(loadedIllnesses);
       
       // Load recent data for autocomplete
       const visitsResponse = await visitsApi.getAll({ child_id: visitData.child_id });
@@ -203,7 +217,7 @@ function EditVisitPage() {
       recentDoctors,
       getTodayDate,
       selectedIllnesses,
-      setSelectedIllnesses,
+      setSelectedIllnesses: setSelectedIllnessesAndRef,
       pendingFiles: [] as File[],
       handleRemoveFile: () => {},
       handleFileUpload,
@@ -232,8 +246,8 @@ function EditVisitPage() {
 
     if (!id || !visit) return;
 
-    // Validation (require at least one selected illness for sick visits)
-    if (visit.visit_type === 'sick' && selectedIllnesses.length === 0) {
+    const illnessesToSend = visit.visit_type === 'sick' ? selectedIllnessesRef.current : null;
+    if (visit.visit_type === 'sick' && (!illnessesToSend || illnessesToSend.length === 0)) {
       setNotification({ message: 'Please select at least one illness for sick visits', type: 'error' });
       return;
     }
@@ -246,11 +260,11 @@ function EditVisitPage() {
     setSubmitting(true);
 
     try {
-      // Send illnesses array and keep `illness_type` for backward compatibility
-      if (visit.visit_type === 'sick') {
-        (formData as any).illnesses = selectedIllnesses.length > 0 ? selectedIllnesses : null;
+      const payload = { ...formData } as any;
+      if (visit.visit_type === 'sick' && illnessesToSend && illnessesToSend.length > 0) {
+        payload.illnesses = illnessesToSend;
       }
-      await visitsApi.update(parseInt(id), formData as any);
+      await visitsApi.update(parseInt(id), payload);
       setNotification({ message: 'Visit updated successfully!', type: 'success' });
       setTimeout(() => {
         navigate(`/visits/${id}`);

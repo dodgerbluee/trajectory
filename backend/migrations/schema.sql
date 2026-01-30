@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS visits (
     blood_pressure VARCHAR(20),
     heart_rate INTEGER,
     symptoms TEXT,
-    temperature DECIMAL(4,2),
+    temperature DECIMAL(5,2),
     illness_start_date DATE,
     end_date DATE,
     injury_type VARCHAR(100),
@@ -125,18 +125,14 @@ CREATE TABLE IF NOT EXISTS visit_illnesses (
     illness_type VARCHAR(100) NOT NULL
 );
 
--- Illnesses (standalone records)
+-- Illnesses (standalone records; types in illness_illness_types)
 CREATE TABLE IF NOT EXISTS illnesses (
     id SERIAL PRIMARY KEY,
     child_id INTEGER NOT NULL REFERENCES children(id) ON DELETE CASCADE,
-    illness_type VARCHAR(100) NOT NULL CHECK (illness_type IN (
-        'flu', 'strep', 'rsv', 'covid', 'cold', 'stomach_bug',
-        'ear_infection', 'hand_foot_mouth', 'croup', 'pink_eye', 'other'
-    )),
     start_date DATE NOT NULL,
     end_date DATE,
     symptoms TEXT,
-    temperature DECIMAL(4,2) CHECK (temperature IS NULL OR (temperature >= 95.0 AND temperature <= 110.0)),
+    temperature DECIMAL(5,2) CHECK (temperature IS NULL OR (temperature >= 95.0 AND temperature <= 110.0)),
     severity INTEGER CHECK (severity IS NULL OR (severity >= 1 AND severity <= 10)),
     visit_id INTEGER REFERENCES visits(id) ON DELETE SET NULL,
     notes TEXT,
@@ -144,6 +140,17 @@ CREATE TABLE IF NOT EXISTS illnesses (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     CONSTRAINT check_illnesses_end_date CHECK (end_date IS NULL OR end_date >= start_date)
 );
+
+CREATE TABLE IF NOT EXISTS illness_illness_types (
+    illness_id INTEGER NOT NULL REFERENCES illnesses(id) ON DELETE CASCADE,
+    illness_type VARCHAR(100) NOT NULL CHECK (illness_type IN (
+        'flu', 'strep', 'rsv', 'covid', 'cold', 'stomach_bug',
+        'ear_infection', 'hand_foot_mouth', 'croup', 'pink_eye', 'other'
+    )),
+    PRIMARY KEY (illness_id, illness_type)
+);
+CREATE INDEX IF NOT EXISTS idx_illness_illness_types_illness ON illness_illness_types(illness_id);
+CREATE INDEX IF NOT EXISTS idx_illness_illness_types_type ON illness_illness_types(illness_type);
 
 -- Attachments
 CREATE SEQUENCE IF NOT EXISTS attachment_id_seq;

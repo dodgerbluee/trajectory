@@ -628,7 +628,7 @@ export function medicalEventRowToEntity(row: MedicalEventRow): MedicalEvent {
 export interface Illness {
   id: number;
   child_id: number;
-  illness_type: IllnessType;
+  illness_types: IllnessType[];
   start_date: string; // ISO date string
   end_date: string | null;
   symptoms: string | null;
@@ -642,7 +642,7 @@ export interface Illness {
 
 export interface CreateIllnessInput {
   child_id: number;
-  illness_type: IllnessType;
+  illness_types: IllnessType[];
   start_date: string;
   end_date?: string | null;
   symptoms?: string | null;
@@ -653,7 +653,7 @@ export interface CreateIllnessInput {
 }
 
 export interface UpdateIllnessInput {
-  illness_type?: IllnessType;
+  illness_types?: IllnessType[];
   start_date?: string;
   end_date?: string | null;
   symptoms?: string | null;
@@ -666,7 +666,6 @@ export interface UpdateIllnessInput {
 export interface IllnessRow {
   id: number;
   child_id: number;
-  illness_type: IllnessType;
   start_date: Date;
   end_date: Date | null;
   symptoms: string | null;
@@ -679,13 +678,13 @@ export interface IllnessRow {
 }
 
 /**
- * Convert IllnessRow from database to Illness for API response
+ * Convert IllnessRow + types from database to Illness for API response
  */
-export function illnessRowToIllness(row: IllnessRow): Illness {
+export function illnessRowToIllness(row: IllnessRow, illnessTypes: IllnessType[]): Illness {
   return {
     id: row.id,
     child_id: row.child_id,
-    illness_type: row.illness_type,
+    illness_types: illnessTypes,
     start_date: row.start_date.toISOString().split('T')[0],
     end_date: row.end_date ? row.end_date.toISOString().split('T')[0] : null,
     symptoms: row.symptoms,

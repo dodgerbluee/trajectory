@@ -198,9 +198,7 @@ export const childrenApi = {
    * Delete a child
    */
   async delete(id: number): Promise<void> {
-    await fetch(`${API_BASE_URL}/api/children/${id}`, {
-      method: 'DELETE',
-    });
+    await request<void>(`/api/children/${id}`, { method: 'DELETE' });
   },
 
   /**
@@ -272,9 +270,7 @@ export const childrenApi = {
    * Delete avatar for child
    */
   async deleteAvatar(childId: number): Promise<void> {
-    await fetch(`${API_BASE_URL}/api/children/${childId}/avatar`, {
-      method: 'DELETE',
-    });
+    await request<void>(`/api/children/${childId}/avatar`, { method: 'DELETE' });
   },
 
   /**
@@ -393,9 +389,7 @@ export const measurementsApi = {
    * Delete a measurement
    */
   async delete(id: number): Promise<void> {
-    await fetch(`${API_BASE_URL}/api/measurements/${id}`, {
-      method: 'DELETE',
-    });
+    await request<void>(`/api/measurements/${id}`, { method: 'DELETE' });
   },
 };
 
@@ -452,9 +446,7 @@ export const medicalEventsApi = {
    * Delete a medical event
    */
   async delete(id: number): Promise<void> {
-    await fetch(`${API_BASE_URL}/api/medical-events/${id}`, {
-      method: 'DELETE',
-    });
+    await request<void>(`/api/medical-events/${id}`, { method: 'DELETE' });
   },
 };
 
@@ -514,9 +506,7 @@ export const attachmentsApi = {
    * Delete attachment
    */
   async delete(attachmentId: number): Promise<void> {
-    await fetch(`${API_BASE_URL}/api/attachments/${attachmentId}`, {
-      method: 'DELETE',
-    });
+    await request<void>(`/api/attachments/${attachmentId}`, { method: 'DELETE' });
   },
 };
 

@@ -105,7 +105,7 @@ describe('Authorization: user A cannot access user B\'s resources', () => {
   describe('GET /api/illnesses/:id', () => {
     it('returns 404 when user cannot access illness (child belongs to another family)', async () => {
       mockQuery.mockResolvedValueOnce({
-        rows: [{ id: 50, child_id: 999, illness_type: 'cold', start_date: new Date(), updated_at: new Date() }],
+        rows: [{ id: 50, child_id: 999, start_date: new Date(), updated_at: new Date() }],
       } as never);
       mockCanAccessChild.mockResolvedValue(false);
 

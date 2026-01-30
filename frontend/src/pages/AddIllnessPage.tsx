@@ -1,4 +1,4 @@
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, FormEvent, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { illnessesApi, childrenApi, visitsApi, ApiClientError } from '../lib/api-client';
 import type { Child, CreateIllnessInput, IllnessType } from '../types/api';
@@ -24,10 +24,10 @@ function AddIllnessPage() {
   const childIdFromUrl = searchParams.get('child_id');
   const initialChildId = childIdFromUrl ? parseInt(childIdFromUrl) : 0;
 
-  type AddIllnessFormData = Omit<CreateIllnessInput, 'illness_type'> & { illness_type: IllnessType | null };
+  type AddIllnessFormData = Omit<CreateIllnessInput, 'illness_types'> & { illness_types: IllnessType[] };
   const [formData, setFormData] = useState<AddIllnessFormData>({
     child_id: initialChildId,
-    illness_type: null,
+    illness_types: [],
     start_date: getTodayDate(),
     end_date: null,
     symptoms: null,
@@ -38,10 +38,7 @@ function AddIllnessPage() {
   });
 
   const [selectedIllnesses, setSelectedIllnesses] = useState<IllnessType[]>([]);
-
-  useEffect(() => {
-    setSelectedIllnesses(formData.illness_type ? [formData.illness_type] : []);
-  }, [formData.illness_type]);
+  const selectedIllnessesRef = useRef<IllnessType[]>([]);
 
   useEffect(() => {
     loadData();
@@ -75,8 +72,9 @@ function AddIllnessPage() {
       return;
     }
 
-    if (!formData.illness_type) {
-      setNotification({ message: 'Please select an illness type', type: 'error' });
+    const illnessTypes = selectedIllnessesRef.current.length > 0 ? selectedIllnessesRef.current : formData.illness_types;
+    if (illnessTypes.length === 0) {
+      setNotification({ message: 'Please select at least one illness type', type: 'error' });
       return;
     }
 
@@ -88,8 +86,17 @@ function AddIllnessPage() {
     setSubmitting(true);
 
     try {
-      const payload: CreateIllnessInput = { ...formData, illness_type: formData.illness_type };
-      const res = await illnessesApi.create(payload);
+      const res = await illnessesApi.create({
+        child_id: formData.child_id,
+        illness_types: illnessTypes,
+        start_date: formData.start_date,
+        end_date: formData.end_date ?? undefined,
+        symptoms: formData.symptoms ?? undefined,
+        temperature: formData.temperature ?? undefined,
+        severity: formData.severity ?? undefined,
+        visit_id: formData.visit_id ?? undefined,
+        notes: formData.notes ?? undefined,
+      });
       setNotification({ message: 'Illness added successfully!', type: 'success' });
       setTimeout(() => {
         const state = location.state as { fromChild?: boolean; childId?: number; fromTab?: string } | null;
@@ -134,7 +141,6 @@ function AddIllnessPage() {
   const handleIllnessEntryChange = (next: import('../components/IllnessEntryFormFields').IllnessEntryFormValue) => {
     setFormData(prev => ({
       ...prev,
-      illness_type: next.illness_type ?? prev.illness_type,
       symptoms: next.symptoms,
       temperature: next.temperature,
       severity: next.illness_severity ?? null,
@@ -209,8 +215,8 @@ function AddIllnessPage() {
                   onChange={handleIllnessEntryChange}
                   selectedIllnesses={selectedIllnesses}
                   onSelectedIllnessesChange={(ills) => {
+                    selectedIllnessesRef.current = ills;
                     setSelectedIllnesses(ills);
-                    setFormData(prev => ({ ...prev, illness_type: ills?.length ? ills[0] : null }));
                   }}
                   disabled={submitting}
                   dateMode="standalone"

@@ -109,7 +109,9 @@ function IllnessDetailPage() {
     return <ErrorMessage message="Illness not found" />;
   }
 
-  const illnessTypeLabel = illness.illness_type ? illness.illness_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Illness';
+  const illnessTypeLabel = illness.illness_types?.length
+    ? illness.illness_types.map((t) => t.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())).join(', ')
+    : 'Illness';
 
   return (
     <div className="page-container">
@@ -154,7 +156,7 @@ function IllnessDetailPage() {
                 <span className="visit-info-value">{child.name}</span>
               </div>
               <div className="visit-info-item">
-                <span className="visit-info-label">Illness type:</span>
+                <span className="visit-info-label">Illness types:</span>
                 <span className="visit-info-value">{illnessTypeLabel}</span>
               </div>
               <div className="visit-info-item">

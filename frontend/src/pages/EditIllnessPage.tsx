@@ -45,7 +45,6 @@ function EditIllnessPage() {
       setVisits(visitsResponse.data);
 
       setFormData({
-        illness_type: fetchedIllness.illness_type,
         start_date: fetchedIllness.start_date,
         end_date: fetchedIllness.end_date,
         symptoms: fetchedIllness.symptoms,
@@ -54,7 +53,7 @@ function EditIllnessPage() {
         visit_id: fetchedIllness.visit_id,
         notes: fetchedIllness.notes,
       });
-      setSelectedIllnesses(fetchedIllness.illness_type ? [fetchedIllness.illness_type] : []);
+      setSelectedIllnesses(fetchedIllness.illness_types?.length ? [...fetchedIllness.illness_types] : []);
     } catch (error) {
       if (error instanceof ApiClientError) {
         setNotification({ message: error.message, type: 'error' });
@@ -82,7 +81,7 @@ function EditIllnessPage() {
     setSubmitting(true);
 
     try {
-      await illnessesApi.update(illness.id, formData);
+      await illnessesApi.update(illness.id, { ...formData, illness_types: selectedIllnesses });
       setNotification({ message: 'Illness updated successfully!', type: 'success' });
       setTimeout(() => {
         navigate(`/illnesses/${illness.id}`);
@@ -115,7 +114,6 @@ function EditIllnessPage() {
   const childVisits = visits.filter(v => v.child_id === illness.child_id);
 
   const illnessEntryValue = {
-    illness_type: formData.illness_type ?? illness.illness_type,
     symptoms: formData.symptoms !== undefined ? formData.symptoms : illness.symptoms,
     temperature: formData.temperature !== undefined ? formData.temperature : illness.temperature,
     illness_severity: formData.severity !== undefined ? formData.severity : illness.severity,
@@ -126,7 +124,6 @@ function EditIllnessPage() {
   const handleIllnessEntryChange = (next: import('../components/IllnessEntryFormFields').IllnessEntryFormValue) => {
     setFormData(prev => ({
       ...prev,
-      illness_type: next.illness_type ?? undefined,
       symptoms: next.symptoms,
       temperature: next.temperature,
       severity: next.illness_severity ?? undefined,
@@ -182,7 +179,6 @@ function EditIllnessPage() {
                   selectedIllnesses={selectedIllnesses}
                   onSelectedIllnessesChange={(ills) => {
                     setSelectedIllnesses(ills);
-                    setFormData(prev => ({ ...prev, illness_type: ills?.length ? ills[0] : undefined }));
                   }}
                   disabled={submitting}
                   dateMode="standalone"
