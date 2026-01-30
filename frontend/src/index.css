@@ -1578,7 +1578,7 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
 /* Create/Edit visit page: back above sidebar; title + body right of sidebar; Save/Cancel level with title on right */
 .visit-form-page.visit-form-layout-grid {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 225px 1fr;
   grid-template-rows: auto auto 1fr;
   gap: 12px 24px;
   align-items: stretch;

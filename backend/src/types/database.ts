@@ -261,7 +261,6 @@ export interface Visit {
   xrays_taken: boolean | null;
   fluoride_treatment: boolean | null;
   sealants_applied: boolean | null;
-  next_appointment_date: string | null; // ISO date string
   dental_procedures?: {
     procedure: string;
     tooth_number?: string | null;
@@ -332,7 +331,6 @@ export interface CreateVisitInput {
   xrays_taken?: boolean | null;
   fluoride_treatment?: boolean | null;
   sealants_applied?: boolean | null;
-  next_appointment_date?: string | null;
   dental_procedures?: {
     procedure: string;
     tooth_number?: string | null;
@@ -396,7 +394,6 @@ export interface UpdateVisitInput {
   xrays_taken?: boolean | null;
   fluoride_treatment?: boolean | null;
   sealants_applied?: boolean | null;
-  next_appointment_date?: string | null;
   dental_procedures?: {
     procedure: string;
     tooth_number?: string | null;
@@ -462,7 +459,6 @@ export interface VisitRow {
   xrays_taken?: boolean | null;
   fluoride_treatment?: boolean | null;
   sealants_applied?: boolean | null;
-  next_appointment_date?: Date | null;
   dental_procedures?: unknown; // JSONB field
   
   vaccines_administered: string | null; // TEXT field
@@ -559,7 +555,6 @@ export function visitRowToVisit(row: VisitRow): Visit {
     xrays_taken: row.xrays_taken ?? null,
     fluoride_treatment: row.fluoride_treatment ?? null,
     sealants_applied: row.sealants_applied ?? null,
-    next_appointment_date: row.next_appointment_date ? row.next_appointment_date.toISOString().split('T')[0] : null,
     dental_procedures: (() => {
       const v = row.dental_procedures;
       if (!v) return null;

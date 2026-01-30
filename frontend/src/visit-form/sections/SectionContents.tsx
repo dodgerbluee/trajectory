@@ -324,12 +324,12 @@ export function VisionSection({ context }: SectionContentPropsWithContext) {
 }
 
 export function DentalSection({ context }: SectionContentPropsWithContext) {
-  const { formData, setFormData, submitting, getTodayDate } = context;
+  const { formData, setFormData, submitting } = context;
   const setForm = setFormData as React.Dispatch<React.SetStateAction<any>>;
   const fd = formData as any;
   
   const procedureTypes = [
-    { value: '', label: 'Select procedure type...' },
+    { value: '', label: 'Select dental visit type...' },
     { value: 'checkup', label: 'Checkup' },
     { value: 'cleaning', label: 'Cleaning' },
     { value: 'filling', label: 'Filling' },
@@ -353,7 +353,7 @@ export function DentalSection({ context }: SectionContentPropsWithContext) {
     <div className="dental-ui">
       <div className="dental-form-fields">
         <FormField
-          label="Procedure Type"
+          label="Dental Visit Type"
           type="select"
           value={fd.dental_procedure_type || ''}
           onChange={(e) => setForm((prev: any) => ({ ...prev, dental_procedure_type: e.target.value || null }))}
@@ -372,7 +372,7 @@ export function DentalSection({ context }: SectionContentPropsWithContext) {
           />
         )}
         
-        <div className="dental-checkboxes">
+        <div className="dental-checkboxes" style={{ display: 'flex', gap: 'var(--spacing-md)', flexWrap: 'wrap', marginBottom: 'var(--spacing-md)' }}>
           <Checkbox
             label="X-Rays Taken"
             checked={fd.xrays_taken || false}
@@ -393,44 +393,29 @@ export function DentalSection({ context }: SectionContentPropsWithContext) {
           />
         </div>
         
-        <div className="dental-numbers">
-          <FormField
-            label="Cavities Found"
-            type="number"
-            value={fd.cavities_found ?? ''}
-            onChange={(e) => setForm((prev: any) => ({ ...prev, cavities_found: e.target.value === '' ? null : parseInt(e.target.value) || null }))}
-            min="0"
-            disabled={submitting}
-          />
-          <FormField
-            label="Cavities Filled"
-            type="number"
-            value={fd.cavities_filled ?? ''}
-            onChange={(e) => setForm((prev: any) => ({ ...prev, cavities_filled: e.target.value === '' ? null : parseInt(e.target.value) || null }))}
-            min="0"
-            max={fd.cavities_found ?? undefined}
-            disabled={submitting}
-          />
+        <div className="dental-numbers" style={{ display: 'flex', gap: '16px' }}>
+          <div style={{ flex: 1 }}>
+            <FormField
+              label="Cavities Found"
+              type="number"
+              value={fd.cavities_found ?? ''}
+              onChange={(e) => setForm((prev: any) => ({ ...prev, cavities_found: e.target.value === '' ? null : parseInt(e.target.value) || null }))}
+              min="0"
+              disabled={submitting}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <FormField
+              label="Cavities Filled"
+              type="number"
+              value={fd.cavities_filled ?? ''}
+              onChange={(e) => setForm((prev: any) => ({ ...prev, cavities_filled: e.target.value === '' ? null : parseInt(e.target.value) || null }))}
+              min="0"
+              max={fd.cavities_found ?? undefined}
+              disabled={submitting}
+            />
+          </div>
         </div>
-        
-        <FormField
-          label="Next Appointment Date"
-          type="date"
-          value={fd.next_appointment_date ?? ''}
-          onChange={(e) => setForm((prev: any) => ({ ...prev, next_appointment_date: e.target.value || null }))}
-          min={getTodayDate()}
-          disabled={submitting}
-        />
-        
-        <FormField
-          label="Dental Notes"
-          type="textarea"
-          value={fd.dental_notes || ''}
-          onChange={(e) => setForm((prev: any) => ({ ...prev, dental_notes: e.target.value || null }))}
-          disabled={submitting}
-          placeholder="Additional notes about the dental visit..."
-          rows={4}
-        />
       </div>
     </div>
   );

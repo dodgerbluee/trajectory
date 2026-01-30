@@ -69,7 +69,7 @@ const SECTION_REGISTRY: SectionEntry[] = [
     id: 'notes',
     label: 'Notes',
     component: NotesSection as ComponentType<SectionContentProps>,
-    hideTitle: true,
+    hideTitle: false,
     removable: false,
     allowedVisitTypes: null,
     optional: false,

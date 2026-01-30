@@ -14,6 +14,10 @@ interface FamilyPermissionsContextType {
 const FamilyPermissionsContext = createContext<FamilyPermissionsContextType | undefined>(undefined);
 
 function computeCanEdit(roles: (string | undefined)[]): boolean {
+  // If user has no families (empty roles array), allow editing (new user scenario)
+  if (roles.length === 0) {
+    return true;
+  }
   return roles.some((r) => r === 'owner' || r === 'parent');
 }
 

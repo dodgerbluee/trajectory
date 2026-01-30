@@ -627,7 +627,6 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
       xrays_taken: req.body.xrays_taken === true ? true : (req.body.xrays_taken === false ? false : null),
       fluoride_treatment: req.body.fluoride_treatment === true ? true : (req.body.fluoride_treatment === false ? false : null),
       sealants_applied: req.body.sealants_applied === true ? true : (req.body.sealants_applied === false ? false : null),
-      next_appointment_date: validateOptionalDate(req.body.next_appointment_date),
       dental_procedures: validateDentalProcedures(req.body.dental_procedures),
 
       vaccines_administered: req.body.vaccines_administered,
@@ -673,7 +672,7 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
           injury_location, treatment,
           vision_prescription, vision_refraction, ordered_glasses, ordered_contacts,
           dental_procedure_type, dental_notes, cleaning_type, cavities_found, cavities_filled,
-          xrays_taken, fluoride_treatment, sealants_applied, next_appointment_date, dental_procedures,
+          xrays_taken, fluoride_treatment, sealants_applied, dental_procedures,
           vaccines_administered, prescriptions, tags, notes
         ) VALUES (
           $1, $2, $3, $4, $5, $6,
@@ -685,8 +684,8 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
           $18, $19, $20, $21, $22,
           $23, $24,
           $25, $26, $27, $28,
-          $29, $30, $31, $32, $33, $34, $35, $36, $37, $38,
-          $39, $40, $41, $42
+          $29, $30, $31, $32, $33, $34, $35, $36, $37,
+          $38, $39, $40, $41
         ) RETURNING *`,
         [
           input.child_id, input.visit_date, input.visit_type, input.location, input.doctor_name, input.title,
@@ -699,7 +698,7 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
           input.injury_location, input.treatment,
           input.vision_prescription, input.vision_refraction ? JSON.stringify(input.vision_refraction) : null, input.ordered_glasses, input.ordered_contacts,
           input.dental_procedure_type, input.dental_notes, input.cleaning_type, input.cavities_found, input.cavities_filled,
-          input.xrays_taken, input.fluoride_treatment, input.sealants_applied, input.next_appointment_date ?? null, input.dental_procedures ? JSON.stringify(input.dental_procedures) : null,
+          input.xrays_taken, input.fluoride_treatment, input.sealants_applied, input.dental_procedures ? JSON.stringify(input.dental_procedures) : null,
           vaccines, prescriptions ? JSON.stringify(prescriptions) : null, tagsJson, input.notes,
         ]
       );
@@ -1089,13 +1088,6 @@ router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
       const v = req.body.sealants_applied === true ? true : (req.body.sealants_applied === false ? false : null);
       payload.sealants_applied = v;
       updates.push(`sealants_applied = $${paramCount++}`);
-      values.push(v);
-    }
-
-    if (req.body.next_appointment_date !== undefined) {
-      const v = validateOptionalDate(req.body.next_appointment_date);
-      payload.next_appointment_date = v;
-      updates.push(`next_appointment_date = $${paramCount++}`);
       values.push(v);
     }
 

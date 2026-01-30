@@ -260,9 +260,9 @@ export const childrenApi = {
    */
   getDefaultAvatarUrl(gender: string): string {
     if (gender === 'male') {
-      return '/avatars/default-boy.svg';
+      return '/api/avatars/default-boy.svg';
     } else {
-      return '/avatars/default-girl.svg';
+      return '/api/avatars/default-girl.svg';
     }
   },
 
@@ -791,6 +791,15 @@ export const authApi = {
     return requestPublic<{ success: boolean; requiresCode: boolean; codeActive: boolean }>(
       '/api/auth/registration-code-required'
     );
+  },
+
+  /**
+   * Generate a registration code (only when no users exist).
+   */
+  async generateRegistrationCode(): Promise<ApiResponse<{ message: string }>> {
+    return requestPublic<{ message: string }>('/api/auth/generate-registration-code', {
+      method: 'POST',
+    });
   },
 
   /**

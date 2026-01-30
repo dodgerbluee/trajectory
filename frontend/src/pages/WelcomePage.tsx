@@ -74,9 +74,18 @@ export default function WelcomePage() {
         .then((res) => {
           setFamilies(res.data);
           const first = res.data[0];
-          if (first) setFamilyName(first.name ?? 'My Family');
+          if (first) {
+            setFamilyName(first.name ?? 'My Family');
+          } else {
+            // No family exists yet - set default name for creation
+            setFamilyName('My Family');
+          }
         })
-        .catch(() => setError('Could not load your family.'))
+        .catch(() => {
+          setError('Could not load your family.');
+          // Set default name even on error so user can still create
+          setFamilyName('My Family');
+        })
         .finally(() => setLoading(false));
     }
   }, [step, families.length]);
@@ -101,15 +110,20 @@ export default function WelcomePage() {
       setError('Please enter a family name.');
       return;
     }
-    const first = families[0];
-    if (!first) {
-      setError('No family found.');
-      return;
-    }
     setError(null);
     setSavingName(true);
     try {
-      await familiesApi.updateFamily(first.id, trimmed);
+      const first = families[0];
+      if (first) {
+        // Update existing family
+        await familiesApi.updateFamily(first.id, trimmed);
+      } else {
+        // Create new family if none exists
+        await familiesApi.create(trimmed);
+        // Refresh families list so handleAddChild can find it
+        const res = await familiesApi.getAll();
+        setFamilies(res.data);
+      }
       setStep(3);
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Could not save family name.');

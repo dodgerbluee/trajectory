@@ -10,9 +10,10 @@ import fs from 'fs/promises';
 import { randomUUID } from 'crypto';
 import { query } from '../db/connection.js';
 import { createResponse } from '../types/api.js';
-import { authenticate, authenticateHeaderOrQuery, type AuthRequest } from '../middleware/auth.js';
+import { authenticate, type AuthRequest } from '../middleware/auth.js';
 import { canAccessChild, canEditChild } from '../lib/family-access.js';
 import { ForbiddenError } from '../middleware/error-handler.js';
+import { verifyToken } from '../lib/auth.js';
 
 const router = Router();
 
@@ -168,12 +169,115 @@ router.post(
 // Get avatar file
 // ============================================================================
 
+// Explicit routes for default avatars (must come BEFORE parameterized route)
+// These are public and require no authentication
+router.get(
+  '/avatars/default-boy.svg',
+  async (_req: Request, res: Response): Promise<void> => {
+    const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="100" cy="100" r="100" fill="#4A90E2"/>
+  <circle cx="100" cy="80" r="35" fill="#FFFFFF"/>
+  <ellipse cx="100" cy="140" rx="50" ry="40" fill="#FFFFFF"/>
+</svg>`;
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.send(svg);
+  }
+);
+
+router.get(
+  '/avatars/default-girl.svg',
+  async (_req: Request, res: Response): Promise<void> => {
+    const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="100" cy="100" r="100" fill="#E91E63"/>
+  <circle cx="100" cy="80" r="35" fill="#FFFFFF"/>
+  <ellipse cx="100" cy="140" rx="50" ry="40" fill="#FFFFFF"/>
+</svg>`;
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.send(svg);
+  }
+);
+
+// Helper function to serve default avatar SVG
+function serveDefaultAvatar(res: Response, isBoy: boolean): void {
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="100" cy="100" r="100" fill="${isBoy ? '#4A90E2' : '#E91E63'}"/>
+  <circle cx="100" cy="80" r="35" fill="#FFFFFF"/>
+  <ellipse cx="100" cy="140" rx="50" ry="40" fill="#FFFFFF"/>
+</svg>`;
+  if (!res.headersSent) {
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.send(svg);
+  }
+}
+
+// Parameterized route for user-uploaded avatars (requires authentication)
 router.get(
   '/avatars/:filename',
-  authenticateHeaderOrQuery,
-  async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    // Extract filename from multiple sources to be absolutely sure
+    const filename = req.params?.filename || 
+                     req.path?.split('/').pop() || 
+                     req.url?.split('/').pop()?.split('?')[0] || 
+                     '';
+    
+    // CRITICAL: Check for default avatars FIRST, before ANY other logic
+    // This must happen before authentication, before headers check, before everything
+    // Also check the full path in case params aren't set
+    const isDefaultBoy = filename === 'default-boy.svg' || req.path?.endsWith('/default-boy.svg') || req.url?.includes('default-boy.svg');
+    const isDefaultGirl = filename === 'default-girl.svg' || req.path?.endsWith('/default-girl.svg') || req.url?.includes('default-girl.svg');
+    
+    if (isDefaultBoy || isDefaultGirl) {
+      serveDefaultAvatar(res, isDefaultBoy);
+      return;
+    }
+
     try {
-      const filename = req.params.filename;
+
+      // Safety check: if response was already sent, don't continue
+      if (res.headersSent) {
+        return;
+      }
+
+      // For non-default avatars, require authentication
+      const authReq = req as AuthRequest;
+      let token: string | undefined;
+      const authHeader = req.headers.authorization;
+      if (authHeader?.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+      } else if (typeof req.query.token === 'string' && req.query.token.trim()) {
+        token = req.query.token.trim();
+      }
+      if (!token) {
+        res.status(401).json({
+          error: {
+            message: 'Missing or invalid authorization',
+            type: 'UnauthorizedError',
+            statusCode: 401,
+          },
+        });
+        return;
+      }
+
+      try {
+        const { userId, email } = verifyToken(token, false);
+        authReq.userId = userId;
+        authReq.userEmail = email;
+      } catch {
+        res.status(401).json({
+          error: {
+            message: 'Invalid or expired token',
+            type: 'UnauthorizedError',
+            statusCode: 401,
+          },
+        });
+        return;
+      }
 
       if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
         res.status(400).json({
@@ -190,7 +294,7 @@ router.get(
         'SELECT id FROM children WHERE avatar = $1',
         [filename]
       );
-      if (childWithAvatar.rows.length === 0 || !(await canAccessChild(req.userId!, childWithAvatar.rows[0].id))) {
+      if (childWithAvatar.rows.length === 0 || !(await canAccessChild(authReq.userId!, childWithAvatar.rows[0].id))) {
         res.status(404).json({
           error: {
             message: 'Avatar not found',
@@ -236,6 +340,12 @@ router.get(
       res.setHeader('Content-Length', fileBuffer.length.toString());
       res.send(fileBuffer);
     } catch (error) {
+      // If this is a default avatar request and we hit an error, serve it anyway
+      const caughtFilename = req.params?.filename || req.path?.split('/').pop() || '';
+      if (caughtFilename === 'default-boy.svg' || caughtFilename === 'default-girl.svg') {
+        serveDefaultAvatar(res, caughtFilename === 'default-boy.svg');
+        return;
+      }
       next(error);
     }
   }

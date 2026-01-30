@@ -47,10 +47,29 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
 
     authApi
       .getRegistrationCodeRequired()
-      .then((res) => {
+      .then(async (res) => {
         const { requiresCode: req, codeActive: active } = res.data;
         if (req && !active) {
-          setStep('code-required');
+          // Auto-generate the code
+          try {
+            await authApi.generateRegistrationCode();
+            // Re-check to confirm code is now active
+            const recheck = await authApi.getRegistrationCodeRequired();
+            if (recheck.data.codeActive) {
+              setStep('code');
+            } else {
+              setStep('code-required');
+              setError('Registration code was generated but could not be verified. Please check server logs.');
+            }
+          } catch (err) {
+            console.error('Failed to generate registration code:', err);
+            setStep('code-required');
+            if (err instanceof ApiClientError) {
+              setError(`Failed to generate registration code: ${err.message}. Please check server logs.`);
+            } else {
+              setError('Failed to generate registration code. Please check server logs.');
+            }
+          }
         } else if (req && active) {
           setStep('code');
         } else {
@@ -155,10 +174,19 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
   };
 
   const formatCodeInput = (value: string) => {
-    const digits = value.replace(/\D/g, '').slice(0, 12);
+    // Allow alphanumeric characters (matching backend alphabet: 23456789ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz)
+    // Backend alphabet excludes: 0, O, I, 1, l (ambiguous characters)
+    // Remove dashes first, then filter to valid characters, then limit to 12
+    const validChars = '23456789ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz';
+    const cleaned = value
+      .replace(/-/g, '')
+      .split('')
+      .filter(char => validChars.includes(char))
+      .join('')
+      .slice(0, 12);
     const parts: string[] = [];
-    for (let i = 0; i < digits.length; i += 4) {
-      parts.push(digits.slice(i, i + 4));
+    for (let i = 0; i < cleaned.length; i += 4) {
+      parts.push(cleaned.slice(i, i + 4));
     }
     return parts.join('-');
   };

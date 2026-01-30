@@ -319,7 +319,7 @@ function VisitDetailPage() {
                       <div className="visit-info-stacked">
                         {(visit as any).dental_procedure_type && (
                           <div className="visit-info-item">
-                            <span className="visit-info-label">Procedure Type:</span>
+                            <span className="visit-info-label">Dental Visit Type:</span>
                             <span className="visit-info-value">{(visit as any).dental_procedure_type}</span>
                           </div>
                         )}
