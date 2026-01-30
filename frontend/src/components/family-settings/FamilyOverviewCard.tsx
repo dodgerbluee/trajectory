@@ -13,6 +13,8 @@ interface FamilyOverviewCardProps {
   isRenaming?: boolean;
   isDeleting?: boolean;
   isLeaving?: boolean;
+  /** When true, render only the overview content without a Card wrapper (for use inside a parent card). */
+  noCard?: boolean;
 }
 
 function FamilyOverviewCard({
@@ -25,6 +27,7 @@ function FamilyOverviewCard({
   isRenaming,
   isDeleting,
   isLeaving,
+  noCard = false,
 }: FamilyOverviewCardProps) {
   const [editingName, setEditingName] = useState(false);
   const [editValue, setEditValue] = useState(familyName);
@@ -50,9 +53,8 @@ function FamilyOverviewCard({
     setEditingName(false);
   };
 
-  return (
-    <Card className="family-settings-card family-settings-card--overview">
-      <div className="family-settings-overview">
+  const content = (
+    <div className="family-settings-overview">
         <div className="family-settings-overview-row">
           <span className="family-settings-overview-label">Family</span>
           {editingName ? (
@@ -117,7 +119,13 @@ function FamilyOverviewCard({
             )}
           </div>
         )}
-      </div>
+    </div>
+  );
+
+  if (noCard) return content;
+  return (
+    <Card className="family-settings-card family-settings-card--overview">
+      {content}
     </Card>
   );
 }

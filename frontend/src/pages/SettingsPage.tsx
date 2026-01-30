@@ -17,6 +17,7 @@ import { LuSun, LuMoon, LuLaptop, LuSave, LuDownload, LuSettings, LuUser, LuUser
 import { ApiClientError, exportApi, familiesApi, childrenApi } from '../lib/api-client';
 import type { Family, FamilyInvite, FamilyMember, Child } from '../types/api';
 import { FamilyOverviewCard, MemberRow, InviteRow } from '../components/family-settings';
+import RoleBadge from '../components/RoleBadge';
 import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
 import { formatDate, calculateAge, formatAge, type DateFormat } from '../lib/date-utils';
 
@@ -49,6 +50,7 @@ function SettingsPage() {
     password: false,
     export: false,
     family: false,
+    familyCreate: false,
     invite: false,
     familyRename: false,
     familyDelete: false,
@@ -58,6 +60,9 @@ function SettingsPage() {
   const [deleteConfirmFamily, setDeleteConfirmFamily] = useState<Family | null>(null);
   const [confirmDeleteInput, setConfirmDeleteInput] = useState('');
   const [leaveConfirmFamily, setLeaveConfirmFamily] = useState<Family | null>(null);
+  const [showAddFamilyModal, setShowAddFamilyModal] = useState(false);
+  const [newFamilyName, setNewFamilyName] = useState('');
+  const [newFamilyNameError, setNewFamilyNameError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Family state
@@ -133,6 +138,57 @@ function SettingsPage() {
       cancelled = true;
     };
   }, [activeTab]);
+
+  const loadFamilies = async () => {
+    setLoading((l) => ({ ...l, family: true }));
+    try {
+      const res = await familiesApi.getAll();
+      setFamilies(res.data);
+      await Promise.all([
+        ...res.data.map((f) =>
+          familiesApi.getMembers(f.id).then((memRes) =>
+            setMembersByFamily((prev) => ({ ...prev, [f.id]: memRes.data }))
+          )
+        ),
+        ...res.data
+          .filter((f) => f.role === 'owner' || f.role === 'parent')
+          .map((f) =>
+            familiesApi.getInvites(f.id).then((invRes) =>
+              setInvitesByFamily((prev) => ({ ...prev, [f.id]: invRes.data }))
+            )
+          ),
+      ]);
+    } catch {
+      setNotification({ message: 'Failed to load families', type: 'error' });
+    } finally {
+      setLoading((l) => ({ ...l, family: false }));
+    }
+  };
+
+  const handleAddFamily = async (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setNewFamilyNameError('Family name is required');
+      return;
+    }
+    setNewFamilyNameError(null);
+    setLoading((l) => ({ ...l, familyCreate: true }));
+    try {
+      await familiesApi.create(trimmed);
+      setNotification({ message: 'Family created.', type: 'success' });
+      setShowAddFamilyModal(false);
+      setNewFamilyName('');
+      await loadFamilies();
+      await loadChildren();
+    } catch (err) {
+      setNotification({
+        message: err instanceof ApiClientError ? err.message : 'Failed to create family',
+        type: 'error',
+      });
+    } finally {
+      setLoading((l) => ({ ...l, familyCreate: false }));
+    }
+  };
 
   const loadChildren = async () => {
     setLoadingKids(true);
@@ -652,10 +708,16 @@ function SettingsPage() {
   ) : families.length === 0 ? (
     <div className="family-settings-empty">No families found.</div>
   ) : (
-    <>
+    <div className="family-management-list">
       {families.map((family) => (
-          <div key={family.id} className="family-settings-container">
-            {/* A. Family Overview */}
+        <Card key={family.id} className="family-management-family-card">
+          <header className="family-management-family-header" aria-label={`Family: ${family.name}`}>
+            <h2 id={`family-management-heading-${family.id}`} className="family-management-family-name">
+              {family.name}
+            </h2>
+            {family.role && <RoleBadge role={family.role} />}
+          </header>
+          <div className="family-management-family-body">
             <FamilyOverviewCard
               familyName={family.name}
               members={membersByFamily[family.id] ?? []}
@@ -681,37 +743,45 @@ function SettingsPage() {
               isRenaming={loading.familyRename && familyActionId === family.id}
               isDeleting={loading.familyDelete && familyActionId === family.id}
               isLeaving={loading.familyLeave && familyActionId === family.id}
+              noCard
             />
 
-            {/* B. Family Members */}
-            <Card title="Family Members" className="family-settings-card">
-              {!(membersByFamily[family.id]?.length) ? (
-                <div className="family-settings-loading">Loading members…</div>
-              ) : (
-                <div className="family-settings-members-list" role="list">
-                  {(membersByFamily[family.id] || []).map((member) => (
-                    <MemberRow
-                      key={member.user_id}
-                      member={member}
-                      currentUserId={user?.id}
-                      canEdit={family.role === 'owner' || family.role === 'parent'}
-                      canRemove={family.role === 'owner' || family.role === 'parent'}
-                      onRemove={() => handleRemoveMember(family.id, member.user_id)}
-                      onRoleChange={(userId, newRole) => handleRoleChange(family.id, userId, newRole)}
-                      savingUserId={
-                        savingMemberRole?.familyId === family.id ? savingMemberRole.userId : null
-                      }
-                    />
-                  ))}
-                </div>
-              )}
-            </Card>
+            <section className="family-management-section" aria-labelledby={`family-members-heading-${family.id}`}>
+              <h3 id={`family-members-heading-${family.id}`} className="family-management-section-title">
+                Members
+              </h3>
+              <div className="family-management-section-content">
+                {!(membersByFamily[family.id]?.length) ? (
+                  <div className="family-settings-loading">Loading members…</div>
+                ) : (
+                  <div className="family-settings-members-list" role="list">
+                    {(membersByFamily[family.id] || []).map((member) => (
+                      <MemberRow
+                        key={member.user_id}
+                        member={member}
+                        currentUserId={user?.id}
+                        canEdit={family.role === 'owner' || family.role === 'parent'}
+                        canRemove={family.role === 'owner' || family.role === 'parent'}
+                        onRemove={() => handleRemoveMember(family.id, member.user_id)}
+                        onRoleChange={(userId, newRole) => handleRoleChange(family.id, userId, newRole)}
+                        savingUserId={
+                          savingMemberRole?.familyId === family.id ? savingMemberRole.userId : null
+                        }
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
 
             {(family.role === 'owner' || family.role === 'parent') && (
               <>
-                {/* C. Invite Member */}
-                <Card title="Invite Member" className="family-settings-card">
-                  <div className="family-settings-invite-form">
+                <section className="family-management-section" aria-labelledby={`family-invite-heading-${family.id}`}>
+                  <h3 id={`family-invite-heading-${family.id}`} className="family-management-section-title">
+                    Invite member
+                  </h3>
+                  <div className="family-management-section-content">
+                    <div className="family-settings-invite-form">
                     <div className="form-field" style={{ marginBottom: 0 }}>
                       <label htmlFor={`invite-role-${family.id}`} className="form-label">
                         Role
@@ -774,10 +844,14 @@ function SettingsPage() {
                       </div>
                     </div>
                   )}
-                </Card>
+                  </div>
+                </section>
 
-                {/* D. Pending Invites */}
-                <Card title="Pending Invites" className="family-settings-card">
+                <section className="family-management-section" aria-labelledby={`family-pending-heading-${family.id}`}>
+                  <h3 id={`family-pending-heading-${family.id}`} className="family-management-section-title">
+                    Pending invites
+                  </h3>
+                  <div className="family-management-section-content">
                   {(invitesByFamily[family.id]?.length ?? 0) === 0 ? (
                     <div className="family-settings-empty">No pending invites.</div>
                   ) : (
@@ -801,12 +875,14 @@ function SettingsPage() {
                       ))}
                     </div>
                   )}
-                </Card>
+                  </div>
+                </section>
               </>
             )}
           </div>
-        ))}
-    </>
+        </Card>
+      ))}
+    </div>
   );
 
   const familyContent = (
@@ -829,16 +905,13 @@ function SettingsPage() {
                 {!loadingKids && !errorKids && (
                   <div className="family-members-by-family">
                     {[...families]
-                      .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+                      .sort((a, b) => a.id - b.id)
                       .map((family) => {
                         const kids = childrenByFamilyId[family.id] ?? [];
                         const canEditFamily = family.role === 'owner' || family.role === 'parent';
                         return (
-                          <section key={family.id} className="family-members-section" aria-labelledby={`family-heading-${family.id}`}>
-                            <h2 id={`family-heading-${family.id}`} className="family-members-section-title">
-                              {family.name}
-                            </h2>
-                            <div className="family-list">
+                          <Card key={family.id} title={family.name} className="family-members-family-card">
+                            <div className="family-members-kids-grid">
                               {kids.map((child) => {
                                 const age = calculateAge(child.date_of_birth);
                                 const ageText = formatAge(age.years, age.months);
@@ -902,9 +975,28 @@ function SettingsPage() {
                                 </Link>
                               )}
                             </div>
-                          </section>
+                          </Card>
                         );
                       })}
+                    <button
+                      type="button"
+                      onClick={() => setShowAddFamilyModal(true)}
+                      className="family-add-family-button"
+                    >
+                      <Card className="family-card family-add-card">
+                        <div className="family-content">
+                          <div className="family-avatar">
+                            <div className="family-add-avatar">+</div>
+                          </div>
+                          <div className="family-info">
+                            <h2 className="family-name">Add Family</h2>
+                            <div className="family-details">
+                              <span>Create a new family</span>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    </button>
                   </div>
                 )}
               </div>
@@ -1329,6 +1421,92 @@ function SettingsPage() {
                 }}
               >
                 {loading.familyDelete ? 'Deleting…' : 'Delete family'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAddFamilyModal && (
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="add-family-modal-title"
+          onClick={() => {
+            if (!loading.familyCreate) {
+              setShowAddFamilyModal(false);
+              setNewFamilyName('');
+              setNewFamilyNameError(null);
+            }
+          }}
+        >
+          <div
+            className="modal-content delete-family-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h2 id="add-family-modal-title">Create family</h2>
+              <button
+                type="button"
+                className="modal-close"
+                aria-label="Close"
+                disabled={loading.familyCreate}
+                onClick={() => {
+                  setShowAddFamilyModal(false);
+                  setNewFamilyName('');
+                  setNewFamilyNameError(null);
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="form-field">
+                <label htmlFor="new-family-name" className="form-label">
+                  Family name
+                </label>
+                <input
+                  id="new-family-name"
+                  type="text"
+                  className={`form-input ${newFamilyNameError ? 'error' : ''}`}
+                  value={newFamilyName}
+                  onChange={(e) => {
+                    setNewFamilyName(e.target.value);
+                    setNewFamilyNameError(null);
+                  }}
+                  placeholder="e.g. Smith Family"
+                  disabled={loading.familyCreate}
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddFamily(newFamilyName);
+                    }
+                  }}
+                />
+                {newFamilyNameError && (
+                  <span className="form-error">{newFamilyNameError}</span>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <Button
+                variant="secondary"
+                disabled={loading.familyCreate}
+                onClick={() => {
+                  setShowAddFamilyModal(false);
+                  setNewFamilyName('');
+                  setNewFamilyNameError(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                disabled={loading.familyCreate || !newFamilyName.trim()}
+                onClick={() => handleAddFamily(newFamilyName)}
+              >
+                {loading.familyCreate ? 'Creating…' : 'Create'}
               </Button>
             </div>
           </div>
