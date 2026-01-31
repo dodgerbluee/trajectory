@@ -9,7 +9,7 @@ import { childrenRouter } from './routes/children.js';
 import { measurementsRouter } from './routes/measurements.js';
 import { medicalEventsRouter } from './routes/medical-events.js';
 import attachmentsRouter from './routes/attachments.js';
-import avatarsRouter from './routes/avatars.js';
+import avatars from './routes/avatars.js';
 import visitsRouter from './routes/visits.js';
 import illnessesRouter from './routes/illnesses.js';
 import { authRouter } from './routes/auth.js';
@@ -58,8 +58,10 @@ export function createApp(): express.Application {
   app.use('/api/illnesses', illnessesRouter); // Illness tracking
   app.use('/api/measurements', measurementsRouter);
   app.use('/api/medical-events', medicalEventsRouter);
+  // Mount avatar file serving at /api/avatars so only these requests hit it (not attachmentsRouter with global auth)
+  app.use('/api/avatars', avatars.avatarFilesRouter);
+  app.use('/api', avatars.default);
   app.use('/api', attachmentsRouter);
-  app.use('/api', avatarsRouter);
 
   // Serve static files from frontend build (if FRONTEND_DIR is set)
   const FRONTEND_DIR = process.env.FRONTEND_DIR;

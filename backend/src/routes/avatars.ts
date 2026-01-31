@@ -17,6 +17,9 @@ import { verifyToken } from '../lib/auth.js';
 
 const router = Router();
 
+// Router for GET /api/avatars/* only (mounted at /api/avatars so it never hits attachmentsRouter auth)
+const avatarFilesRouter = Router();
+
 // Avatar storage configuration
 const AVATAR_DIR = process.env.AVATAR_DIR || '/app/avatars';
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024; // 5MB
@@ -166,40 +169,8 @@ router.post(
 );
 
 // ============================================================================
-// Get avatar file
+// Get avatar file (avatarFilesRouter mounted at /api/avatars so path is e.g. /default-boy.svg or /:filename)
 // ============================================================================
-
-// Explicit routes for default avatars (must come BEFORE parameterized route)
-// These are public and require no authentication
-router.get(
-  '/avatars/default-boy.svg',
-  async (_req: Request, res: Response): Promise<void> => {
-    const svg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="100" cy="100" r="100" fill="#4A90E2"/>
-  <circle cx="100" cy="80" r="35" fill="#FFFFFF"/>
-  <ellipse cx="100" cy="140" rx="50" ry="40" fill="#FFFFFF"/>
-</svg>`;
-    res.setHeader('Content-Type', 'image/svg+xml');
-    res.setHeader('Cache-Control', 'public, max-age=31536000');
-    res.send(svg);
-  }
-);
-
-router.get(
-  '/avatars/default-girl.svg',
-  async (_req: Request, res: Response): Promise<void> => {
-    const svg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="100" cy="100" r="100" fill="#E91E63"/>
-  <circle cx="100" cy="80" r="35" fill="#FFFFFF"/>
-  <ellipse cx="100" cy="140" rx="50" ry="40" fill="#FFFFFF"/>
-</svg>`;
-    res.setHeader('Content-Type', 'image/svg+xml');
-    res.setHeader('Cache-Control', 'public, max-age=31536000');
-    res.send(svg);
-  }
-);
 
 // Helper function to serve default avatar SVG
 function serveDefaultAvatar(res: Response, isBoy: boolean): void {
@@ -216,35 +187,53 @@ function serveDefaultAvatar(res: Response, isBoy: boolean): void {
   }
 }
 
+// Explicit routes for default avatars (must come BEFORE parameterized route)
+avatarFilesRouter.get(
+  '/default-boy.svg',
+  async (_req: Request, res: Response): Promise<void> => {
+    const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="100" cy="100" r="100" fill="#4A90E2"/>
+  <circle cx="100" cy="80" r="35" fill="#FFFFFF"/>
+  <ellipse cx="100" cy="140" rx="50" ry="40" fill="#FFFFFF"/>
+</svg>`;
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.send(svg);
+  }
+);
+
+avatarFilesRouter.get(
+  '/default-girl.svg',
+  async (_req: Request, res: Response): Promise<void> => {
+    const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="100" cy="100" r="100" fill="#E91E63"/>
+  <circle cx="100" cy="80" r="35" fill="#FFFFFF"/>
+  <ellipse cx="100" cy="140" rx="50" ry="40" fill="#FFFFFF"/>
+</svg>`;
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.send(svg);
+  }
+);
+
 // Parameterized route for user-uploaded avatars (requires authentication)
-router.get(
-  '/avatars/:filename',
+avatarFilesRouter.get(
+  '/:filename',
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    // Extract filename from multiple sources to be absolutely sure
-    const filename = req.params?.filename || 
-                     req.path?.split('/').pop() || 
-                     req.url?.split('/').pop()?.split('?')[0] || 
-                     '';
-    
-    // CRITICAL: Check for default avatars FIRST, before ANY other logic
-    // This must happen before authentication, before headers check, before everything
-    // Also check the full path in case params aren't set
-    const isDefaultBoy = filename === 'default-boy.svg' || req.path?.endsWith('/default-boy.svg') || req.url?.includes('default-boy.svg');
-    const isDefaultGirl = filename === 'default-girl.svg' || req.path?.endsWith('/default-girl.svg') || req.url?.includes('default-girl.svg');
-    
+    const filename = req.params?.filename || req.path?.split('/').pop() || req.url?.split('/').pop()?.split('?')[0] || '';
+
+    const isDefaultBoy = filename === 'default-boy.svg';
+    const isDefaultGirl = filename === 'default-girl.svg';
     if (isDefaultBoy || isDefaultGirl) {
       serveDefaultAvatar(res, isDefaultBoy);
       return;
     }
 
     try {
+      if (res.headersSent) return;
 
-      // Safety check: if response was already sent, don't continue
-      if (res.headersSent) {
-        return;
-      }
-
-      // For non-default avatars, require authentication
       const authReq = req as AuthRequest;
       let token: string | undefined;
       const authHeader = req.headers.authorization;
@@ -255,11 +244,7 @@ router.get(
       }
       if (!token) {
         res.status(401).json({
-          error: {
-            message: 'Missing or invalid authorization',
-            type: 'UnauthorizedError',
-            statusCode: 401,
-          },
+          error: { message: 'Missing or invalid authorization', type: 'UnauthorizedError', statusCode: 401 },
         });
         return;
       }
@@ -270,22 +255,14 @@ router.get(
         authReq.userEmail = email;
       } catch {
         res.status(401).json({
-          error: {
-            message: 'Invalid or expired token',
-            type: 'UnauthorizedError',
-            statusCode: 401,
-          },
+          error: { message: 'Invalid or expired token', type: 'UnauthorizedError', statusCode: 401 },
         });
         return;
       }
 
       if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
         res.status(400).json({
-          error: {
-            message: 'Invalid filename',
-            type: 'ValidationError',
-            statusCode: 400,
-          },
+          error: { message: 'Invalid filename', type: 'ValidationError', statusCode: 400 },
         });
         return;
       }
@@ -296,51 +273,32 @@ router.get(
       );
       if (childWithAvatar.rows.length === 0 || !(await canAccessChild(authReq.userId!, childWithAvatar.rows[0].id))) {
         res.status(404).json({
-          error: {
-            message: 'Avatar not found',
-            type: 'NotFoundError',
-            statusCode: 404,
-          },
+          error: { message: 'Avatar not found', type: 'NotFoundError', statusCode: 404 },
         });
         return;
       }
 
       const filePath = path.join(AVATAR_DIR, filename);
-
       try {
         await fs.access(filePath);
       } catch {
         res.status(404).json({
-          error: {
-            message: 'Avatar not found',
-            type: 'NotFoundError',
-            statusCode: 404,
-          },
+          error: { message: 'Avatar not found', type: 'NotFoundError', statusCode: 404 },
         });
         return;
       }
 
-      // Determine content type from extension
       const ext = path.extname(filename).toLowerCase();
       const contentTypeMap: Record<string, string> = {
-        '.jpg': 'image/jpeg',
-        '.jpeg': 'image/jpeg',
-        '.png': 'image/png',
-        '.gif': 'image/gif',
-        '.webp': 'image/webp',
+        '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif', '.webp': 'image/webp',
       };
-
       const contentType = contentTypeMap[ext] || 'application/octet-stream';
-
-      // Read file and send as buffer
       const fileBuffer = await fs.readFile(filePath);
-      
       res.setHeader('Content-Type', contentType);
-      res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
       res.setHeader('Content-Length', fileBuffer.length.toString());
       res.send(fileBuffer);
     } catch (error) {
-      // If this is a default avatar request and we hit an error, serve it anyway
       const caughtFilename = req.params?.filename || req.path?.split('/').pop() || '';
       if (caughtFilename === 'default-boy.svg' || caughtFilename === 'default-girl.svg') {
         serveDefaultAvatar(res, caughtFilename === 'default-boy.svg');
@@ -428,4 +386,4 @@ router.delete(
   }
 );
 
-export default router;
+export default { avatarFilesRouter, default: router };

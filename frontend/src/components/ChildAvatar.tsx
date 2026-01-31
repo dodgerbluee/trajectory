@@ -10,12 +10,13 @@ interface ChildAvatarProps {
 }
 
 /**
- * Fetch default avatar as blob URL (public, no auth required)
+ * Fetch default avatar as blob URL (public, no auth required).
+ * Uses credentials: 'omit' so no token/cookies are sent and we avoid "token expired" on public endpoint.
  */
 async function fetchDefaultAvatarBlobUrl(gender: string): Promise<string | null> {
   const defaultUrl = childrenApi.getDefaultAvatarUrl(gender);
   try {
-    const res = await fetch(defaultUrl);
+    const res = await fetch(defaultUrl, { credentials: 'omit' });
     if (!res.ok) return null;
     const blob = await res.blob();
     return URL.createObjectURL(blob);
@@ -64,33 +65,40 @@ function ChildAvatar({ avatar, gender, alt = 'Avatar', className, style }: Child
     }
 
     // Fetch custom avatar
-    childrenApi.fetchAvatarBlobUrl(avatar).then((blobUrl) => {
-      if (cancelled) {
-        if (blobUrl) URL.revokeObjectURL(blobUrl);
-        return;
-      }
-      if (blobRef.current) {
-        URL.revokeObjectURL(blobRef.current);
-        blobRef.current = null;
-      }
-      if (blobUrl) {
-        blobRef.current = blobUrl;
-        setSrc(blobUrl);
-      } else {
-        // Fallback to default if custom avatar fails
-        if (defaultBlobRef.current) {
-          setSrc(defaultBlobRef.current);
-        } else {
-          // If default not loaded yet, fetch it now
-          fetchDefaultAvatarBlobUrl(gender).then((defaultBlob) => {
-            if (!cancelled && defaultBlob) {
-              defaultBlobRef.current = defaultBlob;
-              setSrc(defaultBlob);
-            }
-          });
+    childrenApi
+      .fetchAvatarBlobUrl(avatar)
+      .then((blobUrl) => {
+        if (cancelled) {
+          if (blobUrl) URL.revokeObjectURL(blobUrl);
+          return;
         }
+        if (blobRef.current) {
+          URL.revokeObjectURL(blobRef.current);
+          blobRef.current = null;
+        }
+        if (blobUrl) {
+          blobRef.current = blobUrl;
+          setSrc(blobUrl);
+        } else {
+          fallbackToDefault();
+        }
+      })
+      .catch(() => {
+        if (!cancelled) fallbackToDefault();
+      });
+
+    function fallbackToDefault() {
+      if (defaultBlobRef.current) {
+        setSrc(defaultBlobRef.current);
+      } else {
+        fetchDefaultAvatarBlobUrl(gender).then((defaultBlob) => {
+          if (!cancelled && defaultBlob) {
+            defaultBlobRef.current = defaultBlob;
+            setSrc(defaultBlob);
+          }
+        });
       }
-    });
+    }
 
     return () => {
       cancelled = true;

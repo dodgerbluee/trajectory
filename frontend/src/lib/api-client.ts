@@ -256,14 +256,13 @@ export const childrenApi = {
   },
 
   /**
-   * Get default avatar URL based on gender
+   * Get default avatar URL based on gender.
+   * Uses API_BASE_URL when set so default avatar works when frontend and API are on different origins.
    */
   getDefaultAvatarUrl(gender: string): string {
-    if (gender === 'male') {
-      return '/api/avatars/default-boy.svg';
-    } else {
-      return '/api/avatars/default-girl.svg';
-    }
+    const base = API_BASE_URL ? `${API_BASE_URL}/api/avatars` : '/api/avatars';
+    const file = gender === 'male' ? 'default-boy.svg' : 'default-girl.svg';
+    return `${base}/${file}`;
   },
 
   /**
