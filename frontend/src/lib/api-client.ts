@@ -208,10 +208,17 @@ export const childrenApi = {
     const formData = new FormData();
     formData.append('avatar', file);
 
+    const token = getAccessToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(
       `${API_BASE_URL}/api/children/${childId}/avatar`,
       {
         method: 'POST',
+        headers,
         body: formData,
       }
     );

@@ -399,7 +399,11 @@ export function DentalSection({ context }: SectionContentPropsWithContext) {
               label="Cavities Found"
               type="number"
               value={fd.cavities_found ?? ''}
-              onChange={(e) => setForm((prev: any) => ({ ...prev, cavities_found: e.target.value === '' ? null : parseInt(e.target.value) || null }))}
+              onChange={(e) => {
+              const v = e.target.value;
+              const n = v === '' ? null : (() => { const num = parseInt(v, 10); return Number.isNaN(num) ? null : num; })();
+              setForm((prev: any) => ({ ...prev, cavities_found: n }));
+            }}
               min="0"
               disabled={submitting}
             />
@@ -409,7 +413,11 @@ export function DentalSection({ context }: SectionContentPropsWithContext) {
               label="Cavities Filled"
               type="number"
               value={fd.cavities_filled ?? ''}
-              onChange={(e) => setForm((prev: any) => ({ ...prev, cavities_filled: e.target.value === '' ? null : parseInt(e.target.value) || null }))}
+              onChange={(e) => {
+              const v = e.target.value;
+              const n = v === '' ? null : (() => { const num = parseInt(v, 10); return Number.isNaN(num) ? null : num; })();
+              setForm((prev: any) => ({ ...prev, cavities_filled: n }));
+            }}
               min="0"
               max={fd.cavities_found ?? undefined}
               disabled={submitting}

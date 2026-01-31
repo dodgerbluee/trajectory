@@ -9,7 +9,9 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import VisitTypeModal from '../components/VisitTypeModal';
 import VisitsSidebar from '../components/VisitsSidebar';
-import { LuActivity, LuHeart, LuPill, LuEye, LuSmile } from 'react-icons/lu';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { DentalToothIcon } from '@hugeicons/core-free-icons';
+import { LuActivity, LuHeart, LuPill, LuEye } from 'react-icons/lu';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
 import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
 
@@ -81,8 +83,8 @@ function VisitsPage() {
         { label: 'Wellness', value: statsSource.filter((v) => v.visit_type === 'wellness').length, icon: LuHeart, color: 'emerald', onClick: () => setFilterVisitType('wellness'), active: filterVisitType === 'wellness' },
         { label: 'Sick', value: statsSource.filter((v) => v.visit_type === 'sick').length, icon: LuPill, color: 'red', onClick: () => setFilterVisitType('sick'), active: filterVisitType === 'sick' },
         { label: 'Injury', value: statsSource.filter((v) => v.visit_type === 'injury').length, icon: MdOutlinePersonalInjury, color: 'blue', onClick: () => setFilterVisitType('injury'), active: filterVisitType === 'injury' },
+        { label: 'Dental', value: statsSource.filter((v) => v.visit_type === 'dental').length, icon: (props: { className?: string }) => <HugeiconsIcon icon={DentalToothIcon} {...props} size={24} color="currentColor" />, color: 'teal', onClick: () => setFilterVisitType('dental'), active: filterVisitType === 'dental' },
         { label: 'Vision', value: statsSource.filter((v) => v.visit_type === 'vision').length, icon: LuEye, color: 'purple', onClick: () => setFilterVisitType('vision'), active: filterVisitType === 'vision' },
-        { label: 'Dental', value: statsSource.filter((v) => v.visit_type === 'dental').length, icon: LuSmile, color: 'teal', onClick: () => setFilterVisitType('dental'), active: filterVisitType === 'dental' },
       ]}
       childrenList={[]}
       selectedChildId={undefined}

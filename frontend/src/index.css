@@ -285,6 +285,7 @@
 .visit-stat-card[data-color="red"] .visit-stat-icon { background: linear-gradient(135deg, #f87171, #ef4444); }
 .visit-stat-card[data-color="yellow"] .visit-stat-icon { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
 .visit-stat-card[data-color="purple"] .visit-stat-icon { background: linear-gradient(135deg, #a78bfa, #7c3aed); }
+.visit-stat-card[data-color="teal"] .visit-stat-icon { background: linear-gradient(135deg, #22d3ee, #06b6d4); }
 .visit-stat-card[data-color="gray"] .visit-stat-icon { background: linear-gradient(135deg, #d1d5db, #9ca3af); }
 
 @media(min-width: 768px) {
@@ -1359,8 +1360,8 @@ body {
 /* Make icons in the VisitTypeModal larger and color-coded per type */
 .visit-type-icon .visit-icon-outline {
   /* Reduced from +50% to +25% overall: wrapper 96px -> 120px */
-  width: 120px;
-  height: 120px;
+  width: 80px;
+  height: 80px;
 }
 .visit-type-icon .visit-icon-outline .visit-type-svg {
   /* SVG scaled proportionally (48px -> 60px for +25%) */
@@ -8171,7 +8172,7 @@ select.form-input:disabled {
 
 .visit-type-selection {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: var(--spacing-lg);
   margin-bottom: var(--spacing-lg);
 }
@@ -8256,7 +8257,7 @@ select.form-input:disabled {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-xl);
+  padding: var(--spacing-md);
   border: 3px solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-background-card);

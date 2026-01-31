@@ -23,7 +23,9 @@ import TrendsSidebar from '../components/TrendsSidebar';
 import MetricsView from '../components/MetricsView';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
 import { LuPill } from 'react-icons/lu';
-import { LuEye, LuSmile } from 'react-icons/lu';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { DentalToothIcon } from '@hugeicons/core-free-icons';
+import { LuEye } from 'react-icons/lu';
 import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
 // replaced local mask icon with Lucide thermometer for illness
 
@@ -31,7 +33,7 @@ function ChildDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const [child, setChild] = useState<Child | null>(null);
   const [visits, setVisits] = useState<Visit[]>([]);
   const [illnesses, setIllnesses] = useState<Illness[]>([]);
@@ -89,7 +91,7 @@ function ChildDetailPage() {
         visitsApi.getAll({ child_id: childId, visit_type: 'dental' }),
         illnessesApi.getAll({ child_id: childId }),
       ]);
-      
+
       setChild(childResponse.data);
       setVisits(allVisitsResponse.data);
       setIllnesses(illnessesResponse.data);
@@ -123,22 +125,22 @@ function ChildDetailPage() {
       } catch (err) {
         // ignore attachment population errors
       }
-      
+
       // Get most recent wellness visit (visits are sorted by date DESC)
       if (wellnessVisitsResponse.data.length > 0) {
         setLastWellnessVisit(wellnessVisitsResponse.data[0]);
       }
-      
+
       // Get most recent sick visit
       if (sickVisitsResponse.data.length > 0) {
         setLastSickVisit(sickVisitsResponse.data[0]);
       }
-      
+
       // Get most recent vision visit
       if (visionVisitsResponse.data.length > 0) {
         setLastVisionVisit(visionVisitsResponse.data[0]);
       }
-      
+
       // Get most recent dental visit
       if (dentalVisitsResponse.data.length > 0) {
         setLastDentalVisit(dentalVisitsResponse.data[0]);
@@ -168,7 +170,7 @@ function ChildDetailPage() {
 
   const loadDocuments = useCallback(async () => {
     if (!id) return;
-    
+
     const childId = parseInt(id);
     if (isNaN(childId)) return;
 
@@ -202,10 +204,10 @@ function ChildDetailPage() {
 
       const visitDocumentsArrays = await Promise.all(visitDocumentsPromises);
       const allVisitDocuments = visitDocumentsArrays.flat();
-      
+
       // Combine and sort by date (newest first) for documents tab
       const allDocuments = [...allVisitDocuments, ...childDocuments];
-      allDocuments.sort((a, b) => 
+      allDocuments.sort((a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
 
@@ -225,7 +227,7 @@ function ChildDetailPage() {
 
   // Filter visits that have vaccines for the vaccine history tab
   const visitsWithVaccines = useMemo(() => {
-    return visits.filter(visit => 
+    return visits.filter(visit =>
       visit.vaccines_administered && visit.vaccines_administered.length > 0
     );
   }, [visits]);
@@ -430,7 +432,7 @@ function ChildDetailPage() {
                 </div>
               </div>
             </div>
-            
+
             {/* Last Visits in Overview */}
             <div className="overview-last-visits">
               {lastWellnessVisit && (
@@ -476,7 +478,7 @@ function ChildDetailPage() {
                 <Link to={`/visits/${lastDentalVisit.id}`} className="overview-last-visit-link">
                   <div className="overview-last-visit">
                     <div className={`visit-icon-outline visit-icon--dental`} aria-hidden="true">
-                      <LuSmile className="visit-type-svg" />
+                      <HugeiconsIcon icon={DentalToothIcon} className="visit-type-svg" size={24} color="currentColor" />
                     </div>
                     <div className="overview-visit-info">
                       <span className="overview-visit-label">Last Dental Visit:</span>
@@ -562,6 +564,14 @@ function ChildDetailPage() {
                           active: visitTypeFilter === 'injury',
                         },
                         {
+                          label: 'Dental',
+                          value: visits.filter((v) => v.visit_type === 'dental').length,
+                          icon: (props: { className?: string }) => <HugeiconsIcon icon={DentalToothIcon} {...props} size={24} color="currentColor" />,
+                          color: 'teal',
+                          onClick: () => setVisitTypeFilter('dental'),
+                          active: visitTypeFilter === 'dental',
+                        },
+                        {
                           label: 'Vision',
                           value: visits.filter((v) => v.visit_type === 'vision').length,
                           icon: LuEye,
@@ -569,19 +579,11 @@ function ChildDetailPage() {
                           onClick: () => setVisitTypeFilter('vision'),
                           active: visitTypeFilter === 'vision',
                         },
-                        {
-                          label: 'Dental',
-                          value: visits.filter((v) => v.visit_type === 'dental').length,
-                          icon: LuSmile,
-                          color: 'teal',
-                          onClick: () => setVisitTypeFilter('dental'),
-                          active: visitTypeFilter === 'dental',
-                        },
                       ]}
                       // Child detail page already implies the child; hide selector.
                       childrenList={[]}
                       selectedChildId={undefined}
-                      onSelectChild={() => {}}
+                      onSelectChild={() => { }}
                       hideChildFilter
                       onAddVisitClick={() => setShowVisitTypeModal(true)}
                     />
@@ -647,7 +649,7 @@ function ChildDetailPage() {
                       ]}
                       childrenList={[]}
                       selectedChildId={undefined}
-                      onSelectChild={() => {}}
+                      onSelectChild={() => { }}
                       hideChildFilter
                       addIllnessChildId={child?.id}
                     />
@@ -717,7 +719,7 @@ function ChildDetailPage() {
                       onChangeTab={(t) => setMetricsActiveTab(t)}
                       childrenList={child ? [child] : []}
                       selectedChildId={child?.id}
-                      onSelectChild={() => {}}
+                      onSelectChild={() => { }}
                       showChildFilter={false}
                     />
                     <main className="visits-main">
@@ -727,7 +729,7 @@ function ChildDetailPage() {
                         selectedYear={metricsYear}
                         onSelectedYearChange={(y) => setMetricsYear(y)}
                         filterChildId={child?.id}
-                        onFilterChildChange={() => {}}
+                        onFilterChildChange={() => { }}
                       />
                     </main>
                   </div>
@@ -761,49 +763,47 @@ function ChildDetailPage() {
       {showAvatarEditor && (
         <div className="modal-overlay" onClick={() => !uploadingAvatar && setShowAvatarEditor(false)}>
           <div className="modal-content modal-content-large" onClick={(e) => e.stopPropagation()}>
-            <Card>
-              <div className="modal-header">
-                <h2>Edit Avatar</h2>
-                <button
-                  type="button"
-                  onClick={() => setShowAvatarEditor(false)}
-                  className="modal-close"
-                  disabled={uploadingAvatar}
-                >
-                  ×
-                </button>
-              </div>
-              <div className="modal-body">
-                <ImageCropUpload
-                  onImageCropped={handleImageCropped}
-                  currentImageUrl={child.avatar ? childrenApi.getAvatarUrl(child.avatar) : childrenApi.getDefaultAvatarUrl(child.gender)}
-                  disabled={uploadingAvatar}
-                />
-                {avatarFile && (
-                  <div style={{ marginTop: 'var(--spacing-md)', textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
-                    ✓ New avatar ready to upload
-                  </div>
-                )}
-              </div>
-              <div className="modal-footer">
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setShowAvatarEditor(false);
-                    setAvatarFile(null);
-                  }}
-                  disabled={uploadingAvatar}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleAvatarSave}
-                  disabled={!avatarFile || uploadingAvatar}
-                >
-                  {uploadingAvatar ? 'Uploading...' : 'Save Avatar'}
-                </Button>
-              </div>
-            </Card>
+            <div className="modal-header">
+              <h2>Edit Avatar</h2>
+              <button
+                type="button"
+                onClick={() => setShowAvatarEditor(false)}
+                className="modal-close"
+                disabled={uploadingAvatar}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <ImageCropUpload
+                onImageCropped={handleImageCropped}
+                currentImageUrl={child.avatar ? childrenApi.getAvatarUrl(child.avatar) : childrenApi.getDefaultAvatarUrl(child.gender)}
+                disabled={uploadingAvatar}
+              />
+              {avatarFile && (
+                <div style={{ marginTop: 'var(--spacing-md)', textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+                  ✓ New avatar ready to upload
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setShowAvatarEditor(false);
+                  setAvatarFile(null);
+                }}
+                disabled={uploadingAvatar}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAvatarSave}
+                disabled={!avatarFile || uploadingAvatar}
+              >
+                {uploadingAvatar ? 'Uploading...' : 'Save Avatar'}
+              </Button>
+            </div>
           </div>
         </div>
       )}
