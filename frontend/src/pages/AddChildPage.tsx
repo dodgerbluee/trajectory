@@ -311,7 +311,7 @@ function AddChildPage() {
           style={{ zIndex: 1001 }}
           onClick={() => setShowAvatarEditor(false)}
         >
-            <Card>
+            <Card onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>Change photo</h2>
                 <button
