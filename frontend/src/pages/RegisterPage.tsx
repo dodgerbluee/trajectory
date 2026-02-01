@@ -81,7 +81,7 @@ function RegisterPage() {
 
     try {
       await register(email, password, username);
-      navigate('/welcome', { replace: true });
+      navigate('/', { replace: true, state: { justRegistered: true } });
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.statusCode === 409) {

@@ -116,7 +116,7 @@ function IllnessesInput({ value, onChange, disabled }: IllnessesInputProps) {
                 <div className="vaccine-modal-overlay">
                     <div className="vaccine-modal-content" ref={modalRef}>
                         <div className="vaccine-modal-header">
-                            <h3 className="vaccine-modal-title">Select Illnesses</h3>
+                            <h3 className="vaccine-modal-title">Select Illness</h3>
                             <button
                                 type="button"
                                 onClick={() => setOpen(false)}

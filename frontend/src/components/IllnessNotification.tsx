@@ -80,7 +80,7 @@ function IllnessNotification() {
       {isOpen && (
         <div className="illness-notification-dropdown">
           <div className="notification-header">
-            <h3>Ongoing Illnesses</h3>
+            <h3>Ongoing Illness</h3>
             <button
               className="notification-close"
               onClick={() => setIsOpen(false)}

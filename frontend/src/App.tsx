@@ -4,6 +4,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { HomeTabRequestProvider } from './contexts/HomeTabRequestContext';
 import { FamilyPermissionsProvider } from './contexts/FamilyPermissionsContext';
+import { OnboardingProvider } from './contexts/OnboardingContext';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -36,10 +37,11 @@ function App() {
           element={
             <ProtectedRoute>
               <FamilyPermissionsProvider>
-                <HomeTabRequestProvider>
-                  <Routes>
-                    <Route path="/welcome" element={<WelcomePage />} />
-                    <Route path="/*" element={
+                <OnboardingProvider>
+                  <HomeTabRequestProvider>
+                    <Routes>
+                      <Route path="/welcome" element={<WelcomePage />} />
+                      <Route path="/*" element={
                       <Layout>
                         <Routes>
                           <Route path="/" element={<HomePage />} />
@@ -60,8 +62,9 @@ function App() {
                         </Routes>
                       </Layout>
                     } />
-                  </Routes>
-                </HomeTabRequestProvider>
+                    </Routes>
+                  </HomeTabRequestProvider>
+                </OnboardingProvider>
               </FamilyPermissionsProvider>
             </ProtectedRoute>
           }

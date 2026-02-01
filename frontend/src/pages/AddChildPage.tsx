@@ -2,6 +2,7 @@ import { useState, FormEvent } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { FaMars, FaVenus } from 'react-icons/fa';
 import { childrenApi, ApiClientError } from '../lib/api-client';
+import { useOnboarding } from '../contexts/OnboardingContext';
 import { validateChildForm, getTodayDate } from '../lib/validation';
 import type { Gender } from '../types/api';
 import Card from '../components/Card';
@@ -14,6 +15,7 @@ import ChildAvatar from '../components/ChildAvatar';
 function AddChildPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const onboarding = useOnboarding();
   const [searchParams] = useSearchParams();
   const familyIdFromState = (location.state as { familyId?: number } | null)?.familyId;
   const familyIdFromQuery = searchParams.get('family_id');
@@ -90,10 +92,9 @@ function AddChildPage() {
         type: 'success',
       });
 
-      const fromOnboarding = (location.state as { fromOnboarding?: boolean } | null)?.fromOnboarding;
       setTimeout(() => {
-        if (fromOnboarding) {
-          navigate('/welcome', { state: { step: 4 }, replace: true });
+        if (fromOnboarding && onboarding) {
+          onboarding.reportChildAdded(response.data.id);
         } else {
           navigate(`/children/${response.data.id}`);
         }
@@ -108,14 +109,18 @@ function AddChildPage() {
     }
   };
 
+  const fromOnboarding = (location.state as { fromOnboarding?: boolean } | null)?.fromOnboarding;
+
   const handleClose = () => {
-    const fromOnboarding = (location.state as { fromOnboarding?: boolean } | null)?.fromOnboarding;
-    if (fromOnboarding) navigate('/welcome', { state: { step: 3 }, replace: true });
+    if (fromOnboarding) navigate('/', { replace: true, state: { tab: 'family' } });
     else navigate(-1);
   };
 
   return (
-    <div className="modal-overlay" onClick={() => !submitting && handleClose()}>
+    <div
+      className="modal-overlay"
+      onClick={() => !fromOnboarding && !submitting && handleClose()}
+    >
       <div
         className="modal-content card"
         onClick={(e) => e.stopPropagation()}
@@ -126,7 +131,7 @@ function AddChildPage() {
               type="button"
               onClick={handleClose}
               className="modal-close"
-              disabled={submitting}
+              disabled={submitting || fromOnboarding}
               aria-label="Close"
             >
               ×
@@ -294,7 +299,7 @@ function AddChildPage() {
             </div>
 
             <div className="form-actions add-child-actions">
-              <Button type="button" variant="secondary" onClick={handleClose} disabled={submitting}>
+              <Button type="button" variant="secondary" onClick={handleClose} disabled={submitting || fromOnboarding}>
                 Cancel
               </Button>
               <Button type="submit" disabled={submitting}>
