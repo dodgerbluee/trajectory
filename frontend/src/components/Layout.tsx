@@ -52,7 +52,9 @@ function Layout({ children }: LayoutProps) {
           {children}
         </div>
       </main>
-      <VersionFooter />
+      <div className="footer-wrapper">
+        <VersionFooter />
+      </div>
     </div>
   );
 }

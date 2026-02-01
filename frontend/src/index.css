@@ -2365,7 +2365,6 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
 }
 
 .app-main {
-  flex: 1;
   padding: var(--spacing-md);
   display: flex;
   justify-content: center;
@@ -2376,7 +2375,6 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
   max-width: 1600px;
   width: 100%;
   box-sizing: border-box;
-  padding-bottom: 30px; /* ensure space below body even when content fills the page */
 }
 
 .app-footer {
@@ -2385,11 +2383,19 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
   margin-top: auto;
 }
 
-/* Version footer - fixed to bottom right (matches Docked style) */
+/* Footer wrapper: same width as content-wrapper, just below body, footer right-aligned */
+.footer-wrapper {
+  max-width: 1600px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 var(--spacing-md) var(--spacing-md);
+  box-sizing: border-box;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Version footer - in flow, just below body, right edge aligned with body end */
 .version-footer {
-  position: fixed;
-  bottom: 16px;
-  right: 16px;
   align-items: center;
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
@@ -2403,7 +2409,6 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
   padding: 4px 8px;
   pointer-events: auto;
   transition: opacity 0.2s ease, color 0.2s ease;
-  z-index: 100;
 }
 
 .version-footer:hover {
