@@ -6,6 +6,7 @@ import ThemeToggle from './ThemeToggle';
 import AboutDropdown from './AboutDropdown';
 import IllnessNotification from './IllnessNotification';
 import VersionFooter from './VersionFooter';
+import { OnboardingOverlay } from './onboarding';
 
 interface LayoutProps {
   children: ReactNode;
@@ -24,6 +25,7 @@ function Layout({ children }: LayoutProps) {
 
   return (
     <div className="app-container">
+      <OnboardingOverlay />
       <header className="app-header">
         <div className="header-content">
           <Link to="/" className="header-brand" onClick={handleLogoClick}>

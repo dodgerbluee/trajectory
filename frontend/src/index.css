@@ -10571,3 +10571,329 @@ select.form-input:disabled {
   margin-left: auto;
   margin-right: auto;
 }
+
+/* ============================================================================
+   Onboarding Overlay (guided welcome flow)
+   ============================================================================ */
+
+.onboarding-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+/* Blocking mask: only spotlight and prompt areas are clickable; panels capture clicks elsewhere */
+.onboarding-blocking-mask {
+  pointer-events: none;
+}
+
+.onboarding-blocking-panel {
+  pointer-events: auto;
+  cursor: default;
+}
+
+.onboarding-layer .onboarding-skip-wrap,
+.onboarding-layer .onboarding-fullscreen,
+.onboarding-layer .onboarding-prompt-overlay,
+.onboarding-layer .onboarding-tooltip-anchor,
+.onboarding-layer .onboarding-prompt-card,
+.onboarding-layer .onboarding-tooltip-card,
+.onboarding-layer .onboarding-welcome-card,
+.onboarding-layer button {
+  pointer-events: auto;
+}
+
+.onboarding-skip-wrap {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  z-index: 10005;
+}
+
+.onboarding-skip-btn {
+  padding: 0.5rem 1rem;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.onboarding-skip-btn:hover {
+  color: var(--color-text-primary);
+  background: var(--color-background-card);
+  border-color: var(--color-primary);
+}
+
+.onboarding-fullscreen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  background: rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
+}
+
+.onboarding-fullscreen-inner {
+  position: relative;
+  z-index: 10001;
+  width: 100%;
+  max-width: 480px;
+}
+
+.onboarding-streamers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10000;
+  overflow: hidden;
+}
+
+.onboarding-streamer {
+  position: absolute;
+  top: -80px;
+  width: 6px;
+  height: 80px;
+  border-radius: 3px;
+  transform-origin: top center;
+  animation: onboarding-streamer-fall linear infinite;
+}
+
+@keyframes onboarding-streamer-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(calc(100vh + 100px)) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.onboarding-welcome-card,
+.onboarding-wrapup-card {
+  padding: var(--spacing-2xl);
+  text-align: center;
+  animation: onboarding-card-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes onboarding-card-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(-16px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.onboarding-welcome-logo {
+  margin-bottom: var(--spacing-lg);
+}
+
+.onboarding-logo-img {
+  height: 64px;
+  width: auto;
+  object-fit: contain;
+}
+
+.onboarding-welcome-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-md);
+  line-height: 1.25;
+}
+
+.onboarding-welcome-subtitle {
+  color: var(--color-text-secondary);
+  font-size: 1rem;
+  line-height: 1.5;
+  margin: 0 0 var(--spacing-sm);
+}
+
+.onboarding-welcome-hint {
+  color: var(--color-text-muted, var(--color-text-secondary));
+  font-size: 0.9rem;
+  margin: 0 0 var(--spacing-lg);
+}
+
+.onboarding-welcome-actions {
+  margin-top: var(--spacing-md);
+}
+
+.onboarding-btn-icon {
+  margin-right: var(--spacing-xs);
+  vertical-align: middle;
+  display: inline-block;
+}
+
+.onboarding-prompt-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 120px var(--spacing-lg) var(--spacing-lg);
+  background: rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+}
+
+/* Floating prompt: does not block clicks (wrapper is pointer-events: none; card is auto) */
+.onboarding-prompt-floating {
+  position: fixed;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  padding: 0 var(--spacing-lg);
+  pointer-events: none;
+  z-index: 10003;
+}
+
+.onboarding-prompt-floating .onboarding-prompt-card {
+  pointer-events: auto;
+}
+
+.onboarding-prompt-floating--bottom {
+  bottom: 20px;
+}
+
+.onboarding-prompt-overlay--minimal {
+  padding-top: 80px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.onboarding-prompt-card {
+  max-width: 420px;
+  padding: var(--spacing-xl);
+  animation: onboarding-card-in 0.35s ease-out;
+}
+
+.onboarding-prompt-card--compact {
+  padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.onboarding-prompt-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-sm);
+}
+
+.onboarding-prompt-copy {
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0 0 var(--spacing-md);
+}
+
+.onboarding-prompt-copy:last-child {
+  margin-bottom: 0;
+}
+
+.onboarding-prompt-actions {
+  margin-top: var(--spacing-md);
+}
+
+.onboarding-prompt-actions--row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.onboarding-prompt-actions--right {
+  margin-left: auto;
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.onboarding-tooltip-card {
+  max-width: 320px;
+  padding: var(--spacing-md) var(--spacing-lg);
+  animation: onboarding-card-in 0.3s ease-out;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.onboarding-tooltip-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-xs);
+}
+
+.onboarding-tooltip-icon {
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+
+.onboarding-tooltip-copy {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  margin: 0 0 var(--spacing-sm);
+}
+
+.onboarding-tooltip-copy:last-child {
+  margin-bottom: 0;
+}
+
+.onboarding-tooltip-actions {
+  margin-top: var(--spacing-sm);
+}
+
+.onboarding-tooltip-cta {
+  margin-top: var(--spacing-sm);
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+/* Tooltip floating: wrapper does not block clicks so tabs and content stay clickable */
+.onboarding-tooltip-floating {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10003;
+  max-width: 90vw;
+  width: 360px;
+  pointer-events: none;
+}
+
+.onboarding-tooltip-floating .onboarding-tooltip-card {
+  pointer-events: auto;
+}
+
+.onboarding-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--color-border);
+  z-index: 10005;
+}
+
+.onboarding-progress-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 0 2px 0 0;
+  transition: width 0.3s ease;
+}
+
+/* When Create family modal is shown during onboarding, highlight the Create button */
+body.onboarding-modal-active [data-onboarding="create-family-submit"] {
+  box-shadow: 0 0 0 3px var(--color-primary), 0 0 16px rgba(59, 130, 246, 0.45);
+  outline: none;
+}

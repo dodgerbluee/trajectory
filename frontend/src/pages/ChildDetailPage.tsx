@@ -27,6 +27,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { DentalToothIcon } from '@hugeicons/core-free-icons';
 import { LuEye } from 'react-icons/lu';
 import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
+import { useOnboarding } from '../contexts/OnboardingContext';
 // replaced local mask icon with Lucide thermometer for illness
 
 function ChildDetailPage() {
@@ -58,6 +59,7 @@ function ChildDetailPage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const { canEdit } = useFamilyPermissions();
+  const onboarding = useOnboarding();
   const [notification, setNotification] = useState<{
     message: string;
     type: 'success' | 'error';
@@ -150,6 +152,13 @@ function ChildDetailPage() {
   useEffect(() => {
     loadChild();
   }, [loadChild]);
+
+  // Onboarding: when user lands on child detail from "click your child", advance to feature tour
+  useEffect(() => {
+    if (onboarding?.isActive && onboarding.step === 'return_home_click_child') {
+      onboarding.advance();
+    }
+  }, [onboarding?.isActive, onboarding?.step, onboarding]);
 
   // When navigating back from Add Illness (or similar), open the requested tab
   const stateTab = (location.state as { tab?: 'visits' | 'illnesses' | 'metrics' | 'documents' | 'vaccines' } | null)?.tab;
@@ -599,7 +608,7 @@ function ChildDetailPage() {
 
               tabsArray.push({
                 id: 'illnesses',
-                label: 'Illnesses',
+                label: 'Illness',
                 content: (
                   <div className="visits-page-layout">
                     <IllnessesSidebar
@@ -718,11 +727,24 @@ function ChildDetailPage() {
                 ),
               });
 
+              const handleTabChange = (tabId: string) => {
+                const typedTabId = tabId as 'visits' | 'illnesses' | 'metrics' | 'documents' | 'vaccines';
+                if (onboarding?.isActive) {
+                  if (onboarding.step === 'feature_visits' && typedTabId === 'illnesses') {
+                    onboarding.advance();
+                  } else if (onboarding.step === 'feature_illness' && typedTabId === 'metrics') {
+                    onboarding.advance();
+                  }
+                }
+                setActiveTab(typedTabId);
+              };
+
               return (
                 <Tabs
                   activeTab={activeTab}
-                  onTabChange={(tabId) => setActiveTab(tabId as 'visits' | 'illnesses' | 'metrics' | 'documents' | 'vaccines')}
+                  onTabChange={handleTabChange}
                   tabs={tabsArray}
+                  getTabButtonProps={(tabId) => ({ 'data-onboarding-tab': tabId })}
                 />
               );
             })()}

@@ -13,12 +13,13 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import { HiChevronDown, HiChevronUp } from 'react-icons/hi';
 import { FaLock } from 'react-icons/fa';
-import { LuSun, LuMoon, LuLaptop, LuSave, LuDownload, LuSettings, LuUser, LuUsers, LuUserPlus } from 'react-icons/lu';
+import { LuSun, LuMoon, LuLaptop, LuSave, LuDownload, LuSettings, LuUser, LuUsers, LuUserPlus, LuInfo } from 'react-icons/lu';
 import { ApiClientError, exportApi, familiesApi, childrenApi } from '../lib/api-client';
 import type { Family, FamilyInvite, FamilyMember, Child } from '../types/api';
 import { FamilyOverviewCard, MemberRow, InviteRow } from '../components/family-settings';
 import RoleBadge from '../components/RoleBadge';
 import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
+import { useOnboarding } from '../contexts/OnboardingContext';
 import { formatDate, calculateAge, formatAge, type DateFormat } from '../lib/date-utils';
 
 function SettingsPage() {
@@ -27,7 +28,8 @@ function SettingsPage() {
   const { dateFormat, setDateFormat } = usePreferences();
   const { user, updateUsername, updatePassword, checkAuth } = useAuth();
   const { canEdit, refreshPermissions } = useFamilyPermissions();
-  const [activeTab, setActiveTab] = useState<'general' | 'user' | 'data' | 'family'>('general');
+  const onboarding = useOnboarding();
+  const [activeTab, setActiveTab] = useState<'general' | 'user' | 'data' | 'family' | 'about'>('general');
   const [familySubTab, setFamilySubTab] = useState<'management' | 'members'>('members');
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   
@@ -100,6 +102,13 @@ function SettingsPage() {
       else if (state.familySubTab === 'members') setFamilySubTab('members');
     }
   }, [location.state]);
+
+  // Onboarding: when user is on Settings > Family, advance step so overlay shows "Create family" / "Add child"
+  useEffect(() => {
+    if (activeTab === 'family' && onboarding?.isActive && onboarding.step === 'go_settings_family') {
+      onboarding.reportOnSettingsFamilyTab();
+    }
+  }, [activeTab, onboarding?.isActive, onboarding?.step, onboarding]);
 
   useEffect(() => {
     // Refresh user data when component mounts
@@ -182,6 +191,7 @@ function SettingsPage() {
       setNewFamilyName('');
       await loadFamilies();
       await loadChildren();
+      onboarding?.reportFamilyCreated();
     } catch (err) {
       setNotification({
         message: err instanceof ApiClientError ? err.message : 'Failed to create family',
@@ -627,12 +637,6 @@ function SettingsPage() {
           </div>
         </div>
 
-        <div className="settings-save-row">
-          <Button variant="primary" type="button" onClick={() => { setNotification({ message: 'Settings saved', type: 'success' }); setTimeout(() => setNotification(null), 3000); }}>
-            <LuSave style={{ marginRight: 8 }} /> Save
-          </Button>
-        </div>
-
         <div className="settings-section">
           <FormField
             label="Date Format"
@@ -645,6 +649,12 @@ function SettingsPage() {
               { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD (ISO)' },
             ]}
           />
+        </div>
+
+        <div className="settings-save-row">
+          <Button variant="primary" type="button" onClick={() => { setNotification({ message: 'Settings saved', type: 'success' }); setTimeout(() => setNotification(null), 3000); }}>
+            <LuSave style={{ marginRight: 8 }} /> Save
+          </Button>
         </div>
 
         <div className="support-section">
@@ -667,19 +677,6 @@ function SettingsPage() {
             </p>
           </div>
         </div>
-
-        <Card title="About">
-          <div className="settings-section">
-            <div className="about-item">
-              <span className="about-label">Version:</span>
-              <span className="about-value">1.0.0</span>
-            </div>
-            <div className="about-item">
-              <span className="about-label">License:</span>
-              <span className="about-value">Private</span>
-            </div>
-          </div>
-        </Card>
       </Card>
     </div>
   );
@@ -694,11 +691,31 @@ function SettingsPage() {
               ? 'Download all your data as a ZIP (JSON, HTML report, and attachments). Only parents and owners can export.'
               : 'Only parents and owners can export data. Read-only members do not have export access.'}
           </p>
+          <p className="settings-description" style={{ fontStyle: 'italic', color: 'var(--color-text-secondary)' }}>
+            This feature is in dev/beta and is not functional yet.
+          </p>
           {canEdit && (
             <Button variant="secondary" onClick={handleExportData} disabled={loading.export}>
               <LuDownload style={{ marginRight: 8 }} /> {loading.export ? 'Preparing…' : 'Export my data'}
             </Button>
           )}
+        </div>
+      </Card>
+    </div>
+  );
+
+  const aboutContent = (
+    <div className="settings-layout">
+      <Card title="About">
+        <div className="settings-section">
+          <div className="about-item">
+            <span className="about-label">Version:</span>
+            <span className="about-value">1.0.0</span>
+          </div>
+          <div className="about-item">
+            <span className="about-label">License:</span>
+            <span className="about-value">Private</span>
+          </div>
         </div>
       </Card>
     </div>
@@ -960,8 +977,9 @@ function SettingsPage() {
                               {canEditFamily && (
                                 <Link
                                   to="/children/new"
-                                  state={{ familyId: family.id }}
+                                  state={{ familyId: family.id, fromOnboarding: onboarding?.isActive }}
                                   className="family-add-link"
+                                  data-onboarding={families.length > 0 && family.id === families[0].id ? 'add-child' : undefined}
                                 >
                                   <Card className="family-card family-add-card">
                                     <div className="family-content">
@@ -986,6 +1004,7 @@ function SettingsPage() {
                       type="button"
                       onClick={() => setShowAddFamilyModal(true)}
                       className="family-add-family-button"
+                      data-onboarding="add-family"
                     >
                       <Card className="family-card family-add-card">
                         <div className="family-content">
@@ -1274,7 +1293,11 @@ function SettingsPage() {
                 <LuSettings className="sidebar-icon" />
                 <span>General</span>
               </button>
-              <button className={`sidebar-item ${activeTab === 'family' ? 'active' : ''}`} onClick={() => setActiveTab('family')}>
+              <button
+                className={`sidebar-item ${activeTab === 'family' ? 'active' : ''}`}
+                onClick={() => setActiveTab('family')}
+                data-onboarding="settings-family-tab"
+              >
                 <LuUsers className="sidebar-icon" />
                 <span>Family</span>
               </button>
@@ -1286,6 +1309,10 @@ function SettingsPage() {
                 <LuDownload className="sidebar-icon" />
                 <span>Data</span>
               </button>
+              <button className={`sidebar-item ${activeTab === 'about' ? 'active' : ''}`} onClick={() => setActiveTab('about')}>
+                <LuInfo className="sidebar-icon" />
+                <span>About</span>
+              </button>
             </aside>
 
                 <main className="settings-main">
@@ -1293,6 +1320,7 @@ function SettingsPage() {
                   {activeTab === 'user' && userContent}
                   {activeTab === 'data' && dataContent}
                   {activeTab === 'family' && familyContent}
+                  {activeTab === 'about' && aboutContent}
                 </main>
           </div>
 
@@ -1520,6 +1548,7 @@ function SettingsPage() {
         >
           <div
             className="modal-content delete-family-modal"
+            data-onboarding="create-family-modal"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
@@ -1580,6 +1609,7 @@ function SettingsPage() {
                 Cancel
               </Button>
               <Button
+                data-onboarding="create-family-submit"
                 disabled={loading.familyCreate || !newFamilyName.trim()}
                 onClick={() => handleAddFamily(newFamilyName)}
               >

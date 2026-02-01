@@ -242,7 +242,7 @@ function HomePage() {
                         const ageText = formatAge(age.years, age.months);
                         const birthdateText = formatDate(child.date_of_birth);
                         return (
-                          <Link key={child.id} to={`/children/${child.id}`} className="child-card-link">
+                          <Link key={child.id} to={`/children/${child.id}`} className="child-card-link" data-onboarding="child-card">
                             <Card className="child-card-compact">
                               <div className="child-card-avatar">
                                 <ChildAvatar

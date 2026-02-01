@@ -36,6 +36,7 @@ function AboutDropdown() {
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
         aria-haspopup="true"
+        data-onboarding="settings-menu"
       >
         <HiChevronDown className="about-dropdown-icon" />
       </button>
@@ -45,6 +46,7 @@ function AboutDropdown() {
             to="/settings"
             className="about-dropdown-item"
             onClick={() => setIsOpen(false)}
+            data-onboarding="settings-menu-item"
           >
             Settings
           </Link>
