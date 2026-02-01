@@ -72,33 +72,87 @@ function buildQueryString(params: Record<string, any>): string {
   return queryString ? `?${queryString}` : '';
 }
 
+const ACCESS_TOKEN_KEY = 'trajectory_access_token';
+const REFRESH_TOKEN_KEY = 'trajectory_refresh_token';
+const USER_KEY = 'trajectory_user';
+
 /**
  * Get access token from localStorage
  */
 function getAccessToken(): string | null {
-  return localStorage.getItem('trajectory_access_token');
+  return localStorage.getItem(ACCESS_TOKEN_KEY);
+}
+
+function getRefreshToken(): string | null {
+  return localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+function setTokens(accessToken: string, refreshToken: string): void {
+  localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+}
+
+function clearAuthStorage(): void {
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+}
+
+function redirectToLogin(): void {
+  if (!window.location.pathname.includes('/login')) {
+    window.location.href = '/login';
+  }
 }
 
 /**
- * Make HTTP request with error handling and authentication
+ * Try to refresh the access token. Returns new access token or null if refresh failed.
+ */
+async function tryRefreshToken(): Promise<string | null> {
+  const refreshTokenValue = getRefreshToken();
+  if (!refreshTokenValue) return null;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: refreshTokenValue }),
+    });
+    const body = await response.json();
+    if (!response.ok) return null;
+    const data = body?.data ?? body;
+    const accessToken = data?.accessToken;
+    const newRefreshToken = data?.refreshToken;
+    if (accessToken && newRefreshToken) {
+      setTokens(accessToken, newRefreshToken);
+      return accessToken;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Make HTTP request with error handling and authentication.
+ * On 401, attempts to refresh the token once and retries the request; only clears auth and redirects if refresh fails.
  */
 async function request<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  isRetryAfterRefresh = false
 ): Promise<ApiResponse<T>> {
   const url = `${API_BASE_URL}${endpoint}`;
-  
+
   const accessToken = getAccessToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string> || {}),
   };
 
-  // Add authorization header if token exists
   if (accessToken) {
     headers['Authorization'] = `Bearer ${accessToken}`;
   }
-  
+
   const config: RequestInit = {
     ...options,
     headers,
@@ -107,7 +161,6 @@ async function request<T>(
   try {
     const response = await fetch(url, config);
 
-    // Handle 204 No Content responses (common for DELETE operations)
     if (response.status === 204) {
       return { data: undefined as any } as ApiResponse<T>;
     }
@@ -116,20 +169,21 @@ async function request<T>(
 
     if (!response.ok) {
       const error = data as ApiError;
-      
-      // Handle 401 Unauthorized - token might be expired
+
       if (response.status === 401 && accessToken) {
-        // Clear tokens on unauthorized response
-        localStorage.removeItem('trajectory_access_token');
-        localStorage.removeItem('trajectory_refresh_token');
-        localStorage.removeItem('trajectory_user');
-        
-        // Redirect to login if not already there
-        if (!window.location.pathname.includes('/login')) {
-          window.location.href = '/login';
+        if (isRetryAfterRefresh) {
+          clearAuthStorage();
+          redirectToLogin();
+        } else {
+          const newToken = await tryRefreshToken();
+          if (newToken) {
+            return request<T>(endpoint, { ...options, headers: { ...headers, Authorization: `Bearer ${newToken}` } }, true);
+          }
+          clearAuthStorage();
+          redirectToLogin();
         }
       }
-      
+
       throw new ApiClientError(
         error.error.message,
         error.error.statusCode,
@@ -139,18 +193,9 @@ async function request<T>(
     }
 
     return data as ApiResponse<T>;
-  } catch (error) {
-    if (error instanceof ApiClientError) {
-      throw error;
-    }
-    
-    // Network or parsing errors
-    throw new ApiClientError(
-      'Failed to communicate with server',
-      0,
-      'NetworkError',
-      error
-    );
+  } catch (err) {
+    if (err instanceof ApiClientError) throw err;
+    throw new ApiClientError('Failed to communicate with server', 0, 'NetworkError', err);
   }
 }
 
