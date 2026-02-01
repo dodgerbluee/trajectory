@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS visits (
     id SERIAL PRIMARY KEY,
     child_id INTEGER NOT NULL REFERENCES children(id) ON DELETE CASCADE,
     visit_date DATE NOT NULL,
+    visit_time TIME,
     visit_type VARCHAR(50) NOT NULL CHECK (visit_type IN ('wellness', 'sick', 'injury', 'vision', 'dental')),
     location VARCHAR(255),
     doctor_name VARCHAR(255),

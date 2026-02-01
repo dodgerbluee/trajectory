@@ -94,6 +94,28 @@ export function formatDate(dateString: string): string {
   }
 }
 
+/**
+ * Format time "HH:MM" or "HH:MM:SS" as 12-hour time (e.g. "9:30 AM", "12:00 PM").
+ */
+export function formatTime(hhmm: string): string {
+  const parts = hhmm.trim().split(':');
+  const h = parseInt(parts[0] ?? '0', 10);
+  const m = parseInt(parts[1] ?? '0', 10);
+  if (Number.isNaN(h) || Number.isNaN(m) || h < 0 || h > 23 || m < 0 || m > 59) {
+    return hhmm;
+  }
+  if (h === 0) {
+    return `12:${String(m).padStart(2, '0')} AM`;
+  }
+  if (h === 12) {
+    return `12:${String(m).padStart(2, '0')} PM`;
+  }
+  if (h < 12) {
+    return `${h}:${String(m).padStart(2, '0')} AM`;
+  }
+  return `${h - 12}:${String(m).padStart(2, '0')} PM`;
+}
+
 /** Format a Date using a specific format (for one-off display). */
 export function formatDateWithFormat(date: Date, format: DateFormat): string {
   const year = date.getFullYear();

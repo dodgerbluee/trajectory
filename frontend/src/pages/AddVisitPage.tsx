@@ -35,6 +35,7 @@ function AddVisitPage() {
   const [formData, setFormData] = useState<CreateVisitInput>({
     child_id: 0,
     visit_date: '',
+    visit_time: null,
     visit_type: initialVisitType || 'wellness',
     location: null,
     doctor_name: null,
@@ -281,6 +282,7 @@ function AddVisitPage() {
         payload = {
           child_id: formData.child_id,
           visit_date: formData.visit_date,
+          visit_time: formData.visit_time ?? null,
           visit_type: formData.visit_type,
           location: formData.location ?? null,
           doctor_name: formData.doctor_name ?? null,

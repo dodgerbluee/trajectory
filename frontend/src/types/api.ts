@@ -214,6 +214,7 @@ export interface Visit {
   id: number;
   child_id: number;
   visit_date: string;
+  visit_time: string | null; // "HH:MM" optional
   visit_type: VisitType;
   location: string | null;
   doctor_name: string | null;
@@ -278,6 +279,7 @@ export interface Visit {
 export interface CreateVisitInput {
   child_id: number;
   visit_date: string;
+  visit_time?: string | null; // "HH:MM"
   visit_type: VisitType;
   location?: string | null;
   doctor_name?: string | null;
@@ -337,6 +339,7 @@ export interface CreateVisitInput {
 
 export interface UpdateVisitInput {
   visit_date?: string;
+  visit_time?: string | null; // "HH:MM"
   visit_type?: VisitType;
   location?: string | null;
   doctor_name?: string | null;

@@ -208,6 +208,7 @@ export interface Visit {
   id: number;
   child_id: number;
   visit_date: string; // ISO date string
+  visit_time: string | null; // "HH:MM" (optional appointment time)
   visit_type: VisitType;
   location: string | null;
   doctor_name: string | null;
@@ -284,6 +285,7 @@ export interface Visit {
 export interface CreateVisitInput {
   child_id: number;
   visit_date: string;
+  visit_time?: string | null; // "HH:MM"
   visit_type: VisitType;
   location?: string | null;
   doctor_name?: string | null;
@@ -349,6 +351,7 @@ export interface CreateVisitInput {
 
 export interface UpdateVisitInput {
   visit_date?: string;
+  visit_time?: string | null; // "HH:MM"
   visit_type?: VisitType;
   location?: string | null;
   doctor_name?: string | null;
@@ -412,6 +415,7 @@ export interface VisitRow {
   id: number;
   child_id: number;
   visit_date: Date;
+  visit_time: string | null; // pg returns "HH:MM:SS"
   visit_type: VisitType;
   location: string | null;
   doctor_name: string | null;
@@ -494,10 +498,15 @@ export function visitRowToVisit(row: VisitRow): Visit {
     return null;
   };
 
+  const visitTime = row.visit_time != null && typeof row.visit_time === 'string'
+    ? row.visit_time.slice(0, 5)
+    : null;
+
   return {
     id: row.id,
     child_id: row.child_id,
     visit_date: row.visit_date.toISOString().split('T')[0],
+    visit_time: visitTime,
     visit_type: row.visit_type,
     location: row.location,
     doctor_name: row.doctor_name,

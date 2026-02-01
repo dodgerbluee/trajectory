@@ -32,6 +32,7 @@ function EditVisitPage() {
   
   const [formData, setFormData] = useState<UpdateVisitInput>({
     visit_date: '',
+    visit_time: null,
     location: null,
     doctor_name: null,
     title: null,
@@ -131,6 +132,7 @@ function EditVisitPage() {
       // Populate form with existing visit data
       setFormData({
         visit_date: visitData.visit_date,
+        visit_time: visitData.visit_time ?? null,
         location: visitData.location,
         doctor_name: visitData.doctor_name,
         title: visitData.title,
@@ -311,6 +313,7 @@ function EditVisitPage() {
       const payload = useLimitedForm
         ? {
             visit_date: formData.visit_date,
+            visit_time: formData.visit_time ?? null,
             visit_type: formData.visit_type,
             location: formData.location,
             doctor_name: formData.doctor_name,

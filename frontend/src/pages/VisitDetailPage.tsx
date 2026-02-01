@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { visitsApi, childrenApi, ApiClientError } from '../lib/api-client';
 import type { Visit, Child, VisitAttachment } from '../types/api';
-import { formatDate, safeFormatDateTime, isFutureVisit } from '../lib/date-utils';
+import { formatDate, formatTime, safeFormatDateTime, isFutureVisit } from '../lib/date-utils';
 import { visitHasOutcomeData } from '../lib/visit-utils';
+import { getGoogleCalendarAddEventUrl } from '../lib/calendar-export';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import Card from '../components/Card';
@@ -153,6 +154,29 @@ function VisitDetailPage() {
   // Show limited (upcoming) view only when future-dated and no outcome data; once full form is saved, show full view
   const isFuture = isFutureVisit(visit) && !visitHasOutcomeData(visit);
 
+  const visitTypeLabel = (t: Visit['visit_type']) => {
+    switch (t) {
+      case 'wellness': return 'Wellness';
+      case 'sick': return 'Sick';
+      case 'injury': return 'Injury';
+      case 'vision': return 'Vision';
+      case 'dental': return 'Dental';
+      default: return 'Visit';
+    }
+  };
+
+  const handleExportToCalendar = () => {
+    const typeLabel = visitTypeLabel(visit.visit_type);
+    const title = child.name ? `${child.name}'s ${typeLabel} Appointment` : `${typeLabel} Appointment`;
+    const url = getGoogleCalendarAddEventUrl({
+      title,
+      date: visit.visit_date,
+      time: visit.visit_time ?? null,
+      location: visit.location ?? null,
+    });
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div className="page-container">
       {notification && (
@@ -170,19 +194,24 @@ function VisitDetailPage() {
             <Link to={`/children/${visit.child_id}`} className="breadcrumb">
               ← Back to {child.name}
             </Link>
-            {canEdit && (
             <div className="visit-detail-actions">
-              <Link 
-                to={`/visits/${visit.id}/edit`}
-                state={{ childId: visit.child_id, fromChild: (location.state as any)?.fromChild || false }}
-              >
-                <Button variant="secondary" size="sm">{isFuture ? 'Edit appointment' : 'Edit Visit'}</Button>
-              </Link>
-              <Button variant="danger" size="sm" onClick={handleDelete} disabled={deleting}>
-                {deleting ? 'Deleting...' : 'Delete Visit'}
+              <Button variant="secondary" size="sm" onClick={handleExportToCalendar}>
+                Export to Calendar
               </Button>
+              {canEdit && (
+                <>
+                  <Link 
+                    to={`/visits/${visit.id}/edit`}
+                    state={{ childId: visit.child_id, fromChild: (location.state as any)?.fromChild || false }}
+                  >
+                    <Button variant="secondary" size="sm">{isFuture ? 'Edit appointment' : 'Edit Visit'}</Button>
+                  </Link>
+                  <Button variant="danger" size="sm" onClick={handleDelete} disabled={deleting}>
+                    {deleting ? 'Deleting...' : 'Delete Visit'}
+                  </Button>
+                </>
+              )}
             </div>
-            )}
           </div>
 
           {/* Visit Header */}
@@ -195,7 +224,10 @@ function VisitDetailPage() {
                visit.visit_type === 'dental' ? 'Dental Visit' : 'Visit'}
               {isFuture && <span className="visit-header-badge">Upcoming</span>}
             </h2>
-            <p className="visit-header-date">{formatDate(visit.visit_date)}</p>
+            <p className="visit-header-date">
+              {formatDate(visit.visit_date)}
+              {visit.visit_time && <span className="visit-header-time"> at {formatTime(visit.visit_time)}</span>}
+            </p>
           </div>
 
           <Tabs

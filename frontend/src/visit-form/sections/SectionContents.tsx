@@ -58,6 +58,13 @@ export function VisitInformationSection({ context }: SectionContentPropsWithCont
           {...futureDateConstraint}
         />
         <FormField
+          label="Time (optional)"
+          type="time"
+          value={formData.visit_time ?? ''}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((prev: any) => ({ ...prev, visit_time: e.target.value || null }))}
+          disabled={submitting}
+        />
+        <FormField
           label="Location"
           type="text"
           value={formData.location || ''}

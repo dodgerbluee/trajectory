@@ -12,7 +12,7 @@ interface SelectOption {
 }
 
 interface InputFieldProps extends BaseFieldProps, InputHTMLAttributes<HTMLInputElement> {
-  type?: 'text' | 'date' | 'number' | 'email' | 'password';
+  type?: 'text' | 'date' | 'time' | 'number' | 'email' | 'password';
   options?: never;
   list?: string;
 }

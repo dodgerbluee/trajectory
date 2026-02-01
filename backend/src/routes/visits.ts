@@ -119,6 +119,27 @@ function validateOptionalString(value: unknown): string | null {
   return value.trim();
 }
 
+/** Optional time "HH:MM" or "HH:MM:SS"; returns "HH:MM" or null. */
+function validateOptionalTime(value: unknown): string | null {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+  if (typeof value !== 'string') {
+    throw new BadRequestError('visit_time must be a string (HH:MM)');
+  }
+  const trimmed = value.trim();
+  if (!/^\d{1,2}:\d{2}(:\d{2})?$/.test(trimmed)) {
+    throw new BadRequestError('visit_time must be HH:MM or HH:MM:SS');
+  }
+  const [h, m] = trimmed.split(':');
+  const hour = parseInt(h!, 10);
+  const min = parseInt(m!, 10);
+  if (hour < 0 || hour > 23 || min < 0 || min > 59) {
+    throw new BadRequestError('visit_time must be a valid time');
+  }
+  return `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
+}
+
 function validateVaccines(value: unknown): string | null {
   if (value === undefined || value === null) {
     return null;
@@ -595,6 +616,7 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
     const input: CreateVisitInput = {
       child_id: childId,
       visit_date: validateDate(req.body.visit_date, 'visit_date'),
+      visit_time: validateOptionalTime(req.body.visit_time),
       visit_type: validateVisitType(req.body.visit_type),
       location: validateOptionalString(req.body.location),
       doctor_name: validateOptionalString(req.body.doctor_name),
@@ -669,7 +691,7 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
     try {
       result = await query<VisitRow>(
         `INSERT INTO visits (
-          child_id, visit_date, visit_type, location, doctor_name, title,
+          child_id, visit_date, visit_time, visit_type, location, doctor_name, title,
           weight_value, weight_ounces, weight_percentile,
           height_value, height_percentile,
           head_circumference_value, head_circumference_percentile,
@@ -682,20 +704,20 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
           xrays_taken, fluoride_treatment, sealants_applied, dental_procedures,
           vaccines_administered, prescriptions, tags, notes
         ) VALUES (
-          $1, $2, $3, $4, $5, $6,
-          $7, $8, $9,
-          $10, $11,
-          $12, $13,
-          $14, $15,
-          $16, $17,
-          $18, $19, $20, $21, $22,
-          $23, $24,
-          $25, $26, $27, $28,
-          $29, $30, $31, $32, $33, $34, $35, $36, $37,
-          $38, $39, $40, $41
+          $1, $2, $3, $4, $5, $6, $7,
+          $8, $9, $10,
+          $11, $12,
+          $13, $14,
+          $15, $16,
+          $17, $18,
+          $19, $20, $21, $22, $23,
+          $24, $25,
+          $26, $27, $28, $29,
+          $30, $31, $32, $33, $34, $35, $36, $37, $38,
+          $39, $40, $41, $42
         ) RETURNING *`,
         [
-          input.child_id, input.visit_date, input.visit_type, input.location, input.doctor_name, input.title,
+          input.child_id, input.visit_date, input.visit_time, input.visit_type, input.location, input.doctor_name, input.title,
           input.weight_value, input.weight_ounces, input.weight_percentile,
           input.height_value, input.height_percentile,
           input.head_circumference_value, input.head_circumference_percentile,
@@ -847,6 +869,13 @@ router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
       const v = validateDate(req.body.visit_date, 'visit_date');
       payload.visit_date = v;
       updates.push(`visit_date = $${paramCount++}`);
+      values.push(v);
+    }
+
+    if (req.body.visit_time !== undefined) {
+      const v = validateOptionalTime(req.body.visit_time);
+      payload.visit_time = v;
+      updates.push(`visit_time = $${paramCount++}`);
       values.push(v);
     }
 
