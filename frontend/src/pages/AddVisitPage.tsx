@@ -258,7 +258,7 @@ function AddVisitPage() {
     }
 
     if (useShortenedForm) {
-      // Future visit: no outcome validation
+      // Future visit: no outcome/type-specific validation; backend allows pending appointments without injury_type/illnesses
     } else {
       // Use ref so we always have latest illnesses (avoids stale closure when Save then Submit quickly)
       const illnessesToSend = formData.visit_type === 'sick' ? selectedIllnessesRef.current : null;

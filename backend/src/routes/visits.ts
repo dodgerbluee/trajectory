@@ -668,14 +668,16 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
 
     // Support illnesses array (multiple illnesses)
     const illnesses = validateIllnessesArray(req.body.illnesses);
-    // Validate: sick visits must provide at least one illness in the illnesses array
-    if (input.visit_type === 'sick' && (!illnesses || illnesses.length === 0)) {
-      throw new BadRequestError('At least one illness is required for sick visits');
-    }
-
-    // Validate: injury visits should have injury_type
-    if (input.visit_type === 'injury' && !input.injury_type) {
-      throw new BadRequestError('injury_type is required for injury visits');
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const isFutureVisit = input.visit_date > todayStr;
+    // Require illness/injury_type only for past/today (completed) visits; pending future appointments may omit
+    if (!isFutureVisit) {
+      if (input.visit_type === 'sick' && (!illnesses || illnesses.length === 0)) {
+        throw new BadRequestError('At least one illness is required for sick visits');
+      }
+      if (input.visit_type === 'injury' && !input.injury_type) {
+        throw new BadRequestError('injury_type is required for injury visits');
+      }
     }
 
     // Process vaccines and prescriptions
