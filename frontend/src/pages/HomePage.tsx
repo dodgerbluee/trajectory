@@ -1,9 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { childrenApi, familiesApi } from '../lib/api-client';
-import type { Child, Family } from '../types/api';
-import { calculateAge, formatAge, formatDate } from '../lib/date-utils';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { DentalToothIcon } from '@hugeicons/core-free-icons';
+import { LuHeart, LuPill, LuEye, LuActivity } from 'react-icons/lu';
+import { MdOutlinePersonalInjury } from 'react-icons/md';
+import { childrenApi, familiesApi, visitsApi } from '../lib/api-client';
+import type { Child, Family, Visit } from '../types/api';
+import { calculateAge, formatAge, formatDate, isFutureDate } from '../lib/date-utils';
+import { visitHasOutcomeData } from '../lib/visit-utils';
 import { useHomeTabRequest } from '../contexts/HomeTabRequestContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
@@ -33,6 +38,8 @@ function HomePage() {
   const [metricsActiveTab, setMetricsActiveTab] = useState<'illness' | 'growth'>('illness');
   const [metricsYear, setMetricsYear] = useState<number>(new Date().getFullYear());
   const [metricsFilterChildId, setMetricsFilterChildId] = useState<number | undefined>(undefined);
+  const [upcomingVisits, setUpcomingVisits] = useState<Visit[]>([]);
+  const [loadingUpcoming, setLoadingUpcoming] = useState(false);
 
   const loadChildren = async () => {
     try {
@@ -66,10 +73,30 @@ function HomePage() {
     }
   };
 
+  const loadUpcomingVisits = async () => {
+    try {
+      setLoadingUpcoming(true);
+      // Fetch enough visits to include future + recent past/today (overdue appointments with no outcome)
+      const response = await visitsApi.getAll({ limit: 80 });
+      const all = response.data;
+      // Upcoming = future OR (on/past date and no outcome data yet); remove only when data entered on/after visit date
+      const upcoming = all
+        .filter((v) => isFutureDate(v.visit_date) || !visitHasOutcomeData(v))
+        .sort((a, b) => new Date(a.visit_date).getTime() - new Date(b.visit_date).getTime())
+        .slice(0, 30);
+      setUpcomingVisits(upcoming);
+    } catch {
+      setUpcomingVisits([]);
+    } finally {
+      setLoadingUpcoming(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'family' || activeTab === 'trends') {
       if (children.length === 0) loadChildren();
       if (families.length === 0) loadFamilies();
+      loadUpcomingVisits();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
@@ -110,22 +137,98 @@ function HomePage() {
     return map;
   }, [families, children]);
 
+  const visitTypeLabel = (t: Visit['visit_type']) => {
+    switch (t) {
+      case 'wellness': return 'Wellness';
+      case 'sick': return 'Sick';
+      case 'injury': return 'Injury';
+      case 'vision': return 'Vision';
+      case 'dental': return 'Dental';
+      default: return 'Visit';
+    }
+  };
+
+  const VisitTypeIcon = ({ visitType }: { visitType: Visit['visit_type'] }) => {
+    if (visitType === 'wellness') return <LuHeart className="home-upcoming-icon" aria-hidden />;
+    if (visitType === 'sick') return <LuPill className="home-upcoming-icon" aria-hidden />;
+    if (visitType === 'injury') return <MdOutlinePersonalInjury className="home-upcoming-icon" aria-hidden />;
+    if (visitType === 'vision') return <LuEye className="home-upcoming-icon" aria-hidden />;
+    if (visitType === 'dental') return <HugeiconsIcon icon={DentalToothIcon} className="home-upcoming-icon" size={16} color="currentColor" aria-hidden />;
+    return <LuActivity className="home-upcoming-icon" aria-hidden />;
+  };
+
+  /** Upcoming visits grouped by child, children sorted by name, visits per child sorted by date. */
+  const upcomingByChild = useMemo(() => {
+    const byChildId = new Map<number, Visit[]>();
+    for (const v of upcomingVisits) {
+      const list = byChildId.get(v.child_id) ?? [];
+      list.push(v);
+      byChildId.set(v.child_id, list);
+    }
+    for (const list of byChildId.values()) {
+      list.sort((a, b) => new Date(a.visit_date).getTime() - new Date(b.visit_date).getTime());
+    }
+    const childIds = Array.from(byChildId.keys());
+    const withChildren = childIds
+      .map((id) => ({ child: children.find((c) => c.id === id), visits: byChildId.get(id)! }))
+      .filter((x) => x.child != null) as { child: Child; visits: Visit[] }[];
+    withChildren.sort((a, b) => (a.child.name || '').localeCompare(b.child.name || ''));
+    return withChildren;
+  }, [upcomingVisits, children]);
+
   const familyContent = (
-    <div className="card home-family-tab">
+    <div className="home-family-tab">
       {loading && <LoadingSpinner message="Loading family..." />}
       {error && <ErrorMessage message={error} onRetry={loadChildren} />}
       {!loading && !error && (
-        <div className="home-family-sections">
+        <div className="home-tabs-content">
+          {/* Upcoming Visits – own tabs-content div with border */}
+          {!loadingUpcoming && upcomingVisits.length > 0 && (
+            <div className="home-tabs-content-box">
+              <section className="home-upcoming-section" aria-labelledby="home-upcoming-heading">
+                <h2 id="home-upcoming-heading" className="home-upcoming-title">Upcoming Visits</h2>
+                <div className="home-upcoming-by-child">
+                  {upcomingByChild.map(({ child, visits }) => (
+                    <div key={child.id} className="home-upcoming-child-row">
+                      <span className="home-upcoming-child-label">{child.name}</span>
+                      <div className="home-upcoming-chips" role="list">
+                        {visits.map((v) => {
+                          const isOverdue = !isFutureDate(v.visit_date);
+                          return (
+                            <Link
+                              key={v.id}
+                              to={`/visits/${v.id}`}
+                              className={`home-upcoming-chip${isOverdue ? ' home-upcoming-chip--overdue' : ''}`}
+                              role="listitem"
+                              title={isOverdue ? 'Past due – add visit outcome' : undefined}
+                            >
+                              <VisitTypeIcon visitType={v.visit_type} />
+                              <span className="home-upcoming-chip-text">
+                                {visitTypeLabel(v.visit_type)} · {formatDate(v.visit_date)}
+                              </span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+          )}
+
+          {/* Each family – own tabs-content div with border */}
           {[...families]
             .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
             .map((family) => {
               const kids = childrenByFamilyId[family.id] ?? [];
               const canEditFamily = family.role === 'owner' || family.role === 'parent';
               return (
-                <section key={family.id} className="home-family-section" aria-labelledby={`home-family-heading-${family.id}`}>
-                  <h2 id={`home-family-heading-${family.id}`} className="home-family-tab-title">
-                    {family.name}
-                  </h2>
+                <div key={family.id} className="home-tabs-content-box">
+                  <section className="home-family-section" aria-labelledby={`home-family-heading-${family.id}`}>
+                    <h2 id={`home-family-heading-${family.id}`} className="home-family-tab-title">
+                      {family.name}
+                    </h2>
                   {kids.length === 0 && !canEditFamily ? (
                     <p className="empty-state">No children in this family.</p>
                   ) : kids.length === 0 ? (
@@ -171,13 +274,16 @@ function HomePage() {
                       })}
                     </div>
                   )}
-                </section>
+                  </section>
+                </div>
               );
             })}
           {families.length === 0 && (
-            <Card>
-              <p className="empty-state">No families yet. Join a family via an invite link or create an account.</p>
-            </Card>
+            <div className="home-tabs-content-box">
+              <Card>
+                <p className="empty-state">No families yet. Join a family via an invite link or create an account.</p>
+              </Card>
+            </div>
           )}
         </div>
       )}

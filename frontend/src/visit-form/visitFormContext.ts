@@ -35,4 +35,6 @@ export interface VisitFormContext {
   loadingAttachments?: boolean;
   handleAttachmentDelete?: (attachmentId: number) => void;
   onRefreshAttachments?: () => void;
+  /** When true (Add Future Visit or editing a future visit), only pre-appointment fields are shown. */
+  isFutureVisit?: boolean;
 }

@@ -128,6 +128,29 @@ export function formatDateTime(dateString: string): string {
 }
 
 /**
+ * True if dateString (YYYY-MM-DD) is after today (local date).
+ */
+export function isFutureDate(dateString: string): boolean {
+  const parts = dateString.split('T')[0].split('-');
+  if (parts.length !== 3) return false;
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1;
+  const day = parseInt(parts[2], 10);
+  const date = new Date(year, month, day);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  date.setHours(0, 0, 0, 0);
+  return date.getTime() > today.getTime();
+}
+
+/**
+ * True if visit's visit_date is in the future (appointment).
+ */
+export function isFutureVisit(visit: { visit_date: string }): boolean {
+  return isFutureDate(visit.visit_date);
+}
+
+/**
  * Format date/time for display; never returns "Invalid Date".
  * Use for audit history and any external/API date values.
  */

@@ -4,7 +4,7 @@ import { LuActivity, LuHeart, LuThermometer } from 'react-icons/lu';
 import { childrenApi, visitsApi, illnessesApi, ApiClientError } from '../lib/api-client';
 import ChildAvatar from '../components/ChildAvatar';
 import type { Child, Visit, VisitType, Illness, VisitAttachment, ChildAttachment } from '../types/api';
-import { calculateAge, formatAge, formatDate } from '../lib/date-utils';
+import { calculateAge, formatAge, formatDate, isFutureVisit } from '../lib/date-utils';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import Card from '../components/Card';
@@ -95,9 +95,10 @@ function ChildDetailPage() {
       setChild(childResponse.data);
       setVisits(allVisitsResponse.data);
       setIllnesses(illnessesResponse.data);
-      // Derive last injury visit from all visits
+      // Derive last injury visit from all visits (only on or before today)
       const sortedAll = [...allVisitsResponse.data].sort((a, b) => new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime());
-      const lastInjury = sortedAll.find(v => v.visit_type === 'injury') || null;
+      const pastOrTodayVisits = sortedAll.filter(v => !isFutureVisit(v));
+      const lastInjury = pastOrTodayVisits.find(v => v.visit_type === 'injury') || null;
       setLastInjuryVisit(lastInjury);
       // Derive last illness (use the latest illness that has an end_date)
       const endedIllnesses = illnessesResponse.data.filter(i => i.end_date).sort((a, b) => new Date(b.end_date!).getTime() - new Date(a.end_date!).getTime());
@@ -126,25 +127,15 @@ function ChildDetailPage() {
         // ignore attachment population errors
       }
 
-      // Get most recent wellness visit (visits are sorted by date DESC)
-      if (wellnessVisitsResponse.data.length > 0) {
-        setLastWellnessVisit(wellnessVisitsResponse.data[0]);
-      }
-
-      // Get most recent sick visit
-      if (sickVisitsResponse.data.length > 0) {
-        setLastSickVisit(sickVisitsResponse.data[0]);
-      }
-
-      // Get most recent vision visit
-      if (visionVisitsResponse.data.length > 0) {
-        setLastVisionVisit(visionVisitsResponse.data[0]);
-      }
-
-      // Get most recent dental visit
-      if (dentalVisitsResponse.data.length > 0) {
-        setLastDentalVisit(dentalVisitsResponse.data[0]);
-      }
+      // Get most recent wellness/sick/vision/dental visit (only on or before today; visits sorted by date DESC)
+      const lastPastWellness = wellnessVisitsResponse.data.find(v => !isFutureVisit(v)) ?? null;
+      const lastPastSick = sickVisitsResponse.data.find(v => !isFutureVisit(v)) ?? null;
+      const lastPastVision = visionVisitsResponse.data.find(v => !isFutureVisit(v)) ?? null;
+      const lastPastDental = dentalVisitsResponse.data.find(v => !isFutureVisit(v)) ?? null;
+      setLastWellnessVisit(lastPastWellness);
+      setLastSickVisit(lastPastSick);
+      setLastVisionVisit(lastPastVision);
+      setLastDentalVisit(lastPastDental);
     } catch (err) {
       if (err instanceof ApiClientError) {
         setError(err.message);
@@ -262,6 +253,33 @@ function ChildDetailPage() {
   // which visits have attachments so the visits timeline can show an indicator.
   // This runs as part of `loadChild` (below) and is kept here as a safety fallback
   // in case documents are loaded separately.
+
+  // Soonest future visit for this child (for merged Last/Next strip)
+  const nextUpVisit = useMemo(() => {
+    const future = visits.filter(isFutureVisit).sort((a, b) => new Date(a.visit_date).getTime() - new Date(b.visit_date).getTime());
+    return future.length > 0 ? future[0] : null;
+  }, [visits]);
+
+  // One badge section: each card can show Last and/or Next for that type (same badge, not separate)
+  const overviewVisitCards = useMemo(() => {
+    const lastByType: Record<string, { date: string; href: string }> = {};
+    if (lastWellnessVisit) lastByType['wellness'] = { date: lastWellnessVisit.visit_date, href: `/visits/${lastWellnessVisit.id}` };
+    if (lastSickVisit) lastByType['sick'] = { date: lastSickVisit.visit_date, href: `/visits/${lastSickVisit.id}` };
+    if (lastVisionVisit) lastByType['vision'] = { date: lastVisionVisit.visit_date, href: `/visits/${lastVisionVisit.id}` };
+    if (lastDentalVisit) lastByType['dental'] = { date: lastDentalVisit.visit_date, href: `/visits/${lastDentalVisit.id}` };
+    if (lastInjuryVisit) lastByType['injury'] = { date: lastInjuryVisit.visit_date, href: `/visits/${lastInjuryVisit.id}` };
+    if (lastIllness) lastByType['illness'] = { date: lastIllness.end_date || lastIllness.start_date, href: `/illnesses/${lastIllness.id}` };
+    const next = nextUpVisit ? { type: nextUpVisit.visit_type as Visit['visit_type'], date: nextUpVisit.visit_date, href: `/visits/${nextUpVisit.id}` } : null;
+    type Card = { key: string; visitType: Visit['visit_type'] | 'illness'; last?: { date: string; href: string }; next?: { date: string; href: string } };
+    const types: (Visit['visit_type'] | 'illness')[] = ['wellness', 'sick', 'vision', 'dental', 'injury', 'illness'];
+    const cards: Card[] = [];
+    for (const t of types) {
+      const last = lastByType[t];
+      const nextForType = next && next.type === t ? { date: next.date, href: next.href } : undefined;
+      if (last || nextForType) cards.push({ key: t, visitType: t, last, next: nextForType });
+    }
+    return cards;
+  }, [lastWellnessVisit, lastSickVisit, lastVisionVisit, lastDentalVisit, lastInjuryVisit, lastIllness, nextUpVisit]);
 
   // Filter visits - MUST be called before early returns (Rules of Hooks)
   const visitItems = useMemo(() => {
@@ -433,88 +451,46 @@ function ChildDetailPage() {
               </div>
             </div>
 
-            {/* Last Visits in Overview */}
-            <div className="overview-last-visits">
-              {lastWellnessVisit && (
-                <Link to={`/visits/${lastWellnessVisit.id}`} className="overview-last-visit-link">
-                  <div className="overview-last-visit">
-                    <div className={`visit-icon-outline visit-icon--wellness`} aria-hidden="true">
-                      <LuHeart className="visit-type-svg" />
+            {/* Last & Next in ONE badge section: each card shows Last and/or Next for that type */}
+            <div className="overview-visits-strip">
+              {overviewVisitCards.length === 0 ? (
+                <span className="overview-visits-empty">No visits recorded yet</span>
+              ) : (
+                overviewVisitCards.map((card) => {
+                  const typeLabel = card.visitType === 'illness' ? 'Illness' : card.visitType === 'wellness' ? 'Wellness' : card.visitType === 'sick' ? 'Sick' : card.visitType === 'injury' ? 'Injury' : card.visitType === 'vision' ? 'Vision' : card.visitType === 'dental' ? 'Dental' : 'Visit';
+                  return (
+                    <div key={card.key} className="overview-last-visit">
+                      <div className={`visit-icon-outline visit-icon--${card.visitType}`} aria-hidden>
+                        {card.visitType === 'wellness' && <LuHeart className="visit-type-svg" />}
+                        {card.visitType === 'sick' && <LuPill className="visit-type-svg" />}
+                        {card.visitType === 'injury' && <MdOutlinePersonalInjury className="visit-type-svg visit-type-svg--filled" />}
+                        {card.visitType === 'vision' && <LuEye className="visit-type-svg" />}
+                        {card.visitType === 'dental' && <HugeiconsIcon icon={DentalToothIcon} className="visit-type-svg" size={24} color="currentColor" />}
+                        {card.visitType === 'illness' && <LuThermometer className="visit-type-svg" />}
+                      </div>
+                      <div className="overview-visit-info">
+                        {card.last && (
+                          <Link
+                            to={card.last.href}
+                            className={`overview-visit-row${card.next ? '' : ' overview-visit-row--stacked'}`}
+                          >
+                            <span className="overview-visit-label">{card.next ? 'Last:' : `Last ${typeLabel} Visit:`}</span>
+                            <span className="overview-visit-date">{formatDate(card.last.date)}</span>
+                          </Link>
+                        )}
+                        {card.next && (
+                          <Link
+                            to={card.next.href}
+                            className={`overview-visit-row ${card.last ? '' : ' overview-visit-row--stacked'}`}
+                          >
+                            <span className="overview-visit-label">{card.last ? 'Next:' : `Next ${typeLabel} Visit:`}</span>
+                            <span className="overview-visit-date">{formatDate(card.next.date)}</span>
+                          </Link>
+                        )}
+                      </div>
                     </div>
-                    <div className="overview-visit-info">
-                      <span className="overview-visit-label">Last Wellness Visit:</span>
-                      <span className="overview-visit-date">{formatDate(lastWellnessVisit.visit_date)}</span>
-                    </div>
-                  </div>
-                </Link>
-              )}
-              {lastSickVisit && (
-                <Link to={`/visits/${lastSickVisit.id}`} className="overview-last-visit-link">
-                  <div className="overview-last-visit">
-                    <div className={`visit-icon-outline visit-icon--sick`} aria-hidden="true">
-                      <LuPill className="visit-type-svg" />
-                    </div>
-                    <div className="overview-visit-info">
-                      <span className="overview-visit-label">Last Sick Visit:</span>
-                      <span className="overview-visit-date">{formatDate(lastSickVisit.visit_date)}</span>
-                    </div>
-                  </div>
-                </Link>
-              )}
-              {lastVisionVisit && (
-                <Link to={`/visits/${lastVisionVisit.id}`} className="overview-last-visit-link">
-                  <div className="overview-last-visit">
-                    <div className={`visit-icon-outline visit-icon--vision`} aria-hidden="true">
-                      <LuEye className="visit-type-svg" />
-                    </div>
-                    <div className="overview-visit-info">
-                      <span className="overview-visit-label">Last Vision Visit:</span>
-                      <span className="overview-visit-date">{formatDate(lastVisionVisit.visit_date)}</span>
-                    </div>
-                  </div>
-                </Link>
-              )}
-              {lastDentalVisit && (
-                <Link to={`/visits/${lastDentalVisit.id}`} className="overview-last-visit-link">
-                  <div className="overview-last-visit">
-                    <div className={`visit-icon-outline visit-icon--dental`} aria-hidden="true">
-                      <HugeiconsIcon icon={DentalToothIcon} className="visit-type-svg" size={24} color="currentColor" />
-                    </div>
-                    <div className="overview-visit-info">
-                      <span className="overview-visit-label">Last Dental Visit:</span>
-                      <span className="overview-visit-date">{formatDate(lastDentalVisit.visit_date)}</span>
-                    </div>
-                  </div>
-                </Link>
-              )}
-              {lastInjuryVisit && (
-                <Link to={`/visits/${lastInjuryVisit.id}`} className="overview-last-visit-link">
-                  <div className="overview-last-visit">
-                    <div className={`visit-icon-outline visit-icon--injury`} aria-hidden="true">
-                      <MdOutlinePersonalInjury className="visit-type-svg visit-type-svg--filled" />
-                    </div>
-                    <div className="overview-visit-info">
-                      <span className="overview-visit-label">Last Injury Visit:</span>
-                      <span className="overview-visit-date">{formatDate(lastInjuryVisit.visit_date)}</span>
-                    </div>
-                  </div>
-                </Link>
-              )}
-              {lastIllness && (
-                <Link to={`/illnesses/${lastIllness.id}`} className="overview-last-visit-link">
-                  <div className="overview-last-visit">
-                    <div className={`visit-icon-outline visit-icon--illness`} aria-hidden="true">
-                      <LuThermometer className="visit-type-svg" />
-                    </div>
-                    <div className="overview-visit-info">
-                      <span className="overview-visit-label">Last Illness:</span>
-                      <span className="overview-visit-date">{formatDate(lastIllness.end_date || lastIllness.start_date)}</span>
-                    </div>
-                  </div>
-                </Link>
-              )}
-              {!lastWellnessVisit && !lastSickVisit && !lastVisionVisit && !lastDentalVisit && (
-                <div className="overview-no-visits">No visits recorded yet</div>
+                  );
+                })
               )}
             </div>
           </div>

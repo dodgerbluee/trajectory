@@ -522,11 +522,13 @@ export const attachmentsApi = {
 
 export const visitsApi = {
   /**
-   * Get all visits with filtering
+   * Get all visits with filtering.
+   * future_only: true returns only visits with visit_date > today, ordered soonest first.
    */
   async getAll(params?: {
     child_id?: number;
     visit_type?: VisitType;
+    future_only?: boolean;
     limit?: number;
     offset?: number;
   }): Promise<ApiResponse<Visit[]>> {

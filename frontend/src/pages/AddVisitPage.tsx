@@ -3,6 +3,7 @@ import { Link, useParams, useNavigate, useSearchParams, useLocation } from 'reac
 import { visitsApi, childrenApi, ApiClientError } from '../lib/api-client';
 import type { Child, CreateVisitInput, VisitType, IllnessType } from '../types/api';
 import { getTodayDate } from '../lib/validation';
+import { isFutureDate } from '../lib/date-utils';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Notification from '../components/Notification';
@@ -33,7 +34,7 @@ function AddVisitPage() {
 
   const [formData, setFormData] = useState<CreateVisitInput>({
     child_id: 0,
-    visit_date: getTodayDate(),
+    visit_date: '',
     visit_type: initialVisitType || 'wellness',
     location: null,
     doctor_name: null,
@@ -99,16 +100,29 @@ function AddVisitPage() {
   const [recentLocations, setRecentLocations] = useState<string[]>([]);
   const [recentDoctors, setRecentDoctors] = useState<string[]>([]);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  /** When user clicks "Use full visit form" on a future-dated add, show full form. */
+  const [userChoseFullForm, setUserChoseFullForm] = useState(false);
 
-  /** Step 5: active sections driven by config; no visit-type conditionals in render. */
-  const [activeSections, setActiveSections] = useState<string[]>(() =>
-    getDefaultSectionsForVisitType(formData.visit_type)
-  );
+  /** No date yet: form starts with only visit details at top. */
+  const hasDate = !!(formData.visit_date && formData.visit_date.trim());
+  const noDateYet = !hasDate;
+  /** When date is future → limited form unless user chose full form. */
+  const isDateFuture = hasDate && isFutureDate(formData.visit_date);
+  const useShortenedForm = isDateFuture && !userChoseFullForm;
 
-  /** Reset active sections when visit type changes (e.g. from modal). */
+  /** activeSections: no date = only visit-information; future date (limited) = visit-information + notes; past/today or user chose full = full default. */
+  const [activeSections, setActiveSections] = useState<string[]>(() => ['visit-information']);
+
+  /** Sync sections when date is entered/changed, visit type, or user chose full form. */
   useEffect(() => {
-    setActiveSections(getDefaultSectionsForVisitType(formData.visit_type));
-  }, [formData.visit_type]);
+    if (noDateYet) {
+      setActiveSections(['visit-information']);
+    } else if (useShortenedForm) {
+      setActiveSections(['visit-information', 'notes']);
+    } else {
+      setActiveSections(getDefaultSectionsForVisitType(formData.visit_type));
+    }
+  }, [formData.visit_type, noDateYet, useShortenedForm]);
 
   const removeSection = (sectionId: string) => {
     setActiveSections((prev) => prev.filter((id) => id !== sectionId));
@@ -197,6 +211,9 @@ function AddVisitPage() {
     setPendingFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  /** Limited form when no date yet or future date and user hasn't chosen full form (no outcome sections). */
+  const isLimitedForm = noDateYet || useShortenedForm;
+
   /** Must run unconditionally (before any early return) to satisfy Rules of Hooks. */
   const visitFormContext = useMemo(
     () => ({
@@ -216,6 +233,7 @@ function AddVisitPage() {
       children,
       selectedChildId: selectedChildId ?? null,
       setSelectedChildId,
+      isFutureVisit: isLimitedForm,
     }),
     [
       formData,
@@ -226,38 +244,63 @@ function AddVisitPage() {
       pendingFiles,
       children,
       selectedChildId,
+      isLimitedForm,
     ]
   );
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    // Use ref so we always have latest illnesses (avoids stale closure when Save then Submit quickly)
-    const illnessesToSend = formData.visit_type === 'sick' ? selectedIllnessesRef.current : null;
-    if (formData.visit_type === 'sick' && (!illnessesToSend || illnessesToSend.length === 0)) {
-      setNotification({ message: 'Please select at least one illness for sick visits', type: 'error' });
+    if (!formData.visit_date || !formData.visit_date.trim()) {
+      setNotification({ message: 'Please enter a visit date', type: 'error' });
       return;
     }
 
-    if (formData.visit_type === 'injury' && !formData.injury_type) {
-      setNotification({ message: 'Please enter an injury type', type: 'error' });
-      return;
+    if (useShortenedForm) {
+      // Future visit: no outcome validation
+    } else {
+      // Use ref so we always have latest illnesses (avoids stale closure when Save then Submit quickly)
+      const illnessesToSend = formData.visit_type === 'sick' ? selectedIllnessesRef.current : null;
+      if (formData.visit_type === 'sick' && (!illnessesToSend || illnessesToSend.length === 0)) {
+        setNotification({ message: 'Please select at least one illness for sick visits', type: 'error' });
+        return;
+      }
+
+      if (formData.visit_type === 'injury' && !formData.injury_type) {
+        setNotification({ message: 'Please enter an injury type', type: 'error' });
+        return;
+      }
     }
 
     setSubmitting(true);
 
     try {
-      // Build payload with full illnesses array from ref (not stale state)
-      const payload = { ...formData };
-      if (formData.visit_type === 'sick' && illnessesToSend && illnessesToSend.length > 0) {
-        (payload as any).illnesses = illnessesToSend;
+      // Build payload. For future date, send only pre-appointment fields.
+      let payload: CreateVisitInput;
+      if (useShortenedForm) {
+        payload = {
+          child_id: formData.child_id,
+          visit_date: formData.visit_date,
+          visit_type: formData.visit_type,
+          location: formData.location ?? null,
+          doctor_name: formData.doctor_name ?? null,
+          title: formData.title ?? null,
+          notes: formData.notes ?? null,
+          tags: formData.tags ?? null,
+        };
+      } else {
+        payload = { ...formData };
+        const illnessesToSend = formData.visit_type === 'sick' ? selectedIllnessesRef.current : null;
+        if (formData.visit_type === 'sick' && illnessesToSend && illnessesToSend.length > 0) {
+          (payload as any).illnesses = illnessesToSend;
+        }
       }
-      // Create the visit first
+      // Create the visit
       const response = await visitsApi.create(payload);
       const visitId = response.data.id;
 
-      // Upload all pending files
-      if (pendingFiles.length > 0) {
+      // Upload pending files only for past/today visits (full form)
+      if (!useShortenedForm && pendingFiles.length > 0) {
         try {
           await Promise.all(
             pendingFiles.map(file => visitsApi.uploadAttachment(visitId, file))
@@ -277,7 +320,7 @@ function AddVisitPage() {
         }
       }
 
-      setNotification({ message: 'Visit added successfully!', type: 'success' });
+      setNotification({ message: useShortenedForm ? 'Future visit added!' : 'Visit added successfully!', type: 'success' });
       setTimeout(() => {
         navigate(`/visits/${visitId}`);
       }, 1000);
@@ -336,7 +379,7 @@ function AddVisitPage() {
 
       <form onSubmit={handleSubmit}>
         <Card>
-          <div className="visit-form-page visit-form-layout-grid">
+          <div className="visit-form-page visit-form-layout-grid has-date-banner">
             <div className="visit-form-back-row">
               <Link
                 to={selectedChildId ? `/children/${selectedChildId}` : '/'}
@@ -354,7 +397,13 @@ function AddVisitPage() {
               </div>
             </div>
             <div className="visit-form-sidebar-cell">
-              <VisitFormSidebar activeSections={activeSections} onAddSection={addSection} />
+              <VisitFormSidebar
+                activeSections={activeSections}
+                onAddSection={addSection}
+                isFutureVisit={isLimitedForm}
+                showUseFullFormButton={isDateFuture && useShortenedForm}
+                onUseFullForm={isDateFuture ? () => setUserChoseFullForm(true) : undefined}
+              />
             </div>
             <div className="visit-form-top-row">
               <h2 className="visit-header-title">
@@ -364,6 +413,26 @@ function AddVisitPage() {
                       formData.visit_type === 'vision' ? 'Vision' :
                         formData.visit_type === 'dental' ? 'Dental' : 'Visit'} Visit
               </h2>
+            </div>
+            <div className="visit-form-date-banner" role="status">
+              {noDateYet ? (
+                <>
+                  <strong>How it works:</strong> The form depends on the date you enter.<br />
+                  <div className="visit-form-date-banner-bullets">
+                    <div className="visit-form-date-banner-bullet">• A <strong>visit</strong> is a past or current date and shows the full form (measurements, illness, vaccines, etc.).</div>
+                    <div className="visit-form-date-banner-bullet">• A <strong>scheduled visit</strong> is a future date and shows a limited form (details and notes only).</div>
+                  </div>
+                  Enter a visit date to continue.
+                </>
+              ) : useShortenedForm ? (
+                <>
+                  <strong>Scheduled visit</strong> (future date). This limited form captures details and notes. Add outcome information after the visit, or use the sidebar to switch to the full form.
+                </>
+              ) : (
+                <>
+                  <strong>Visit</strong> (past or current date). Use the full form below to add measurements, illness, vaccines, and other outcome details.
+                </>
+              )}
             </div>
             <div className="visit-form-body-cell visit-detail-body">
               {(() => {

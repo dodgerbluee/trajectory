@@ -484,6 +484,7 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
 
     const childId = req.query.child_id ? parseInt(req.query.child_id as string) : undefined;
     const visitType = req.query.visit_type as VisitType | undefined;
+    const futureOnly = req.query.future_only === 'true';
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
     const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
 
@@ -504,7 +505,13 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
       queryParams.push(visitType);
     }
 
-    queryText += ` ORDER BY visit_date DESC, id DESC LIMIT $${paramCount++} OFFSET $${paramCount++}`;
+    if (futureOnly) {
+      queryText += ` AND visit_date > CURRENT_DATE`;
+    }
+
+    queryText += futureOnly
+      ? ` ORDER BY visit_date ASC, id ASC LIMIT $${paramCount++} OFFSET $${paramCount++}`
+      : ` ORDER BY visit_date DESC, id DESC LIMIT $${paramCount++} OFFSET $${paramCount++}`;
     queryParams.push(limit, offset);
 
     const result = await query<VisitRow>(queryText, queryParams);

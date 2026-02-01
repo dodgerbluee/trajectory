@@ -1,8 +1,10 @@
 import { useState, FormEvent, useEffect, useMemo, useRef, type Dispatch, type SetStateAction } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { visitsApi, childrenApi, ApiClientError } from '../lib/api-client';
 import type { Child, UpdateVisitInput, IllnessType, Visit, VisitAttachment } from '../types/api';
 import { getTodayDate } from '../lib/validation';
+import { isFutureVisit, isFutureDate } from '../lib/date-utils';
+import { visitHasOutcomeData } from '../lib/visit-utils';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Notification from '../components/Notification';
@@ -17,7 +19,11 @@ import { VisitFormSidebar } from '../visit-form/VisitFormSidebar';
 function EditVisitPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const [userChoseFullForm, setUserChoseFullForm] = useState(false);
+  const forceFullForm = searchParams.get('full') === '1' || (location.state as { editAsFullVisit?: boolean } | null)?.editAsFullVisit === true || userChoseFullForm;
+
   const [child, setChild] = useState<Child | null>(null);
   const [visit, setVisit] = useState<Visit | null>(null);
   const [loading, setLoading] = useState(true);
@@ -102,11 +108,11 @@ function EditVisitPage() {
 
   useEffect(() => {
     if (id) {
-      loadData();
+      loadData(forceFullForm);
     }
-  }, [id]);
+  }, [id]); // forceFullForm intentionally omitted: "Use full visit form" expands via separate effect
 
-  const loadData = async () => {
+  const loadData = async (forceFull: boolean) => {
     if (!id) return;
 
     try {
@@ -179,7 +185,10 @@ function EditVisitPage() {
       const doctors = [...new Set(visitsResponse.data.map(v => v.doctor_name).filter(Boolean))] as string[];
       setRecentLocations(locations);
       setRecentDoctors(doctors);
-      setActiveSections(getDefaultSectionsForVisitType(visitData.visit_type));
+      const futureVisit = isFutureVisit(visitData);
+      const hasOutcome = visitHasOutcomeData(visitData);
+      const useLimitedForm = futureVisit && !forceFull && !hasOutcome;
+      setActiveSections(useLimitedForm ? ['visit-information', 'notes'] : getDefaultSectionsForVisitType(visitData.visit_type));
     } catch (error) {
       if (error instanceof ApiClientError) {
         setNotification({ message: error.message, type: 'error' });
@@ -226,6 +235,21 @@ function EditVisitPage() {
     setAttachments((prev) => prev.filter((a) => a.id !== attachmentId));
   };
 
+  // Drive limited vs full by current form date: future date => short form (no outcome validation).
+  // If visit already has outcome data (user saved full form), always show full form.
+  const isCurrentlyFutureVisit = formData.visit_date
+    ? isFutureDate(formData.visit_date)
+    : (visit ? isFutureVisit(visit) : false);
+  const useLimitedForm = isCurrentlyFutureVisit && !forceFullForm && !(visit ? visitHasOutcomeData(visit) : false);
+
+  // Sync sections when limited/full mode changes (e.g. user enters future date or clicks "Use full visit form")
+  useEffect(() => {
+    if (!visit) return;
+    setActiveSections(
+      useLimitedForm ? ['visit-information', 'notes'] : getDefaultSectionsForVisitType(visit.visit_type)
+    );
+  }, [visit, useLimitedForm]);
+
   const visitFormContext = useMemo(
     () => ({
       mode: 'edit' as const,
@@ -247,6 +271,7 @@ function EditVisitPage() {
       loadingAttachments,
       handleAttachmentDelete,
       onRefreshAttachments: id ? () => loadAttachments(parseInt(id, 10)) : undefined,
+      isFutureVisit: useLimitedForm,
     }),
     [
       formData,
@@ -258,6 +283,7 @@ function EditVisitPage() {
       selectedIllnesses,
       attachments,
       loadingAttachments,
+      useLimitedForm,
     ]
   );
 
@@ -266,23 +292,38 @@ function EditVisitPage() {
 
     if (!id || !visit) return;
 
-    const illnessesToSend = visit.visit_type === 'sick' ? selectedIllnessesRef.current : null;
-    if (visit.visit_type === 'sick' && (!illnessesToSend || illnessesToSend.length === 0)) {
-      setNotification({ message: 'Please select at least one illness for sick visits', type: 'error' });
-      return;
-    }
+    if (!useLimitedForm) {
+      const illnessesToSend = visit.visit_type === 'sick' ? selectedIllnessesRef.current : null;
+      if (visit.visit_type === 'sick' && (!illnessesToSend || illnessesToSend.length === 0)) {
+        setNotification({ message: 'Please select at least one illness for sick visits', type: 'error' });
+        return;
+      }
 
-    if (visit.visit_type === 'injury' && !formData.injury_type) {
-      setNotification({ message: 'Please enter an injury type', type: 'error' });
-      return;
+      if (visit.visit_type === 'injury' && !formData.injury_type) {
+        setNotification({ message: 'Please enter an injury type', type: 'error' });
+        return;
+      }
     }
 
     setSubmitting(true);
 
     try {
-      const payload = { ...formData } as any;
-      if (visit.visit_type === 'sick' && illnessesToSend && illnessesToSend.length > 0) {
-        payload.illnesses = illnessesToSend;
+      const payload = useLimitedForm
+        ? {
+            visit_date: formData.visit_date,
+            visit_type: formData.visit_type,
+            location: formData.location,
+            doctor_name: formData.doctor_name,
+            title: formData.title,
+            notes: formData.notes,
+            tags: formData.tags,
+          }
+        : ({ ...formData } as any);
+      if (!useLimitedForm && visit.visit_type === 'sick') {
+        const illnessesToSend = selectedIllnessesRef.current;
+        if (illnessesToSend && illnessesToSend.length > 0) {
+          payload.illnesses = illnessesToSend;
+        }
       }
       await visitsApi.update(parseInt(id), payload);
       setNotification({ message: 'Visit updated successfully!', type: 'success' });
@@ -339,7 +380,13 @@ function EditVisitPage() {
               </div>
             </div>
             <div className="visit-form-sidebar-cell">
-              <VisitFormSidebar activeSections={activeSections} onAddSection={addSection} />
+              <VisitFormSidebar
+              activeSections={activeSections}
+              onAddSection={addSection}
+              isFutureVisit={useLimitedForm}
+              showUseFullFormButton={useLimitedForm}
+              onUseFullForm={() => setUserChoseFullForm(true)}
+            />
             </div>
             <div className="visit-form-top-row">
               <h2 className="visit-header-title">

@@ -1585,6 +1585,39 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
   align-items: stretch;
 }
 
+/* When banner is present (Add Visit only): back, then title row, then banner under title, then body */
+.visit-form-page.visit-form-layout-grid.has-date-banner {
+  grid-template-rows: auto auto auto 1fr;
+}
+.visit-form-page.visit-form-layout-grid.has-date-banner .visit-form-back-row { grid-row: 1; }
+.visit-form-page.visit-form-layout-grid.has-date-banner .visit-form-sidebar-cell { grid-row: 2 / -1; }
+.visit-form-page.visit-form-layout-grid.has-date-banner .visit-form-top-row { grid-row: 2; }
+.visit-form-page.visit-form-layout-grid.has-date-banner .visit-form-date-banner { grid-row: 3; grid-column: 2; }
+.visit-form-page.visit-form-layout-grid.has-date-banner .visit-form-body-cell { grid-row: 4; }
+
+/* Info banner: "How it works" under Add Visit header (Add Visit only) */
+.visit-form-date-banner {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--color-surface-elevated, rgba(255, 255, 255, 0.06));
+  color: var(--color-text-secondary, rgba(255, 255, 255, 0.8));
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.visit-form-date-banner-bullets {
+  margin-top: 0.25em;
+  padding-left: 2em;
+}
+
+.visit-form-date-banner-bullet {
+  margin-bottom: 0.15em;
+}
+
+.visit-form-date-banner-bullet:last-child {
+  margin-bottom: 0;
+}
+
 /* Back link left, Save/Cancel right – same row, level with each other */
 .visit-form-back-row {
   grid-column: 1 / -1;
@@ -1690,11 +1723,20 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
     grid-template-rows: auto auto auto 1fr;
   }
 
-  /* Back first, then header (title + buttons), then sidebar, then body */
+  /* Back first, then header (title), then sidebar, then body */
   .visit-form-back-row { grid-column: 1; grid-row: 1; }
-  .visit-form-sidebar-cell { grid-column: 1; grid-row: 3; }
   .visit-form-top-row { grid-column: 1; grid-row: 2; }
+  .visit-form-sidebar-cell { grid-column: 1; grid-row: 3; }
   .visit-form-body-cell { grid-column: 1; grid-row: 4; }
+
+  .visit-form-page.visit-form-layout-grid.has-date-banner {
+    grid-template-rows: auto auto auto auto 1fr;
+  }
+  .visit-form-page.visit-form-layout-grid.has-date-banner .visit-form-back-row { grid-row: 1; }
+  .visit-form-page.visit-form-layout-grid.has-date-banner .visit-form-top-row { grid-row: 2; }
+  .visit-form-page.visit-form-layout-grid.has-date-banner .visit-form-date-banner { grid-column: 1; grid-row: 3; }
+  .visit-form-page.visit-form-layout-grid.has-date-banner .visit-form-sidebar-cell { grid-row: 4; }
+  .visit-form-page.visit-form-layout-grid.has-date-banner .visit-form-body-cell { grid-row: 5; }
 }
 
 /* Ensure SVG icons explicitly pick up currentColor for fill/stroke
@@ -2663,6 +2705,11 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
   color: var(--color-text-primary);
 }
 
+/* Family home tab: no outer border; padding so content isn't flush */
+.home-family-tab {
+  padding: var(--spacing-lg);
+}
+
 /* Family home tab: header spacing */
 .home-family-tab-title {
   margin: 0 0 var(--spacing-md) 0;
@@ -2672,10 +2719,19 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
   color: var(--color-text-primary);
 }
 
-.home-family-sections {
+.home-tabs-content {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xl);
+  gap: 20px;
+}
+
+/* Each section (Upcoming, each family) in its own card-style bordered box with 20px padding */
+.home-tabs-content-box {
+  background-color: var(--color-background-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
 }
 
 .home-family-section {
@@ -2683,6 +2739,137 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
   flex-direction: column;
   gap: var(--spacing-sm);
 }
+
+/* Upcoming Visits: grouped by child, up to 5 chips per line */
+.home-upcoming-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.home-upcoming-title {
+  font-size: 1.375rem;
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.3;
+  color: var(--color-text-primary);
+}
+
+.home-upcoming-by-child {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* One line per kid: name + chips on same row; chips wrap if needed */
+.home-upcoming-child-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  min-width: 0;
+}
+
+.home-upcoming-child-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  flex-shrink: 0;
+}
+
+.home-upcoming-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+/* Chip fits content – no extra space */
+.home-upcoming-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  text-decoration: none;
+  color: inherit;
+  width: fit-content;
+  max-width: 100%;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.home-upcoming-chip:hover {
+  background: var(--color-surface-hover, rgba(0 0 0 / 0.03));
+  border-color: var(--color-primary);
+}
+
+/* Past-due appointment (visit date on or past; no outcome data yet) – clean red in light/dark */
+.home-upcoming-chip--overdue {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.45);
+}
+
+.home-upcoming-chip--overdue .home-upcoming-chip-text {
+  color: #b91c1c;
+}
+
+.home-upcoming-chip--overdue:hover {
+  background: rgba(239, 68, 68, 0.16);
+  border-color: rgba(239, 68, 68, 0.65);
+}
+
+[data-theme="dark"] .home-upcoming-chip--overdue {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(248, 113, 113, 0.5);
+}
+
+[data-theme="dark"] .home-upcoming-chip--overdue .home-upcoming-chip-text {
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .home-upcoming-chip--overdue:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(248, 113, 113, 0.65);
+}
+
+@media (prefers-color-scheme: dark) {
+  .home-upcoming-chip--overdue {
+    background: rgba(239, 68, 68, 0.18);
+    border-color: rgba(248, 113, 113, 0.5);
+  }
+
+  .home-upcoming-chip--overdue .home-upcoming-chip-text {
+    color: #fca5a5;
+  }
+
+  .home-upcoming-chip--overdue:hover {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: rgba(248, 113, 113, 0.65);
+  }
+}
+
+.home-upcoming-icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-secondary);
+}
+
+.home-upcoming-chip-text {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 
 .child-card-add-wrap {
   text-decoration: none;
@@ -3043,43 +3230,69 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
   font-size: var(--font-size-base);
 }
 
-.overview-last-visits {
+/* Last & Next: merged strip of same-size cards (old "Last X Visit" badge size) */
+.overview-visits-strip {
   display: flex;
-  gap: var(--spacing-md);
   flex-wrap: wrap;
-  margin-bottom: var(--spacing-lg);
+  align-items: stretch;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
 }
 
-.overview-last-visit-link {
-  text-decoration: none;
-  color: inherit;
-  display: block;
-}
-
-.overview-last-visit-link:hover .overview-last-visit {
-  /* Keep pointer for interactivity but avoid changing background color */
-  cursor: pointer;
+.overview-visits-empty {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-style: italic;
+  padding: var(--spacing-sm) 0;
 }
 
 .overview-last-visit {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);
   background: var(--color-surface);
-  transition: background-color 0.2s;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
-}
-
-.overview-visit-icon {
-  font-size: 1.25rem;
-  line-height: 1;
+  transition: border-color 0.2s;
+  min-height: 52px;
 }
 
 .overview-visit-info {
   display: flex;
   flex-direction: column;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+.overview-visit-row {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 0.35em;
+  flex-wrap: nowrap;
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.15s;
+}
+
+.overview-visit-row:hover {
+  opacity: 0.9;
+}
+
+.overview-visit-row:hover .overview-visit-date {
+  color: var(--color-primary);
+}
+
+.overview-visit-row--next .overview-visit-label {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Single row only: old way – label on top, date on bottom */
+.overview-visit-row--stacked {
+  flex-direction: column;
+  align-items: flex-start;
   gap: var(--spacing-xs);
 }
 
@@ -3093,13 +3306,6 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
   font-size: var(--font-size-sm);
   color: var(--color-text-primary);
   font-weight: var(--font-weight-semibold);
-}
-
-.overview-no-visits {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  font-style: italic;
-  padding: var(--spacing-sm) 0;
 }
 
 /* Toolbar */
@@ -4101,7 +4307,6 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1rem 1.25rem;
-  padding-top: 1rem;
   align-items: start;
 }
 
@@ -6668,6 +6873,18 @@ select.form-input:disabled {
   font-weight: 600;
   color: var(--color-text-primary);
   margin: 0 0 var(--spacing-xs) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.visit-header-badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.15em 0.5em;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-light, rgba(0 0 0 / 0.06));
+  color: var(--color-primary);
 }
 
 .visit-header-date {
@@ -8418,13 +8635,8 @@ select.form-input:disabled {
     min-width: auto;
   }
 
-  .overview-last-visits {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .overview-last-visit {
-    width: 100%;
+  .overview-visits-strip {
+    margin-bottom: var(--spacing-sm);
   }
 
   .overview-header {

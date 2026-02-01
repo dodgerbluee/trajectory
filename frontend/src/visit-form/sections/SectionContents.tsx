@@ -19,6 +19,7 @@ import { VisionRefractionCard } from '../../components/VisionRefractionCard';
 import type { VisionRefraction } from '../../components/VisionRefractionCard';
 import type { SectionId } from '../sectionRegistry';
 import type { VisitFormContext } from '../visitFormContext';
+import { isFutureDate } from '../../lib/date-utils';
 
 export interface SectionContentPropsWithContext {
   sectionId: SectionId;
@@ -28,6 +29,11 @@ export interface SectionContentPropsWithContext {
 export function VisitInformationSection({ context }: SectionContentPropsWithContext) {
   const { formData, setFormData, submitting, showTitle, recentLocations, recentDoctors, getTodayDate, children, selectedChildId, setSelectedChildId } = context;
   const setForm = setFormData as React.Dispatch<React.SetStateAction<any>>;
+  // Add mode: no date restriction (user can pick any date; form expands to full or limited based on date).
+  // Edit mode: allow future if form's date is already future, else max today.
+  const formDateIsFuture = !!(formData.visit_date && isFutureDate(formData.visit_date));
+  const allowFutureDate = context.mode === 'edit' && formDateIsFuture;
+  const futureDateConstraint = context.mode === 'add' ? {} : allowFutureDate ? {} : { max: getTodayDate() };
   return (
     <div className="visit-info-form">
       {context.mode === 'add' && children && children.length > 0 && setSelectedChildId && (
@@ -49,7 +55,7 @@ export function VisitInformationSection({ context }: SectionContentPropsWithCont
           onChange={(e) => setForm((prev: any) => ({ ...prev, visit_date: e.target.value }))}
           required
           disabled={submitting}
-          max={getTodayDate()}
+          {...futureDateConstraint}
         />
         <FormField
           label="Location"

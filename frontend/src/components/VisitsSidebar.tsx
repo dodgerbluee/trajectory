@@ -50,7 +50,7 @@ export default function VisitsSidebar({ stats, childrenList, selectedChildId, on
                         <ChildSelector childrenList={childrenList} selectedChildId={selectedChildId} onSelect={onSelectChild} />
 
                         {canEdit && (
-                        <div className="sidebar-action" style={{ marginTop: 12 }}>
+                        <div className="sidebar-actions" style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
                             <AddVisitButton
                                 fromPath={fromPath}
                                 fromTab={fromTab}
@@ -63,7 +63,7 @@ export default function VisitsSidebar({ stats, childrenList, selectedChildId, on
                 )}
 
                 {hideChildFilter && canEdit && (
-                    <div className="sidebar-action" style={{ marginTop: 12 }}>
+                    <div className="sidebar-actions" style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
                         <AddVisitButton
                             fromPath={fromPath}
                             fromTab={fromTab}
@@ -99,3 +99,4 @@ export default function VisitsSidebar({ stats, childrenList, selectedChildId, on
                         </Button>
                     );
                 }
+
