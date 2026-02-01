@@ -3291,6 +3291,17 @@ body:not([data-theme="dark"]) .visits-page-layout .child-row-sub {
   font-weight: 600;
 }
 
+/* Empty row (no last/next yet): not a link, muted date */
+.overview-visit-row--empty {
+  cursor: default;
+}
+.overview-visit-row--empty:hover {
+  opacity: 1;
+}
+.overview-visit-row--empty .overview-visit-date {
+  color: var(--color-text-secondary);
+}
+
 /* Single row only: old way – label on top, date on bottom */
 .overview-visit-row--stacked {
   flex-direction: column;

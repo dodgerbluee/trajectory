@@ -254,13 +254,19 @@ function ChildDetailPage() {
   // This runs as part of `loadChild` (below) and is kept here as a safety fallback
   // in case documents are loaded separately.
 
-  // Soonest future visit for this child (for merged Last/Next strip)
-  const nextUpVisit = useMemo(() => {
+  // Soonest future visit per type (for Last/Next strip)
+  const nextByType = useMemo(() => {
     const future = visits.filter(isFutureVisit).sort((a, b) => new Date(a.visit_date).getTime() - new Date(b.visit_date).getTime());
-    return future.length > 0 ? future[0] : null;
+    const byType: Record<string, { date: string; href: string }> = {};
+    for (const v of future) {
+      if (!byType[v.visit_type]) {
+        byType[v.visit_type] = { date: v.visit_date, href: `/visits/${v.id}` };
+      }
+    }
+    return byType;
   }, [visits]);
 
-  // One badge section: each card can show Last and/or Next for that type (same badge, not separate)
+  // One card per visit type when that type has last and/or next; each card shows Last and/or Next (only render when data exists)
   const overviewVisitCards = useMemo(() => {
     const lastByType: Record<string, { date: string; href: string }> = {};
     if (lastWellnessVisit) lastByType['wellness'] = { date: lastWellnessVisit.visit_date, href: `/visits/${lastWellnessVisit.id}` };
@@ -269,17 +275,19 @@ function ChildDetailPage() {
     if (lastDentalVisit) lastByType['dental'] = { date: lastDentalVisit.visit_date, href: `/visits/${lastDentalVisit.id}` };
     if (lastInjuryVisit) lastByType['injury'] = { date: lastInjuryVisit.visit_date, href: `/visits/${lastInjuryVisit.id}` };
     if (lastIllness) lastByType['illness'] = { date: lastIllness.end_date || lastIllness.start_date, href: `/illnesses/${lastIllness.id}` };
-    const next = nextUpVisit ? { type: nextUpVisit.visit_type as Visit['visit_type'], date: nextUpVisit.visit_date, href: `/visits/${nextUpVisit.id}` } : null;
     type Card = { key: string; visitType: Visit['visit_type'] | 'illness'; last?: { date: string; href: string }; next?: { date: string; href: string } };
-    const types: (Visit['visit_type'] | 'illness')[] = ['wellness', 'sick', 'vision', 'dental', 'injury', 'illness'];
+    const visitTypes: Visit['visit_type'][] = ['wellness', 'sick', 'injury', 'vision', 'dental'];
     const cards: Card[] = [];
-    for (const t of types) {
+    for (const t of visitTypes) {
       const last = lastByType[t];
-      const nextForType = next && next.type === t ? { date: next.date, href: next.href } : undefined;
-      if (last || nextForType) cards.push({ key: t, visitType: t, last, next: nextForType });
+      const next = nextByType[t];
+      if (last || next) cards.push({ key: t, visitType: t, last, next });
+    }
+    if (lastByType['illness']) {
+      cards.push({ key: 'illness', visitType: 'illness', last: lastByType['illness'], next: undefined });
     }
     return cards;
-  }, [lastWellnessVisit, lastSickVisit, lastVisionVisit, lastDentalVisit, lastInjuryVisit, lastIllness, nextUpVisit]);
+  }, [lastWellnessVisit, lastSickVisit, lastVisionVisit, lastDentalVisit, lastInjuryVisit, lastIllness, nextByType]);
 
   // Filter visits - MUST be called before early returns (Rules of Hooks)
   const visitItems = useMemo(() => {
@@ -451,12 +459,10 @@ function ChildDetailPage() {
               </div>
             </div>
 
-            {/* Last & Next in ONE badge section: each card shows Last and/or Next for that type */}
-            <div className="overview-visits-strip">
-              {overviewVisitCards.length === 0 ? (
-                <span className="overview-visits-empty">No visits recorded yet</span>
-              ) : (
-                overviewVisitCards.map((card) => {
+            {/* Last & Next: only show section when at least one type has a last or next visit; use "Last:" / "Next:" when both exist */}
+            {overviewVisitCards.length > 0 && (
+              <div className="overview-visits-strip">
+                {overviewVisitCards.map((card) => {
                   const typeLabel = card.visitType === 'illness' ? 'Illness' : card.visitType === 'wellness' ? 'Wellness' : card.visitType === 'sick' ? 'Sick' : card.visitType === 'injury' ? 'Injury' : card.visitType === 'vision' ? 'Vision' : card.visitType === 'dental' ? 'Dental' : 'Visit';
                   return (
                     <div key={card.key} className="overview-last-visit">
@@ -474,14 +480,14 @@ function ChildDetailPage() {
                             to={card.last.href}
                             className={`overview-visit-row${card.next ? '' : ' overview-visit-row--stacked'}`}
                           >
-                            <span className="overview-visit-label">{card.next ? 'Last:' : `Last ${typeLabel} Visit:`}</span>
+                            <span className="overview-visit-label">{card.next ? 'Last:' : card.visitType === 'illness' ? 'Last Illness:' : `Last ${typeLabel} Visit:`}</span>
                             <span className="overview-visit-date">{formatDate(card.last.date)}</span>
                           </Link>
                         )}
                         {card.next && (
                           <Link
                             to={card.next.href}
-                            className={`overview-visit-row ${card.last ? '' : ' overview-visit-row--stacked'}`}
+                            className={`overview-visit-row${card.last ? '' : ' overview-visit-row--stacked'}`}
                           >
                             <span className="overview-visit-label">{card.last ? 'Next:' : `Next ${typeLabel} Visit:`}</span>
                             <span className="overview-visit-date">{formatDate(card.next.date)}</span>
@@ -490,9 +496,9 @@ function ChildDetailPage() {
                       </div>
                     </div>
                   );
-                })
-              )}
-            </div>
+                })}
+              </div>
+            )}
           </div>
 
           {/* Tabs Section */}
