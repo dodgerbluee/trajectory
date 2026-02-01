@@ -294,7 +294,7 @@ export function transformVisitsToMarkers(visits: Visit[]): EventMarker[] {
       return {
         date: v.visit_date,
         type: 'illness' as const,
-        label: v.illness_type ? v.illness_type.replace('_', ' ') : 'Illness',
+        label: v.illnesses?.length ? v.illnesses.map((i) => i.replace('_', ' ')).join(', ') : 'Illness',
         endDate: v.end_date || undefined,
       };
     }

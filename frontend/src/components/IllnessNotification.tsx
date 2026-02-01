@@ -100,7 +100,7 @@ function IllnessNotification() {
                 <div className="notification-item-content">
                   <div className="notification-item-header">
                     <strong>{getChildName(illness.child_id)}</strong>
-                    <span className="illness-type-badge">{illness.illness_type}</span>
+                    <span className="illness-type-badge">{illness.illness_types?.join(', ') ?? ''}</span>
                   </div>
                   <div className="notification-item-details">
                     <span>Started: {formatDate(illness.start_date)}</span>

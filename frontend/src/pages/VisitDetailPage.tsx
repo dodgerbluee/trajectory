@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { visitsApi, childrenApi, ApiClientError } from '../lib/api-client';
 import type { Visit, Child, VisitAttachment } from '../types/api';
-import { formatDate, safeFormatDateTime } from '../lib/date-utils';
+import { formatDate, formatTime, safeFormatDateTime, isFutureVisit } from '../lib/date-utils';
+import { visitHasOutcomeData } from '../lib/visit-utils';
+import { getGoogleCalendarAddEventUrl } from '../lib/calendar-export';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import Card from '../components/Card';
@@ -11,6 +13,7 @@ import Notification from '../components/Notification';
 import VisitAttachmentsList from '../components/VisitAttachmentsList';
 import Tabs from '../components/Tabs';
 import { useAuth } from '../contexts/AuthContext';
+import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
 import { VisionRefractionCard } from '../components/VisionRefractionCard';
 import AuditDiffView from '../components/AuditDiffView';
 import type { AuditHistoryEvent } from '../types/api';
@@ -20,6 +23,7 @@ function VisitDetailPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { canEdit } = useFamilyPermissions();
   
   const [visit, setVisit] = useState<Visit | null>(null);
   const [child, setChild] = useState<Child | null>(null);
@@ -147,6 +151,32 @@ function VisitDetailPage() {
     return <ErrorMessage message="Visit not found" />;
   }
 
+  // Show limited (upcoming) view only when future-dated and no outcome data; once full form is saved, show full view
+  const isFuture = isFutureVisit(visit) && !visitHasOutcomeData(visit);
+
+  const visitTypeLabel = (t: Visit['visit_type']) => {
+    switch (t) {
+      case 'wellness': return 'Wellness';
+      case 'sick': return 'Sick';
+      case 'injury': return 'Injury';
+      case 'vision': return 'Vision';
+      case 'dental': return 'Dental';
+      default: return 'Visit';
+    }
+  };
+
+  const handleExportToCalendar = () => {
+    const typeLabel = visitTypeLabel(visit.visit_type);
+    const title = child.name ? `${child.name}'s ${typeLabel} Appointment` : `${typeLabel} Appointment`;
+    const url = getGoogleCalendarAddEventUrl({
+      title,
+      date: visit.visit_date,
+      time: visit.visit_time ?? null,
+      location: visit.location ?? null,
+    });
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div className="page-container">
       {notification && (
@@ -165,15 +195,22 @@ function VisitDetailPage() {
               ← Back to {child.name}
             </Link>
             <div className="visit-detail-actions">
-              <Link 
-                to={`/visits/${visit.id}/edit`}
-                state={{ childId: visit.child_id, fromChild: (location.state as any)?.fromChild || false }}
-              >
-                <Button variant="secondary" size="sm">Edit Visit</Button>
-              </Link>
-              <Button variant="danger" size="sm" onClick={handleDelete} disabled={deleting}>
-                {deleting ? 'Deleting...' : 'Delete Visit'}
+              <Button variant="secondary" size="sm" onClick={handleExportToCalendar}>
+                Export to Calendar
               </Button>
+              {canEdit && (
+                <>
+                  <Link 
+                    to={`/visits/${visit.id}/edit`}
+                    state={{ childId: visit.child_id, fromChild: (location.state as any)?.fromChild || false }}
+                  >
+                    <Button variant="secondary" size="sm">{isFuture ? 'Edit appointment' : 'Edit Visit'}</Button>
+                  </Link>
+                  <Button variant="danger" size="sm" onClick={handleDelete} disabled={deleting}>
+                    {deleting ? 'Deleting...' : 'Delete Visit'}
+                  </Button>
+                </>
+              )}
             </div>
           </div>
 
@@ -183,9 +220,14 @@ function VisitDetailPage() {
               {visit.visit_type === 'wellness' ? 'Wellness Visit' : 
                visit.visit_type === 'sick' ? 'Sick Visit' : 
                visit.visit_type === 'injury' ? 'Injury Visit' :
-               'Vision Visit'}
+               visit.visit_type === 'vision' ? 'Vision Visit' :
+               visit.visit_type === 'dental' ? 'Dental Visit' : 'Visit'}
+              {isFuture && <span className="visit-header-badge">Upcoming</span>}
             </h2>
-            <p className="visit-header-date">{formatDate(visit.visit_date)}</p>
+            <p className="visit-header-date">
+              {formatDate(visit.visit_date)}
+              {visit.visit_time && <span className="visit-header-time"> at {formatTime(visit.visit_time)}</span>}
+            </p>
           </div>
 
           <Tabs
@@ -228,8 +270,16 @@ function VisitDetailPage() {
                       </div>
                     )}
 
-                    {/* Illness/Injury/Vision Information */}
-                    {visit.visit_type === 'sick' && (
+                    {/* Pre-appointment notes always visible */}
+                    {visit.notes && (
+                      <div className="visit-notes-section">
+                        <h3 className="visit-section-header">Notes</h3>
+                        <p className="visit-notes-text">{visit.notes}</p>
+                      </div>
+                    )}
+
+                    {/* Outcome sections only when not a future visit */}
+                    {!isFuture && visit.visit_type === 'sick' && (
                       <div className="visit-info-stacked">
                         {visit.illnesses && visit.illnesses.length > 0 && (
                           <div className="visit-info-item">
@@ -264,7 +314,7 @@ function VisitDetailPage() {
                       </div>
                     )}
 
-                    {visit.visit_type === 'injury' && (
+                    {!isFuture && visit.visit_type === 'injury' && (
                       <div className="visit-info-stacked">
                         {visit.injury_type && (
                           <div className="visit-info-item">
@@ -287,7 +337,7 @@ function VisitDetailPage() {
                       </div>
                     )}
 
-                    {visit.visit_type === 'vision' && (
+                    {!isFuture && visit.visit_type === 'vision' && (
                       <div className="visit-info-stacked">
                         {(visit as any).vision_refraction ? (
                           <div className="visit-info-item">
@@ -310,8 +360,61 @@ function VisitDetailPage() {
                       </div>
                     )}
 
-                    {/* Measurements Section */}
-                    {(visit.weight_value || visit.height_value || visit.head_circumference_value || visit.bmi_value || visit.blood_pressure || visit.heart_rate) && (
+                    {!isFuture && visit.visit_type === 'dental' && (
+                      <div className="visit-info-stacked">
+                        {(visit as any).dental_procedure_type && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Dental Visit Type:</span>
+                            <span className="visit-info-value">{(visit as any).dental_procedure_type}</span>
+                          </div>
+                        )}
+                        {(visit as any).cleaning_type && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Cleaning Type:</span>
+                            <span className="visit-info-value">{(visit as any).cleaning_type}</span>
+                          </div>
+                        )}
+                        {(visit as any).cavities_found !== null && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Cavities Found:</span>
+                            <span className="visit-info-value">{(visit as any).cavities_found}</span>
+                          </div>
+                        )}
+                        {(visit as any).cavities_filled !== null && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Cavities Filled:</span>
+                            <span className="visit-info-value">{(visit as any).cavities_filled}</span>
+                          </div>
+                        )}
+                        <div className="visit-info-item">
+                          <span className="visit-info-label">X-Rays Taken:</span>
+                          <span className="visit-info-value">{(visit as any).xrays_taken ? 'Yes' : 'No'}</span>
+                        </div>
+                        <div className="visit-info-item">
+                          <span className="visit-info-label">Fluoride Treatment:</span>
+                          <span className="visit-info-value">{(visit as any).fluoride_treatment ? 'Yes' : 'No'}</span>
+                        </div>
+                        <div className="visit-info-item">
+                          <span className="visit-info-label">Sealants Applied:</span>
+                          <span className="visit-info-value">{(visit as any).sealants_applied ? 'Yes' : 'No'}</span>
+                        </div>
+                        {(visit as any).next_appointment_date && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Next Appointment:</span>
+                            <span className="visit-info-value">{formatDate((visit as any).next_appointment_date)}</span>
+                          </div>
+                        )}
+                        {(visit as any).dental_notes && (
+                          <div className="visit-info-item">
+                            <span className="visit-info-label">Notes:</span>
+                            <span className="visit-info-value">{(visit as any).dental_notes}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Measurements Section - only for past/today visits */}
+                    {!isFuture && (visit.weight_value || visit.height_value || visit.head_circumference_value || visit.bmi_value || visit.blood_pressure || visit.heart_rate) && (
                       <div className="visit-measurements-section">
                         <h3 className="visit-section-header">Measurements</h3>
                         <div className="visit-measurements-grid">
@@ -369,8 +472,8 @@ function VisitDetailPage() {
                       </div>
                     )}
 
-                    {/* Compact Vaccines */}
-                    {visit.vaccines_administered && visit.vaccines_administered.length > 0 && (
+                    {/* Compact Vaccines - only for past/today visits */}
+                    {!isFuture && visit.vaccines_administered && visit.vaccines_administered.length > 0 && (
                       <div className="visit-vaccines-compact">
                         <span className="visit-vaccines-label">Vaccines:</span>
                         <div className="visit-vaccines-badges">
@@ -383,8 +486,8 @@ function VisitDetailPage() {
                       </div>
                     )}
 
-                    {/* Prescriptions */}
-                    {visit.prescriptions && visit.prescriptions.length > 0 && (
+                    {/* Prescriptions - only for past/today visits */}
+                    {!isFuture && visit.prescriptions && visit.prescriptions.length > 0 && (
                       <div className="visit-prescriptions-compact">
                         {visit.prescriptions.map((rx, index) => (
                           <div key={index} className="prescription-compact">
@@ -392,14 +495,6 @@ function VisitDetailPage() {
                             {rx.notes && <span className="prescription-notes"> ({rx.notes})</span>}
                           </div>
                         ))}
-                      </div>
-                    )}
-
-                    {/* Notes */}
-                    {visit.notes && (
-                      <div className="visit-notes-section">
-                        <h3 className="visit-section-header">Notes</h3>
-                        <p className="visit-notes-text">{visit.notes}</p>
                       </div>
                     )}
                   </div>
@@ -444,7 +539,7 @@ function VisitDetailPage() {
 interface VisitHistoryProps {
   history: AuditHistoryEvent[];
   loading: boolean;
-  user: { name: string } | null;
+  user: { username: string } | null;
 }
 
 function VisitHistory({ history, loading, user }: VisitHistoryProps) {
@@ -488,7 +583,7 @@ function VisitHistory({ history, loading, user }: VisitHistoryProps) {
               </span>
               <span className="visit-history-description-compact">{summaryDisplay}</span>
               <span className="visit-history-date-compact">{dateDisplay}</span>
-              <span className="visit-history-user-compact">{entry.user_name || user?.name || 'Unknown'}</span>
+              <span className="visit-history-user-compact">{entry.user_name || user?.username || 'Unknown'}</span>
               <span className="visit-history-chevron" aria-hidden>›</span>
             </button>
           );
@@ -523,7 +618,7 @@ function VisitHistory({ history, loading, user }: VisitHistoryProps) {
             <div className="history-detail-meta">
               <span className="history-detail-date">{safeFormatDateTime(selectedEntry.changed_at)}</span>
               <span className="history-detail-sep">·</span>
-              <span className="history-detail-user">{selectedEntry.user_name || user?.name || 'Unknown'}</span>
+              <span className="history-detail-user">{selectedEntry.user_name || user?.username || 'Unknown'}</span>
             </div>
             <div className="history-detail-body">
               {selectedEntry.changes && Object.keys(selectedEntry.changes).length > 0 ? (

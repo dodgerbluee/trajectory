@@ -12,6 +12,12 @@ export interface VisitFormSidebarProps {
   activeSections: string[];
   /** Add a section by id (appends to active sections). */
   onAddSection: (sectionId: string) => void;
+  /** When true (Add Future Visit), no outcome sections can be added. */
+  isFutureVisit?: boolean;
+  /** When true (editing a future visit in limited mode), show "Use full visit form" button. */
+  showUseFullFormButton?: boolean;
+  /** Called when user clicks "Use full visit form". */
+  onUseFullForm?: () => void;
 }
 
 const ADDABLE_LABELS: Record<string, string> = {
@@ -32,8 +38,8 @@ const ADDABLE_ICONS: Record<string, string> = {
   prescriptions: '💊',
 };
 
-export function VisitFormSidebar({ activeSections, onAddSection }: VisitFormSidebarProps) {
-  const addableIds = getAddableSectionIds();
+export function VisitFormSidebar({ activeSections, onAddSection, isFutureVisit, showUseFullFormButton, onUseFullForm }: VisitFormSidebarProps) {
+  const addableIds = isFutureVisit ? [] : getAddableSectionIds();
   const activeSet = new Set(activeSections);
 
   const buttons = addableIds
@@ -68,7 +74,17 @@ export function VisitFormSidebar({ activeSections, onAddSection }: VisitFormSide
         <div className="sidebar-section">
           <h4 className="sidebar-section-title">Add section</h4>
           <div className="sidebar-action" style={{ marginTop: 12 }}>
-            {buttons.length === 0 ? (
+            {showUseFullFormButton && onUseFullForm ? (
+              <button
+                type="button"
+                className="measurement-card-add visit-form-use-full"
+                onClick={onUseFullForm}
+                title="Show all visit fields and save as a full visit"
+              >
+                <span className="measurement-card-icon" aria-hidden>📋</span>
+                <span className="measurement-card-add-label">Use full visit form</span>
+              </button>
+            ) : buttons.length === 0 ? (
               <p className="visit-form-sidebar-empty">No more sections to add.</p>
             ) : buttons.length === 1 ? (
               buttons[0]

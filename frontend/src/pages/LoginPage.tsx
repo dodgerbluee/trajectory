@@ -1,36 +1,38 @@
 import { useState, FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { LuEye, LuEyeOff } from 'react-icons/lu';
 import { useAuth } from '../contexts/AuthContext';
 import FormField from '../components/FormField';
 import Button from '../components/Button';
-import ErrorMessage from '../components/ErrorMessage';
 import Card from '../components/Card';
+import CreateUserModal from '../components/CreateUserModal';
 import { ApiClientError } from '../lib/api-client';
 
 function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [createUserOpen, setCreateUserOpen] = useState(false);
 
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from ?? '/';
 
   // Redirect if already authenticated
   if (isAuthenticated) {
-    navigate('/', { replace: true });
+    navigate(from, { replace: true });
     return null;
   }
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'Invalid email format';
+    if (!username.trim()) {
+      newErrors.username = 'Username is required';
     }
 
     if (!password) {
@@ -53,12 +55,12 @@ function LoginPage() {
     setLoading(true);
 
     try {
-      await login(email, password);
-      navigate('/', { replace: true });
+      await login(username, password);
+      navigate(from, { replace: true });
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.statusCode === 401) {
-          setError('Invalid email or password');
+          setError('Invalid username or password');
         } else if (err.statusCode === 429) {
           setError('Too many login attempts. Please try again later.');
         } else {
@@ -87,24 +89,23 @@ function LoginPage() {
           </div>
 
           {error && (
-            <ErrorMessage 
-              message={error} 
-              onRetry={() => setError(null)}
-            />
+            <div role="alert" className="login-alert">
+              {error}
+            </div>
           )}
 
           <form onSubmit={handleSubmit} className="login-form" noValidate>
             <FormField
-              label="Email Address"
-              type="email"
-              value={email}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-              error={errors.email}
+              label="Username"
+              type="text"
+              value={username}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
+              error={errors.username}
               required
-              autoComplete="email"
+              autoComplete="username"
               autoFocus
               disabled={loading}
-              aria-describedby={errors.email ? 'email-error' : undefined}
+              aria-describedby={errors.username ? 'username-error' : undefined}
             />
 
             <div className="form-field">
@@ -131,7 +132,11 @@ function LoginPage() {
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                   tabIndex={-1}
                 >
-                  {showPassword ? '👁️' : '👁️‍🗨️'}
+                  {showPassword ? (
+                    <LuEyeOff className="password-toggle-icon" size={20} aria-hidden />
+                  ) : (
+                    <LuEye className="password-toggle-icon" size={20} aria-hidden />
+                  )}
                 </button>
               </div>
               {errors.password && (
@@ -161,13 +166,23 @@ function LoginPage() {
           <div className="login-footer">
             <p>
               Don't have an account?{' '}
-              <Link to="/register" className="register-link">
-                Sign up
-              </Link>
+              <button
+                type="button"
+                className="register-link button-as-link"
+                onClick={() => setCreateUserOpen(true)}
+              >
+                Create account
+              </button>
             </p>
           </div>
         </Card>
       </div>
+
+      <CreateUserModal
+        isOpen={createUserOpen}
+        onClose={() => setCreateUserOpen(false)}
+        onSuccess={() => setCreateUserOpen(false)}
+      />
     </div>
   );
 }

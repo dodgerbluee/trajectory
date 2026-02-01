@@ -32,6 +32,10 @@ import type {
   GrowthDataPoint,
   HeatmapData,
   AuditHistoryEvent,
+  Family,
+  FamilyInvite,
+  FamilyMember,
+  CreateInviteResponse,
 } from '../types/api';
 
 // Base API URL - use relative URL in production (served by unified app), absolute for development
@@ -68,33 +72,87 @@ function buildQueryString(params: Record<string, any>): string {
   return queryString ? `?${queryString}` : '';
 }
 
+const ACCESS_TOKEN_KEY = 'trajectory_access_token';
+const REFRESH_TOKEN_KEY = 'trajectory_refresh_token';
+const USER_KEY = 'trajectory_user';
+
 /**
  * Get access token from localStorage
  */
 function getAccessToken(): string | null {
-  return localStorage.getItem('trajectory_access_token');
+  return localStorage.getItem(ACCESS_TOKEN_KEY);
+}
+
+function getRefreshToken(): string | null {
+  return localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+function setTokens(accessToken: string, refreshToken: string): void {
+  localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+}
+
+function clearAuthStorage(): void {
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+}
+
+function redirectToLogin(): void {
+  if (!window.location.pathname.includes('/login')) {
+    window.location.href = '/login';
+  }
 }
 
 /**
- * Make HTTP request with error handling and authentication
+ * Try to refresh the access token. Returns new access token or null if refresh failed.
+ */
+async function tryRefreshToken(): Promise<string | null> {
+  const refreshTokenValue = getRefreshToken();
+  if (!refreshTokenValue) return null;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: refreshTokenValue }),
+    });
+    const body = await response.json();
+    if (!response.ok) return null;
+    const data = body?.data ?? body;
+    const accessToken = data?.accessToken;
+    const newRefreshToken = data?.refreshToken;
+    if (accessToken && newRefreshToken) {
+      setTokens(accessToken, newRefreshToken);
+      return accessToken;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Make HTTP request with error handling and authentication.
+ * On 401, attempts to refresh the token once and retries the request; only clears auth and redirects if refresh fails.
  */
 async function request<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  isRetryAfterRefresh = false
 ): Promise<ApiResponse<T>> {
   const url = `${API_BASE_URL}${endpoint}`;
-  
+
   const accessToken = getAccessToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string> || {}),
   };
 
-  // Add authorization header if token exists
   if (accessToken) {
     headers['Authorization'] = `Bearer ${accessToken}`;
   }
-  
+
   const config: RequestInit = {
     ...options,
     headers,
@@ -103,7 +161,6 @@ async function request<T>(
   try {
     const response = await fetch(url, config);
 
-    // Handle 204 No Content responses (common for DELETE operations)
     if (response.status === 204) {
       return { data: undefined as any } as ApiResponse<T>;
     }
@@ -112,20 +169,21 @@ async function request<T>(
 
     if (!response.ok) {
       const error = data as ApiError;
-      
-      // Handle 401 Unauthorized - token might be expired
+
       if (response.status === 401 && accessToken) {
-        // Clear tokens on unauthorized response
-        localStorage.removeItem('trajectory_access_token');
-        localStorage.removeItem('trajectory_refresh_token');
-        localStorage.removeItem('trajectory_user');
-        
-        // Redirect to login if not already there
-        if (!window.location.pathname.includes('/login')) {
-          window.location.href = '/login';
+        if (isRetryAfterRefresh) {
+          clearAuthStorage();
+          redirectToLogin();
+        } else {
+          const newToken = await tryRefreshToken();
+          if (newToken) {
+            return request<T>(endpoint, { ...options, headers: { ...headers, Authorization: `Bearer ${newToken}` } }, true);
+          }
+          clearAuthStorage();
+          redirectToLogin();
         }
       }
-      
+
       throw new ApiClientError(
         error.error.message,
         error.error.statusCode,
@@ -135,18 +193,9 @@ async function request<T>(
     }
 
     return data as ApiResponse<T>;
-  } catch (error) {
-    if (error instanceof ApiClientError) {
-      throw error;
-    }
-    
-    // Network or parsing errors
-    throw new ApiClientError(
-      'Failed to communicate with server',
-      0,
-      'NetworkError',
-      error
-    );
+  } catch (err) {
+    if (err instanceof ApiClientError) throw err;
+    throw new ApiClientError('Failed to communicate with server', 0, 'NetworkError', err);
   }
 }
 
@@ -194,9 +243,7 @@ export const childrenApi = {
    * Delete a child
    */
   async delete(id: number): Promise<void> {
-    await fetch(`${API_BASE_URL}/api/children/${id}`, {
-      method: 'DELETE',
-    });
+    await request<void>(`/api/children/${id}`, { method: 'DELETE' });
   },
 
   /**
@@ -206,10 +253,17 @@ export const childrenApi = {
     const formData = new FormData();
     formData.append('avatar', file);
 
+    const token = getAccessToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(
       `${API_BASE_URL}/api/children/${childId}/avatar`,
       {
         method: 'POST',
+        headers,
         body: formData,
       }
     );
@@ -228,30 +282,46 @@ export const childrenApi = {
   },
 
   /**
-   * Get avatar URL for child
+   * Get avatar URL for child (with token in query for img src).
+   * Prefer fetchAvatarBlobUrl() for reliable loading across accounts.
    */
   getAvatarUrl(avatar: string): string {
-    return `${API_BASE_URL}/api/avatars/${avatar}`;
+    const base = `${API_BASE_URL}/api/avatars/${avatar}`;
+    const token = getAccessToken();
+    return token ? `${base}?token=${encodeURIComponent(token)}` : base;
   },
 
   /**
-   * Get default avatar URL based on gender
+   * Fetch avatar image with auth and return a blob URL (no token in URL).
+   * Caller must revoke the URL when done: URL.revokeObjectURL(url).
+   */
+  async fetchAvatarBlobUrl(avatar: string): Promise<string | null> {
+    const token = getAccessToken();
+    if (!token) return null;
+    const url = `${API_BASE_URL}/api/avatars/${avatar}`;
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+  },
+
+  /**
+   * Get default avatar URL based on gender.
+   * Uses API_BASE_URL when set so default avatar works when frontend and API are on different origins.
    */
   getDefaultAvatarUrl(gender: string): string {
-    if (gender === 'male') {
-      return '/avatars/default-boy.svg';
-    } else {
-      return '/avatars/default-girl.svg';
-    }
+    const base = API_BASE_URL ? `${API_BASE_URL}/api/avatars` : '/api/avatars';
+    const file = gender === 'male' ? 'default-boy.svg' : 'default-girl.svg';
+    return `${base}/${file}`;
   },
 
   /**
    * Delete avatar for child
    */
   async deleteAvatar(childId: number): Promise<void> {
-    await fetch(`${API_BASE_URL}/api/children/${childId}/avatar`, {
-      method: 'DELETE',
-    });
+    await request<void>(`/api/children/${childId}/avatar`, { method: 'DELETE' });
   },
 
   /**
@@ -370,9 +440,7 @@ export const measurementsApi = {
    * Delete a measurement
    */
   async delete(id: number): Promise<void> {
-    await fetch(`${API_BASE_URL}/api/measurements/${id}`, {
-      method: 'DELETE',
-    });
+    await request<void>(`/api/measurements/${id}`, { method: 'DELETE' });
   },
 };
 
@@ -429,9 +497,7 @@ export const medicalEventsApi = {
    * Delete a medical event
    */
   async delete(id: number): Promise<void> {
-    await fetch(`${API_BASE_URL}/api/medical-events/${id}`, {
-      method: 'DELETE',
-    });
+    await request<void>(`/api/medical-events/${id}`, { method: 'DELETE' });
   },
 };
 
@@ -491,9 +557,7 @@ export const attachmentsApi = {
    * Delete attachment
    */
   async delete(attachmentId: number): Promise<void> {
-    await fetch(`${API_BASE_URL}/api/attachments/${attachmentId}`, {
-      method: 'DELETE',
-    });
+    await request<void>(`/api/attachments/${attachmentId}`, { method: 'DELETE' });
   },
 };
 
@@ -503,11 +567,13 @@ export const attachmentsApi = {
 
 export const visitsApi = {
   /**
-   * Get all visits with filtering
+   * Get all visits with filtering.
+   * future_only: true returns only visits with visit_date > today, ordered soonest first.
    */
   async getAll(params?: {
     child_id?: number;
     visit_type?: VisitType;
+    future_only?: boolean;
     limit?: number;
     offset?: number;
   }): Promise<ApiResponse<Visit[]>> {
@@ -697,6 +763,221 @@ export const illnessesApi = {
   }): Promise<ApiResponse<HeatmapData>> {
     const queryString = buildQueryString(params || {});
     return request<HeatmapData>(`/api/illnesses/metrics/heatmap${queryString}`);
+  },
+};
+
+// ============================================================================
+// Export API
+// ============================================================================
+
+export const exportApi = {
+  /**
+   * Download full data export as ZIP (JSON + HTML report + attachment files).
+   * Triggers a file download in the browser.
+   */
+  async download(): Promise<void> {
+    const url = `${API_BASE_URL}/api/export`;
+    const accessToken = getAccessToken();
+    const headers: Record<string, string> = {};
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+    const response = await fetch(url, { method: 'GET', headers });
+    if (!response.ok) {
+      const text = await response.text();
+      let message = 'Export failed';
+      try {
+        const data = JSON.parse(text);
+        if (data?.error?.message) message = data.error.message;
+      } catch {
+        if (text) message = text.slice(0, 100);
+      }
+      throw new ApiClientError(message, response.status, 'ExportError');
+    }
+    const blob = await response.blob();
+    const disposition = response.headers.get('Content-Disposition');
+    const match = disposition?.match(/filename="?([^";\n]+)"?/);
+    const filename = match ? match[1].trim() : `trajectory-export-${new Date().toISOString().slice(0, 10)}.zip`;
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(objectUrl);
+  },
+};
+
+// ============================================================================
+// Auth (unauthenticated registration-code flow)
+// ============================================================================
+
+/** Unauthenticated request for registration-code flow (no auth header). */
+async function requestPublic<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+  const url = `${API_BASE_URL}${endpoint}`;
+  const config: RequestInit = {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...(options.headers as Record<string, string> || {}) },
+  };
+  const response = await fetch(url, config);
+  const data = await response.json();
+  if (!response.ok) {
+    const err = data as ApiError;
+    throw new ApiClientError(
+      err.error?.message || 'Request failed',
+      err.error?.statusCode ?? response.status,
+      err.error?.type ?? 'RequestError',
+      err.error?.details
+    );
+  }
+  return data as ApiResponse<T>;
+}
+
+export const authApi = {
+  /**
+   * Check if a registration code is required (no users) and if one is active.
+   */
+  async getRegistrationCodeRequired(): Promise<
+    ApiResponse<{ success: boolean; requiresCode: boolean; codeActive: boolean }>
+  > {
+    return requestPublic<{ success: boolean; requiresCode: boolean; codeActive: boolean }>(
+      '/api/auth/registration-code-required'
+    );
+  },
+
+  /**
+   * Generate a registration code (only when no users exist).
+   */
+  async generateRegistrationCode(): Promise<ApiResponse<{ message: string }>> {
+    return requestPublic<{ message: string }>('/api/auth/generate-registration-code', {
+      method: 'POST',
+    });
+  },
+
+  /**
+   * Verify the registration code (so UI can advance to user form).
+   */
+  async verifyRegistrationCode(registrationCode: string): Promise<ApiResponse<{ success: boolean }>> {
+    return requestPublic<{ success: boolean }>('/api/auth/verify-registration-code', {
+      method: 'POST',
+      body: JSON.stringify({ registrationCode }),
+    });
+  },
+};
+
+// ============================================================================
+// User preferences (theme, date_format)
+// ============================================================================
+
+export type UserPreferences = { theme: string; date_format: string };
+
+export const preferencesApi = {
+  async get(): Promise<ApiResponse<UserPreferences>> {
+    return request<UserPreferences>('/api/users/me/preferences');
+  },
+
+  async update(body: { theme?: string; date_format?: string }): Promise<ApiResponse<UserPreferences>> {
+    return request<UserPreferences>('/api/users/me/preferences', {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    });
+  },
+};
+
+// ============================================================================
+// Families & Invites
+// ============================================================================
+
+// Users "me" onboarding (no dedicated usersApi namespace; used by AuthContext / Welcome)
+export async function completeOnboarding(): Promise<ApiResponse<{ onboarding_completed: boolean }>> {
+  return request<{ onboarding_completed: boolean }>('/api/users/me/onboarding', {
+    method: 'PATCH',
+    body: JSON.stringify({ onboarding_completed: true }),
+  });
+}
+
+export const familiesApi = {
+  async getAll(): Promise<ApiResponse<Family[]>> {
+    return request<Family[]>('/api/families');
+  },
+
+  async create(name: string): Promise<ApiResponse<Family>> {
+    return request<Family>('/api/families', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    });
+  },
+
+  async updateFamily(familyId: number, name: string): Promise<void> {
+    await request<void>(`/api/families/${familyId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ name }),
+    });
+  },
+
+  async deleteFamily(familyId: number): Promise<void> {
+    await request<void>(`/api/families/${familyId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async getMembers(familyId: number): Promise<ApiResponse<FamilyMember[]>> {
+    return request<FamilyMember[]>(`/api/families/${familyId}/members`);
+  },
+
+  async getInvites(familyId: number): Promise<ApiResponse<FamilyInvite[]>> {
+    return request<FamilyInvite[]>(`/api/families/${familyId}/invites`);
+  },
+
+  async updateMemberRole(
+    familyId: number,
+    userId: number,
+    role: 'parent' | 'read_only'
+  ): Promise<ApiResponse<{ user_id: number; role: string }>> {
+    return request<{ user_id: number; role: string }>(
+      `/api/families/${familyId}/members/${userId}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ role }),
+      }
+    );
+  },
+
+  async removeMember(familyId: number, userId: number): Promise<void> {
+    await request<void>(`/api/families/${familyId}/members/${userId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async createInvite(
+    familyId: number,
+    role: 'parent' | 'read_only'
+  ): Promise<ApiResponse<CreateInviteResponse>> {
+    return request<CreateInviteResponse>(`/api/families/${familyId}/invites`, {
+      method: 'POST',
+      body: JSON.stringify({ role }),
+    });
+  },
+
+  async revokeInvite(familyId: number, inviteId: number): Promise<void> {
+    await request<void>(`/api/families/${familyId}/invites/${inviteId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+export const invitesApi = {
+  async accept(token: string): Promise<
+    ApiResponse<{ success: boolean; family_id: number; family_name: string; role: string }>
+  > {
+    return request<{ success: boolean; family_id: number; family_name: string; role: string }>(
+      '/api/invites/accept',
+      {
+        method: 'POST',
+        body: JSON.stringify({ token }),
+      }
+    );
   },
 };
 

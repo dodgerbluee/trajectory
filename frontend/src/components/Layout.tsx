@@ -5,20 +5,16 @@ import { useHomeTabRequest } from '../contexts/HomeTabRequestContext';
 import ThemeToggle from './ThemeToggle';
 import AboutDropdown from './AboutDropdown';
 import IllnessNotification from './IllnessNotification';
-import Button from './Button';
+import VersionFooter from './VersionFooter';
 
 interface LayoutProps {
   children: ReactNode;
 }
 
 function Layout({ children }: LayoutProps) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const homeTabRequest = useHomeTabRequest();
-
-  const handleLogout = async () => {
-    await logout();
-  };
 
   const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
@@ -41,22 +37,12 @@ function Layout({ children }: LayoutProps) {
           <div className="header-actions">
             {user && (
               <span className="user-name" title={user.email}>
-                {user.name}
+                {user.username}
               </span>
             )}
             <IllnessNotification />
             <AboutDropdown />
             <ThemeToggle />
-            {user && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleLogout}
-                className="logout-button"
-              >
-                Logout
-              </Button>
-            )}
           </div>
         </div>
       </header>
@@ -66,6 +52,7 @@ function Layout({ children }: LayoutProps) {
           {children}
         </div>
       </main>
+      <VersionFooter />
     </div>
   );
 }

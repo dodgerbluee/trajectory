@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from './LoadingSpinner';
 
@@ -8,7 +8,8 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return <LoadingSpinner message="Checking authentication..." />;
@@ -16,6 +17,20 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  const fromInvite = (location.state as { fromInvite?: boolean } | null)?.fromInvite === true;
+  const fromOnboarding =
+    (location.state as { fromOnboarding?: boolean } | null)?.fromOnboarding === true;
+  const allowedDuringOnboarding = location.pathname === '/children/new' && fromOnboarding;
+  const needsOnboarding =
+    user &&
+    user.onboardingCompleted === false &&
+    location.pathname !== '/welcome' &&
+    !fromInvite &&
+    !allowedDuringOnboarding;
+  if (needsOnboarding) {
+    return <Navigate to="/welcome" replace />;
   }
 
   return <>{children}</>;

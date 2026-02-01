@@ -43,7 +43,7 @@ function AllIllnessesView() {
       ]);
 
       setAllIllnesses(illnessesResponse.data);
-      let displayed = filterIllnessType ? illnessesResponse.data.filter(i => i.illness_type === filterIllnessType) : illnessesResponse.data;
+      let displayed = filterIllnessType ? illnessesResponse.data.filter((i) => i.illness_types?.includes(filterIllnessType)) : illnessesResponse.data;
       if (filterIllnessStatus === 'ongoing') {
         displayed = displayed.filter(i => !i.end_date);
       } else if (filterIllnessStatus === 'ended') {

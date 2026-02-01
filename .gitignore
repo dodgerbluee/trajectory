@@ -45,3 +45,6 @@ docker-compose.override.yml
 
 # Vite
 .vite/
+
+# Internal checklists and planning (vibe/)
+vibe/

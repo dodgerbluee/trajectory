@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import Cropper, { Area } from 'react-easy-crop';
 import Button from './Button';
 
@@ -14,7 +14,15 @@ function ImageCropUpload({ onImageCropped, currentImageUrl, disabled }: ImageCro
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [showCropper, setShowCropper] = useState(false);
+  const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Revoke pending blob URL on unmount to avoid leaks
+  useEffect(() => {
+    return () => {
+      if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+    };
+  }, [pendingPreviewUrl]);
 
   const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -93,6 +101,11 @@ function ImageCropUpload({ onImageCropped, currentImageUrl, disabled }: ImageCro
     try {
       const croppedImage = await createCroppedImage();
       onImageCropped(croppedImage);
+      // Show the new cropped image in the preview before user clicks modal "Save Avatar"
+      setPendingPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return URL.createObjectURL(croppedImage);
+      });
       setShowCropper(false);
       setImageSrc(null);
       // Reset file input
@@ -117,9 +130,9 @@ function ImageCropUpload({ onImageCropped, currentImageUrl, disabled }: ImageCro
     <div className="image-crop-upload">
       {!showCropper ? (
         <div className="upload-section">
-          {currentImageUrl && (
+          {(pendingPreviewUrl || currentImageUrl) && (
             <div className="current-avatar-preview">
-              <img src={currentImageUrl} alt="Current avatar" />
+              <img src={pendingPreviewUrl || currentImageUrl || undefined} alt="Avatar preview" />
             </div>
           )}
           

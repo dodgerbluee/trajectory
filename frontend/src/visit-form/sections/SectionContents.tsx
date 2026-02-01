@@ -19,6 +19,7 @@ import { VisionRefractionCard } from '../../components/VisionRefractionCard';
 import type { VisionRefraction } from '../../components/VisionRefractionCard';
 import type { SectionId } from '../sectionRegistry';
 import type { VisitFormContext } from '../visitFormContext';
+import { isFutureDate } from '../../lib/date-utils';
 
 export interface SectionContentPropsWithContext {
   sectionId: SectionId;
@@ -28,6 +29,11 @@ export interface SectionContentPropsWithContext {
 export function VisitInformationSection({ context }: SectionContentPropsWithContext) {
   const { formData, setFormData, submitting, showTitle, recentLocations, recentDoctors, getTodayDate, children, selectedChildId, setSelectedChildId } = context;
   const setForm = setFormData as React.Dispatch<React.SetStateAction<any>>;
+  // Add mode: no date restriction (user can pick any date; form expands to full or limited based on date).
+  // Edit mode: allow future if form's date is already future, else max today.
+  const formDateIsFuture = !!(formData.visit_date && isFutureDate(formData.visit_date));
+  const allowFutureDate = context.mode === 'edit' && formDateIsFuture;
+  const futureDateConstraint = context.mode === 'add' ? {} : allowFutureDate ? {} : { max: getTodayDate() };
   return (
     <div className="visit-info-form">
       {context.mode === 'add' && children && children.length > 0 && setSelectedChildId && (
@@ -49,7 +55,14 @@ export function VisitInformationSection({ context }: SectionContentPropsWithCont
           onChange={(e) => setForm((prev: any) => ({ ...prev, visit_date: e.target.value }))}
           required
           disabled={submitting}
-          max={getTodayDate()}
+          {...futureDateConstraint}
+        />
+        <FormField
+          label="Time (optional)"
+          type="time"
+          value={formData.visit_time ?? ''}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((prev: any) => ({ ...prev, visit_time: e.target.value || null }))}
+          disabled={submitting}
         />
         <FormField
           label="Location"
@@ -318,6 +331,112 @@ export function VisionSection({ context }: SectionContentPropsWithContext) {
           onChange={(checked) => setForm((prev: any) => ({ ...prev, ordered_contacts: checked }))}
           disabled={submitting}
         />
+      </div>
+    </div>
+  );
+}
+
+export function DentalSection({ context }: SectionContentPropsWithContext) {
+  const { formData, setFormData, submitting } = context;
+  const setForm = setFormData as React.Dispatch<React.SetStateAction<any>>;
+  const fd = formData as any;
+  
+  const procedureTypes = [
+    { value: '', label: 'Select dental visit type...' },
+    { value: 'checkup', label: 'Checkup' },
+    { value: 'cleaning', label: 'Cleaning' },
+    { value: 'filling', label: 'Filling' },
+    { value: 'extraction', label: 'Extraction' },
+    { value: 'xray', label: 'X-Ray' },
+    { value: 'fluoride', label: 'Fluoride Treatment' },
+    { value: 'sealant', label: 'Sealant' },
+    { value: 'orthodontic', label: 'Orthodontic' },
+    { value: 'emergency', label: 'Emergency' },
+    { value: 'other', label: 'Other' },
+  ];
+  
+  const cleaningTypes = [
+    { value: '', label: 'Select cleaning type...' },
+    { value: 'routine', label: 'Routine' },
+    { value: 'deep', label: 'Deep' },
+    { value: 'polish', label: 'Polish' },
+  ];
+  
+  return (
+    <div className="dental-ui">
+      <div className="dental-form-fields">
+        <FormField
+          label="Dental Visit Type"
+          type="select"
+          value={fd.dental_procedure_type || ''}
+          onChange={(e) => setForm((prev: any) => ({ ...prev, dental_procedure_type: e.target.value || null }))}
+          options={procedureTypes}
+          disabled={submitting}
+        />
+        
+        {fd.dental_procedure_type === 'cleaning' && (
+          <FormField
+            label="Cleaning Type"
+            type="select"
+            value={fd.cleaning_type || ''}
+            onChange={(e) => setForm((prev: any) => ({ ...prev, cleaning_type: e.target.value || null }))}
+            options={cleaningTypes}
+            disabled={submitting}
+          />
+        )}
+        
+        <div className="dental-checkboxes" style={{ display: 'flex', gap: 'var(--spacing-md)', flexWrap: 'wrap', marginBottom: 'var(--spacing-md)' }}>
+          <Checkbox
+            label="X-Rays Taken"
+            checked={fd.xrays_taken || false}
+            onChange={(checked) => setForm((prev: any) => ({ ...prev, xrays_taken: checked }))}
+            disabled={submitting}
+          />
+          <Checkbox
+            label="Fluoride Treatment"
+            checked={fd.fluoride_treatment || false}
+            onChange={(checked) => setForm((prev: any) => ({ ...prev, fluoride_treatment: checked }))}
+            disabled={submitting}
+          />
+          <Checkbox
+            label="Sealants Applied"
+            checked={fd.sealants_applied || false}
+            onChange={(checked) => setForm((prev: any) => ({ ...prev, sealants_applied: checked }))}
+            disabled={submitting}
+          />
+        </div>
+        
+        <div className="dental-numbers" style={{ display: 'flex', gap: '16px' }}>
+          <div style={{ flex: 1 }}>
+            <FormField
+              label="Cavities Found"
+              type="number"
+              value={fd.cavities_found ?? ''}
+              onChange={(e) => {
+              const v = e.target.value;
+              const n = v === '' ? null : (() => { const num = parseInt(v, 10); return Number.isNaN(num) ? null : num; })();
+              setForm((prev: any) => ({ ...prev, cavities_found: n }));
+            }}
+              min="0"
+              disabled={submitting}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <FormField
+              label="Cavities Filled"
+              type="number"
+              value={fd.cavities_filled ?? ''}
+              onChange={(e) => {
+              const v = e.target.value;
+              const n = v === '' ? null : (() => { const num = parseInt(v, 10); return Number.isNaN(num) ? null : num; })();
+              setForm((prev: any) => ({ ...prev, cavities_filled: n }));
+            }}
+              min="0"
+              max={fd.cavities_found ?? undefined}
+              disabled={submitting}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

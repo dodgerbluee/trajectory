@@ -20,6 +20,7 @@ export interface BaseEntity {
 export type Gender = 'male' | 'female';
 
 export interface Child extends BaseEntity {
+  family_id: number;
   name: string;
   date_of_birth: Date;
   gender: Gender;
@@ -136,6 +137,7 @@ export interface UpdateMedicalEventInput {
  */
 export interface ChildRow {
   id: number;
+  family_id: number;
   name: string;
   date_of_birth: Date;
   gender: Gender;
@@ -180,7 +182,7 @@ export interface MedicalEventRow {
 // Visits (Unified wellness and sick visits)
 // ============================================================================
 
-export type VisitType = 'wellness' | 'sick' | 'injury' | 'vision';
+export type VisitType = 'wellness' | 'sick' | 'injury' | 'vision' | 'dental';
 
 export type IllnessType = 
   | 'flu'
@@ -206,6 +208,7 @@ export interface Visit {
   id: number;
   child_id: number;
   visit_date: string; // ISO date string
+  visit_time: string | null; // "HH:MM" (optional appointment time)
   visit_type: VisitType;
   location: string | null;
   doctor_name: string | null;
@@ -250,6 +253,22 @@ export interface Visit {
   // Legacy column retained for compatibility
   needs_glasses: boolean | null;
   
+  // Dental visit fields
+  dental_procedure_type: string | null;
+  dental_notes: string | null;
+  cleaning_type: string | null;
+  cavities_found: number | null;
+  cavities_filled: number | null;
+  xrays_taken: boolean | null;
+  fluoride_treatment: boolean | null;
+  sealants_applied: boolean | null;
+  dental_procedures?: {
+    procedure: string;
+    tooth_number?: string | null;
+    location?: string | null;
+    notes?: string | null;
+  }[] | null;
+  
   // Medical interventions
   vaccines_administered: string[] | null;
   prescriptions: Prescription[] | null;
@@ -266,6 +285,7 @@ export interface Visit {
 export interface CreateVisitInput {
   child_id: number;
   visit_date: string;
+  visit_time?: string | null; // "HH:MM"
   visit_type: VisitType;
   location?: string | null;
   doctor_name?: string | null;
@@ -304,6 +324,22 @@ export interface CreateVisitInput {
   ordered_contacts?: boolean | null;
   needs_glasses?: boolean | null;
   
+  // Dental visit fields
+  dental_procedure_type?: string | null;
+  dental_notes?: string | null;
+  cleaning_type?: string | null;
+  cavities_found?: number | null;
+  cavities_filled?: number | null;
+  xrays_taken?: boolean | null;
+  fluoride_treatment?: boolean | null;
+  sealants_applied?: boolean | null;
+  dental_procedures?: {
+    procedure: string;
+    tooth_number?: string | null;
+    location?: string | null;
+    notes?: string | null;
+  }[] | null;
+  
   vaccines_administered?: string[] | null;
   prescriptions?: Prescription[] | null;
   
@@ -315,6 +351,7 @@ export interface CreateVisitInput {
 
 export interface UpdateVisitInput {
   visit_date?: string;
+  visit_time?: string | null; // "HH:MM"
   visit_type?: VisitType;
   location?: string | null;
   doctor_name?: string | null;
@@ -340,6 +377,33 @@ export interface UpdateVisitInput {
   injury_location?: string | null;
   treatment?: string | null;
   
+  // Vision visit fields
+  vision_prescription?: string | null;
+  vision_refraction?: {
+    od?: { sphere?: number | null; cylinder?: number | null; axis?: number | null } | null;
+    os?: { sphere?: number | null; cylinder?: number | null; axis?: number | null } | null;
+    notes?: string | null;
+  } | null;
+  ordered_glasses?: boolean | null;
+  ordered_contacts?: boolean | null;
+  needs_glasses?: boolean | null;
+  
+  // Dental visit fields
+  dental_procedure_type?: string | null;
+  dental_notes?: string | null;
+  cleaning_type?: string | null;
+  cavities_found?: number | null;
+  cavities_filled?: number | null;
+  xrays_taken?: boolean | null;
+  fluoride_treatment?: boolean | null;
+  sealants_applied?: boolean | null;
+  dental_procedures?: {
+    procedure: string;
+    tooth_number?: string | null;
+    location?: string | null;
+    notes?: string | null;
+  }[] | null;
+  
   vaccines_administered?: string[] | null;
   prescriptions?: Prescription[] | null;
   
@@ -351,6 +415,7 @@ export interface VisitRow {
   id: number;
   child_id: number;
   visit_date: Date;
+  visit_time: string | null; // pg returns "HH:MM:SS"
   visit_type: VisitType;
   location: string | null;
   doctor_name: string | null;
@@ -389,6 +454,17 @@ export interface VisitRow {
   ordered_contacts?: boolean | null;
   needs_glasses?: boolean | null;
   
+  // Dental visit fields
+  dental_procedure_type?: string | null;
+  dental_notes?: string | null;
+  cleaning_type?: string | null;
+  cavities_found?: number | null;
+  cavities_filled?: number | null;
+  xrays_taken?: boolean | null;
+  fluoride_treatment?: boolean | null;
+  sealants_applied?: boolean | null;
+  dental_procedures?: unknown; // JSONB field
+  
   vaccines_administered: string | null; // TEXT field
   prescriptions: unknown; // JSONB field
   
@@ -422,10 +498,15 @@ export function visitRowToVisit(row: VisitRow): Visit {
     return null;
   };
 
+  const visitTime = row.visit_time != null && typeof row.visit_time === 'string'
+    ? row.visit_time.slice(0, 5)
+    : null;
+
   return {
     id: row.id,
     child_id: row.child_id,
     visit_date: row.visit_date.toISOString().split('T')[0],
+    visit_time: visitTime,
     visit_type: row.visit_type,
     location: row.location,
     doctor_name: row.doctor_name,
@@ -473,6 +554,40 @@ export function visitRowToVisit(row: VisitRow): Visit {
     ordered_glasses: row.ordered_glasses ?? null,
     ordered_contacts: row.ordered_contacts ?? null,
     needs_glasses: row.needs_glasses ?? null,
+    
+    // Dental visit fields
+    dental_procedure_type: row.dental_procedure_type ?? null,
+    dental_notes: row.dental_notes ?? null,
+    cleaning_type: row.cleaning_type ?? null,
+    cavities_found: row.cavities_found ?? null,
+    cavities_filled: row.cavities_filled ?? null,
+    xrays_taken: row.xrays_taken ?? null,
+    fluoride_treatment: row.fluoride_treatment ?? null,
+    sealants_applied: row.sealants_applied ?? null,
+    dental_procedures: (() => {
+      const v = row.dental_procedures;
+      if (!v) return null;
+      if (Array.isArray(v)) return v as {
+        procedure: string;
+        tooth_number?: string | null;
+        location?: string | null;
+        notes?: string | null;
+      }[];
+      if (typeof v === 'string') {
+        try {
+          const parsed = JSON.parse(v) as unknown;
+          return Array.isArray(parsed) ? (parsed as {
+            procedure: string;
+            tooth_number?: string | null;
+            location?: string | null;
+            notes?: string | null;
+          }[]) : null;
+        } catch {
+          return null;
+        }
+      }
+      return null;
+    })(),
     
     vaccines_administered: row.vaccines_administered ? row.vaccines_administered.split(',').map(v => v.trim()).filter(v => v) : null,
     prescriptions: parsePrescriptions(row.prescriptions),
@@ -596,10 +711,19 @@ export function childRowToEntity(row: ChildRow): Child {
   };
 
   return {
-    ...row,
+    id: row.id,
+    family_id: row.family_id,
+    name: row.name,
+    date_of_birth: row.date_of_birth,
+    gender: row.gender,
+    avatar: row.avatar,
+    notes: row.notes,
+    due_date: row.due_date,
     birth_weight: parseDecimal(row.birth_weight),
     birth_weight_ounces: row.birth_weight_ounces,
     birth_height: parseDecimal(row.birth_height),
+    created_at: row.created_at,
+    updated_at: row.updated_at,
   };
 }
 
@@ -617,7 +741,7 @@ export function medicalEventRowToEntity(row: MedicalEventRow): MedicalEvent {
 export interface Illness {
   id: number;
   child_id: number;
-  illness_type: IllnessType;
+  illness_types: IllnessType[];
   start_date: string; // ISO date string
   end_date: string | null;
   symptoms: string | null;
@@ -631,7 +755,7 @@ export interface Illness {
 
 export interface CreateIllnessInput {
   child_id: number;
-  illness_type: IllnessType;
+  illness_types: IllnessType[];
   start_date: string;
   end_date?: string | null;
   symptoms?: string | null;
@@ -642,7 +766,7 @@ export interface CreateIllnessInput {
 }
 
 export interface UpdateIllnessInput {
-  illness_type?: IllnessType;
+  illness_types?: IllnessType[];
   start_date?: string;
   end_date?: string | null;
   symptoms?: string | null;
@@ -655,7 +779,6 @@ export interface UpdateIllnessInput {
 export interface IllnessRow {
   id: number;
   child_id: number;
-  illness_type: IllnessType;
   start_date: Date;
   end_date: Date | null;
   symptoms: string | null;
@@ -668,13 +791,13 @@ export interface IllnessRow {
 }
 
 /**
- * Convert IllnessRow from database to Illness for API response
+ * Convert IllnessRow + types from database to Illness for API response
  */
-export function illnessRowToIllness(row: IllnessRow): Illness {
+export function illnessRowToIllness(row: IllnessRow, illnessTypes: IllnessType[]): Illness {
   return {
     id: row.id,
     child_id: row.child_id,
-    illness_type: row.illness_type,
+    illness_types: illnessTypes,
     start_date: row.start_date.toISOString().split('T')[0],
     end_date: row.end_date ? row.end_date.toISOString().split('T')[0] : null,
     symptoms: row.symptoms,

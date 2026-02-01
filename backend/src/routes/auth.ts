@@ -29,14 +29,27 @@ import { createResponse } from '../types/api.js';
 import { asyncHandler } from '../middleware/error-handler.js';
 import { loginRateLimiter, passwordResetRateLimiter } from '../middleware/rate-limit.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import {
+  initializeRegistrationCode,
+  validateRegistrationCode,
+  clearRegistrationCode,
+  isRegistrationCodeActive,
+} from '../lib/registration-code.js';
 
 export const authRouter = express.Router();
+
+/** True if at least one user exists (first-user flow = no users). */
+async function hasAnyUsers(): Promise<boolean> {
+  const result = await query<{ count: string }>('SELECT COUNT(*)::text as count FROM users');
+  const count = parseInt(result.rows[0]?.count ?? '0', 10);
+  return count > 0;
+}
 
 interface UserRow {
   id: number;
   email: string;
   password_hash: string;
-  name: string;
+  username: string;
   email_verified: boolean;
   created_at: Date;
   updated_at: Date;
@@ -46,18 +59,83 @@ interface UserRow {
 }
 
 /**
+ * GET /api/auth/registration-code-required
+ * No auth. Returns whether a registration code is required (no users) and if a code is active.
+ */
+authRouter.get(
+  '/registration-code-required',
+  asyncHandler(async (_req: Request, res: Response) => {
+    const hasUsers = await hasAnyUsers();
+    const requiresCode = !hasUsers;
+    const codeActive = isRegistrationCodeActive();
+    res.json(createResponse({ success: true, requiresCode, codeActive }));
+  })
+);
+
+/**
+ * POST /api/auth/generate-registration-code
+ * No auth. Generates a code and logs it to server; only when no users exist.
+ */
+authRouter.post(
+  '/generate-registration-code',
+  asyncHandler(async (_req: Request, res: Response) => {
+    if (await hasAnyUsers()) {
+      throw new BadRequestError('Registration code can only be generated when no users exist.');
+    }
+    initializeRegistrationCode();
+    res.json(createResponse({ message: 'Registration code generated and logged to container logs.' }));
+  })
+);
+
+/**
+ * POST /api/auth/verify-registration-code
+ * No auth. Verifies the code so UI can advance to user form.
+ */
+authRouter.post(
+  '/verify-registration-code',
+  asyncHandler(async (req: Request, res: Response) => {
+    const { registrationCode } = req.body;
+    const code = typeof registrationCode === 'string' ? registrationCode.replace(/-/g, '') : '';
+    if (!code) {
+      throw new BadRequestError('Registration code is required.');
+    }
+    if (!isRegistrationCodeActive()) {
+      throw new BadRequestError('Registration code has not been generated. Please click Create User first.');
+    }
+    if (!validateRegistrationCode(registrationCode as string)) {
+      throw new UnauthorizedError('Invalid registration code. Please check the server logs.');
+    }
+    res.json(createResponse({ success: true }));
+  })
+);
+
+/**
  * POST /api/auth/register
- * Register a new user
+ * Register a new user. When no users exist (first-user setup), requires a valid registration code.
  */
 authRouter.post(
   '/register',
   asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-    const { email, password, name } = req.body;
+    const { email, password, username, registrationCode } = req.body;
 
     // Validate input
     const emailValue = validateRequired(email, 'email');
     const passwordValue = validateRequired(password, 'password');
-    const nameValue = validateRequired(name, 'name');
+    const usernameValue = validateRequired(username, 'username');
+
+    const isFirstUser = !(await hasAnyUsers());
+    if (isFirstUser) {
+      const code = typeof registrationCode === 'string' ? registrationCode.replace(/-/g, '').trim() : '';
+      if (!code) {
+        throw new BadRequestError('Registration code is required to create the first user.');
+      }
+      if (!isRegistrationCodeActive()) {
+        throw new BadRequestError('Registration code has not been generated. Please generate one first.');
+      }
+      if (!validateRegistrationCode(registrationCode as string)) {
+        throw new UnauthorizedError('Invalid registration code.');
+      }
+    }
 
     // Validate email format
     if (!validateEmail(emailValue)) {
@@ -70,28 +148,38 @@ authRouter.post(
       throw new ValidationError(passwordValidation.errors.join(', '), 'password');
     }
 
-    // Check if user already exists
-    const existingUser = await query<UserRow>(
+    const existingEmail = await query<UserRow>(
       'SELECT id FROM users WHERE email = $1',
       [emailValue.toLowerCase()]
     );
-
-    if (existingUser.rows.length > 0) {
+    if (existingEmail.rows.length > 0) {
       throw new ConflictError('User with this email already exists');
+    }
+
+    const existingUsername = await query<UserRow>(
+      'SELECT id FROM users WHERE LOWER(username) = LOWER($1)',
+      [usernameValue.trim()]
+    );
+    if (existingUsername.rows.length > 0) {
+      throw new ConflictError('Username is already taken');
     }
 
     // Hash password
     const passwordHash = await hashPassword(passwordValue);
 
-    // Create user
-    const result = await query<UserRow>(
-      `INSERT INTO users (email, password_hash, name)
-       VALUES ($1, $2, $3)
-       RETURNING id, email, name, created_at`,
-      [emailValue.toLowerCase(), passwordHash, nameValue]
+    // Create user (first user gets is_instance_admin = true)
+    const result = await query<UserRow & { onboarding_completed: boolean }>(
+      `INSERT INTO users (email, password_hash, username, is_instance_admin)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, email, username, created_at, onboarding_completed`,
+      [emailValue.toLowerCase(), passwordHash, usernameValue.trim(), isFirstUser]
     );
 
     const user = result.rows[0];
+
+    if (isFirstUser) {
+      clearRegistrationCode();
+    }
 
     // Generate tokens
     const accessToken = generateAccessToken(user.id, user.email);
@@ -110,7 +198,8 @@ authRouter.post(
         user: {
           id: user.id,
           email: user.email,
-          name: user.name,
+          username: user.username,
+          onboardingCompleted: user.onboarding_completed ?? false,
         },
         accessToken,
         refreshToken,
@@ -121,45 +210,41 @@ authRouter.post(
 
 /**
  * POST /api/auth/login
- * Login user and return tokens
+ * Login by username and password. Case-insensitive username.
+ * Generic error "Invalid username or password" to avoid user enumeration.
  */
 authRouter.post(
   '/login',
   loginRateLimiter,
   asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
-    // Validate input
-    const emailValue = validateRequired(email, 'email');
+    const usernameValue = validateRequired(username, 'username');
     const passwordValue = validateRequired(password, 'password');
+    const usernameLower = usernameValue.trim().toLowerCase();
 
-    // Find user
     const userResult = await query<UserRow>(
-      'SELECT * FROM users WHERE email = $1',
-      [emailValue.toLowerCase()]
+      'SELECT * FROM users WHERE LOWER(username) = $1',
+      [usernameLower]
     );
 
     if (userResult.rows.length === 0) {
-      // Log failed attempt
       await query(
         'INSERT INTO login_attempts (email, ip_address, success) VALUES ($1, $2, $3)',
-        [emailValue.toLowerCase(), req.ip, false]
+        [usernameLower, req.ip, false]
       );
-      throw new UnauthorizedError('Invalid email or password');
+      throw new UnauthorizedError('Invalid username or password');
     }
 
     const user = userResult.rows[0];
 
-    // Check if account is locked
     if (user.locked_until && new Date(user.locked_until) > new Date()) {
       throw new UnauthorizedError('Account is temporarily locked. Please try again later.');
     }
 
-    // Verify password
     const passwordValid = await verifyPassword(passwordValue, user.password_hash);
 
     if (!passwordValid) {
-      // Increment failed attempts
       const newFailedAttempts = user.failed_login_attempts + 1;
       const lockUntil = newFailedAttempts >= 5 ? new Date(Date.now() + 15 * 60 * 1000) : null;
 
@@ -170,16 +255,14 @@ authRouter.post(
         [newFailedAttempts, lockUntil, user.id]
       );
 
-      // Log failed attempt
       await query(
         'INSERT INTO login_attempts (email, ip_address, success) VALUES ($1, $2, $3)',
-        [emailValue.toLowerCase(), req.ip, false]
+        [usernameLower, req.ip, false]
       );
 
-      throw new UnauthorizedError('Invalid email or password');
+      throw new UnauthorizedError('Invalid username or password');
     }
 
-    // Reset failed attempts and unlock account
     await query(
       `UPDATE users 
        SET failed_login_attempts = 0, locked_until = NULL, last_login_at = NOW()
@@ -187,10 +270,9 @@ authRouter.post(
       [user.id]
     );
 
-    // Log successful attempt
     await query(
       'INSERT INTO login_attempts (email, ip_address, success) VALUES ($1, $2, $3)',
-      [emailValue.toLowerCase(), req.ip, true]
+      [usernameLower, req.ip, true]
     );
 
     // Generate tokens
@@ -210,7 +292,8 @@ authRouter.post(
         user: {
           id: user.id,
           email: user.email,
-          name: user.name,
+          username: user.username,
+          onboardingCompleted: (user as { onboarding_completed?: boolean }).onboarding_completed ?? false,
         },
         accessToken,
         refreshToken,
@@ -254,7 +337,7 @@ authRouter.post(
 
     // Get user
     const userResult = await query<UserRow>(
-      'SELECT id, email, name FROM users WHERE id = $1',
+      'SELECT id, email, username FROM users WHERE id = $1',
       [decoded.userId]
     );
 
@@ -312,8 +395,10 @@ authRouter.get(
   '/me',
   authenticate,
   asyncHandler(async (req: AuthRequest, res: Response, _next: NextFunction) => {
-    const userResult = await query<UserRow>(
-      'SELECT id, email, name, email_verified, created_at, last_login_at FROM users WHERE id = $1',
+    const userResult = await query<
+      UserRow & { is_instance_admin: boolean; onboarding_completed: boolean }
+    >(
+      'SELECT id, email, username, email_verified, created_at, last_login_at, is_instance_admin, onboarding_completed FROM users WHERE id = $1',
       [req.userId]
     );
 
@@ -327,10 +412,12 @@ authRouter.get(
       createResponse({
         id: user.id,
         email: user.email,
-        name: user.name,
+        username: user.username,
         emailVerified: user.email_verified,
         createdAt: user.created_at.toISOString(),
         lastLoginAt: user.last_login_at?.toISOString() || null,
+        isInstanceAdmin: user.is_instance_admin,
+        onboardingCompleted: user.onboarding_completed ?? false,
       })
     );
   })
@@ -476,9 +563,9 @@ authRouter.put(
       throw new UnauthorizedError('Current password is incorrect');
     }
 
-    // Check if username is already taken
+    // Check if username is already taken (case-insensitive)
     const existingUser = await query<UserRow>(
-      'SELECT id FROM users WHERE name = $1 AND id != $2',
+      'SELECT id FROM users WHERE LOWER(username) = LOWER($1) AND id != $2',
       [newUsernameValue.trim(), req.userId]
     );
 
@@ -488,7 +575,7 @@ authRouter.put(
 
     // Update username
     await query(
-      'UPDATE users SET name = $1 WHERE id = $2',
+      'UPDATE users SET username = $1 WHERE id = $2',
       [newUsernameValue.trim(), req.userId]
     );
 

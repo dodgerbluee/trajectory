@@ -9,10 +9,14 @@ import { childrenRouter } from './routes/children.js';
 import { measurementsRouter } from './routes/measurements.js';
 import { medicalEventsRouter } from './routes/medical-events.js';
 import attachmentsRouter from './routes/attachments.js';
-import avatarsRouter from './routes/avatars.js';
+import avatars from './routes/avatars.js';
 import visitsRouter from './routes/visits.js';
 import illnessesRouter from './routes/illnesses.js';
 import { authRouter } from './routes/auth.js';
+import { usersRouter } from './routes/users.js';
+import { familiesRouter } from './routes/families.js';
+import { invitesRouter } from './routes/invites.js';
+import exportRouter from './routes/export.js';
 import { errorHandler } from './middleware/error-handler.js';
 
 export function createApp(): express.Application {
@@ -23,11 +27,13 @@ export function createApp(): express.Application {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // Request logging (simple)
-  app.use((req, _res, next) => {
-    console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
-    next();
-  });
+  // Request logging (simple); skipped in test to keep output clean
+  if (process.env.NODE_ENV !== 'test') {
+    app.use((req, _res, next) => {
+      console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
+      next();
+    });
+  }
 
   // Health check endpoint
   // Simple endpoint that always returns 200 once the app is running
@@ -37,18 +43,25 @@ export function createApp(): express.Application {
       status: 'ok',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
+      timezone: process.env.TZ || 'UTC',
     });
   });
 
   // API routes
   app.use('/api/auth', authRouter); // Authentication endpoints
+  app.use('/api/users', usersRouter); // User management (instance admin only)
+  app.use('/api/families', familiesRouter); // Family list and invites
+  app.use('/api/invites', invitesRouter); // Accept invite by token
+  app.use('/api/export', exportRouter);
   app.use('/api/children', childrenRouter);
   app.use('/api/visits', visitsRouter); // Unified visits endpoint
   app.use('/api/illnesses', illnessesRouter); // Illness tracking
   app.use('/api/measurements', measurementsRouter);
   app.use('/api/medical-events', medicalEventsRouter);
+  // Mount avatar file serving at /api/avatars so only these requests hit it (not attachmentsRouter with global auth)
+  app.use('/api/avatars', avatars.avatarFilesRouter);
+  app.use('/api', avatars.default);
   app.use('/api', attachmentsRouter);
-  app.use('/api', avatarsRouter);
 
   // Serve static files from frontend build (if FRONTEND_DIR is set)
   const FRONTEND_DIR = process.env.FRONTEND_DIR;

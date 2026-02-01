@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { DentalToothIcon } from '@hugeicons/core-free-icons';
 import { LuPaperclip, LuActivity, LuHeart, LuPill, LuEye } from 'react-icons/lu';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
 import type { Visit } from '../types/api';
@@ -21,6 +23,7 @@ function VisitCard({ visit, childName, childId, hasAttachments }: VisitCardProps
             case 'sick': return 'Sick Visit';
             case 'injury': return 'Injury Visit';
             case 'vision': return 'Vision Visit';
+            case 'dental': return 'Dental Visit';
             default: return 'Visit';
         }
     })();
@@ -30,6 +33,7 @@ function VisitCard({ visit, childName, childId, hasAttachments }: VisitCardProps
         if (visit.visit_type === 'sick') return <LuPill className="visit-type-svg" />;
         if (visit.visit_type === 'injury') return <MdOutlinePersonalInjury className="visit-type-svg visit-type-svg--filled" />;
         if (visit.visit_type === 'vision') return <LuEye className="visit-type-svg" />;
+        if (visit.visit_type === 'dental') return <HugeiconsIcon icon={DentalToothIcon} className="visit-type-svg" size={24} color="currentColor" />;
         return <LuActivity className="visit-type-svg" />;
     };
 
@@ -45,6 +49,12 @@ function VisitCard({ visit, childName, childId, hasAttachments }: VisitCardProps
         : (visit as any).illness_type ? (visit as any).illness_type.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) : null;
     if (illnessLabel) badges.push({ key: 'illness', label: `🤒 ${illnessLabel}` });
     if (visit.visit_date) badges.push({ key: 'visit-date', label: `📅 ${formatDate(visit.visit_date)}` });
+    // Dental appointment type (between visit date and cavities found)
+    if (visit.visit_type === 'dental' && (visit as any).dental_procedure_type) {
+      const dt = (visit as any).dental_procedure_type;
+      const procedureLabel = typeof dt === 'string' ? dt.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) : String(dt);
+      badges.push({ key: 'dental-type', label: `😁 ${procedureLabel}` });
+    }
     if (visit.location) badges.push({ key: 'location', label: `📍 ${visit.location}` });
     if (visit.doctor_name) badges.push({ key: 'doctor', label: `👨‍⚕️ ${visit.doctor_name}` });
     if (visit.temperature) badges.push({ key: 'temperature', label: `🌡️ ${visit.temperature}°F` });
@@ -69,6 +79,16 @@ function VisitCard({ visit, childName, childId, hasAttachments }: VisitCardProps
     }
     if ((visit as any).ordered_glasses) badges.push({ key: 'ordered-glasses', label: '👓' });
     if ((visit as any).ordered_contacts) badges.push({ key: 'ordered-contacts', label: '🫧' });
+
+    // Dental visit badges
+    if (visit.visit_type === 'dental') {
+      const v = visit as any;
+      if (v.cavities_found != null) badges.push({ key: 'cavities-found', label: `🦷 ${v.cavities_found} found` });
+      if (v.cavities_filled != null) badges.push({ key: 'cavities-filled', label: `🦷 ${v.cavities_filled} filled` });
+      if (v.xrays_taken === true) badges.push({ key: 'xrays', label: '🩻' });
+      if (v.fluoride_treatment === true) badges.push({ key: 'fluoride', label: '💧' });
+      if (v.sealants_applied === true) badges.push({ key: 'sealants', label: '🛡️' });
+    }
 
     return (
         <Link to={url} state={linkState} className="timeline-item-link">

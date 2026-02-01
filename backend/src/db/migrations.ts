@@ -139,6 +139,48 @@ async function getMigrationFiles(): Promise<Array<[string, string]>> {
 }
 
 /**
+ * Apply base schema.sql if it hasn't been applied yet
+ */
+async function applyBaseSchema(): Promise<void> {
+  const appliedMigrations = await getAppliedMigrations();
+  const schemaName = 'schema.sql';
+  
+  // Check if schema.sql has been applied
+  if (appliedMigrations.includes(schemaName)) {
+    return; // Already applied
+  }
+  
+  // Find schema.sql file using the same logic as getMigrationFiles
+  let schemaPath: string | null = null;
+  const possiblePaths = [
+    join(__dirname, '..', '..', 'migrations', schemaName),
+    join(process.cwd(), 'backend', 'migrations', schemaName),
+    join(process.cwd(), 'migrations', schemaName),
+  ];
+  
+  for (const path of possiblePaths) {
+    try {
+      await readFile(path, 'utf-8');
+      schemaPath = path;
+      break;
+    } catch {
+      // Try next path
+      continue;
+    }
+  }
+  
+  if (!schemaPath) {
+    console.log('schema.sql not found, skipping base schema application\n');
+    return;
+  }
+  
+  const sql = await readFile(schemaPath, 'utf-8');
+  console.log('Applying base schema (schema.sql)...\n');
+  await executeMigration(schemaName, sql);
+  console.log('✓ Base schema applied successfully\n');
+}
+
+/**
  * Run all pending migrations
  */
 export async function runMigrations(): Promise<void> {
@@ -148,12 +190,17 @@ export async function runMigrations(): Promise<void> {
     // Ensure migrations table exists
     await ensureMigrationsTable();
     
-    // Get list of applied migrations
+    // Apply base schema first if needed
+    await applyBaseSchema();
+    
+    // Get list of applied migrations (refresh after schema application)
     const appliedMigrations = await getAppliedMigrations();
     console.log(`Found ${appliedMigrations.length} previously applied migration(s)`);
     
     // Get all migration files (returns [filename, fullPath] tuples)
-    const migrationFiles = await getMigrationFiles();
+    // Filter out schema.sql since we handle it separately
+    const allMigrationFiles = await getMigrationFiles();
+    const migrationFiles = allMigrationFiles.filter(([filename]) => filename !== 'schema.sql');
     console.log(`Found ${migrationFiles.length} migration file(s) in directory\n`);
     
     if (migrationFiles.length === 0) {

@@ -11,17 +11,26 @@ dotenv.config();
 
 const { Pool } = pg;
 
+// Use app timezone for DB session (e.g. NOW(), timestamp display)
+const appTimezone = process.env.TZ || 'UTC';
+
 // Database connection configuration
 const dbConfig = {
   connectionString: process.env.DATABASE_URL,
-  // Connection pool settings
-  max: 20, // Maximum number of clients in the pool
-  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-  connectionTimeoutMillis: 5000, // Timeout after 5 seconds
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
 };
 
 // Create connection pool
 export const pool = new Pool(dbConfig);
+
+// Set session timezone for each new connection so NOW() and timestamps match app TZ
+pool.on('connect', (client) => {
+  client.query(`SET time zone '${appTimezone.replace(/'/g, "''")}'`).catch((err) => {
+    console.warn('Failed to set session timezone:', err.message);
+  });
+});
 
 // Error handler for pool
 // Handles errors on idle database clients gracefully

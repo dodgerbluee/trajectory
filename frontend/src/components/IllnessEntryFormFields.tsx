@@ -60,7 +60,7 @@ export default function IllnessEntryFormFields({
           value={selectedIllnesses}
           onChange={(ills) => {
             onSelectedIllnessesChange(ills);
-            set({ illness_type: ills?.length ? ills[0] : null });
+            // Do not update formData.illness_type – it causes re-renders/effects that overwrite multi-select
           }}
           disabled={disabled}
         />

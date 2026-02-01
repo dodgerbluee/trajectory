@@ -5,6 +5,7 @@ import type { Visit, ChildAttachment } from '../types/api';
 import { formatDate } from '../lib/date-utils';
 import { childrenApi, ApiClientError } from '../lib/api-client';
 import FileUpload from './FileUpload';
+import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
 import LoadingSpinner from './LoadingSpinner';
 import VaccineSidebar from './VaccineSidebar';
 
@@ -24,6 +25,7 @@ interface VaccineRecord {
 }
 
 function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProps) {
+  const { canEdit } = useFamilyPermissions();
   const [uploading, setUploading] = useState(false);
   const [vaccineReports, setVaccineReports] = useState<ChildAttachment[]>([]);
   const [loadingReports, setLoadingReports] = useState(true);
@@ -306,29 +308,33 @@ function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProp
                       >
                         <HiDownload />
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => handleEditStart(doc)}
-                        className="btn-icon-action btn-edit"
-                        title="Rename document"
-                      >
-                        <HiPencil />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(doc.id)}
-                        disabled={deletingId === doc.id}
-                        className="btn-icon-action btn-delete"
-                        title="Delete document"
-                      >
-                        {deletingId === doc.id ? (
-                          <div className="btn-spinner-wrapper">
-                            <div className="spinner"></div>
-                          </div>
-                        ) : (
-                          <HiTrash />
-                        )}
-                      </button>
+                      {canEdit && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleEditStart(doc)}
+                            className="btn-icon-action btn-edit"
+                            title="Rename document"
+                          >
+                            <HiPencil />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(doc.id)}
+                            disabled={deletingId === doc.id}
+                            className="btn-icon-action btn-delete"
+                            title="Delete document"
+                          >
+                            {deletingId === doc.id ? (
+                              <div className="btn-spinner-wrapper">
+                                <div className="spinner"></div>
+                              </div>
+                            ) : (
+                              <HiTrash />
+                            )}
+                          </button>
+                        </>
+                      )}
                     </>
                   )}
                 </div>
@@ -338,6 +344,7 @@ function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProp
         </div>
       ) : null}
 
+      {canEdit && (
       <div className="vaccine-history-upload-section">
         <h4 className="vaccine-history-upload-title">Upload Vaccine Report</h4>
         <p className="vaccine-history-upload-description">
@@ -345,6 +352,7 @@ function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProp
         </p>
         <FileUpload onUpload={handleFileUpload} disabled={uploading} />
       </div>
+      )}
         </div>
       </main>
     </div>
