@@ -174,14 +174,10 @@ async function applyBaseSchema(): Promise<void> {
     return;
   }
   
-  try {
-    const sql = await readFile(schemaPath, 'utf-8');
-    console.log('Applying base schema (schema.sql)...\n');
-    await executeMigration(schemaName, sql);
-    console.log('✓ Base schema applied successfully\n');
-  } catch (error: unknown) {
-    throw error;
-  }
+  const sql = await readFile(schemaPath, 'utf-8');
+  console.log('Applying base schema (schema.sql)...\n');
+  await executeMigration(schemaName, sql);
+  console.log('✓ Base schema applied successfully\n');
 }
 
 /**
