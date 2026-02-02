@@ -175,7 +175,7 @@ function AddChildPage() {
                     />
                   )}
                   <div className={styles.avatarOverlay}>
-                    <span className="overview-avatar-edit-icon" aria-hidden>✏️</span>
+                    <span className={styles.avatarEditIcon} aria-hidden>✏️</span>
                   </div>
                 </button>
                 <p className={styles.avatarHint}>Tap to change photo</p>

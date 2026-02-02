@@ -14,6 +14,8 @@ import LoadingSpinner from './LoadingSpinner';
 import DocumentsSummary from './DocumentsSummary';
 import loadingStyles from './LoadingSpinner.module.css';
 import t from './TimelineItem.module.css';
+import tl from './TimelineList.module.css';
+import Card from '../components/Card';
 import d from './DocumentsList.module.css';
 
 interface DocumentWithVisit extends VisitAttachment {
@@ -111,7 +113,7 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
   };
 
   const handleClick = (attachmentId: number, docType: 'visit' | 'child') => {
-    const url = docType === 'visit' 
+    const url = docType === 'visit'
       ? visitsApi.getAttachmentDownloadUrl(attachmentId)
       : childrenApi.getAttachmentDownloadUrl(attachmentId);
     window.open(url, '_blank');
@@ -135,9 +137,11 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
 
   if (documents.length === 0) {
     return (
-      <div className={d.empty}>
-        <p>No documents found. Documents can be attached to visits or uploaded as vaccine reports.</p>
-      </div>
+      <Card>
+        <p className={tl.empty}>
+          No documents found. Documents can be attached to visits or uploaded as vaccine reports.
+        </p>
+      </Card>
     );
   }
 

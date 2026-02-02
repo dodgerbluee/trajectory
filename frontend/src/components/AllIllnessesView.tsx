@@ -103,7 +103,7 @@ function AllIllnessesView() {
         {/* Illnesses Timeline */}
         {sortedIllnesses.length === 0 ? (
           <Card>
-            <p className="empty-state">
+            <p className={tl.empty}>
               No illnesses recorded yet. Click "Add Illness" to get started.
             </p>
           </Card>

@@ -130,7 +130,7 @@ function AllVisitsView() {
         {/* Visits Timeline */}
         {sortedVisits.length === 0 ? (
           <Card>
-            <p className="empty-state">
+            <p className={tl.empty}>
               No visits recorded yet. Click "Add Visit" to get started.
             </p>
           </Card>

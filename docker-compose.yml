@@ -3,36 +3,30 @@ services:
     image: postgres:16-alpine
     container_name: trajectory-db
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ../trajectory-data/postgres_data:/var/lib/postgresql/data
       # Optional: run "docker compose exec database psql -U trajectory_user -d trajectory -f /scripts/make-dodgerbluee-admin.sql" to make dodgerbluee an instance admin
       - ./database/make-dodgerbluee-admin.sql:/scripts/make-dodgerbluee-admin.sql
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-trajectory}
-      POSTGRES_USER: ${POSTGRES_USER:-trajectory_user}
+      POSTGRES_USER: ${POSTGRES_USER:-trajectory}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-development_password}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-trajectory_user} -d ${POSTGRES_DB:-trajectory}"]
       interval: 5s
       timeout: 5s
       retries: 5
-    networks:
-      - trajectory-network
     restart: unless-stopped
 
   app:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        # Use empty string to make API calls relative (served by same app)
-        VITE_API_URL: ""
-        VITE_BASE_PATH: ""
     container_name: trajectory-app
     ports:
       - "3000:3001"
     volumes:
-      - uploads_data:/app/uploads
-      - avatars_data:/app/avatars
+      - ../trajectory-data/uploads_data:/app/uploads
+      - ../trajectory-data/avatars_data:/app/avatars
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-trajectory_user}:${DB_PASSWORD:-development_password}@database:5432/${POSTGRES_DB:-trajectory}
       NODE_ENV: development
@@ -44,8 +38,6 @@ services:
     depends_on:
       database:
         condition: service_healthy
-    networks:
-      - trajectory-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
@@ -53,37 +45,3 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
-
-  # One-off: make user dodgerbluee an instance admin. Run after that user has registered.
-  # Usage: docker compose run make-admin
-  make-admin:
-    image: postgres:16-alpine
-    container_name: trajectory-make-admin
-    depends_on:
-      database:
-        condition: service_healthy
-    environment:
-      PGHOST: database
-      PGPORT: 5432
-      PGUSER: ${POSTGRES_USER:-trajectory_user}
-      PGPASSWORD: ${DB_PASSWORD:-development_password}
-      PGDATABASE: ${POSTGRES_DB:-trajectory}
-    command: psql -c "UPDATE users SET is_instance_admin = true WHERE username = 'dodgerbluee';"
-    networks:
-      - trajectory-network
-    restart: "no"
-    profiles:
-      - admin-setup
-
-networks:
-  trajectory-network:
-    name: trajectory-network
-    driver: bridge
-
-volumes:
-  postgres_data:
-    name: trajectory_data
-  uploads_data:
-    name: trajectory_uploads
-  avatars_data:
-    name: trajectory_avatars

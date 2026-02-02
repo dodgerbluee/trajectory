@@ -26,3 +26,9 @@
   color: var(--color-text-primary);
   font-size: var(--font-size-sm);
 }
+
+.empty {
+  text-align: center !important;
+  color: var(--color-text-secondary) !important;
+  padding: var(--spacing-xl) !important;
+}

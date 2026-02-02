@@ -203,8 +203,8 @@ function MetricsView({
                 </Button>
               </div>
             </div>
-            <p className="heatmap-description">
-              {filterChildId 
+            <p className={styles.heatmapDescription}>
+              {filterChildId
                 ? 'Each square represents a day. Darker colors indicate higher illness severity (1-10). Click on a day to see details.'
                 : 'Each square represents a day. Darker colors indicate more children were sick on that day. Click on a day to see details.'}
             </p>

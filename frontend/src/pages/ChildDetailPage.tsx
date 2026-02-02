@@ -618,7 +618,7 @@ function ChildDetailPage() {
                     <main className={visitsLayout.main}>
                       {visitItems.length === 0 ? (
                         <Card>
-                          <p className="empty-state">
+                          <p className={tl.empty}>
                             No visits recorded yet. Click "Add Visit" to get started.
                           </p>
                         </Card>
@@ -683,7 +683,7 @@ function ChildDetailPage() {
                     <main className={visitsLayout.main}>
                       {illnessItems.length === 0 ? (
                         <Card>
-                          <p className="empty-state">
+                          <p className={tl.empty}>
                             No illnesses recorded yet. Click "Add Illness" to get started.
                           </p>
                         </Card>

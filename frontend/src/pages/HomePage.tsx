@@ -23,6 +23,7 @@ import VisitTypeModal from '../components/VisitTypeModal';
 import styles from './HomePage.module.css';
 import pageLayout from '../styles/page-layout.module.css';
 import visitsLayout from '../styles/VisitsLayout.module.css';
+import tl from '../components/TimelineList.module.css';
 
 type HomeTab = 'family' | 'illnesses' | 'visits' | 'trends';
 
@@ -233,10 +234,10 @@ function HomePage() {
                       {family.name}
                     </h2>
                   {kids.length === 0 && !canEditFamily ? (
-                    <p className="empty-state">No children in this family.</p>
+                    <p className={tl.empty}>No children in this family.</p>
                   ) : kids.length === 0 ? (
                     <Card>
-                      <p className="empty-state">No children yet.</p>
+                      <p className={tl.empty}>No children yet.</p>
                     </Card>
                   ) : (
                     <div className={styles.grid}>
@@ -284,7 +285,7 @@ function HomePage() {
           {families.length === 0 && (
             <div className={styles.tabsContentBox}>
               <Card>
-                <p className="empty-state">No families yet. Join a family via an invite link or create an account.</p>
+                <p className={tl.empty}>No families yet. Join a family via an invite link or create an account.</p>
               </Card>
             </div>
           )}
@@ -292,6 +293,38 @@ function HomePage() {
       )}
     </div>
   );
+
+  // Check if any children have growth data for the Trends tab
+  const [childrenGrowthData, setChildrenGrowthData] = useState<Record<number, boolean>>({});
+  
+  useEffect(() => {
+    // Load growth data for all children to determine if Growth tab should be shown
+    const loadGrowthDataForChildren = async () => {
+      const growthChecks = await Promise.all(
+        children.map(async (child) => {
+          try {
+            const response = await visitsApi.getGrowthData({ child_id: child.id });
+            const hasGrowth = response.data && response.data.length > 0;
+            return { childId: child.id, hasGrowth };
+          } catch (error) {
+            console.error(`Failed to load growth data for child ${child.id}:`, error);
+            return { childId: child.id, hasGrowth: false };
+          }
+        })
+      );
+      
+      const growthDataMap: Record<number, boolean> = {};
+      growthChecks.forEach(check => {
+        growthDataMap[check.childId] = check.hasGrowth;
+      });
+      
+      setChildrenGrowthData(growthDataMap);
+    };
+    
+    if (children.length > 0) {
+      loadGrowthDataForChildren();
+    }
+  }, [children]);
 
   const tabs = [
     {
@@ -320,7 +353,7 @@ function HomePage() {
             childrenList={children}
             selectedChildId={metricsFilterChildId}
             onSelectChild={(id) => setMetricsFilterChildId(id)}
-            
+            showGrowthTab={Object.values(childrenGrowthData).some(hasGrowth => hasGrowth)}
           />
 
           <main className={visitsLayout.main}>

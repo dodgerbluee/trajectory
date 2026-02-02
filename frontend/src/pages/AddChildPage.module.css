@@ -93,6 +93,11 @@
   opacity: 1;
 }
 
+.avatarEditIcon {
+  font-size: 1.5rem;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
 .avatarHint {
   margin: var(--spacing-xs) 0 0;
   font-size: var(--font-size-sm);
@@ -116,6 +121,9 @@
 }
 
 .genderField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
   margin-bottom: 0;
 }
 
@@ -184,6 +192,12 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
+}
+
+.numberWrap :global(.form-label) {
+  font-size: var(--font-size-sm-tight);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
 }
 
 .lbOz {

@@ -187,7 +187,7 @@ function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProp
 
   if (vaccineRecords.length === 0) {
     return (
-      <div className="empty-state">
+      <div className={visitsLayout.emptyState}>
         <p>No vaccines recorded yet. Vaccines will appear here when added to wellness visits.</p>
       </div>
     );

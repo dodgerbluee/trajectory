@@ -12,6 +12,7 @@ import IllnessEntryFormFields from '../components/IllnessEntryFormFields';
 import { SectionWrapper } from '../visit-form/SectionWrapper';
 import layoutStyles from '../styles/visit-detail-layout.module.css';
 import pageLayout from '../styles/page-layout.module.css';
+import tl from '../components/TimelineList.module.css';
 
 function EditIllnessPage() {
   const { id } = useParams<{ id: string }>();
@@ -107,7 +108,7 @@ function EditIllnessPage() {
     return (
       <div className={pageLayout.pageContainer}>
         <Card>
-          <p className="empty-state">Illness not found.</p>
+          <p className={tl.empty}>Illness not found.</p>
         </Card>
       </div>
     );

@@ -233,13 +233,17 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: transform var(--transition-base) ease;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
   font: inherit;
   color: var(--color-text-secondary);
 }
 
 .cardAdd:hover:not(:disabled) {
-  transform: translateY(calc(-1 * var(--spacing-2, 2px)));
+  transform: translateY(-1px);
+}
+
+.cardAdd.active {
+  transform: translateY(-2px);
 }
 
 .cardAdd:disabled {

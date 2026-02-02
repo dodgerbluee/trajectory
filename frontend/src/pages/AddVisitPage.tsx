@@ -347,7 +347,7 @@ function AddVisitPage() {
     return (
       <div className={pageLayout.pageContainer}>
         <Card>
-          <p className="empty-state">
+          <p className={pageLayout.emptyState}>
             No children added yet. <Link to="/children/new">Add a child</Link> first to create visits.
           </p>
         </Card>

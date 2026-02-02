@@ -86,7 +86,7 @@
 }
 
 [data-theme="dark"] .secondary {
-  background-color: var(--color-surface);
+  /* background-color: var(--color-surface); */
   border-color: var(--color-border);
 }
 

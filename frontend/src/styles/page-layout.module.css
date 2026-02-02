@@ -45,3 +45,9 @@
   flex-direction: column;
   gap: var(--spacing-lg);
 }
+
+.empty {
+  text-align: center !important;
+  color: var(--color-text-secondary) !important;
+  padding: var(--spacing-xl) !important;
+}

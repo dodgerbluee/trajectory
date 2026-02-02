@@ -11,6 +11,7 @@ import Notification from '../components/Notification';
 import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
 import layoutStyles from '../styles/visit-detail-layout.module.css';
 import pageLayout from '../styles/page-layout.module.css';
+import styles from './VisitDetailPage.module.css';
 
 const SEVERITY_LABELS: Record<number, string> = {
   1: '1 - Barely noticeable',
@@ -146,47 +147,47 @@ function IllnessDetailPage() {
 
           {/* Illness Header */}
           <div>
-            <h2 className={layoutStyles.headerTitle}>{illnessTypeLabel}</h2>
-            <p className="visit-header-date">{formatDate(illness.start_date)}</p>
+            <h2 className={styles.headerTitle}>{illnessTypeLabel}</h2>
+            <p className={styles.headerDate}>{formatDate(illness.start_date)}</p>
           </div>
 
           {/* Illness details - same section style as visit detail */}
-          <div className="visit-tab-content">
-            <div className="visit-info-stacked">
-              <div className="visit-info-item">
-                <span className="visit-info-label">Child:</span>
-                <span className="visit-info-value">{child.name}</span>
+          <div className={styles.tabContent}>
+            <div className={styles.infoStacked}>
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>Child:</span>
+                <span className={styles.infoValue}>{child.name}</span>
               </div>
-              <div className="visit-info-item">
-                <span className="visit-info-label">Illness types:</span>
-                <span className="visit-info-value">{illnessTypeLabel}</span>
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>Illness types:</span>
+                <span className={styles.infoValue}>{illnessTypeLabel}</span>
               </div>
-              <div className="visit-info-item">
-                <span className="visit-info-label">Start date:</span>
-                <span className="visit-info-value">{formatDate(illness.start_date)}</span>
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>Start date:</span>
+                <span className={styles.infoValue}>{formatDate(illness.start_date)}</span>
               </div>
               {illness.end_date && (
-                <div className="visit-info-item">
-                  <span className="visit-info-label">End date:</span>
-                  <span className="visit-info-value">{formatDate(illness.end_date)}</span>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>End date:</span>
+                  <span className={styles.infoValue}>{formatDate(illness.end_date)}</span>
                 </div>
               )}
               {illness.temperature != null && (
-                <div className="visit-info-item">
-                  <span className="visit-info-label">Temperature / Fever:</span>
-                  <span className="visit-info-value">{illness.temperature}°F</span>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>Temperature / Fever:</span>
+                  <span className={styles.infoValue}>{illness.temperature}°F</span>
                 </div>
               )}
               {illness.severity != null && (
-                <div className="visit-info-item">
-                  <span className="visit-info-label">Severity:</span>
-                  <span className="visit-info-value">{SEVERITY_LABELS[illness.severity] ?? illness.severity}</span>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>Severity:</span>
+                  <span className={styles.infoValue}>{SEVERITY_LABELS[illness.severity] ?? illness.severity}</span>
                 </div>
               )}
               {linkedVisit && (
-                <div className="visit-info-item">
-                  <span className="visit-info-label">Linked visit:</span>
-                  <Link to={`/visits/${linkedVisit.id}`} className="visit-info-value" style={{ textDecoration: 'underline' }}>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>Linked visit:</span>
+                  <Link to={`/visits/${linkedVisit.id}`} className={styles.infoValue} style={{ textDecoration: 'underline' }}>
                     {formatDate(linkedVisit.visit_date)} — {linkedVisit.visit_type}
                   </Link>
                 </div>
@@ -194,16 +195,16 @@ function IllnessDetailPage() {
             </div>
 
             {illness.symptoms && (
-              <div className="visit-notes-section">
-                <h3 className="visit-section-header">Symptoms</h3>
-                <p className="visit-notes-text">{illness.symptoms}</p>
+              <div className={styles.notesSection}>
+                <h3 className={styles.sectionHeader}>Symptoms</h3>
+                <p className={styles.notesText}>{illness.symptoms}</p>
               </div>
             )}
 
             {illness.notes && (
-              <div className="visit-notes-section">
-                <h3 className="visit-section-header">Notes</h3>
-                <p className="visit-notes-text">{illness.notes}</p>
+              <div className={styles.notesSection}>
+                <h3 className={styles.sectionHeader}>Notes</h3>
+                <p className={styles.notesText}>{illness.notes}</p>
               </div>
             )}
           </div>
