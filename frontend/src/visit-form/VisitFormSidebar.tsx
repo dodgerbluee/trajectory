@@ -39,6 +39,7 @@ const ADDABLE_LABELS: Record<string, string> = {
   illness: 'Illness',
   injury: 'Injury',
   vision: 'Vision',
+  dental: 'Dental',
   vaccines: 'Vaccines',
   prescriptions: 'Prescriptions',
 };
@@ -48,6 +49,7 @@ const ADDABLE_ICONS: Record<string, string> = {
   illness: '🤒',
   injury: '🩹',
   vision: '👁️',
+  dental: '🦷',
   vaccines: '💉',
   prescriptions: '💊',
 };

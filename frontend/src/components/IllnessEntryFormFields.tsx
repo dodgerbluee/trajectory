@@ -77,6 +77,13 @@ export default function IllnessEntryFormFields({
       />
 
       <div className={styles.row}>
+        <div className={styles.severityField}>
+          <SeveritySelector
+            value={value.illness_severity ?? null}
+            onChange={(severity) => set({ illness_severity: severity })}
+            disabled={disabled}
+          />
+        </div>
         <FormField
           label="Temperature (°F)"
           type="number"
@@ -88,13 +95,6 @@ export default function IllnessEntryFormFields({
           min="95"
           max="110"
         />
-        <div className={styles.severityField}>
-          <SeveritySelector
-            value={value.illness_severity ?? null}
-            onChange={(severity) => set({ illness_severity: severity })}
-            disabled={disabled}
-          />
-        </div>
       </div>
 
       <div className={styles.row}>

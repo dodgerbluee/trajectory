@@ -240,15 +240,17 @@ function AddIllnessPage() {
                   />
                 )}
 
-                <FormField
-                  label="Notes"
-                  type="textarea"
-                  value={formData.notes ?? ''}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value || null })}
-                  disabled={submitting}
-                  placeholder="Any additional notes..."
-                  rows={3}
-                />
+                <div style={{ marginTop: 'var(--spacing-md)' }}>
+                  <FormField
+                    label="Notes"
+                    type="textarea"
+                    value={formData.notes ?? ''}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value || null })}
+                    disabled={submitting}
+                    placeholder="Any additional notes..."
+                    rows={3}
+                  />
+                </div>
             </SectionWrapper>
           </div>
         </Card>

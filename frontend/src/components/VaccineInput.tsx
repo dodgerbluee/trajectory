@@ -97,7 +97,7 @@ function VaccineInput({ value, onChange, disabled }: VaccineInputProps) {
             title="Add Vaccine"
           >
             <span aria-hidden>💉</span>
-            <span>Add Vaccine</span>
+            {value.length === 0 && <span>Add Vaccine</span>}
           </button>
         </div>
       </div>

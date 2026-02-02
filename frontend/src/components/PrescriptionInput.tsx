@@ -4,7 +4,6 @@ import type { Prescription } from '../types/api';
 import Button from './Button';
 import FormField from './FormField';
 import styles from './PrescriptionInput.module.css';
-import mui from '../styles/MeasurementsUI.module.css';
 
 interface PrescriptionInputProps {
   value: Prescription[];
@@ -110,16 +109,18 @@ function PrescriptionInput({ value, onChange, disabled }: PrescriptionInputProps
           ))}
         </div>
       )}
-      <button
-        type="button"
-        onClick={handleAdd}
-        disabled={disabled}
-        className={mui.cardAdd}
-        title="Add Prescription"
-      >
-        <span className={mui.cardIcon} aria-hidden>💊</span>
-        <span className={mui.cardAddLabel}>Add Prescription</span>
-      </button>
+      <div className={value.length === 0 ? styles.empty : ''}>
+        <button
+          type="button"
+          onClick={handleAdd}
+          disabled={disabled}
+          className={styles.addButton}
+          title="Add Prescription"
+        >
+          <span aria-hidden>💊</span>
+          {value.length === 0 && <span>Add Prescription</span>}
+        </button>
+      </div>
 
       {isModalOpen && (
         <div className={styles.modalOverlay}>

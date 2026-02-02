@@ -1,9 +1,5 @@
 /* Severity selector (1-10 scale with emoji options) */
 
-.selector {
-  margin-bottom: var(--spacing-md);
-}
-
 .selector :global(.form-label) {
   display: flex;
   flex-direction: column;

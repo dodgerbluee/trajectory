@@ -43,12 +43,15 @@
 }
 
 /* Target Card's inner content div (has data-card-content) */
+.compact {
+  transition: transform .2s ease-in-out, box-shadow .2s ease-in-out, border-color .2s ease-in-out;
+}
+
 .compact :global([data-card-content]) {
   display: flex;
   align-items: center;
   gap: var(--spacing-lg);
   padding: var(--spacing-lg);
-  transition: transform var(--transition-base) ease-in-out, box-shadow var(--transition-base) ease-in-out, border-color var(--transition-base) ease-in-out;
   cursor: pointer;
 }
 
@@ -56,9 +59,9 @@
   border-color: var(--color-primary);
 }
 
-.compact:hover :global([data-card-content]) {
-  transform: translateY(calc(-1 * var(--spacing-sm)));
-  box-shadow: var(--shadow-lg);
+.compact:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--elevation-1);
 }
 
 .content {
