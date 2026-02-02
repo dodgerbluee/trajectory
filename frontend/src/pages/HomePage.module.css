@@ -163,11 +163,6 @@
   }
 }
 
-/* Family tab: padding, sections, upcoming visits chips */
-.familyTab {
-  padding: var(--spacing-lg);
-}
-
 .familyTabTitle {
   margin: 0 0 var(--spacing-md) 0;
   font-size: var(--font-size-step);
