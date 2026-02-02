@@ -1,0 +1,253 @@
+/* Add Child page/modal – form layout, avatar, gender toggle, birth details. */
+
+.header {
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.form :global(.form-field) {
+  margin-bottom: 0;
+}
+
+.form :global(.form-label) {
+  font-size: var(--font-size-sm-tight);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.form :global(.form-input),
+.form :global(.form-textarea),
+.form .genderOption,
+.form .actions button {
+  padding: 0.625rem var(--spacing-sm-plus);
+  min-height: var(--size-touch-min);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.form :global(.form-textarea) {
+  min-height: var(--spacing-2xl);
+  resize: vertical;
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--spacing-md) * 2);
+}
+
+.topRow :global(.form-field) {
+  flex: 1;
+  margin-bottom: var(--size-touch-min);
+}
+
+.topRow :global(.form-input) {
+  min-height: var(--size-touch-min);
+}
+
+.avatarWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-shrink: 0;
+  margin-bottom: 0;
+  margin-right: 0;
+  padding: var(--spacing-lg);
+}
+
+.avatarButton {
+  position: relative;
+  display: block;
+}
+
+.avatarImg {
+  width: 6rem;
+  height: 6rem;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: var(--elevation-2);
+  display: block;
+  border: var(--border-width-thick) solid var(--color-border);
+}
+
+.avatarOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.avatarButton:hover .avatarOverlay {
+  opacity: 1;
+}
+
+.avatarHint {
+  margin: var(--spacing-xs) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  align-items: start;
+}
+
+.rowHalf {
+  grid-template-columns: 1fr 1fr;
+}
+
+.rowHalf > :global(.form-field):first-child {
+  margin-top: 10px;
+}
+
+.genderField {
+  margin-bottom: 0;
+}
+
+.genderToggle {
+  display: inline-flex;
+  gap: 0;
+  padding: 2px;
+}
+
+.genderOption {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: calc(var(--radius-md) - 1px);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.genderOption:hover:not(:disabled) {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.genderOption.selected {
+  background: var(--color-primary);
+  color: white;
+}
+
+.genderOptionIcon {
+  font-size: 1.125rem;
+  flex-shrink: 0;
+}
+
+.form .rowHalf :global(.form-label),
+.form .birthRow :global(.form-label) {
+  min-height: 1.5em;
+  display: block;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 calc(var(--spacing-xs) * 1.5) 0;
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 2px solid var(--color-primary);
+  display: inline-block;
+  width: fit-content;
+}
+
+.birthRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--spacing-lg);
+  align-items: start;
+  margin-bottom: var(--spacing-md);
+}
+
+.numberWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.lbOz {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.lbOz :global(.form-input),
+.heightIn :global(.form-input) {
+  width: 4.5rem;
+  min-width: 4.5rem;
+  min-height: 2.5rem;
+  text-align: center;
+}
+
+.unit {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.heightIn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.notesWrap {
+  margin-bottom: var(--spacing-md);
+}
+
+.notesWrap :global(.form-field) {
+  margin-bottom: 0;
+}
+
+.notesWrap :global(.form-textarea) {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.inputNoSpinner {
+  -moz-appearance: textfield;
+}
+
+.inputNoSpinner::-webkit-inner-spin-button,
+.inputNoSpinner::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.actions {
+  padding-top: calc(var(--spacing-md) * 1.5);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+}
+
+.actions button {
+  min-height: 2.5rem;
+}
+
+.avatarModalOverlay {
+  padding: var(--spacing-md);
+}

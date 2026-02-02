@@ -9,6 +9,8 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import Notification from '../components/Notification';
 import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
+import layoutStyles from '../styles/visit-detail-layout.module.css';
+import pageLayout from '../styles/page-layout.module.css';
 
 const SEVERITY_LABELS: Record<number, string> = {
   1: '1 - Barely noticeable',
@@ -114,7 +116,7 @@ function IllnessDetailPage() {
     : 'Illness';
 
   return (
-    <div className="page-container">
+    <div className={pageLayout.pageContainer}>
       {notification && (
         <Notification
           message={notification.message}
@@ -124,14 +126,14 @@ function IllnessDetailPage() {
       )}
 
       <Card>
-        <div className="visit-detail-body">
+        <div className={layoutStyles.detailBody}>
           {/* Header with Back button and Actions */}
-          <div className="visit-detail-header">
-            <Link to={`/children/${illness.child_id}`} className="breadcrumb">
+          <div className={layoutStyles.detailHeader}>
+            <Link to={`/children/${illness.child_id}`} className={pageLayout.breadcrumb}>
               ← Back to {child.name}
             </Link>
             {canEdit && (
-            <div className="visit-detail-actions">
+            <div className={layoutStyles.detailActions}>
               <Link to={`/illnesses/${illness.id}/edit`} state={{ childId: illness.child_id, fromChild: true }}>
                 <Button variant="secondary" size="sm">Edit Illness</Button>
               </Link>
@@ -144,7 +146,7 @@ function IllnessDetailPage() {
 
           {/* Illness Header */}
           <div>
-            <h2 className="visit-header-title">{illnessTypeLabel}</h2>
+            <h2 className={layoutStyles.headerTitle}>{illnessTypeLabel}</h2>
             <p className="visit-header-date">{formatDate(illness.start_date)}</p>
           </div>
 

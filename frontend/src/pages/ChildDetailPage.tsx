@@ -11,6 +11,12 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import Notification from '../components/Notification';
 import VisitTypeModal from '../components/VisitTypeModal';
+import modalStyles from '../components/Modal.module.css';
+import cd from './ChildDetailPage.module.css';
+import pageLayout from '../styles/page-layout.module.css';
+import visitsLayout from '../styles/VisitsLayout.module.css';
+import vi from '../styles/VisitIcons.module.css';
+import tl from '../components/TimelineList.module.css';
 import TimelineItem from '../components/TimelineItem';
 import Tabs from '../components/Tabs';
 import DocumentsList from '../components/DocumentsList';
@@ -167,6 +173,35 @@ function ChildDetailPage() {
       setActiveTab(stateTab);
     }
   }, [stateTab]);
+
+  // Growth data: any visit with weight/height/head/bmi. Illness data: any illness record.
+  const hasGrowthData = useMemo(
+    () =>
+      visits.some(
+        (v) =>
+          (v as Visit).weight_value != null ||
+          (v as Visit).height_value != null ||
+          (v as Visit).head_circumference_value != null ||
+          (v as Visit).bmi_value != null
+      ),
+    [visits]
+  );
+  const hasIllnessData = useMemo(() => illnesses.length > 0, [illnesses]);
+  const hasAnyMetrics = hasGrowthData || hasIllnessData;
+
+  // If Metrics tab is not shown (no metrics for this child), switch away from it
+  useEffect(() => {
+    if (!hasAnyMetrics && activeTab === 'metrics') {
+      setActiveTab('visits');
+    }
+  }, [hasAnyMetrics, activeTab]);
+
+  // When only one metrics sub-tab is available, select it
+  useEffect(() => {
+    if (!hasAnyMetrics) return;
+    if (!hasGrowthData) setMetricsActiveTab('illness');
+    else if (!hasIllnessData) setMetricsActiveTab('growth');
+  }, [hasAnyMetrics, hasGrowthData, hasIllnessData]);
 
   const loadDocuments = useCallback(async () => {
     if (!id) return;
@@ -376,7 +411,7 @@ function ChildDetailPage() {
   const age = calculateAge(child.date_of_birth);
 
   return (
-    <div className="page-container">
+    <div className={pageLayout.pageContainer}>
       {notification && (
         <Notification
           message={notification.message}
@@ -390,61 +425,61 @@ function ChildDetailPage() {
         <div className="child-detail-body">
           {/* Overview Section - without header title */}
           <div className="child-detail-section">
-            <Link to="/" className="breadcrumb">← Back to Children</Link>
-            <div className="overview-header">
-              <div className="overview-main">
-                <div className="overview-avatar">
+            <Link to="/" className={`${pageLayout.breadcrumb} ${pageLayout.childDetailSectionBreadcrumb}`}>← Back to Children</Link>
+            <div className={cd.overviewHeader}>
+              <div className={cd.overviewMain}>
+                <div className={cd.overviewAvatar}>
                   {canEdit ? (
                     <button
                       type="button"
                       onClick={() => setShowAvatarEditor(true)}
-                      className="overview-avatar-button"
+                      className={cd.overviewAvatarButton}
                       title="Click to edit avatar"
                     >
                       <ChildAvatar
                         avatar={child.avatar}
                         gender={child.gender}
                         alt={`${child.name}'s avatar`}
-                        className="overview-avatar-img"
+                        className={cd.overviewAvatarImg}
                       />
-                      <div className="overview-avatar-overlay">
-                        <span className="overview-avatar-edit-icon">✏️</span>
+                      <div className={cd.overviewAvatarOverlay}>
+                        <span className={cd.overviewAvatarEditIcon} aria-hidden>✏️</span>
                       </div>
                     </button>
                   ) : (
-                    <div className="overview-avatar-static">
+                    <div className={cd.overviewAvatarStatic}>
                       <ChildAvatar
                         avatar={child.avatar}
                         gender={child.gender}
                         alt={`${child.name}'s avatar`}
-                        className="overview-avatar-img"
+                        className={cd.overviewAvatarImg}
                       />
                     </div>
                   )}
                 </div>
-                <div className="overview-info">
-                  <h1 className="overview-name">{child.name}</h1>
-                  <div className="overview-details">
-                    <div className="overview-detail-item">
-                      <span className="overview-detail-label">Age:</span>
-                      <span className="overview-detail-value">
+                <div className={cd.overviewInfo}>
+                  <h1 className={cd.overviewName}>{child.name}</h1>
+                  <div className={cd.overviewDetails}>
+                    <div className={cd.overviewDetailItem}>
+                      <span className={cd.overviewDetailLabel}>Age:</span>
+                      <span className={cd.overviewDetailValue}>
                         {formatAge(age.years, age.months)}
                       </span>
                     </div>
-                    <div className="overview-detail-item">
-                      <span className="overview-detail-label">Date of Birth:</span>
-                      <span className="overview-detail-value">{formatDate(child.date_of_birth)}</span>
+                    <div className={cd.overviewDetailItem}>
+                      <span className={cd.overviewDetailLabel}>Date of Birth:</span>
+                      <span className={cd.overviewDetailValue}>{formatDate(child.date_of_birth)}</span>
                     </div>
                     {child.due_date && (
-                      <div className="overview-detail-item">
-                        <span className="overview-detail-label">Due Date:</span>
-                        <span className="overview-detail-value">{formatDate(child.due_date)}</span>
+                      <div className={cd.overviewDetailItem}>
+                        <span className={cd.overviewDetailLabel}>Due Date:</span>
+                        <span className={cd.overviewDetailValue}>{formatDate(child.due_date)}</span>
                       </div>
                     )}
                     {(child.birth_weight || child.birth_weight_ounces) && (
-                      <div className="overview-detail-item">
-                        <span className="overview-detail-label">Birth Weight:</span>
-                        <span className="overview-detail-value">
+                      <div className={cd.overviewDetailItem}>
+                        <span className={cd.overviewDetailLabel}>Birth Weight:</span>
+                        <span className={cd.overviewDetailValue}>
                           {child.birth_weight ? `${child.birth_weight} lbs` : ''}
                           {child.birth_weight && child.birth_weight_ounces ? ' ' : ''}
                           {child.birth_weight_ounces ? `${child.birth_weight_ounces} oz` : ''}
@@ -452,15 +487,15 @@ function ChildDetailPage() {
                       </div>
                     )}
                     {child.birth_height && (
-                      <div className="overview-detail-item">
-                        <span className="overview-detail-label">Birth Height:</span>
-                        <span className="overview-detail-value">{child.birth_height}"</span>
+                      <div className={cd.overviewDetailItem}>
+                        <span className={cd.overviewDetailLabel}>Birth Height:</span>
+                        <span className={cd.overviewDetailValue}>{child.birth_height}"</span>
                       </div>
                     )}
                     {child.notes && (
-                      <div className="overview-detail-item">
-                        <span className="overview-detail-label">Notes:</span>
-                        <span className="overview-detail-value">{child.notes}</span>
+                      <div className={cd.overviewDetailItem}>
+                        <span className={cd.overviewDetailLabel}>Notes:</span>
+                        <span className={cd.overviewDetailValue}>{child.notes}</span>
                       </div>
                     )}
                   </div>
@@ -470,36 +505,37 @@ function ChildDetailPage() {
 
             {/* Last & Next: only show section when at least one type has a last or next visit; use "Last:" / "Next:" when both exist */}
             {overviewVisitCards.length > 0 && (
-              <div className="overview-visits-strip">
+              <div className={cd.overviewVisitsStrip}>
                 {overviewVisitCards.map((card) => {
                   const typeLabel = card.visitType === 'illness' ? 'Illness' : card.visitType === 'wellness' ? 'Wellness' : card.visitType === 'sick' ? 'Sick' : card.visitType === 'injury' ? 'Injury' : card.visitType === 'vision' ? 'Vision' : card.visitType === 'dental' ? 'Dental' : 'Visit';
+                  const iconTypeClass = card.visitType === 'wellness' ? vi.iconWellness : card.visitType === 'sick' ? vi.iconSick : card.visitType === 'injury' ? vi.iconInjury : card.visitType === 'vision' ? vi.iconVision : card.visitType === 'dental' ? vi.iconDental : card.visitType === 'illness' ? vi.iconIllness : vi.iconWellness;
                   return (
-                    <div key={card.key} className="overview-last-visit">
-                      <div className={`visit-icon-outline visit-icon--${card.visitType}`} aria-hidden>
-                        {card.visitType === 'wellness' && <LuHeart className="visit-type-svg" />}
-                        {card.visitType === 'sick' && <LuPill className="visit-type-svg" />}
-                        {card.visitType === 'injury' && <MdOutlinePersonalInjury className="visit-type-svg visit-type-svg--filled" />}
-                        {card.visitType === 'vision' && <LuEye className="visit-type-svg" />}
-                        {card.visitType === 'dental' && <HugeiconsIcon icon={DentalToothIcon} className="visit-type-svg" size={24} color="currentColor" />}
-                        {card.visitType === 'illness' && <LuThermometer className="visit-type-svg" />}
+                    <div key={card.key} className={cd.overviewLastVisit}>
+                      <div className={`${vi.iconOutline} ${iconTypeClass}`} aria-hidden>
+                        {card.visitType === 'wellness' && <LuHeart className={vi.typeSvg} />}
+                        {card.visitType === 'sick' && <LuPill className={vi.typeSvg} />}
+                        {card.visitType === 'injury' && <MdOutlinePersonalInjury className={`${vi.typeSvg} ${vi.typeSvgFilled}`} />}
+                        {card.visitType === 'vision' && <LuEye className={vi.typeSvg} />}
+                        {card.visitType === 'dental' && <HugeiconsIcon icon={DentalToothIcon} className={vi.typeSvg} size={24} color="currentColor" />}
+                        {card.visitType === 'illness' && <LuThermometer className={vi.typeSvg} />}
                       </div>
-                      <div className="overview-visit-info">
+                      <div className={cd.overviewVisitInfo}>
                         {card.last && (
                           <Link
                             to={card.last.href}
-                            className={`overview-visit-row${card.next ? '' : ' overview-visit-row--stacked'}`}
+                            className={card.next ? cd.overviewVisitRow : `${cd.overviewVisitRow} ${cd.overviewVisitRowStacked}`}
                           >
-                            <span className="overview-visit-label">{card.next ? 'Last:' : card.visitType === 'illness' ? 'Last Illness:' : `Last ${typeLabel} Visit:`}</span>
-                            <span className="overview-visit-date">{formatDate(card.last.date)}</span>
+                            <span className={cd.overviewVisitLabel}>{card.next ? 'Last:' : card.visitType === 'illness' ? 'Last Illness:' : `Last ${typeLabel} Visit:`}</span>
+                            <span className={cd.overviewVisitDate}>{formatDate(card.last.date)}</span>
                           </Link>
                         )}
                         {card.next && (
                           <Link
                             to={card.next.href}
-                            className={`overview-visit-row${card.last ? '' : ' overview-visit-row--stacked'}`}
+                            className={card.last ? cd.overviewVisitRow : `${cd.overviewVisitRow} ${cd.overviewVisitRowStacked}`}
                           >
-                            <span className="overview-visit-label">{card.last ? 'Next:' : `Next ${typeLabel} Visit:`}</span>
-                            <span className="overview-visit-date">{formatDate(card.next.date)}</span>
+                            <span className={cd.overviewVisitLabel}>{card.last ? 'Next:' : `Next ${typeLabel} Visit:`}</span>
+                            <span className={cd.overviewVisitDate}>{formatDate(card.next.date)}</span>
                           </Link>
                         )}
                       </div>
@@ -519,7 +555,7 @@ function ChildDetailPage() {
                 id: 'visits',
                 label: 'Visits',
                 content: (
-                  <div className="visits-page-layout">
+                  <div className={visitsLayout.pageLayout}>
                     <VisitsSidebar
                       stats={[
                         {
@@ -579,7 +615,7 @@ function ChildDetailPage() {
                       onAddVisitClick={() => setShowVisitTypeModal(true)}
                     />
 
-                    <main className="visits-main">
+                    <main className={visitsLayout.main}>
                       {visitItems.length === 0 ? (
                         <Card>
                           <p className="empty-state">
@@ -588,7 +624,7 @@ function ChildDetailPage() {
                         </Card>
                       ) : (
                         <Card>
-                          <div className="timeline-list-modern">
+                          <div className={tl.list}>
                             {visitItems.map((item) => (
                               <TimelineItem
                                 key={item.id}
@@ -610,7 +646,7 @@ function ChildDetailPage() {
                 id: 'illnesses',
                 label: 'Illness',
                 content: (
-                  <div className="visits-page-layout">
+                  <div className={visitsLayout.pageLayout}>
                     <IllnessesSidebar
                       stats={[
                         {
@@ -644,7 +680,7 @@ function ChildDetailPage() {
                       hideChildFilter
                       addIllnessChildId={child?.id}
                     />
-                    <main className="visits-main">
+                    <main className={visitsLayout.main}>
                       {illnessItems.length === 0 ? (
                         <Card>
                           <p className="empty-state">
@@ -653,7 +689,7 @@ function ChildDetailPage() {
                         </Card>
                       ) : (
                         <Card>
-                          <div className="timeline-list-modern">
+                          <div className={tl.list}>
                             {illnessItems.map((item) => (
                               <TimelineItem
                                 key={item.id}
@@ -675,7 +711,7 @@ function ChildDetailPage() {
                 content: loadingDocuments ? (
                   <LoadingSpinner message="Loading documents..." />
                 ) : (
-                  <div className="visits-page-layout">
+                  <div className={visitsLayout.pageLayout}>
                     <DocumentsSidebar
                       total={documents.length}
                       visitCount={visitDocsCount}
@@ -683,7 +719,7 @@ function ChildDetailPage() {
                       filter={documentTypeFilter}
                       onFilterChange={setDocumentTypeFilter}
                     />
-                    <main className="visits-main">
+                    <main className={visitsLayout.main}>
                       <DocumentsList documents={filteredDocuments} onUpdate={loadDocuments} showHeader={false} />
                     </main>
                   </div>
@@ -699,33 +735,37 @@ function ChildDetailPage() {
                 });
               }
 
-              // Metrics tab at far right
-              tabsArray.push({
-                id: 'metrics',
-                label: 'Metrics',
-                content: (
-                  <div className="visits-page-layout">
-                    <TrendsSidebar
-                      activeTab={metricsActiveTab}
-                      onChangeTab={(t) => setMetricsActiveTab(t)}
-                      childrenList={child ? [child] : []}
-                      selectedChildId={child?.id}
-                      onSelectChild={() => { }}
-                      showChildFilter={false}
-                    />
-                    <main className="visits-main">
-                      <MetricsView
+              // Only include the Metrics tab when the child has any metrics (growth or illness data)
+              if (hasAnyMetrics) {
+                tabsArray.push({
+                  id: 'metrics',
+                  label: 'Metrics',
+                  content: (
+                    <div className={visitsLayout.pageLayout}>
+                      <TrendsSidebar
                         activeTab={metricsActiveTab}
-                        onActiveTabChange={(t) => setMetricsActiveTab(t)}
-                        selectedYear={metricsYear}
-                        onSelectedYearChange={(y) => setMetricsYear(y)}
-                        filterChildId={child?.id}
-                        onFilterChildChange={() => { }}
+                        onChangeTab={(t) => setMetricsActiveTab(t)}
+                        childrenList={child ? [child] : []}
+                        selectedChildId={child?.id}
+                        onSelectChild={() => { }}
+                        showChildFilter={false}
+                        showIllnessTab={hasIllnessData}
+                        showGrowthTab={hasGrowthData}
                       />
-                    </main>
-                  </div>
-                ),
-              });
+                      <main className={visitsLayout.main}>
+                        <MetricsView
+                          activeTab={metricsActiveTab}
+                          onActiveTabChange={(t) => setMetricsActiveTab(t)}
+                          selectedYear={metricsYear}
+                          onSelectedYearChange={(y) => setMetricsYear(y)}
+                          filterChildId={child?.id}
+                          onFilterChildChange={() => { }}
+                        />
+                      </main>
+                    </div>
+                  ),
+                });
+              }
 
               const handleTabChange = (tabId: string) => {
                 const typedTabId = tabId as 'visits' | 'illnesses' | 'metrics' | 'documents' | 'vaccines';
@@ -765,20 +805,20 @@ function ChildDetailPage() {
 
       {/* Avatar Editor Modal */}
       {showAvatarEditor && (
-        <div className="modal-overlay" onClick={() => !uploadingAvatar && setShowAvatarEditor(false)}>
-          <div className="modal-content modal-content-large" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className={modalStyles.overlay} onClick={() => !uploadingAvatar && setShowAvatarEditor(false)}>
+          <div className={`${modalStyles.content} ${modalStyles.contentLarge}`} onClick={(e) => e.stopPropagation()}>
+            <div className={modalStyles.header}>
               <h2>Edit Avatar</h2>
               <button
                 type="button"
                 onClick={() => setShowAvatarEditor(false)}
-                className="modal-close"
+                className={modalStyles.close}
                 disabled={uploadingAvatar}
               >
                 ×
               </button>
             </div>
-            <div className="modal-body">
+            <div className={modalStyles.body}>
               <ImageCropUpload
                 onImageCropped={handleImageCropped}
                 currentImageUrl={child.avatar ? childrenApi.getAvatarUrl(child.avatar) : childrenApi.getDefaultAvatarUrl(child.gender)}
@@ -790,7 +830,7 @@ function ChildDetailPage() {
                 </div>
               )}
             </div>
-            <div className="modal-footer">
+            <div className={modalStyles.footer}>
               <Button
                 variant="secondary"
                 onClick={() => {

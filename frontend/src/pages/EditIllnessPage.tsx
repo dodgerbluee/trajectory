@@ -9,6 +9,9 @@ import Button from '../components/Button';
 import Notification from '../components/Notification';
 import LoadingSpinner from '../components/LoadingSpinner';
 import IllnessEntryFormFields from '../components/IllnessEntryFormFields';
+import { SectionWrapper } from '../visit-form/SectionWrapper';
+import layoutStyles from '../styles/visit-detail-layout.module.css';
+import pageLayout from '../styles/page-layout.module.css';
 
 function EditIllnessPage() {
   const { id } = useParams<{ id: string }>();
@@ -102,7 +105,7 @@ function EditIllnessPage() {
 
   if (!illness) {
     return (
-      <div className="page-container">
+      <div className={pageLayout.pageContainer}>
         <Card>
           <p className="empty-state">Illness not found.</p>
         </Card>
@@ -133,7 +136,7 @@ function EditIllnessPage() {
   };
 
   return (
-    <div className="page-container">
+    <div className={pageLayout.pageContainer}>
       {notification && (
         <Notification
           message={notification.message}
@@ -144,12 +147,12 @@ function EditIllnessPage() {
 
       <form onSubmit={handleSubmit}>
         <Card>
-          <div className="visit-detail-body">
-            <div className="visit-detail-header">
-              <Link to={`/illnesses/${illness.id}`} className="breadcrumb">
+          <div className={layoutStyles.detailBody}>
+            <div className={layoutStyles.detailHeader}>
+              <Link to={`/illnesses/${illness.id}`} className={pageLayout.breadcrumb}>
                 ← Back to Illness
               </Link>
-              <div className="visit-detail-actions">
+              <div className={layoutStyles.detailActions}>
                 <Button type="submit" disabled={submitting}>
                   {submitting ? 'Updating Illness...' : 'Update Illness'}
                 </Button>
@@ -161,13 +164,9 @@ function EditIllnessPage() {
               </div>
             </div>
 
-            <h2 className="visit-header-title">Edit Illness{child ? ` — ${child.name}` : ''}</h2>
+            <h2 className={layoutStyles.headerTitle}>Edit Illness{child ? ` — ${child.name}` : ''}</h2>
 
-            <section className="visit-detail-section visit-detail-section-last">
-              <div className="visit-detail-section-header">
-                <h3 className="visit-detail-section-title">Illness</h3>
-              </div>
-              <div className="visit-detail-section-body">
+            <SectionWrapper sectionId="illness" label="Illness" removable={false} isLast>
                 <div className="form-field">
                   <label className="form-label">Child</label>
                   <div className="form-readonly">{child?.name ?? `Child #${illness.child_id}`}</div>
@@ -212,8 +211,7 @@ function EditIllnessPage() {
                   placeholder="Any additional notes..."
                   rows={3}
                 />
-              </div>
-            </section>
+            </SectionWrapper>
           </div>
         </Card>
       </form>

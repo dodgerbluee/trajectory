@@ -44,14 +44,16 @@ Self-hosted, privacy-first app for tracking children's health data: growth, visi
    ```bash
    cp .env.prod.example .env
    ```
-2. Edit `.env`: set a strong `DB_PASSWORD`, `JWT_SECRET`, and `JWT_REFRESH_SECRET`; set `IMAGE` to your app image (e.g. from GitHub Container Registry).
+2. Edit `.env`: set a strong `DB_PASSWORD`, `JWT_SECRET`, and `JWT_REFRESH_SECRET` (the app will not start in production with placeholder secrets); set `IMAGE` to your app image (e.g. from GitHub Container Registry).
 3. Start the stack:
    ```bash
    docker-compose -f docker-compose.prod.yml up -d
    ```
 4. Put the app behind HTTPS (reverse proxy). Open the app, register the first user, and start adding children.
 
-For Portainer, Nginx Proxy Manager, backup, restore, upgrade, and rollback, see [DEPLOYMENT.md](./DEPLOYMENT.md). For versioning and release notes, see [VERSIONING.md](./VERSIONING.md). For running from the codebase (development), see the docs in [backend/README.md](./backend/README.md) and [frontend](./frontend).
+For Portainer, Nginx Proxy Manager, backup, restore, upgrade, and rollback, see [DEPLOYMENT.md](./DEPLOYMENT.md). For versioning and release notes, see [VERSIONING.md](./VERSIONING.md).
+
+**Development (run from source):** Use `docker-compose up` for backend + DB, or run backend and frontend separately; see [backend/README.md](./backend/README.md) and [frontend](./frontend).
 
 **Stop:** `docker-compose -f docker-compose.prod.yml down`
 

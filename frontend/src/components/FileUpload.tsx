@@ -4,6 +4,7 @@
  */
 
 import { useState, useRef, ChangeEvent } from 'react';
+import styles from './FileUpload.module.css';
 
 interface FileUploadProps {
   onUpload: (file: File) => Promise<void>;
@@ -86,7 +87,7 @@ function FileUpload({
   };
 
   return (
-    <div className="file-upload">
+    <div className={styles.root}>
       <input
         ref={fileInputRef}
         type="file"
@@ -106,9 +107,9 @@ function FileUpload({
         {uploading ? '📤 Uploading...' : '📎 Attach File'}
       </button>
 
-      {error && <div className="upload-error">{error}</div>}
+      {error && <div className={styles.uploadError}>{error}</div>}
       
-      <div className="upload-hint">
+      <div className={styles.uploadHint}>
         Images (JPEG, PNG, GIF, WebP) or PDF • Max 10MB
       </div>
     </div>

@@ -8,8 +8,37 @@ import jwt from 'jsonwebtoken';
 import type { JwtPayload } from 'jsonwebtoken';
 import crypto from 'crypto';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'change-me-in-production';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'change-me-in-production-refresh';
+const PLACEHOLDER_SECRETS = new Set([
+  '',
+  'change-me-in-production',
+  'change-me-in-production-refresh',
+  'change-me-in-production-use-strong-random-secret',
+  'change-me-in-production-use-strong-random-refresh-secret',
+]);
+
+function getRequiredSecret(name: string, value: string | undefined, fallback: string): string {
+  const raw = (value ?? '').trim();
+  if (process.env.NODE_ENV === 'production') {
+    if (!raw || PLACEHOLDER_SECRETS.has(raw)) {
+      throw new Error(
+        `${name} must be set to a strong random value in production. Do not use the default placeholder. See .env.example and DEPLOYMENT.md.`
+      );
+    }
+    return raw;
+  }
+  return raw || fallback;
+}
+
+const JWT_SECRET = getRequiredSecret(
+  'JWT_SECRET',
+  process.env.JWT_SECRET,
+  'change-me-in-production'
+);
+const JWT_REFRESH_SECRET = getRequiredSecret(
+  'JWT_REFRESH_SECRET',
+  process.env.JWT_REFRESH_SECRET,
+  'change-me-in-production-refresh'
+);
 const BCRYPT_ROUNDS = 12;
 
 /**

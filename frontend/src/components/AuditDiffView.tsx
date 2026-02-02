@@ -4,6 +4,7 @@
  */
 
 import { formatDate } from '../lib/date-utils';
+import styles from './AuditDiffView.module.css';
 
 export interface AuditDiffViewProps {
   /** Field-level changes: { fieldName: { before, after } } */
@@ -121,14 +122,14 @@ function AuditDiffView({ changes, fieldLabels, formatValue }: AuditDiffViewProps
   
   if (filteredChanges.length === 0) {
     return (
-      <div className="audit-diff-empty">
-        <span className="audit-diff-empty-text">No field changes</span>
+      <div className={styles.empty} data-audit-diff>
+        <span className={styles.emptyText}>No field changes</span>
       </div>
     );
   }
 
   return (
-    <div className="audit-diff">
+    <div className={styles.root} data-audit-diff>
       {filteredChanges.map(([fieldName, change]) => {
         const { before, after } = change;
         const changeType = getChangeType(before, after);
@@ -142,27 +143,34 @@ function AuditDiffView({ changes, fieldLabels, formatValue }: AuditDiffViewProps
           ? formatValue(fieldName, after)
           : formatValueForDisplay(after, fieldName);
         
+        const fieldClass = [
+          styles.field,
+          changeType === 'added' && styles.fieldAdded,
+          changeType === 'removed' && styles.fieldRemoved,
+          changeType === 'changed' && styles.fieldChanged,
+        ].filter(Boolean).join(' ');
+        
         return (
-          <div key={fieldName} className={`audit-diff-field audit-diff-field--${changeType}`}>
-            <div className="audit-diff-field-label">{label}</div>
-            <div className="audit-diff-field-values">
+          <div key={fieldName} className={fieldClass}>
+            <div className={styles.fieldLabel}>{label}</div>
+            <div className={styles.fieldValues}>
               {changeType === 'added' ? (
                 <>
-                  <span className="audit-diff-before">—</span>
-                  <span className="audit-diff-arrow">→</span>
-                  <span className="audit-diff-after audit-diff-after--added">{afterFormatted}</span>
+                  <span className={styles.before}>—</span>
+                  <span className={styles.arrow}>→</span>
+                  <span className={`${styles.after} ${styles.afterAdded}`}>{afterFormatted}</span>
                 </>
               ) : changeType === 'removed' ? (
                 <>
-                  <span className="audit-diff-before audit-diff-before--removed">{beforeFormatted}</span>
-                  <span className="audit-diff-arrow">→</span>
-                  <span className="audit-diff-after">—</span>
+                  <span className={`${styles.before} ${styles.beforeRemoved}`}>{beforeFormatted}</span>
+                  <span className={styles.arrow}>→</span>
+                  <span className={styles.after}>—</span>
                 </>
               ) : (
                 <>
-                  <span className="audit-diff-before audit-diff-before--changed">{beforeFormatted}</span>
-                  <span className="audit-diff-arrow">→</span>
-                  <span className="audit-diff-after audit-diff-after--changed">{afterFormatted}</span>
+                  <span className={`${styles.before} ${styles.beforeChanged}`}>{beforeFormatted}</span>
+                  <span className={styles.arrow}>→</span>
+                  <span className={`${styles.after} ${styles.afterChanged}`}>{afterFormatted}</span>
                 </>
               )}
             </div>

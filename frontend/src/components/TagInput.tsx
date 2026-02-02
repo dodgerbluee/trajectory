@@ -4,6 +4,7 @@
  */
 
 import { useState, KeyboardEvent } from 'react';
+import styles from './TagInput.module.css';
 
 interface TagInputProps {
   tags: string[];
@@ -34,16 +35,16 @@ function TagInput({ tags, onChange, disabled = false, placeholder = 'Type and pr
   };
 
   return (
-    <div className="tag-input-container">
-      <div className="tag-input-tags">
+    <div className={styles.root}>
+      <div className={styles.tags} data-tag-input-tags>
         {tags.map((tag, index) => (
-          <span key={index} className="tag-badge">
+          <span key={index} className={styles.tagBadge}>
             {tag}
             {!disabled && (
               <button
                 type="button"
                 onClick={() => handleRemoveTag(tag)}
-                className="tag-remove"
+                className={styles.tagRemove}
                 aria-label={`Remove ${tag}`}
               >
                 ×
@@ -58,10 +59,10 @@ function TagInput({ tags, onChange, disabled = false, placeholder = 'Type and pr
           onKeyDown={handleKeyDown}
           disabled={disabled}
           placeholder={tags.length === 0 ? placeholder : ''}
-          className="tag-input-field"
+          className={styles.field}
         />
       </div>
-      <p className="tag-input-hint">Press Enter to add a tag</p>
+      <p className={styles.hint}>Press Enter to add a tag</p>
     </div>
   );
 }

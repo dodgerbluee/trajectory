@@ -1,0 +1,47 @@
+/* Shared page layout – page container, header, breadcrumb; tokens in styles/tokens.css */
+
+.pageContainer {
+  width: 100%;
+}
+
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-xl);
+}
+
+.pageHeaderActions {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+.pageHeader h1 {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-sm);
+}
+
+.breadcrumb {
+  display: inline-block;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  margin-bottom: var(--spacing-md);
+  font-size: var(--font-size-sm);
+}
+
+.breadcrumb:hover {
+  color: var(--color-primary);
+}
+
+.childDetailSectionBreadcrumb {
+  margin-bottom: var(--spacing-lg);
+}
+
+/* Settings-style layout (flex column gap) – used by Settings page and Admin pages */
+.settingsLayout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}

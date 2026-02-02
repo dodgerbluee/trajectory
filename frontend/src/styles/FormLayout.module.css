@@ -1,0 +1,28 @@
+/* Shared form layout: form-actions, form-row, required indicator. */
+
+.formActions {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.formActions button {
+  min-width: var(--size-tag-input-min);
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+}
+
+@media (max-width: 768px) {
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.required {
+  color: var(--color-error);
+  margin-left: var(--spacing-2);
+}

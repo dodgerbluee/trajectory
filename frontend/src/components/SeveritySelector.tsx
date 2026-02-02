@@ -1,3 +1,5 @@
+import styles from './SeveritySelector.module.css';
+
 /**
  * Severity selector with emoji faces (1-10 scale)
  */
@@ -23,28 +25,28 @@ const SEVERITY_OPTIONS = [
 
 export default function SeveritySelector({ value, onChange, disabled }: SeveritySelectorProps) {
   return (
-    <div className="severity-selector">
+    <div className={styles.selector}>
       <label className="form-label">
         Severity (1-10)
       </label>
-      <div className="severity-options">
+      <div className={styles.options}>
         {SEVERITY_OPTIONS.map((option) => (
           <button
             key={option.value}
             type="button"
-            className={`severity-option ${value === option.value ? 'selected' : ''}`}
+            className={value === option.value ? `${styles.option} ${styles.optionSelected}` : styles.option}
             onClick={() => onChange(value === option.value ? null : option.value)}
             disabled={disabled}
             title={option.label}
           >
-            <span className="severity-emoji">{option.emoji}</span>
-            <span className="severity-number">{option.value}</span>
+            <span className={styles.emoji}>{option.emoji}</span>
+            <span className={styles.number}>{option.value}</span>
           </button>
         ))}
         {value !== null && (
           <button
             type="button"
-            className="severity-clear"
+            className={styles.clear}
             onClick={() => onChange(null)}
             disabled={disabled}
             title="Clear severity"
@@ -54,7 +56,7 @@ export default function SeveritySelector({ value, onChange, disabled }: Severity
         )}
       </div>
       {value !== null && (
-        <div className="severity-selected">
+        <div className={styles.selected}>
           Selected: {SEVERITY_OPTIONS.find(o => o.value === value)?.label}
         </div>
       )}

@@ -1,9 +1,10 @@
 /**
  * Error logging utilities
- * Respects LOG_LEVEL env (error | warn | info | debug). Default: info.
+ * Respects runtime log level (admin config) or LOG_LEVEL env. Default: info.
  */
 
 import type { Request } from 'express';
+import { getRuntimeLogLevel } from '../lib/admin-config.js';
 
 /**
  * Log levels (priority: error < warn < info < debug)
@@ -23,9 +24,20 @@ const LEVEL_PRIORITY: Record<LogLevel, number> = {
 };
 
 function getConfiguredLevel(): LogLevel {
-  const v = (process.env.LOG_LEVEL || 'info').toUpperCase();
+  const v = getRuntimeLogLevel().toUpperCase();
   if (v in LEVEL_PRIORITY) return v as LogLevel;
   return LogLevel.INFO;
+}
+
+/** In-memory log buffer for admin logs view (no sensitive data). */
+const MAX_LOG_BUFFER = 2000;
+const logBuffer: LogEntry[] = [];
+
+function pushToBuffer(entry: LogEntry): void {
+  logBuffer.push(entry);
+  if (logBuffer.length > MAX_LOG_BUFFER) {
+    logBuffer.shift();
+  }
 }
 
 /** True if the given level should be logged given LOG_LEVEL env. */
@@ -35,9 +47,9 @@ export function shouldLog(level: LogLevel): boolean {
 }
 
 /**
- * Log entry structure
+ * Log entry structure (exported for admin API).
  */
-interface LogEntry {
+export interface LogEntry {
   timestamp: string;
   level: LogLevel;
   message: string;
@@ -55,6 +67,25 @@ interface LogEntry {
     body?: unknown;
     ip?: string;
   };
+}
+
+/**
+ * Get recent log entries for admin. Filter by level(s), paginate.
+ */
+export function getLogBuffer(options: {
+  levels?: LogLevel[];
+  limit?: number;
+  offset?: number;
+}): { entries: LogEntry[]; total: number } {
+  const { levels, limit = 100, offset = 0 } = options;
+  let slice = [...logBuffer].reverse();
+  if (levels && levels.length > 0) {
+    const set = new Set(levels);
+    slice = slice.filter((e) => set.has(e.level));
+  }
+  const total = slice.length;
+  slice = slice.slice(offset, offset + limit);
+  return { entries: slice, total };
 }
 
 /**
@@ -89,9 +120,9 @@ export function logError(
     };
   }
 
-  // In production, you might send this to a logging service; skipped in test to keep output clean
   if (process.env.NODE_ENV !== 'test') {
     console.error(JSON.stringify(entry, null, 2));
+    pushToBuffer(entry);
   }
 }
 
@@ -107,6 +138,7 @@ export function logWarning(message: string, context?: Record<string, unknown>): 
 
   if (process.env.NODE_ENV !== 'test' && shouldLog(LogLevel.WARN)) {
     console.warn(JSON.stringify({ ...entry, ...context }, null, 2));
+    pushToBuffer(entry);
   }
 }
 
@@ -122,5 +154,45 @@ export function logInfo(message: string, context?: Record<string, unknown>): voi
 
   if (process.env.NODE_ENV !== 'test' && shouldLog(LogLevel.INFO)) {
     console.log(JSON.stringify({ ...entry, ...context }, null, 2));
+    pushToBuffer(entry);
+  }
+}
+
+/**
+ * Log debug
+ */
+export function logDebug(message: string, context?: Record<string, unknown>): void {
+  const entry: LogEntry = {
+    timestamp: new Date().toISOString(),
+    level: LogLevel.DEBUG,
+    message,
+  };
+
+  if (process.env.NODE_ENV !== 'test' && shouldLog(LogLevel.DEBUG)) {
+    console.log(JSON.stringify({ ...entry, ...context }, null, 2));
+    pushToBuffer(entry);
+  }
+}
+
+/**
+ * Log an API request to the buffer (INFO level). Use in request middleware so admin logs show activity.
+ * Only call for routes you want to appear (e.g. /api/*, /health) to avoid flooding the buffer.
+ */
+export function logRequest(req: Request): void {
+  const message = `${req.method} ${req.path}`;
+  const entry: LogEntry = {
+    timestamp: new Date().toISOString(),
+    level: LogLevel.INFO,
+    message,
+    request: {
+      method: req.method,
+      path: req.path,
+      query: req.query as Record<string, unknown>,
+      ip: req.ip,
+    },
+  };
+
+  if (process.env.NODE_ENV !== 'test' && shouldLog(LogLevel.INFO)) {
+    pushToBuffer(entry);
   }
 }

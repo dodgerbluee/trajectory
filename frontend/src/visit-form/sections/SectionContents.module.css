@@ -1,0 +1,147 @@
+/* Visit information form and section form layout (SectionContents.tsx). */
+
+.root {
+  display: flex;
+  flex-direction: column;
+}
+
+.root > :global(.form-field) {
+  margin-bottom: 0;
+}
+
+.primary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-md) var(--spacing-lg);
+  align-items: start;
+}
+
+.primary :global(.form-field) {
+  margin-bottom: 0;
+}
+
+.optional {
+  padding-top: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm-plus);
+}
+
+[data-theme="dark"] .optional {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.optionalFields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
+  gap: var(--spacing-md) var(--spacing-lg);
+  align-items: start;
+}
+
+.optionalFields :global(.form-field),
+.optionalFields .tagsField {
+  margin-bottom: 0;
+}
+
+.tagsField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+  min-width: 0;
+}
+
+.tagsField :global(.form-label) {
+  font-size: var(--font-size-sm-tight);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  margin-bottom: 0;
+}
+
+.root :global(.form-label) {
+  font-size: var(--font-size-sm-tight);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.root :global(.form-input),
+.root :global(.form-textarea),
+.root :global(select.form-input) {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.root :global(.form-input:focus),
+.root :global(.form-textarea:focus),
+.root :global(select.form-input:focus) {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.root :global(.form-input::placeholder) {
+  color: var(--color-text-secondary);
+  opacity: 0.7;
+}
+
+[data-theme="dark"] .root :global(.form-input),
+[data-theme="dark"] .root :global(.form-textarea),
+[data-theme="dark"] .root :global(select.form-input) {
+  background: var(--color-surface);
+  border-color: var(--color-border-strong);
+}
+
+[data-theme="dark"] .root :global(.form-input:focus),
+[data-theme="dark"] .root :global(.form-textarea:focus),
+[data-theme="dark"] .root :global(select.form-input:focus) {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.root [data-tag-input-tags] {
+  padding: var(--spacing-sm) var(--spacing-md);
+  min-height: 2.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.root [data-tag-input-tags]:focus-within {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+[data-theme="dark"] .root [data-tag-input-tags] {
+  background: var(--color-surface);
+  border-color: var(--color-border-strong);
+}
+
+[data-theme="dark"] .root [data-tag-input-tags]:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+}
+
+@media (max-width: 768px) {
+  .primary {
+    grid-template-columns: 1fr;
+  }
+
+  .optionalFields {
+    grid-template-columns: 1fr;
+  }
+
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+}

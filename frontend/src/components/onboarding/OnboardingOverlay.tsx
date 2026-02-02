@@ -10,6 +10,7 @@ import { LuSparkles, LuHouse, LuActivity, LuPill, LuTrendingUp } from 'react-ico
 import { useOnboarding, type OnboardingStep } from '../../contexts/OnboardingContext';
 import Button from '../Button';
 import Card from '../Card';
+import styles from './OnboardingOverlay.module.css';
 
 const STREAMER_COLORS = [
   'var(--color-primary)',
@@ -22,11 +23,11 @@ const STREAMER_COLORS = [
 function Streamers() {
   const count = 24;
   return (
-    <div className="onboarding-streamers" aria-hidden="true">
+    <div className={styles.streamers} aria-hidden="true">
       {Array.from({ length: count }, (_, i) => (
         <div
           key={i}
-          className="onboarding-streamer"
+          className={styles.streamer}
           style={{
             left: `${(i * (100 / count)) + (Math.random() * 4)}%`,
             backgroundColor: STREAMER_COLORS[i % STREAMER_COLORS.length],
@@ -52,15 +53,15 @@ function PromptActions({
   showSkip: boolean;
 }) {
   return (
-    <div className="onboarding-prompt-actions onboarding-prompt-actions--row">
-      <div className="onboarding-prompt-actions--right">
+    <div className={`${styles.promptActions} ${styles.promptActionsRow}`}>
+      <div className={styles.promptActionsRight}>
         {showBack && (
           <Button variant="secondary" size="sm" onClick={onBack}>
             Back
           </Button>
         )}
         {showSkip && (
-          <Button variant="secondary" size="sm" onClick={onSkip} className="onboarding-skip-inline">
+          <Button variant="secondary" size="sm" onClick={onSkip}>
             Skip
           </Button>
         )}
@@ -85,21 +86,21 @@ function BlockingMask({
     const width = targetRect.width + padding * 2;
     const height = targetRect.height + padding * 2;
     return (
-      <div className="onboarding-blocking-mask" aria-hidden>
+      <div className={styles.blockingMask} aria-hidden>
         <div
-          className="onboarding-blocking-panel"
+          className={styles.blockingPanel}
           style={{ position: 'fixed', left: 0, top: 0, right: 0, height: top, zIndex: BLOCKING_MASK_Z }}
         />
         <div
-          className="onboarding-blocking-panel"
+          className={styles.blockingPanel}
           style={{ position: 'fixed', left: 0, top: top + height, right: 0, bottom: 0, zIndex: BLOCKING_MASK_Z }}
         />
         <div
-          className="onboarding-blocking-panel"
+          className={styles.blockingPanel}
           style={{ position: 'fixed', left: 0, top, width: left, height, zIndex: BLOCKING_MASK_Z }}
         />
         <div
-          className="onboarding-blocking-panel"
+          className={styles.blockingPanel}
           style={{ position: 'fixed', left: left + width, top, right: 0, height, zIndex: BLOCKING_MASK_Z }}
         />
       </div>
@@ -107,7 +108,7 @@ function BlockingMask({
   }
   return (
     <div
-      className="onboarding-blocking-panel"
+      className={styles.blockingPanel}
       style={{
         position: 'fixed',
         inset: 0,
@@ -128,7 +129,7 @@ function SpotlightOverlay({
   if (!targetRect) return null;
   return (
     <div
-      className="onboarding-spotlight-cutout"
+      className={styles.spotlightCutout}
       style={{
         position: 'fixed',
         left: targetRect.left - padding,
@@ -269,21 +270,21 @@ export default function OnboardingOverlay() {
   const content = (() => {
     if (step === 'welcome_home' && isHome) {
       return (
-        <div className="onboarding-fullscreen onboarding-welcome">
+        <div className={`${styles.fullscreen} ${styles.welcomeCard}`}>
           <Streamers />
-          <div className="onboarding-fullscreen-inner">
-            <Card className="onboarding-welcome-card">
-              <div className="onboarding-welcome-logo">
-                <img src="/logo/trajectory.png" alt="" className="onboarding-logo-img" />
+          <div className={styles.fullscreenInner}>
+            <Card className={styles.welcomeCard}>
+              <div className={styles.welcomeLogo}>
+                <img src="/logo/trajectory.png" alt="" className={styles.logoImg} />
               </div>
-              <h1 className="onboarding-welcome-title">Welcome to Trajectory</h1>
-              <p className="onboarding-welcome-subtitle">
+              <h1 className={styles.welcomeTitle}>Welcome to Trajectory</h1>
+              <p className={styles.welcomeSubtitle}>
                 This is a guided setup so you can get your family and first child added in just a few steps.
               </p>
-              <p className="onboarding-welcome-hint">You can skip anytime.</p>
-              <div className="onboarding-welcome-actions">
+              <p className={styles.welcomeHint}>You can skip anytime.</p>
+              <div className={styles.welcomeActions}>
                 <Button variant="primary" size="lg" onClick={() => advance()}>
-                  <LuSparkles className="onboarding-btn-icon" aria-hidden />
+                  <LuSparkles className={styles.btnIcon} aria-hidden />
                   Get started
                 </Button>
               </div>
@@ -299,10 +300,10 @@ export default function OnboardingOverlay() {
         return (
           <>
             <SpotlightOverlay targetRect={spotlightRect} padding={12} />
-            <div className="onboarding-prompt-floating onboarding-prompt-floating--bottom">
-              <Card className="onboarding-prompt-card">
-                <h2 className="onboarding-prompt-title">Go to Settings, then Family</h2>
-                <p className="onboarding-prompt-copy">
+            <div className={`${styles.promptFloating} ${styles.promptFloatingBottom}`}>
+              <Card className={styles.promptCard}>
+                <h2 className={styles.promptTitle}>Go to Settings, then Family</h2>
+                <p className={styles.promptCopy}>
                   Click the <strong>down arrow (▼)</strong> next to your name in the top right, then choose <strong>Settings</strong>. Once there, click <strong>Family</strong> in the left sidebar.
                 </p>
                 <PromptActions showBack={showBack} showSkip={showSkipInPopup} onBack={goBack} onSkip={handleSkip} />
@@ -315,10 +316,10 @@ export default function OnboardingOverlay() {
         return (
           <>
             <SpotlightOverlay targetRect={spotlightRect} padding={8} />
-            <div className="onboarding-prompt-floating onboarding-prompt-floating--bottom">
-              <Card className="onboarding-prompt-card">
-                <h2 className="onboarding-prompt-title">Click Family</h2>
-                <p className="onboarding-prompt-copy">
+            <div className={`${styles.promptFloating} ${styles.promptFloatingBottom}`}>
+              <Card className={styles.promptCard}>
+                <h2 className={styles.promptTitle}>Click Family</h2>
+                <p className={styles.promptCopy}>
                   In the left sidebar, click <strong>Family</strong> to open Family Settings.
                 </p>
                 <PromptActions showBack={showBack} showSkip={showSkipInPopup} onBack={goBack} onSkip={handleSkip} />
@@ -332,10 +333,10 @@ export default function OnboardingOverlay() {
     if (step === 'create_family') {
       if (!isSettings) {
         return (
-          <div className="onboarding-prompt-floating onboarding-prompt-floating--bottom">
-            <Card className="onboarding-prompt-card">
-              <h2 className="onboarding-prompt-title">Create a family</h2>
-              <p className="onboarding-prompt-copy">
+          <div className={`${styles.promptFloating} ${styles.promptFloatingBottom}`}>
+            <Card className={styles.promptCard}>
+              <h2 className={styles.promptTitle}>Create a family</h2>
+              <p className={styles.promptCopy}>
                 Go to <strong>Settings → Family</strong> to add a family. Use the menu in the top right.
               </p>
               <PromptActions showBack={showBack} showSkip={showSkipInPopup} onBack={goBack} onSkip={handleSkip} />
@@ -346,10 +347,10 @@ export default function OnboardingOverlay() {
       return (
         <>
           <SpotlightOverlay targetRect={spotlightRect} padding={10} />
-          <div className="onboarding-prompt-floating onboarding-prompt-floating--bottom">
-            <Card className="onboarding-prompt-card">
-              <h3 className="onboarding-tooltip-title">Create a family</h3>
-              <p className="onboarding-prompt-copy">
+          <div className={`${styles.promptFloating} ${styles.promptFloatingBottom}`}>
+            <Card className={styles.promptCard}>
+              <h3 className={styles.tooltipTitle}>Create a family</h3>
+              <p className={styles.promptCopy}>
                 Click <strong>Add Family</strong>, enter a family name, then click <strong>Create</strong>.
               </p>
               <PromptActions showBack={showBack} showSkip={showSkipInPopup} onBack={goBack} onSkip={handleSkip} />
@@ -362,10 +363,10 @@ export default function OnboardingOverlay() {
     if (step === 'add_child') {
       if (!isSettings && !isAddChild) {
         return (
-          <div className="onboarding-prompt-floating onboarding-prompt-floating--bottom">
-            <Card className="onboarding-prompt-card">
-              <h2 className="onboarding-prompt-title">Add a child</h2>
-              <p className="onboarding-prompt-copy">
+          <div className={`${styles.promptFloating} ${styles.promptFloatingBottom}`}>
+            <Card className={styles.promptCard}>
+              <h2 className={styles.promptTitle}>Add a child</h2>
+              <p className={styles.promptCopy}>
                 Go to <strong>Settings → Family</strong> and click <strong>Add Child</strong> for your family.
               </p>
               <PromptActions showBack={showBack} showSkip={showSkipInPopup} onBack={goBack} onSkip={handleSkip} />
@@ -379,7 +380,7 @@ export default function OnboardingOverlay() {
             <SpotlightOverlay targetRect={spotlightRect} padding={10} />
             {spotlightRect && (
               <div
-                className="onboarding-tooltip-anchor"
+                className={styles.tooltipAnchor}
                 style={{
                   position: 'fixed',
                   left: Math.max(16, Math.min(spotlightRect.left, typeof window !== 'undefined' ? window.innerWidth - 340 : 0)),
@@ -387,9 +388,9 @@ export default function OnboardingOverlay() {
                   zIndex: 10003,
                 }}
               >
-                <Card className="onboarding-tooltip-card">
-                  <h3 className="onboarding-tooltip-title">Add a child</h3>
-                  <p className="onboarding-tooltip-copy">
+                <Card className={styles.tooltipCard}>
+                  <h3 className={styles.tooltipTitle}>Add a child</h3>
+                  <p className={styles.tooltipCopy}>
                     Click <strong>Add Child</strong>, then enter your child's name and optional details. Click <strong>Add Child</strong> to save.
                   </p>
                   <PromptActions showBack={showBack} showSkip={showSkipInPopup} onBack={goBack} onSkip={handleSkip} />
@@ -401,9 +402,9 @@ export default function OnboardingOverlay() {
       }
       if (isAddChild) {
         return (
-          <div className="onboarding-prompt-floating onboarding-prompt-floating--bottom">
-            <Card className="onboarding-prompt-card onboarding-prompt-card--compact">
-              <p className="onboarding-prompt-copy">
+          <div className={`${styles.promptFloating} ${styles.promptFloatingBottom}`}>
+            <Card className={`${styles.promptCard} ${styles.promptCardCompact}`}>
+              <p className={styles.promptCopy}>
                 Fill in your child's name and any details, then click <strong>Add Child</strong>.
               </p>
               <PromptActions showBack={showBack} showSkip={showSkipInPopup} onBack={goBack} onSkip={handleSkip} />
@@ -416,10 +417,10 @@ export default function OnboardingOverlay() {
     if (step === 'return_home_click_child') {
       if (!isHome) {
         return (
-          <div className="onboarding-prompt-floating onboarding-prompt-floating--bottom">
-            <Card className="onboarding-prompt-card">
-              <h2 className="onboarding-prompt-title">Almost there</h2>
-              <p className="onboarding-prompt-copy">
+          <div className={`${styles.promptFloating} ${styles.promptFloatingBottom}`}>
+            <Card className={styles.promptCard}>
+              <h2 className={styles.promptTitle}>Almost there</h2>
+              <p className={styles.promptCopy}>
                 Go back to <strong>Home</strong> (click the logo) and click on your child's card to continue the tour.
               </p>
               <PromptActions showBack={showBack} showSkip={showSkipInPopup} onBack={goBack} onSkip={handleSkip} />
@@ -430,10 +431,10 @@ export default function OnboardingOverlay() {
       return (
         <>
           <SpotlightOverlay targetRect={spotlightRect} padding={10} />
-          <div className="onboarding-prompt-floating onboarding-prompt-floating--bottom">
-            <Card className="onboarding-prompt-card">
-              <h2 className="onboarding-prompt-title">Click on your child</h2>
-              <p className="onboarding-prompt-copy">
+          <div className={`${styles.promptFloating} ${styles.promptFloatingBottom}`}>
+            <Card className={styles.promptCard}>
+              <h2 className={styles.promptTitle}>Click on your child</h2>
+              <p className={styles.promptCopy}>
                 Open the card for the child you just added to see their profile and the main features.
               </p>
               <PromptActions showBack={showBack} showSkip={showSkipInPopup} onBack={goBack} onSkip={handleSkip} />
@@ -446,10 +447,10 @@ export default function OnboardingOverlay() {
     if (step === 'feature_visits') {
       if (!isChildDetail) {
         return (
-          <div className="onboarding-prompt-floating onboarding-prompt-floating--bottom">
-            <Card className="onboarding-prompt-card">
-              <h2 className="onboarding-prompt-title">Tour your child's profile</h2>
-              <p className="onboarding-prompt-copy">
+          <div className={`${styles.promptFloating} ${styles.promptFloatingBottom}`}>
+            <Card className={styles.promptCard}>
+              <h2 className={styles.promptTitle}>Tour your child's profile</h2>
+              <p className={styles.promptCopy}>
                 Open a child's card from <strong>Home</strong> to see Visits, Illness, and Metrics.
               </p>
               <PromptActions showBack={showBack} showSkip={showSkipInPopup} onBack={goBack} onSkip={handleSkip} />
@@ -460,15 +461,15 @@ export default function OnboardingOverlay() {
       return (
         <>
           <SpotlightOverlay targetRect={spotlightRect} padding={6} />
-          <div className="onboarding-tooltip-floating" style={{ top: (spotlightRect?.bottom ?? 60) + 12 }}>
-            <Card className="onboarding-tooltip-card">
-              <h3 className="onboarding-tooltip-title">
-                <LuActivity className="onboarding-tooltip-icon" aria-hidden /> Visits
+          <div className={styles.tooltipFloating} style={{ top: (spotlightRect?.bottom ?? 60) + 12 }}>
+            <Card className={styles.tooltipCard}>
+              <h3 className={styles.tooltipTitle}>
+                <LuActivity className={styles.tooltipIcon} aria-hidden /> Visits
               </h3>
-              <p className="onboarding-tooltip-copy">
+              <p className={styles.tooltipCopy}>
                 Log wellness visits, sick visits, injuries, vision, and dental. Add visit dates and outcomes here.
               </p>
-              <p className="onboarding-tooltip-copy onboarding-tooltip-cta">
+              <p className={`${styles.tooltipCopy} ${styles.tooltipCta}`}>
                 Click the <strong>Illness</strong> tab above to continue.
               </p>
               <PromptActions showBack={showBack} showSkip={showSkipInPopup} onBack={goBack} onSkip={handleSkip} />
@@ -481,10 +482,10 @@ export default function OnboardingOverlay() {
     if (step === 'feature_illness') {
       if (!isChildDetail) {
         return (
-          <div className="onboarding-prompt-floating onboarding-prompt-floating--bottom">
-            <Card className="onboarding-prompt-card">
-              <h2 className="onboarding-prompt-title">Tour your child's profile</h2>
-              <p className="onboarding-prompt-copy">
+          <div className={`${styles.promptFloating} ${styles.promptFloatingBottom}`}>
+            <Card className={styles.promptCard}>
+              <h2 className={styles.promptTitle}>Tour your child's profile</h2>
+              <p className={styles.promptCopy}>
                 Open a child's card from <strong>Home</strong> to continue the tour.
               </p>
               <PromptActions showBack={showBack} showSkip={showSkipInPopup} onBack={goBack} onSkip={handleSkip} />
@@ -495,15 +496,15 @@ export default function OnboardingOverlay() {
       return (
         <>
           <SpotlightOverlay targetRect={spotlightRect} padding={6} />
-          <div className="onboarding-tooltip-floating" style={{ top: (spotlightRect?.bottom ?? 60) + 12 }}>
-            <Card className="onboarding-tooltip-card">
-              <h3 className="onboarding-tooltip-title">
-                <LuPill className="onboarding-tooltip-icon" aria-hidden /> Illness
+          <div className={styles.tooltipFloating} style={{ top: (spotlightRect?.bottom ?? 60) + 12 }}>
+            <Card className={styles.tooltipCard}>
+              <h3 className={styles.tooltipTitle}>
+                <LuPill className={styles.tooltipIcon} aria-hidden /> Illness
               </h3>
-              <p className="onboarding-tooltip-copy">
+              <p className={styles.tooltipCopy}>
                 Track illnesses with start and end dates, symptoms, and severity. Great for colds, flu, and ongoing conditions.
               </p>
-              <p className="onboarding-tooltip-copy onboarding-tooltip-cta">
+              <p className={`${styles.tooltipCopy} ${styles.tooltipCta}`}>
                 Click the <strong>Metrics</strong> tab above to continue.
               </p>
               <PromptActions showBack={showBack} showSkip={showSkipInPopup} onBack={goBack} onSkip={handleSkip} />
@@ -516,10 +517,10 @@ export default function OnboardingOverlay() {
     if (step === 'feature_metrics') {
       if (!isChildDetail) {
         return (
-          <div className="onboarding-prompt-floating onboarding-prompt-floating--bottom">
-            <Card className="onboarding-prompt-card">
-              <h2 className="onboarding-prompt-title">Tour your child's profile</h2>
-              <p className="onboarding-prompt-copy">
+          <div className={`${styles.promptFloating} ${styles.promptFloatingBottom}`}>
+            <Card className={styles.promptCard}>
+              <h2 className={styles.promptTitle}>Tour your child's profile</h2>
+              <p className={styles.promptCopy}>
                 Open a child's card from <strong>Home</strong> to continue the tour.
               </p>
               <PromptActions showBack={showBack} showSkip={showSkipInPopup} onBack={goBack} onSkip={handleSkip} />
@@ -530,18 +531,18 @@ export default function OnboardingOverlay() {
       return (
         <>
           <SpotlightOverlay targetRect={spotlightRect} padding={6} />
-          <div className="onboarding-tooltip-floating" style={{ top: (spotlightRect?.bottom ?? 60) + 12 }}>
-            <Card className="onboarding-tooltip-card">
-              <h3 className="onboarding-tooltip-title">
-                <LuTrendingUp className="onboarding-tooltip-icon" aria-hidden /> Metrics
+          <div className={styles.tooltipFloating} style={{ top: (spotlightRect?.bottom ?? 60) + 12 }}>
+            <Card className={styles.tooltipCard}>
+              <h3 className={styles.tooltipTitle}>
+                <LuTrendingUp className={styles.tooltipIcon} aria-hidden /> Metrics
               </h3>
-              <p className="onboarding-tooltip-copy">
+              <p className={styles.tooltipCopy}>
                 View <strong>Illness Overview</strong> and <strong>Growth</strong> (height, weight) over time. Switch between tabs to explore.
               </p>
-              <p className="onboarding-tooltip-copy onboarding-tooltip-cta">
+              <p className={`${styles.tooltipCopy} ${styles.tooltipCta}`}>
                 You've seen the basics. Click <strong>Done</strong> below to finish the tour.
               </p>
-              <div className="onboarding-prompt-actions onboarding-prompt-actions--row">
+              <div className={`${styles.promptActions} ${styles.promptActionsRow}`}>
                 {showBack && (
                   <Button variant="secondary" size="sm" onClick={goBack}>
                     Back
@@ -560,13 +561,13 @@ export default function OnboardingOverlay() {
     if (step === 'wrap_up') {
       if (!isChildDetail) {
         return (
-          <div className="onboarding-prompt-floating onboarding-prompt-floating--bottom">
-            <Card className="onboarding-prompt-card">
-              <h2 className="onboarding-prompt-title">Finish the tour</h2>
-              <p className="onboarding-prompt-copy">
+          <div className={`${styles.promptFloating} ${styles.promptFloatingBottom}`}>
+            <Card className={styles.promptCard}>
+              <h2 className={styles.promptTitle}>Finish the tour</h2>
+              <p className={styles.promptCopy}>
                 Open a child's card from <strong>Home</strong> to see the completion message, or click <strong>Skip</strong> to finish now.
               </p>
-              <div className="onboarding-prompt-actions">
+              <div className={styles.promptActions}>
                 <Button variant="primary" onClick={() => complete()}>
                   I'm done
                 </Button>
@@ -577,22 +578,22 @@ export default function OnboardingOverlay() {
         );
       }
       return (
-        <div className="onboarding-fullscreen onboarding-wrapup">
-          <div className="onboarding-fullscreen-inner">
-            <Card className="onboarding-welcome-card onboarding-wrapup-card">
-              <h1 className="onboarding-welcome-title">You're all set!</h1>
-              <p className="onboarding-welcome-subtitle">
+        <div className={`${styles.fullscreen} ${styles.wrapupCard}`}>
+          <div className={styles.fullscreenInner}>
+            <Card className={`${styles.welcomeCard} ${styles.wrapupCard}`}>
+              <h1 className={styles.welcomeTitle}>You're all set!</h1>
+              <p className={styles.welcomeSubtitle}>
                 You've seen the basics: family, children, visits, illness, and metrics. You can explore anytime from this child's profile or from Home.
               </p>
-              <p className="onboarding-welcome-hint">We're here if you need help.</p>
-              <div className="onboarding-welcome-actions">
+              <p className={styles.welcomeHint}>We're here if you need help.</p>
+              <div className={styles.welcomeActions}>
                 <Button variant="primary" size="lg" onClick={() => complete()}>
-                  <LuHouse className="onboarding-btn-icon" aria-hidden />
+                  <LuHouse className={styles.btnIcon} aria-hidden />
                   Done
                 </Button>
               </div>
               {showBack && (
-                <div className="onboarding-prompt-actions onboarding-prompt-actions--row" style={{ marginTop: 'var(--spacing-md)' }}>
+                <div className={`${styles.promptActions} ${styles.promptActionsRow}`} style={{ marginTop: 'var(--spacing-md)' }}>
                   <Button variant="secondary" size="sm" onClick={goBack}>
                     Back
                   </Button>
@@ -610,13 +611,13 @@ export default function OnboardingOverlay() {
   /* On Add Child page we show only a bottom prompt; don't block the form so the user can fill it in */
   const skipBlockingOnAddChildPage = step === 'add_child' && isAddChild;
   const portal = (
-    <div className="onboarding-layer" aria-live="polite" role="region" aria-label="Guided setup">
+    <div className={styles.layer} aria-live="polite" role="region" aria-label="Guided setup">
       {content && !skipBlockingOnAddChildPage && <BlockingMask targetRect={spotlightRect} padding={8} />}
       {content}
       {content && step !== 'welcome_home' && step !== 'wrap_up' && (
-        <div className="onboarding-progress-bar" aria-label={`Step ${stepIndex + 1} of ${totalSteps}`}>
+        <div className={styles.progressBar} aria-label={`Step ${stepIndex + 1} of ${totalSteps}`}>
           <div
-            className="onboarding-progress-fill"
+            className={styles.progressFill}
             style={{ width: `${((stepIndex + 1) / totalSteps) * 100}%` }}
           />
         </div>

@@ -5,6 +5,7 @@
 
 import { LuSyringe, LuClipboardList, LuActivity } from 'react-icons/lu';
 import VisitStats from './VisitStats';
+import layout from '../styles/VisitsLayout.module.css';
 
 interface Props {
   /** Number of distinct vaccine types recorded from visits */
@@ -48,15 +49,15 @@ export default function VaccineSidebar({
   ];
 
   return (
-    <aside className="visits-sidebar vaccine-sidebar--info">
-      <div className="visits-sidebar-inner">
+    <aside className={`${layout.sidebar} vaccine-sidebar--info`}>
+      <div className={layout.sidebarInner}>
         <header>
-          <div className="sidebar-brand">Summary</div>
+          <div className={layout.sidebarBrand}>Summary</div>
         </header>
 
-        <div className="sidebar-divider" />
+        <div className={layout.sidebarDivider} />
 
-        <nav className="sidebar-stats">
+        <nav className={layout.sidebarStats}>
           <VisitStats stats={stats as any} vertical />
         </nav>
       </div>

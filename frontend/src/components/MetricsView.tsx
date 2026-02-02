@@ -5,11 +5,12 @@ import type { HeatmapData, Child } from '../types/api';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 import Card from './Card';
+import Button from './Button';
 import Heatmap from './Heatmap';
 import GrowthChartTab from './GrowthChartTab';
-// import { HiChevronLeft, HiChevronRight } from 'react-icons/hi';
 import { formatDate } from '../lib/date-utils';
 import { HiChevronLeft, HiChevronRight } from 'react-icons/hi';
+import styles from './MetricsView.module.css';
 
 interface MetricsViewProps {
   activeTab?: 'illness' | 'growth';
@@ -112,9 +113,9 @@ function MetricsView({
 
       {/* Summary Stats (only for Illness view) */}
       {activeTab !== 'growth' && (
-        <div className="metrics-summary">
-        <Card className="summary-card summary-card-avatars">
-          <div className="summary-avatars">
+        <div className={styles.summary}>
+        <Card className={`${styles.summaryCard} ${styles.summaryCardAvatars}`}>
+          <div className={styles.summaryAvatars}>
             {filterChildId ? (
               (() => {
                 const child = children.find((c) => c.id === filterChildId);
@@ -124,7 +125,7 @@ function MetricsView({
                     avatar={child.avatar}
                     gender={child.gender}
                     alt={child.name}
-                    className="summary-avatar-single"
+                    className={styles.summaryAvatarSingle}
                   />
                 );
               })()
@@ -135,42 +136,42 @@ function MetricsView({
                   avatar={child.avatar}
                   gender={child.gender}
                   alt={child.name}
-                  className="summary-avatar-item"
+                  className={styles.summaryAvatarItem}
                 />
               ))
             )}
           </div>
-          <div className="summary-label">
+          <div className={styles.summaryLabel}>
             {filterChildId 
               ? children.find(c => c.id === filterChildId)?.name || 'Child'
               : 'All Children'}
           </div>
         </Card>
 
-        <Card className="summary-card">
-          <div className="summary-value">{uniqueDaysWithIllness}</div>
-          <div className="summary-label">Days with Illness</div>
+        <Card className={styles.summaryCard}>
+          <div className={styles.summaryValue}>{uniqueDaysWithIllness}</div>
+          <div className={styles.summaryLabel}>Days with Illness</div>
         </Card>
-        <Card className="summary-card">
-          <div className="summary-value">{totalSickDays}</div>
-          <div className="summary-label">Total Sick Days</div>
+        <Card className={styles.summaryCard}>
+          <div className={styles.summaryValue}>{totalSickDays}</div>
+          <div className={styles.summaryLabel}>Total Sick Days</div>
         </Card>
         {!filterChildId && (
-          <Card className="summary-card">
-            <div className="summary-value">{Math.round(heatmapData.maxCount)}</div>
-            <div className="summary-label">Max Sick Children/Day</div>
+          <Card className={styles.summaryCard}>
+            <div className={styles.summaryValue}>{Math.round(heatmapData.maxCount)}</div>
+            <div className={styles.summaryLabel}>Max Sick Children/Day</div>
           </Card>
         )}
         {filterChildId && (
-          <Card className="summary-card">
-            <div className="summary-value">{Math.round(heatmapData.maxCount)}</div>
-            <div className="summary-label">Max Severity</div>
+          <Card className={styles.summaryCard}>
+            <div className={styles.summaryValue}>{Math.round(heatmapData.maxCount)}</div>
+            <div className={styles.summaryLabel}>Max Severity</div>
           </Card>
         )}
         {maxDay.count > 0 && (
-          <Card className="summary-card">
-            <div className="summary-value">{formatDate(maxDay.date)}</div>
-            <div className="summary-label">Peak Illness Date</div>
+          <Card className={styles.summaryCard}>
+            <div className={styles.summaryValue}>{formatDate(maxDay.date)}</div>
+            <div className={styles.summaryLabel}>Peak Illness Date</div>
           </Card>
         )}
         </div>
@@ -180,26 +181,26 @@ function MetricsView({
       {activeTab === 'illness' ? (
         <>
           <Card>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h2 className="card-title">Illness Heatmap</h2>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
+            <div className={styles.headerRow}>
+              <h2 className={styles.sectionTitle}>Illness Heatmap</h2>
+              <div className={styles.yearControls}>
+                <Button
+                  variant="secondary"
                   onClick={() => handleYearChange(-1)}
                   disabled={selectedYear <= 2020}
+                  aria-label="Previous year"
                 >
-                  <HiChevronLeft className="btn-icon" />
-                </button>
-                <div style={{ fontWeight: 600 }}>{selectedYear}</div>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
+                  <HiChevronLeft className={styles.btnIcon} aria-hidden />
+                </Button>
+                <div className={styles.yearLabel}>{selectedYear}</div>
+                <Button
+                  variant="secondary"
                   onClick={() => handleYearChange(1)}
                   disabled={selectedYear >= new Date().getFullYear()}
+                  aria-label="Next year"
                 >
-                  <HiChevronRight className="btn-icon" />
-                </button>
+                  <HiChevronRight className={styles.btnIcon} aria-hidden />
+                </Button>
               </div>
             </div>
             <p className="heatmap-description">
@@ -216,7 +217,7 @@ function MetricsView({
 
           {selectedDate && selectedDayData && (
             <Card title={`Details for ${formatDate(selectedDate)}`}>
-              <div className="day-details">
+              <div className={styles.dayDetails}>
                 {filterChildId ? (
                   <p><strong>Severity:</strong> {Math.round(selectedDayData.count)}/10</p>
                 ) : (

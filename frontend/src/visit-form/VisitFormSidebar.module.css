@@ -1,0 +1,5 @@
+/* VisitFormSidebar – "Use full visit form" button variant. */
+
+.useFullFormButton {
+  /* Same base as measurement-card-add; no extra styles needed unless overrides desired */
+}

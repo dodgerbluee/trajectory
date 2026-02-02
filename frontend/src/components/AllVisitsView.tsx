@@ -6,6 +6,8 @@ import ErrorMessage from './ErrorMessage';
 import TimelineItem from './TimelineItem';
 import Card from './Card';
 import VisitsSidebar from './VisitsSidebar';
+import tl from './TimelineList.module.css';
+import visitsLayout from '../styles/VisitsLayout.module.css';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { DentalToothIcon } from '@hugeicons/core-free-icons';
 import { LuActivity, LuHeart, LuPill, LuEye } from 'react-icons/lu';
@@ -109,7 +111,7 @@ function AllVisitsView() {
   }
 
   return (
-    <div className="visits-page-layout">
+    <div className={visitsLayout.pageLayout}>
       <VisitsSidebar
         stats={[
           { label: 'Total Visits', value: statsSource.length, icon: LuActivity, color: 'gray', onClick: () => setFilterVisitType(undefined), active: !filterVisitType },
@@ -124,7 +126,7 @@ function AllVisitsView() {
         onSelectChild={(id: number | undefined) => setFilterChildId(id)}
       />
 
-      <main className="visits-main">
+      <main className={visitsLayout.main}>
         {/* Visits Timeline */}
         {sortedVisits.length === 0 ? (
           <Card>
@@ -134,7 +136,7 @@ function AllVisitsView() {
           </Card>
         ) : (
           <Card>
-            <div className="timeline-list-modern">
+            <div className={tl.list}>
               {sortedVisits.map((visit) => {
                 const child = childMap.get(visit.child_id);
                 return (

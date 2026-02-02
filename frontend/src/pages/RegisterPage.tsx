@@ -2,6 +2,7 @@ import { useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import FormField from '../components/FormField';
+import formFieldStyles from '../components/FormField.module.css';
 import Button from '../components/Button';
 import ErrorMessage from '../components/ErrorMessage';
 import Card from '../components/Card';
@@ -178,7 +179,7 @@ function RegisterPage() {
                   {errors.password}
                 </span>
               )}
-              <div className="form-hint">
+              <div className={formFieldStyles.hint}>
                 Must be at least 8 characters with uppercase, lowercase, number, and special character
               </div>
             </div>

@@ -11,6 +11,9 @@ import Button from '../components/Button';
 import Notification from '../components/Notification';
 import ImageCropUpload from '../components/ImageCropUpload';
 import ChildAvatar from '../components/ChildAvatar';
+import modalStyles from '../components/Modal.module.css';
+import styles from './AddChildPage.module.css';
+import formLayout from '../styles/FormLayout.module.css';
 
 function AddChildPage() {
   const navigate = useNavigate();
@@ -118,19 +121,19 @@ function AddChildPage() {
 
   return (
     <div
-      className="modal-overlay"
+      className={modalStyles.overlay}
       onClick={() => !fromOnboarding && !submitting && handleClose()}
     >
       <div
-        className="modal-content card"
+        className={`${modalStyles.content} ${modalStyles.contentCard}`}
         onClick={(e) => e.stopPropagation()}
       >
-          <div className="modal-header add-child-modal-header">
+          <div className={`${modalStyles.header} ${styles.header}`}>
             <h2>Add Child</h2>
             <button
               type="button"
               onClick={handleClose}
-              className="modal-close"
+              className={modalStyles.close}
               disabled={submitting || fromOnboarding}
               aria-label="Close"
             >
@@ -146,14 +149,14 @@ function AddChildPage() {
             />
           )}
 
-          <form onSubmit={handleSubmit} className="form add-child-form">
+          <form onSubmit={handleSubmit} className={styles.form}>
             {/* Top row: Avatar left, Name right */}
-            <div className="add-child-top-row">
-              <div className="add-child-avatar-wrap">
+            <div className={styles.topRow}>
+              <div className={styles.avatarWrap}>
                 <button
                   type="button"
                   onClick={() => setShowAvatarEditor(true)}
-                  className="overview-avatar-button add-child-avatar-button"
+                  className={styles.avatarButton}
                   title="Click to change photo"
                   disabled={submitting}
                 >
@@ -161,21 +164,21 @@ function AddChildPage() {
                     <img
                       src={avatarPreviewUrl}
                       alt="New avatar"
-                      className="add-child-avatar-img"
+                      className={styles.avatarImg}
                     />
                   ) : (
                     <ChildAvatar
                       avatar={null}
                       gender={formData.gender}
                       alt="Default avatar"
-                      className="add-child-avatar-img"
+                      className={styles.avatarImg}
                     />
                   )}
-                  <div className="overview-avatar-overlay add-child-avatar-overlay">
-                    <span className="overview-avatar-edit-icon">✏️</span>
+                  <div className={styles.avatarOverlay}>
+                    <span className="overview-avatar-edit-icon" aria-hidden>✏️</span>
                   </div>
                 </button>
-                <p className="add-child-avatar-hint">Tap to change photo</p>
+                <p className={styles.avatarHint}>Tap to change photo</p>
               </div>
               <FormField
                 label="Name"
@@ -190,7 +193,7 @@ function AddChildPage() {
             </div>
 
             {/* Second row: DOB and Gender each 1/2 */}
-            <div className="add-child-row add-child-row-half">
+            <div className={`${styles.row} ${styles.rowHalf}`}>
               <FormField
                 label="Date of Birth"
                 type="date"
@@ -201,27 +204,27 @@ function AddChildPage() {
                 max={getTodayDate()}
                 disabled={submitting}
               />
-              <div className="form-field add-child-gender-field">
-                <label className="form-label.gender">
-                  Gender <span className="required">*</span>
+              <div className={`form-field ${styles.genderField}`}>
+                <label className="form-label">
+                  Gender <span className={formLayout.required}>*</span>
                 </label>
-                <div className="add-child-gender-toggle" role="group" aria-label="Gender">
+                <div className={styles.genderToggle} role="group" aria-label="Gender">
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, gender: 'male' })}
-                    className={`add-child-gender-option ${formData.gender === 'male' ? 'selected' : ''}`}
+                    className={`${styles.genderOption} ${formData.gender === 'male' ? styles.selected : ''}`}
                     disabled={submitting}
                   >
-                    <FaMars className="add-child-gender-option-icon" aria-hidden />
+                    <FaMars className={styles.genderOptionIcon} aria-hidden />
                     <span>Male</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, gender: 'female' })}
-                    className={`add-child-gender-option ${formData.gender === 'female' ? 'selected' : ''}`}
+                    className={`${styles.genderOption} ${formData.gender === 'female' ? styles.selected : ''}`}
                     disabled={submitting}
                   >
-                    <FaVenus className="add-child-gender-option-icon" aria-hidden />
+                    <FaVenus className={styles.genderOptionIcon} aria-hidden />
                     <span>Female</span>
                   </button>
                 </div>
@@ -229,8 +232,8 @@ function AddChildPage() {
             </div>
 
             {/* Birth details: Due Date, Weight, Height on one row */}
-            <h3 className="add-child-section-title">Birth details</h3>
-            <div className="add-child-birth-row">
+            <h3 className={styles.sectionTitle}>Birth details</h3>
+            <div className={styles.birthRow}>
               <FormField
                 label="Due Date"
                 type="date"
@@ -239,9 +242,9 @@ function AddChildPage() {
                 max={getTodayDate()}
                 disabled={submitting}
               />
-              <div className="add-child-number-wrap">
+              <div className={styles.numberWrap}>
                 <label className="form-label">Birth Weight</label>
-                <div className="add-child-lb-oz">
+                <div className={styles.lbOz}>
                   <input
                     type="number"
                     inputMode="numeric"
@@ -250,9 +253,9 @@ function AddChildPage() {
                     placeholder="7"
                     min="0"
                     disabled={submitting}
-                    className="form-input input-no-spinner"
+                    className={`form-input ${styles.inputNoSpinner}`}
                   />
-                  <span className="add-child-unit">lb</span>
+                  <span className={styles.unit}>lb</span>
                   <input
                     type="number"
                     inputMode="numeric"
@@ -262,14 +265,14 @@ function AddChildPage() {
                     min="0"
                     max="15"
                     disabled={submitting}
-                    className="form-input input-no-spinner"
+                    className={`form-input ${styles.inputNoSpinner}`}
                   />
-                  <span className="add-child-unit">oz</span>
+                  <span className={styles.unit}>oz</span>
                 </div>
               </div>
-              <div className="add-child-number-wrap">
+              <div className={styles.numberWrap}>
                 <label className="form-label">Birth Height</label>
-                <div className="add-child-height-in">
+                <div className={styles.heightIn}>
                   <input
                     type="number"
                     inputMode="decimal"
@@ -279,14 +282,14 @@ function AddChildPage() {
                     min="0"
                     step="0.1"
                     disabled={submitting}
-                    className="form-input input-no-spinner"
+                    className={`form-input ${styles.inputNoSpinner}`}
                   />
-                  <span className="add-child-unit">in</span>
+                  <span className={styles.unit}>in</span>
                 </div>
               </div>
             </div>
 
-            <div className="add-child-notes-wrap">
+            <div className={styles.notesWrap}>
               <FormField
                 label="Notes"
                 type="textarea"
@@ -298,7 +301,7 @@ function AddChildPage() {
               />
             </div>
 
-            <div className="form-actions add-child-actions">
+            <div className={styles.actions}>
               <Button type="button" variant="secondary" onClick={handleClose} disabled={submitting || fromOnboarding}>
                 Cancel
               </Button>
@@ -312,23 +315,23 @@ function AddChildPage() {
       {/* Avatar editor modal */}
       {showAvatarEditor && (
         <div
-          className="modal-overlay add-child-avatar-modal-overlay"
+          className={`${modalStyles.overlay} ${styles.avatarModalOverlay}`}
           style={{ zIndex: 1001 }}
           onClick={() => setShowAvatarEditor(false)}
         >
             <Card onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
+              <div className={modalStyles.header}>
                 <h2>Change photo</h2>
                 <button
                   type="button"
                   onClick={() => setShowAvatarEditor(false)}
-                  className="modal-close"
+                  className={modalStyles.close}
                   aria-label="Close"
                 >
                   ×
                 </button>
               </div>
-              <div className="modal-body">
+              <div className={modalStyles.body}>
                 <ImageCropUpload
                   onImageCropped={handleImageCropped}
                   currentImageUrl={avatarPreviewUrl ?? undefined}

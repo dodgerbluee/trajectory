@@ -1,0 +1,191 @@
+/* Documents list: rows, empty state, edit form, actions */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.empty {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--color-text-secondary);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: all 0.2s;
+}
+
+.item:hover {
+  background: var(--color-surface);
+  border-color: var(--color-primary);
+}
+
+.icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.fileIcon {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  color: var(--color-text-secondary);
+  opacity: 0.95;
+}
+
+.filenameLink {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  transition: color 0.2s;
+}
+
+.filenameLink:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+.fileSizeBadge {
+  opacity: 0.9;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  margin-top: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.metaItem {
+  display: inline-block;
+}
+
+.metaSeparator {
+  color: var(--color-text-secondary);
+  opacity: 0.5;
+}
+
+.visitLink {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.visitLink:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+.editForm {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+}
+
+.editInput {
+  flex: 1;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-base);
+  background: var(--color-background);
+  color: var(--color-text-primary);
+}
+
+.editActions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.actions {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+}
+
+.btnIconAction {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  width: 32px;
+  height: 32px;
+}
+
+.btnIconAction:hover {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.btnDownload:hover {
+  color: var(--color-primary);
+}
+
+.btnEdit:hover {
+  color: var(--color-primary);
+}
+
+.btnDelete:hover {
+  color: var(--color-danger);
+}
+
+.btnIconSmall {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xs);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  transition: all 0.2s;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btnIconSmall:hover {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.btnSave:hover {
+  background: var(--color-primary);
+  color: white;
+}
+
+.btnCancel:hover {
+  background: var(--color-danger);
+  color: white;
+}

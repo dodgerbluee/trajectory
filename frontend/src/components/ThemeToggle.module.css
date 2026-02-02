@@ -1,0 +1,27 @@
+/* ThemeToggle – dot button; tokens in styles/tokens.css */
+
+.toggleDot {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  transition: background-color var(--transition-base) ease;
+  width: var(--size-icon-box);
+  height: var(--size-icon-box);
+}
+
+.toggleDot:hover {
+  background-color: var(--color-surface);
+}
+
+.dot {
+  width: var(--size-dot);
+  height: var(--size-dot);
+  border-radius: var(--radius-full);
+  background-color: var(--color-text-primary);
+  display: block;
+}

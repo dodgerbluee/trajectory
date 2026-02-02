@@ -1,22 +1,14 @@
 # Database setup (backend)
 
-This directory holds the **schema configuration** the app uses to set up the database on startup.
+This directory holds the **schema** the app uses to set up the database on startup.
 
-## SQL / setup files in this repo
+## schema.sql
 
-| File | Purpose |
-|------|--------|
-| **backend/migrations/schema.sql** | Full DB schema (tables, indexes, triggers). Applied by the backend on startup via `src/db/migrations.ts`. Idempotent; safe on fresh or existing DB. |
-| **database/init.sql** | Docker Postgres init script. Run by the Postgres container on first start when using `docker-compose` (mounted into `/docker-entrypoint-initdb.d/`). Creates schema for a new container volume. |
+Single source of truth for the database schema (tables, indexes, triggers). Applied by the backend on startup via `src/db/migrations.ts`. Idempotent (IF NOT EXISTS etc.); safe on fresh or existing DB.
 
-Use **backend/migrations/schema.sql** as the single source of truth for the current schema. Keep **database/init.sql** in sync if you use Docker init (or point Docker at the same schema).
+The app records when `schema.sql` has been applied in a `migrations` table and does not re-run it.
 
-## How backend setup works
-
-1. On startup, the app runs `runMigrations()` in `src/db/migrations.ts`.
-2. It ensures a `migrations` table exists (tracks which setup files have been applied).
-3. It runs each `.sql` file in this directory that hasn’t been applied yet (alphabetically by filename).
-4. `schema.sql` is idempotent (IF NOT EXISTS etc.), so it’s safe on an already-set-up DB.
+**Note:** `database/init.sql` in the repo root is a legacy Docker Postgres init script. The app does not mount it; schema comes from backend migrations only. If you use Docker init elsewhere, keep that file in sync with `schema.sql`.
 
 ## Manual run
 

@@ -10,6 +10,7 @@ import IllnessesInput from './IllnessesInput';
 import SeveritySelector from './SeveritySelector';
 import Checkbox from './Checkbox';
 import type { IllnessType } from '../types/api';
+import formLayout from '../styles/FormLayout.module.css';
 
 export interface IllnessEntryFormValue {
   illness_type?: IllnessType | null;
@@ -103,7 +104,7 @@ export default function IllnessEntryFormFields({
         disabled={disabled}
       />
 
-      <div className="form-row">
+      <div className={formLayout.formRow}>
         <FormField
           label={dateMode === 'visit' ? 'Illness Start Date' : 'Start Date'}
           type="date"

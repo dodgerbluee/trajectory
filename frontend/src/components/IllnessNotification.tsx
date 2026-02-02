@@ -4,6 +4,7 @@ import { illnessesApi, childrenApi, ApiClientError } from '../lib/api-client';
 import type { Illness, Child } from '../types/api';
 import { HiBell, HiX } from 'react-icons/hi';
 import { formatDate } from '../lib/date-utils';
+import styles from './IllnessNotification.module.css';
 
 function IllnessNotification() {
   const [illnesses, setIllnesses] = useState<Illness[]>([]);
@@ -65,47 +66,49 @@ function IllnessNotification() {
   }
 
   return (
-    <div className="illness-notification" ref={dropdownRef}>
+    <div className={styles.root} ref={dropdownRef}>
       <button
-        className="illness-notification-trigger"
+        type="button"
+        className={styles.trigger}
         onClick={() => setIsOpen(!isOpen)}
         aria-label={`${illnesses.length} ongoing illness${illnesses.length > 1 ? 'es' : ''}`}
       >
-        <HiBell className="notification-icon" />
+        <HiBell className={styles.triggerIcon} aria-hidden />
         {illnesses.length > 0 && (
-          <span className="notification-badge">{illnesses.length}</span>
+          <span className={styles.badge}>{illnesses.length}</span>
         )}
       </button>
 
       {isOpen && (
-        <div className="illness-notification-dropdown">
-          <div className="notification-header">
+        <div className={styles.dropdown}>
+          <div className={styles.header}>
             <h3>Ongoing Illness</h3>
             <button
-              className="notification-close"
+              type="button"
+              className={styles.close}
               onClick={() => setIsOpen(false)}
               aria-label="Close"
             >
-              <HiX />
+              <HiX aria-hidden />
             </button>
           </div>
-          <div className="notification-list">
+          <div className={styles.list}>
             {illnesses.map((illness) => (
               <Link
                 key={illness.id}
                 to={`/illnesses/${illness.id}`}
-                className="notification-item"
+                className={styles.item}
                 onClick={() => setIsOpen(false)}
               >
-                <div className="notification-item-content">
-                  <div className="notification-item-header">
+                <div className={styles.itemContent}>
+                  <div className={styles.itemHeader}>
                     <strong>{getChildName(illness.child_id)}</strong>
-                    <span className="illness-type-badge">{illness.illness_types?.join(', ') ?? ''}</span>
+                    <span className={styles.typeBadge}>{illness.illness_types?.join(', ') ?? ''}</span>
                   </div>
-                  <div className="notification-item-details">
+                  <div className={styles.itemDetails}>
                     <span>Started: {formatDate(illness.start_date)}</span>
                     {illness.symptoms && (
-                      <span className="notification-symptoms">{illness.symptoms}</span>
+                      <span className={styles.symptoms}>{illness.symptoms}</span>
                     )}
                   </div>
                 </div>

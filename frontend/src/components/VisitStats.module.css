@@ -1,0 +1,126 @@
+/* VisitStats – visit stat cards grid; tokens in styles/tokens.css */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--m-space-2);
+}
+
+.vertical {
+  grid-template-columns: 1fr;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg,#ffffff08,#ffffff05);
+  border: 1px solid var(--color-border);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  cursor: pointer;
+  text-align: left;
+}
+
+.card:hover {
+  transform: translateY(calc(-1 * var(--spacing-6, 6px)));
+  box-shadow: var(--elevation-3);
+}
+
+.card.active {
+  background: linear-gradient(90deg, rgba(96, 165, 250, 0.14), rgba(59, 130, 246, 0.06));
+  border-color: rgba(59, 130, 246, 0.12);
+  box-shadow: var(--elevation-2);
+}
+
+.vertical .card {
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-md-alt);
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.vertical .card:hover {
+  transform: translateY(calc(-1 * var(--spacing-sm)));
+}
+
+.icon {
+  width: var(--size-touch-min);
+  height: var(--size-touch-min);
+  border-radius: var(--radius-md-alt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.iconSvg {
+  width: var(--spacing-xl);
+  height: var(--spacing-xl);
+  color: var(--color-text-inverse);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+}
+
+.value {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.vertical .icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-md);
+}
+
+.vertical .iconSvg {
+  width: var(--spacing-md);
+  height: var(--spacing-md);
+}
+
+.vertical .value {
+  font-size: var(--font-size-base);
+}
+
+.vertical .label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.vertical .card.active {
+  background: linear-gradient(90deg, rgba(96, 165, 250, 0.14), rgba(59, 130, 246, 0.06));
+  border-color: rgba(59, 130, 246, 0.12);
+  box-shadow: var(--elevation-2);
+}
+
+.card[data-color="blue"] .icon { background: linear-gradient(135deg, #60a5fa, #3b82f6); }
+.card[data-color="emerald"] .icon { background: linear-gradient(135deg, #34d399, #10b981); }
+.card[data-color="red"] .icon { background: linear-gradient(135deg, #f87171, #ef4444); }
+.card[data-color="yellow"] .icon { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+.card[data-color="purple"] .icon { background: linear-gradient(135deg, #a78bfa, #7c3aed); }
+.card[data-color="teal"] .icon { background: linear-gradient(135deg, #22d3ee, #06b6d4); }
+.card[data-color="gray"] .icon { background: linear-gradient(135deg, #d1d5db, #9ca3af); }
+
+@media (min-width: 768px) {
+  .grid:not(.vertical) {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+/* Vaccine sidebar: info-only; no click/hover transform on stat buttons */
+:global(.vaccine-sidebar--info) .grid[data-visit-stats] .card {
+  cursor: default;
+}
+:global(.vaccine-sidebar--info) .grid[data-visit-stats] .card:hover {
+  transform: none;
+}

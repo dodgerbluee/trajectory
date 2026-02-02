@@ -3,6 +3,7 @@
  */
 
 import { ReactNode } from 'react';
+import styles from './Tabs.module.css';
 
 interface Tab {
   id: string;
@@ -20,12 +21,12 @@ interface TabsProps {
 
 function Tabs({ tabs, activeTab, onTabChange, getTabButtonProps }: TabsProps) {
   return (
-    <div className="tabs-container">
-      <div className="tabs-header">
+    <div className={styles.container}>
+      <div className={styles.header}>
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
+            className={activeTab === tab.id ? `${styles.tabButton} ${styles.tabButtonActive}` : styles.tabButton}
             onClick={() => onTabChange(tab.id)}
             {...(getTabButtonProps?.(tab.id) ?? {})}
           >
@@ -33,7 +34,7 @@ function Tabs({ tabs, activeTab, onTabChange, getTabButtonProps }: TabsProps) {
           </button>
         ))}
       </div>
-      <div className="tabs-content">
+      <div className={styles.content}>
         {tabs.find(tab => tab.id === activeTab)?.content}
       </div>
     </div>

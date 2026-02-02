@@ -7,6 +7,7 @@
 import { Router, Response, NextFunction } from 'express';
 import { query } from '../db/connection.js';
 import { authenticate, requireInstanceAdmin, type AuthRequest } from '../middleware/auth.js';
+import { hashPassword, validatePasswordStrength } from '../lib/auth.js';
 import { NotFoundError, BadRequestError } from '../middleware/error-handler.js';
 import { validatePositiveInteger } from '../middleware/validation.js';
 import { createResponse } from '../types/api.js';
@@ -16,6 +17,8 @@ interface UserListRow {
   email: string;
   username: string;
   is_instance_admin: boolean;
+  created_at: Date;
+  last_login_at: Date | null;
 }
 
 interface PreferencesRow {
@@ -145,24 +148,130 @@ usersRouter.use(requireInstanceAdmin);
 
 /**
  * GET /api/users
- * List all users (id, email, username, is_instance_admin). Instance admin only.
+ * List all users with created_at, last_login_at. Instance admin only.
  */
 usersRouter.get('/', async (_req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const result = await query<UserListRow>(
-      'SELECT id, email, username, is_instance_admin FROM users ORDER BY id'
+      'SELECT id, email, username, is_instance_admin, created_at, last_login_at FROM users ORDER BY id'
     );
     const users = result.rows.map((row) => ({
       id: row.id,
       email: row.email,
       username: row.username,
       is_instance_admin: row.is_instance_admin,
+      created_at: row.created_at,
+      last_login_at: row.last_login_at,
     }));
     res.json(createResponse(users));
   } catch (error) {
     next(error);
   }
 });
+
+/**
+ * GET /api/users/:id
+ * User detail with stats (total kids, visits, illnesses). Instance admin only.
+ */
+usersRouter.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const id = validatePositiveInteger(req.params.id, 'id');
+    const userResult = await query<{
+      id: number;
+      email: string;
+      username: string;
+      is_instance_admin: boolean;
+      created_at: Date;
+      last_login_at: Date | null;
+    }>(
+      'SELECT id, email, username, is_instance_admin, created_at, last_login_at FROM users WHERE id = $1',
+      [id]
+    );
+    if (userResult.rows.length === 0) {
+      throw new NotFoundError('User');
+    }
+    const user = userResult.rows[0];
+
+    const familyIdsResult = await query<{ family_id: number }>(
+      'SELECT family_id FROM family_members WHERE user_id = $1',
+      [id]
+    );
+    const familyIds = familyIdsResult.rows.map((r) => r.family_id);
+    let totalKids = 0;
+    let totalVisits = 0;
+    let totalIllnesses = 0;
+    if (familyIds.length > 0) {
+      const kidsResult = await query<{ count: string }>(
+        'SELECT COUNT(*)::text as count FROM children WHERE family_id = ANY($1::int[])',
+        [familyIds]
+      );
+      totalKids = parseInt(kidsResult.rows[0]?.count ?? '0', 10);
+      const childIdsResult = await query<{ id: number }>(
+        'SELECT id FROM children WHERE family_id = ANY($1::int[])',
+        [familyIds]
+      );
+      const childIds = childIdsResult.rows.map((r) => r.id);
+      if (childIds.length > 0) {
+        const visitsResult = await query<{ count: string }>(
+          'SELECT COUNT(*)::text as count FROM visits WHERE child_id = ANY($1::int[])',
+          [childIds]
+        );
+        totalVisits = parseInt(visitsResult.rows[0]?.count ?? '0', 10);
+        const illResult = await query<{ count: string }>(
+          'SELECT COUNT(*)::text as count FROM illnesses WHERE child_id = ANY($1::int[])',
+          [childIds]
+        );
+        totalIllnesses = parseInt(illResult.rows[0]?.count ?? '0', 10);
+      }
+    }
+
+    res.json(
+      createResponse({
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        is_instance_admin: user.is_instance_admin,
+        created_at: user.created_at,
+        last_login_at: user.last_login_at,
+        total_kids: totalKids,
+        total_visits: totalVisits,
+        total_illnesses: totalIllnesses,
+      })
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/users/:id/change-password
+ * Admin sets a new password for a user. Instance admin only. No plaintext in logs.
+ */
+usersRouter.post(
+  '/:id/change-password',
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const id = validatePositiveInteger(req.params.id, 'id');
+      const { newPassword } = req.body as { newPassword?: string };
+      if (typeof newPassword !== 'string' || !newPassword.trim()) {
+        throw new BadRequestError('newPassword is required');
+      }
+      const passwordValidation = validatePasswordStrength(newPassword);
+      if (!passwordValidation.valid) {
+        throw new BadRequestError(passwordValidation.errors.join(' '));
+      }
+      const existing = await query<{ id: number }>('SELECT id FROM users WHERE id = $1', [id]);
+      if (existing.rows.length === 0) {
+        throw new NotFoundError('User');
+      }
+      const passwordHash = await hashPassword(newPassword.trim());
+      await query('UPDATE users SET password_hash = $1 WHERE id = $2', [passwordHash, id]);
+      res.json(createResponse({ success: true }));
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 /**
  * PUT /api/users/:id/instance-admin

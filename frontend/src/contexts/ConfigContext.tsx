@@ -1,11 +1,11 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { setAppTimezone } from '../lib/date-utils';
+import { API_BASE_URL } from '../lib/env.js';
 
 const ConfigContext = createContext<{ timezoneReady: boolean }>({ timezoneReady: false });
 
 function getHealthUrl(): string {
-  const base = import.meta.env.VITE_API_URL || '';
-  return base ? `${base.replace(/\/$/, '')}/health` : '/health';
+  return API_BASE_URL ? `${API_BASE_URL.replace(/\/$/, '')}/health` : '/health';
 }
 
 export function ConfigProvider({ children }: { children: ReactNode }) {

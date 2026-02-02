@@ -10,6 +10,8 @@ import Notification from '../components/Notification';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import ImageCropUpload from '../components/ImageCropUpload';
+import pageLayout from '../styles/page-layout.module.css';
+import formLayout from '../styles/FormLayout.module.css';
 
 function EditChildPage() {
   const { id } = useParams<{ id: string }>();
@@ -162,10 +164,10 @@ function EditChildPage() {
   }
 
   return (
-    <div className="page-container">
-      <div className="page-header">
+    <div className={pageLayout.pageContainer}>
+      <div className={pageLayout.pageHeader}>
         <div>
-          <Link to={`/children/${id}`} className="breadcrumb">← Back to Child</Link>
+          <Link to={`/children/${id}`} className={pageLayout.breadcrumb}>← Back to Child</Link>
           <h1>Edit {child.name}</h1>
         </div>
       </div>
@@ -292,7 +294,7 @@ function EditChildPage() {
               disabled={submitting}
             />
 
-          <div className="form-actions">
+          <div className={formLayout.formActions}>
             <Button type="submit" disabled={submitting}>
               {submitting ? 'Saving...' : 'Save Changes'}
             </Button>

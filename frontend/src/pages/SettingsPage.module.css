@@ -1,0 +1,579 @@
+/* Settings page: layout, sections, expandable, user-info, theme selector, about. */
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.section:last-child {
+  margin-bottom: 0;
+}
+
+/* Support section (General tab) */
+.supportSection {
+  margin-bottom: var(--spacing-xl);
+}
+
+.supportSectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-sm);
+}
+
+.supportContent {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+}
+
+.supportCoffeeLink {
+  display: inline-block;
+  line-height: 0;
+}
+
+.supportCoffeeButton {
+  height: 3.25rem;
+  width: auto;
+  display: block;
+}
+
+.supportText {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.label {
+  display: block;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-xs);
+  font-size: var(--font-size-base);
+}
+
+.description {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-md);
+}
+
+.hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  font-style: italic;
+  margin-top: var(--spacing-xs);
+}
+
+.themeSelector {
+  display: inline-flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.themeOption {
+  flex: 0 0 auto;
+  min-width: 0;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background-card);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  text-align: center;
+}
+
+.themeOption:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--elevation-2);
+}
+
+.themeOption.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  box-shadow: var(--elevation-2);
+}
+
+.themeOptionIcon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.themeOptionLabel {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.aboutItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.aboutItem:last-child {
+  border-bottom: none;
+}
+
+.aboutLabel {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.aboutValue {
+  color: var(--color-text-primary);
+}
+
+.userInfoCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.userInfoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.userInfoRow:last-child {
+  border-bottom: none;
+}
+
+.userInfoLabel {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.userInfoValue {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+}
+
+/* Expandable Settings Sections */
+.expandable {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+  overflow: hidden;
+  transition: border-color var(--transition-base);
+}
+
+.expandable:hover {
+  border-color: var(--color-primary);
+}
+
+.expandableHeader {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--color-surface);
+  border: none;
+  cursor: pointer;
+  transition: background-color var(--transition-base);
+  text-align: left;
+}
+
+.expandableHeader:hover {
+  background: var(--color-background-card);
+}
+
+.expandableHeader:focus {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+
+.expandableTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
+}
+
+.expandableIcon {
+  font-size: var(--font-size-lg);
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.expandableChevron {
+  font-size: var(--font-size-lg);
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+  transition: transform var(--transition-base);
+}
+
+.expandableContent {
+  padding: var(--spacing-lg);
+  background: var(--color-background);
+  border-top: 1px solid var(--color-border);
+}
+
+.expandableContent :global(.form-field) {
+  margin-bottom: var(--spacing-md);
+}
+
+.expandableContent :global(.form-field:last-of-type) {
+  margin-bottom: var(--spacing-lg);
+}
+
+.updateButton {
+  margin-top: var(--spacing-sm);
+}
+
+/* Dark mode adjustments for expandable sections and user-info */
+:global([data-theme="dark"]) .expandableHeader {
+  background: var(--color-background-card);
+}
+
+:global([data-theme="dark"]) .expandableHeader:hover {
+  background: var(--color-gray-700);
+}
+
+:global([data-theme="dark"]) .expandableContent {
+  background: var(--color-background);
+}
+
+:global([data-theme="dark"]) .userInfoCard {
+  background: var(--color-background-card);
+}
+
+/* Delete/leave/create family modals – narrow content */
+.deleteFamilyContent {
+  max-width: 440px;
+}
+
+.deleteFamilyAlert {
+  color: var(--color-danger);
+  font-size: 1rem;
+  margin: 0 0 var(--spacing-md);
+  line-height: 1.5;
+}
+
+.deleteFamilyInstruction {
+  color: var(--color-text-secondary);
+  font-size: 0.9375rem;
+  margin: 0 0 var(--spacing-md);
+  line-height: 1.5;
+}
+
+.deleteFamilyInput {
+  width: 100%;
+  margin-top: var(--spacing-xs);
+}
+
+/* Family tab – management list, family card, sections, invite form, members/invites lists */
+.familySettingsPage {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-md) var(--spacing-xl);
+}
+
+.familySettingsPageSubtitle {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-lg);
+}
+
+.familyManagementList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xl);
+}
+
+.familyManagementFamilyCard {
+  overflow: visible;
+}
+
+.familyManagementFamilyCard :global([data-card-content]) {
+  padding: 0;
+}
+
+.familyManagementFamilyHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-bottom: 2px solid var(--color-primary);
+  background: var(--color-surface);
+}
+
+.familyManagementFamilyName {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1.3;
+}
+
+.familyManagementFamilyHeader > *:last-child {
+  flex-shrink: 0;
+}
+
+.familyManagementFamilyBody {
+  padding: var(--spacing-lg) var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.familyManagementFamilyBody > .familyManagementSection {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.familyManagementSection {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.familyManagementSectionTitle {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-sm) 0;
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 2px solid var(--color-primary);
+  display: inline-block;
+  width: fit-content;
+}
+
+.familyManagementSectionContent {
+  margin-top: var(--spacing-xs);
+}
+
+.familySettingsMembersList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.familySettingsInviteForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--spacing-md);
+  margin-bottom: 0;
+}
+
+.familySettingsInviteForm :global(.form-field) {
+  margin-bottom: 0;
+}
+
+.familySettingsInviteHelper {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  margin-top: var(--spacing-md);
+  line-height: 1.4;
+}
+
+.familySettingsInviteLinkBox {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.familySettingsInviteLinkLabel {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-sm);
+  display: block;
+}
+
+.familySettingsInviteLinkActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+}
+
+.familySettingsInviteLinkCode {
+  font-size: 0.8125rem;
+  font-family: ui-monospace, monospace;
+  word-break: break-all;
+  color: var(--color-text-primary);
+  line-height: 1.5;
+}
+
+.familySettingsInvitesList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.familySettingsEmpty {
+  text-align: center;
+  padding: var(--spacing-xl) var(--spacing-lg);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.familySettingsLoading {
+  padding: var(--spacing-lg) var(--spacing-lg);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+/* Family Members tab: list, cards, add child/add family */
+.familyMembersTab {
+  /* wrapper for tab content */
+}
+
+.familyMembersByFamily {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.familyMembersFamilyCard {
+  margin-bottom: 0;
+}
+
+.familyMembersKidsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+}
+
+.familyCard {
+  padding: var(--spacing-lg);
+}
+
+.familyContent {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.familyAvatar {
+  flex-shrink: 0;
+}
+
+.familyAvatarImg {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: var(--shadow-sm);
+}
+
+.familyInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.familyName {
+  margin: 0 0 var(--spacing-xs) 0;
+  font-size: 1.25rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+}
+
+.familyDetails {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.familyActions {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+.familyAddLink {
+  text-decoration: none;
+  color: inherit;
+}
+
+.familyAddFamilyButton {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+}
+
+.familyAddFamilyButton:hover:not(:disabled) .familyAddCard,
+.familyAddFamilyButton:focus-visible .familyAddCard {
+  border-color: var(--color-primary);
+  background-color: var(--color-surface);
+}
+
+.familyAddFamilyButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.familyAddFamilyButton .familyAddCard {
+  width: 100%;
+}
+
+.familyAddCard {
+  border: 2px dashed var(--color-border);
+  background-color: transparent;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.familyAddCard:hover {
+  border-color: var(--color-primary);
+  background-color: var(--color-surface);
+  transform: translateY(-2px);
+  box-shadow: var(--elevation-2);
+}
+
+.familyAddAvatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px dashed var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: var(--color-text-secondary);
+  background-color: var(--color-surface);
+  transition: all 0.2s;
+}
+
+.familyAddCard:hover .familyAddAvatar {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background-color: var(--color-primary-light);
+}

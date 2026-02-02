@@ -1,0 +1,97 @@
+/* Notification – toast notification; tokens in styles/tokens.css */
+
+.root {
+  position: fixed;
+  top: var(--spacing-lg);
+  right: var(--spacing-lg);
+  background-color: var(--color-background);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  max-width: 25rem;
+  z-index: var(--z-dropdown);
+  animation: slideIn var(--transition-slow) ease-out;
+  border-left: var(--spacing-sm) solid;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.success {
+  border-left-color: var(--color-success);
+}
+
+.error {
+  border-left-color: var(--color-danger);
+}
+
+.info {
+  border-left-color: var(--color-primary);
+}
+
+.content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.icon {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+}
+
+.root.success .icon {
+  color: var(--color-success);
+}
+
+.root.error .icon {
+  color: var(--color-danger);
+}
+
+.root.info .icon {
+  color: var(--color-primary);
+}
+
+.message {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+.close {
+  background: none;
+  border: none;
+  font-size: var(--font-size-2xl);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 0;
+  width: var(--spacing-2xl);
+  height: var(--spacing-2xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition-base);
+}
+
+.close:hover {
+  color: var(--color-text-primary);
+}
+
+@media (max-width: 768px) {
+  .root {
+    left: var(--spacing-md);
+    right: var(--spacing-md);
+    max-width: none;
+  }
+}

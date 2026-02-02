@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { HiPencil, HiTrash, HiDownload } from 'react-icons/hi';
 import type { VisitAttachment } from '../types/api';
 import { visitsApi } from '../lib/api-client';
+import fu from './FileUpload.module.css';
 
 interface VisitAttachmentsListProps {
   attachments: VisitAttachment[];
@@ -95,23 +96,23 @@ function VisitAttachmentsList({ attachments, onDelete, readOnly = false, onUpdat
   };
 
   if (attachments.length === 0) {
-    return <div className="attachments-empty">No attachments</div>;
+    return <div className={fu.attachmentsEmpty}>No attachments</div>;
   }
 
   return (
-    <div className="attachments-list-compact">
+    <div className={fu.attachmentsListCompact}>
       {attachments.map((attachment) => {
         const isImage = attachment.file_type.startsWith('image/');
         const imageUrl = isImage ? visitsApi.getAttachmentDownloadUrl(attachment.id) : null;
         
         return (
-        <div key={attachment.id} className="attachment-item-compact">
+        <div key={attachment.id} className={fu.attachmentItemCompact}>
           {isImage && imageUrl ? (
-            <div className="attachment-image-preview">
+            <div className={fu.attachmentImagePreview}>
               <img 
                 src={imageUrl} 
                 alt={attachment.original_filename}
-                className="attachment-preview-img"
+                className={fu.attachmentPreviewImg}
                 onError={(e) => {
                   // Fallback to icon if image fails to load
                   const target = e.target as HTMLImageElement;
@@ -119,7 +120,7 @@ function VisitAttachmentsList({ attachments, onDelete, readOnly = false, onUpdat
                   const parent = target.parentElement;
                   if (parent) {
                     const iconDiv = document.createElement('div');
-                    iconDiv.className = 'attachment-icon-compact';
+                    iconDiv.className = fu.attachmentIconCompact;
                     iconDiv.textContent = getFileIcon(attachment.file_type);
                     parent.appendChild(iconDiv);
                   }
@@ -127,16 +128,16 @@ function VisitAttachmentsList({ attachments, onDelete, readOnly = false, onUpdat
               />
             </div>
           ) : (
-            <div className="attachment-icon-compact">{getFileIcon(attachment.file_type)}</div>
+            <div className={fu.attachmentIconCompact}>{getFileIcon(attachment.file_type)}</div>
           )}
           
           {editingId === attachment.id ? (
-            <div className="attachment-edit-form">
+            <div className={fu.attachmentEditForm}>
               <input
                 type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="attachment-edit-input"
+                className={fu.attachmentEditInput}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     handleEditSave(attachment.id);
@@ -149,7 +150,7 @@ function VisitAttachmentsList({ attachments, onDelete, readOnly = false, onUpdat
               <button
                 type="button"
                 onClick={() => handleEditSave(attachment.id)}
-                className="btn-icon-small"
+                className={fu.btnIconSmall}
                 title="Save"
               >
                 ✓
@@ -157,7 +158,7 @@ function VisitAttachmentsList({ attachments, onDelete, readOnly = false, onUpdat
               <button
                 type="button"
                 onClick={handleEditCancel}
-                className="btn-icon-small"
+                className={fu.btnIconSmall}
                 title="Cancel"
               >
                 ✕
@@ -165,26 +166,26 @@ function VisitAttachmentsList({ attachments, onDelete, readOnly = false, onUpdat
             </div>
           ) : (
             <>
-              <div className="attachment-info-compact">
+              <div className={fu.attachmentInfoCompact}>
                 <button
                   type="button"
                   onClick={() => handleClick(attachment.id)}
-                  className="attachment-filename-link-compact"
+                  className={fu.attachmentFilenameLinkCompact}
                   title="Click to open document"
                 >
                   {attachment.original_filename}
                 </button>
-                <div className="attachment-meta-compact">
+                <div className={fu.attachmentMetaCompact}>
                   {formatFileSize(attachment.file_size)} • {new Date(attachment.created_at).toLocaleDateString()}
                 </div>
               </div>
 
               {!readOnly && (
-                <div className="attachment-actions-compact">
+                <div className={fu.attachmentActionsCompact}>
                   <button
                     type="button"
                     onClick={() => handleDownload(attachment.id, attachment.original_filename)}
-                    className="btn-icon-small"
+                    className={fu.btnIconSmall}
                     title="Download"
                   >
                     <HiDownload />
@@ -192,7 +193,7 @@ function VisitAttachmentsList({ attachments, onDelete, readOnly = false, onUpdat
                   <button
                     type="button"
                     onClick={() => handleEditStart(attachment)}
-                    className="btn-icon-small"
+                    className={fu.btnIconSmall}
                     title="Rename"
                   >
                     <HiPencil />
@@ -201,7 +202,7 @@ function VisitAttachmentsList({ attachments, onDelete, readOnly = false, onUpdat
                     type="button"
                     onClick={() => handleDelete(attachment.id)}
                     disabled={deletingId === attachment.id}
-                    className="btn-icon-small btn-danger"
+                    className={`${fu.btnIconSmall} ${fu.btnIconSmallDanger}`}
                     title="Delete"
                   >
                     {deletingId === attachment.id ? '⏳' : <HiTrash />}

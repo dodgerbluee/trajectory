@@ -13,6 +13,9 @@ import { getDefaultSectionsForVisitType } from '../visit-form/visitTypeDefaults'
 import { getSectionById } from '../visit-form/sectionRegistry';
 import { SectionWrapper } from '../visit-form/SectionWrapper';
 import { VisitFormSidebar } from '../visit-form/VisitFormSidebar';
+import layoutStyles from '../styles/visit-detail-layout.module.css';
+import pageLayout from '../styles/page-layout.module.css';
+import formLayout from '../styles/VisitFormLayout.module.css';
 
 
 
@@ -342,7 +345,7 @@ function AddVisitPage() {
 
   if (children.length === 0) {
     return (
-      <div className="page-container">
+      <div className={pageLayout.pageContainer}>
         <Card>
           <p className="empty-state">
             No children added yet. <Link to="/children/new">Add a child</Link> first to create visits.
@@ -370,7 +373,7 @@ function AddVisitPage() {
   };
 
   return (
-    <div className="page-container">
+    <div className={pageLayout.pageContainer}>
       {notification && (
         <Notification
           message={notification.message}
@@ -381,11 +384,11 @@ function AddVisitPage() {
 
       <form onSubmit={handleSubmit}>
         <Card>
-          <div className="visit-form-page visit-form-layout-grid has-date-banner">
-            <div className="visit-form-back-row">
+          <div className={`${formLayout.root} ${formLayout.hasDateBanner}`}>
+            <div className={formLayout.backRow}>
               <Link
                 to={selectedChildId ? `/children/${selectedChildId}` : '/'}
-                className="breadcrumb visit-form-back"
+                className={`${pageLayout.breadcrumb} ${formLayout.backLink}`}
               >
                 ← Back to {childName}
               </Link>
@@ -407,8 +410,8 @@ function AddVisitPage() {
                 onUseFullForm={isDateFuture ? () => setUserChoseFullForm(true) : undefined}
               />
             </div>
-            <div className="visit-form-top-row">
-              <h2 className="visit-header-title">
+            <div className={formLayout.topRow}>
+              <h2 className={`${layoutStyles.headerTitle} ${formLayout.headerTitle}`}>
                 Add {formData.visit_type === 'wellness' ? 'Wellness' :
                   formData.visit_type === 'sick' ? 'Sick' :
                     formData.visit_type === 'injury' ? 'Injury' :
@@ -416,13 +419,13 @@ function AddVisitPage() {
                         formData.visit_type === 'dental' ? 'Dental' : 'Visit'} Visit
               </h2>
             </div>
-            <div className="visit-form-date-banner" role="status">
+            <div className={formLayout.dateBanner} role="status">
               {noDateYet ? (
                 <>
                   <strong>How it works:</strong> The form depends on the date you enter.<br />
-                  <div className="visit-form-date-banner-bullets">
-                    <div className="visit-form-date-banner-bullet">• A <strong>visit</strong> is a past or current date and shows the full form (measurements, illness, vaccines, etc.).</div>
-                    <div className="visit-form-date-banner-bullet">• A <strong>scheduled visit</strong> is a future date and shows a limited form (details and notes only).</div>
+                  <div className={formLayout.dateBannerBullets}>
+                    <div className={formLayout.dateBannerBullet}>• A <strong>visit</strong> is a past or current date and shows the full form (measurements, illness, vaccines, etc.).</div>
+                    <div className={formLayout.dateBannerBullet}>• A <strong>scheduled visit</strong> is a future date and shows a limited form (details and notes only).</div>
                   </div>
                   Enter a visit date to continue.
                 </>
@@ -436,7 +439,7 @@ function AddVisitPage() {
                 </>
               )}
             </div>
-            <div className="visit-form-body-cell visit-detail-body">
+            <div className={`${formLayout.bodyCell} ${layoutStyles.detailBody}`}>
               {(() => {
                 type SectionId = import('../visit-form/sectionRegistry').SectionId;
                 const sectionsToRender: { sectionId: SectionId; entry: NonNullable<ReturnType<typeof getSectionById>> }[] = [];

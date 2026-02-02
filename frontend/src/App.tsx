@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { AdminRoute } from './components/AdminRoute';
 import { HomeTabRequestProvider } from './contexts/HomeTabRequestContext';
 import { FamilyPermissionsProvider } from './contexts/FamilyPermissionsContext';
 import { OnboardingProvider } from './contexts/OnboardingContext';
@@ -15,6 +16,7 @@ import AddVisitPage from './pages/AddVisitPage';
 import EditVisitPage from './pages/EditVisitPage';
 import VisitDetailPage from './pages/VisitDetailPage';
 import SettingsPage from './pages/SettingsPage';
+import AdminPage from './pages/AdminPage';
 import InviteAcceptPage from './pages/InviteAcceptPage';
 import WelcomePage from './pages/WelcomePage';
 import AddIllnessPage from './pages/AddIllnessPage';
@@ -30,6 +32,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/invite" element={<InviteAcceptPage />} />
+        <Route path="/forgot-password" element={<Navigate to="/login" replace />} />
         
         {/* Protected routes */}
         <Route
@@ -58,6 +61,7 @@ function App() {
                           <Route path="/illnesses/:id/edit" element={<EditIllnessPage />} />
                           <Route path="/family" element={<Navigate to="/settings" replace state={{ tab: 'family', familySubTab: 'members' }} />} />
                           <Route path="/settings" element={<SettingsPage />} />
+                          <Route path="/admin/*" element={<AdminRoute><AdminPage /></AdminRoute>} />
                           <Route path="*" element={<NotFoundPage />} />
                         </Routes>
                       </Layout>

@@ -1,0 +1,181 @@
+/* Visit type icons: stroke/fill normalization and per-type overrides.
+   Shared by VisitTypeModal, VisitCard, IllnessCard, ChildDetailPage. */
+
+/* Base wrapper (timeline/list size) */
+.iconOutline {
+  width: 30px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  color: var(--color-visit-accent);
+  background: transparent;
+  transition: box-shadow 160ms var(--transition-base);
+  --icon-stroke: var(--icon-stroke-default);
+}
+
+.iconOutline .typeSvg,
+.iconOutline .typeSvg svg {
+  stroke: currentColor;
+}
+
+.iconOutline .typeSvg:not(.typeSvgFilled),
+.iconOutline .typeSvg:not(.typeSvgFilled) svg,
+.iconOutline .typeSvg:not(.typeSvgFilled) svg path,
+.iconOutline .typeSvg:not(.typeSvgFilled) svg g {
+  stroke: currentColor !important;
+  stroke-width: var(--icon-stroke) !important;
+  fill: none !important;
+  vector-effect: non-scaling-stroke !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+.typeSvgFilled,
+.typeSvgFilled svg,
+.typeSvgFilled svg path {
+  fill: currentColor !important;
+  stroke: none !important;
+}
+
+.iconOutline .typeSvg svg {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.iconOutline .typeSvg {
+  width: 20px;
+  height: 20px;
+  transform: translateY(var(--icon-optical-offset, 0));
+}
+
+/* Modal: larger icon */
+.typeIcon .iconOutline {
+  width: 80px;
+  height: 80px;
+  --icon-stroke: var(--icon-stroke-modal);
+}
+
+.typeIcon .iconOutline .typeSvg {
+  width: 60px;
+  height: 60px;
+}
+
+.typeIcon .iconOutline .typeSvg svg {
+  stroke-width: 1.25px;
+}
+
+/* Per-type colors */
+.iconWellness { color: var(--color-success); }
+.iconSick { color: var(--color-danger); }
+.iconInjury { color: var(--color-visit-accent); }
+.iconVision { color: var(--color-vision); }
+.iconDental { color: var(--color-dental); }
+.iconIllness { color: var(--color-warning); }
+
+:global([data-theme="dark"]) .iconOutline {
+  color: var(--color-visit-accent-2);
+}
+
+:global([data-theme="dark"]) .iconWellness { color: var(--color-success); }
+:global([data-theme="dark"]) .iconSick { color: var(--color-danger); }
+:global([data-theme="dark"]) .iconInjury { color: var(--color-visit-accent); }
+:global([data-theme="dark"]) .iconVision { color: var(--color-vision); }
+:global([data-theme="dark"]) .iconDental { color: var(--color-dental); }
+:global([data-theme="dark"]) .iconIllness { color: var(--color-warning); }
+
+/* Sick: no fill, special stroke */
+.iconSick { --icon-stroke: var(--icon-stroke-sick); }
+.iconSick { --icon-optical-offset: -2px; }
+.iconInjury { --icon-optical-offset: 1px; }
+
+.iconOutline.iconSick {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 9999px;
+  padding: 0;
+}
+
+.iconOutline.iconSick .typeSvg {
+  display: inline-block;
+}
+
+.iconOutline.iconSick,
+.iconOutline.iconSick .typeSvg,
+.iconOutline.iconSick svg,
+.iconOutline.iconSick svg * {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  fill: none !important;
+}
+
+.typeIcon .iconOutline.iconSick .typeSvg svg {
+  stroke-width: 1px;
+}
+
+.iconSick .typeSvg.typeSvgFilled,
+.iconSick .typeSvg.typeSvgFilled svg {
+  fill: currentColor;
+  stroke: none;
+}
+
+/* Wellness / injury stroke */
+.iconWellness .typeSvg,
+.iconWellness .typeSvg svg,
+.iconInjury .typeSvg,
+.iconInjury .typeSvg svg {
+  stroke: currentColor;
+  fill: none;
+}
+
+/* Illness stroke */
+.iconIllness .typeSvg svg,
+.iconIllness .typeSvg svg path {
+  stroke-width: 0.95px !important;
+  stroke: currentColor !important;
+  fill: none !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  vector-effect: non-scaling-stroke !important;
+}
+
+/* Vision / dental */
+.iconVision .typeSvg,
+.iconVision .typeSvg svg,
+.iconDental .typeSvg,
+.iconDental .typeSvg svg {
+  stroke: currentColor;
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.iconWellness .typeSvg,
+.iconWellness .typeSvg svg,
+.iconInjury .typeSvg,
+.iconInjury .typeSvg svg {
+  vector-effect: non-scaling-stroke;
+}
+
+/* Injury: slightly smaller SVG */
+.iconInjury .typeSvg,
+.iconInjury .typeSvg svg {
+  width: 22px;
+  height: 22px;
+  transform: scale(0.95);
+}
+
+.iconInjury .typeSvg.typeSvgFilled svg path,
+.iconInjury .typeSvg.typeSvgFilled svg g {
+  fill: currentColor !important;
+  stroke: none !important;
+}
+
+.typeIcon .iconOutline.iconInjury .typeSvg,
+.typeIcon .iconOutline.iconInjury .typeSvg svg {
+  width: 68px;
+  height: 68px;
+  display: inline-block;
+  transform: translateY(var(--icon-optical-offset, 0)) scale(0.92);
+}
+

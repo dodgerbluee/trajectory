@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Card from '../Card';
 import Button from '../Button';
 import type { FamilyMember } from '../../types/api';
+import styles from './FamilyOverviewCard.module.css';
 
 interface FamilyOverviewCardProps {
   familyName: string;
@@ -124,7 +125,7 @@ function FamilyOverviewCard({
 
   if (noCard) return content;
   return (
-    <Card className="family-settings-card family-settings-card--overview">
+    <Card className={`${styles.card} ${styles.cardOverview}`}>
       {content}
     </Card>
   );

@@ -5,6 +5,8 @@ import { LuPaperclip, LuActivity, LuHeart, LuPill, LuEye } from 'react-icons/lu'
 import { MdOutlinePersonalInjury } from 'react-icons/md';
 import type { Visit } from '../types/api';
 import { formatDate } from '../lib/date-utils';
+import t from './TimelineItem.module.css';
+import vi from '../styles/VisitIcons.module.css';
 
 interface VisitCardProps {
     visit: Visit;
@@ -28,13 +30,14 @@ function VisitCard({ visit, childName, childId, hasAttachments }: VisitCardProps
         }
     })();
 
+    const iconTypeClass = visit.visit_type === 'wellness' ? vi.iconWellness : visit.visit_type === 'sick' ? vi.iconSick : visit.visit_type === 'injury' ? vi.iconInjury : visit.visit_type === 'vision' ? vi.iconVision : visit.visit_type === 'dental' ? vi.iconDental : vi.iconWellness;
     const Icon = () => {
-        if (visit.visit_type === 'wellness') return <LuHeart className="visit-type-svg" />;
-        if (visit.visit_type === 'sick') return <LuPill className="visit-type-svg" />;
-        if (visit.visit_type === 'injury') return <MdOutlinePersonalInjury className="visit-type-svg visit-type-svg--filled" />;
-        if (visit.visit_type === 'vision') return <LuEye className="visit-type-svg" />;
-        if (visit.visit_type === 'dental') return <HugeiconsIcon icon={DentalToothIcon} className="visit-type-svg" size={24} color="currentColor" />;
-        return <LuActivity className="visit-type-svg" />;
+        if (visit.visit_type === 'wellness') return <LuHeart className={vi.typeSvg} />;
+        if (visit.visit_type === 'sick') return <LuPill className={vi.typeSvg} />;
+        if (visit.visit_type === 'injury') return <MdOutlinePersonalInjury className={`${vi.typeSvg} ${vi.typeSvgFilled}`} />;
+        if (visit.visit_type === 'vision') return <LuEye className={vi.typeSvg} />;
+        if (visit.visit_type === 'dental') return <HugeiconsIcon icon={DentalToothIcon} className={vi.typeSvg} size={24} color="currentColor" />;
+        return <LuActivity className={vi.typeSvg} />;
     };
 
     const badges: Array<{ key: string; label: string }> = [];
@@ -91,37 +94,37 @@ function VisitCard({ visit, childName, childId, hasAttachments }: VisitCardProps
     }
 
     return (
-        <Link to={url} state={linkState} className="timeline-item-link">
-            <div className="timeline-item-modern">
-                <div className="timeline-item-icon">
-                    <div className={`visit-icon-outline visit-icon--${visit.visit_type}`} aria-hidden="true">
+        <Link to={url} state={linkState} className={t.link}>
+            <div className={t.item}>
+                <div className={t.icon}>
+                    <div className={`${vi.iconOutline} ${iconTypeClass}`} aria-hidden="true">
                         <Icon />
                     </div>
                 </div>
 
-                <div className="timeline-item-content">
-                    <div className="timeline-item-header-compact">
-                        <div className="timeline-item-main">
-                            <div className="timeline-item-label-row">
-                                <span className="timeline-item-label-compact">{label}</span>
-                                <div className="wellness-badges-group">
+                <div className={t.content}>
+                    <div className={t.headerCompact}>
+                        <div className={t.main}>
+                            <div className={t.labelRow}>
+                                <span className={t.labelCompact}>{label}</span>
+                                <div className={t.badgesGroup}>
                                     {childName && (
-                                        <Link to={childId ? `/children/${childId}` : '#'} className="child-name-badge" onClick={(e) => { if (!childId) e.preventDefault(); else e.stopPropagation(); }}>
+                                        <Link to={childId ? `/children/${childId}` : '#'} className={t.childNameBadge} onClick={(e) => { if (!childId) e.preventDefault(); else e.stopPropagation(); }}>
                                             {childName}
                                         </Link>
                                     )}
                                     {badges.map(b => (
-                                        <span key={b.key} className="timeline-badge">{b.label}</span>
+                                        <span key={b.key} className={t.badge}>{b.label}</span>
                                     ))}
                                     {hasAttachments && (
-                                    <span className="attachment-indicator" title="Has attachments">
-                                        <LuPaperclip className="attachment-icon" aria-hidden="true" />
+                                    <span className={t.attachmentIndicator} title="Has attachments">
+                                        <LuPaperclip className={t.attachmentIcon} aria-hidden="true" />
                                     </span>
                                 )}
                                 </div>
                             </div>
                         </div>
-                        <span className="timeline-item-arrow-compact">→</span>
+                        <span className={t.arrowCompact} aria-hidden>→</span>
                     </div>
                 </div>
             </div>

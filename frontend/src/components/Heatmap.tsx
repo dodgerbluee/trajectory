@@ -5,6 +5,7 @@
 
 import { useMemo } from 'react';
 import type { HeatmapData, HeatmapDay } from '../types/api';
+import styles from './Heatmap.module.css';
 
 interface HeatmapProps {
   data: HeatmapData;
@@ -174,29 +175,29 @@ function Heatmap({ data, onDayClick, isSingleChild = false }: HeatmapProps) {
   };
 
   return (
-    <div className="heatmap-container">
-      <div className="heatmap-grid">
+    <div className={styles.container}>
+      <div className={styles.grid}>
         {/* Day labels - MUST align with the 7 rows of cells */}
-        <div className="heatmap-day-labels">
+        <div className={styles.dayLabels}>
           {dayLabels.map((label, idx) => (
-            <div key={idx} className="heatmap-day-label">
+            <div key={idx} className={styles.dayLabel}>
               {label}
             </div>
           ))}
         </div>
         
         {/* Weeks - Each week column has exactly 7 cells (Sunday=0 to Saturday=6) */}
-        <div className="heatmap-weeks">
+        <div className={styles.weeks}>
           {weeks.map(({ week, days }) => (
-            <div key={week} className="heatmap-week">
+            <div key={week} className={styles.week}>
               {days.map((day) => {
                 // CRITICAL: days array is guaranteed to have 7 elements in order: [Sun, Mon, Tue, Wed, Thu, Fri, Sat]
                 // Render all cells, including empty padding days, to maintain alignment
                 if (!day.date) {
                   return (
-                    <div 
-                      key={`empty-${week}-${day.dayOfWeek}`} 
-                      className="heatmap-cell heatmap-cell-empty"
+                    <div
+                      key={`empty-${week}-${day.dayOfWeek}`}
+                      className={`${styles.cell} ${styles.cellEmpty}`}
                     />
                   );
                 }
@@ -212,7 +213,7 @@ function Heatmap({ data, onDayClick, isSingleChild = false }: HeatmapProps) {
                 return (
                   <div
                     key={day.date}
-                    className="heatmap-cell"
+                    className={styles.cell}
                     style={{ backgroundColor: color }}
                     title={tooltipText}
                     onClick={() => handleDayClick(day.date)}
@@ -225,22 +226,22 @@ function Heatmap({ data, onDayClick, isSingleChild = false }: HeatmapProps) {
       </div>
       
       {/* Legend */}
-      <div className="heatmap-legend">
-        <span className="heatmap-legend-label">Less</span>
-        <div className="heatmap-legend-colors">
+      <div className={styles.legend}>
+        <span className={styles.legendLabel}>Less</span>
+        <div className={styles.legendColors}>
           {[0, 1, 2, 3, 4].map((level) => {
             const mockCount = Math.round((level / 4) * data.maxCount);
             const color = getColorIntensity(mockCount, data.maxCount);
             return (
               <div
                 key={level}
-                className="heatmap-legend-cell"
+                className={styles.legendCell}
                 style={{ backgroundColor: color }}
               />
             );
           })}
         </div>
-        <span className="heatmap-legend-label">More</span>
+        <span className={styles.legendLabel}>More</span>
       </div>
     </div>
   );

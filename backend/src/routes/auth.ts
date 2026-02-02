@@ -287,13 +287,16 @@ authRouter.post(
       [user.id, tokenHash, req.get('user-agent') || null, req.ip]
     );
 
+    const userRow = user as UserRow & { is_instance_admin?: boolean; onboarding_completed?: boolean };
     res.json(
       createResponse({
         user: {
           id: user.id,
           email: user.email,
           username: user.username,
-          onboardingCompleted: (user as { onboarding_completed?: boolean }).onboarding_completed ?? false,
+          onboardingCompleted: userRow.onboarding_completed ?? false,
+          isInstanceAdmin: userRow.is_instance_admin ?? false,
+          createdAt: user.created_at.toISOString(),
         },
         accessToken,
         refreshToken,

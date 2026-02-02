@@ -13,6 +13,8 @@ import IllnessEntryFormFields from '../../components/IllnessEntryFormFields';
 import MeasurementsInput from '../../components/MeasurementsInput';
 import PrescriptionInput from '../../components/PrescriptionInput';
 import FileUpload from '../../components/FileUpload';
+import fileUploadStyles from '../../components/FileUpload.module.css';
+import loadingStyles from '../../components/LoadingSpinner.module.css';
 import VisitAttachmentsList from '../../components/VisitAttachmentsList';
 import Checkbox from '../../components/Checkbox';
 import { VisionRefractionCard } from '../../components/VisionRefractionCard';
@@ -20,6 +22,8 @@ import type { VisionRefraction } from '../../components/VisionRefractionCard';
 import type { SectionId } from '../sectionRegistry';
 import type { VisitFormContext } from '../visitFormContext';
 import { isFutureDate } from '../../lib/date-utils';
+import sectionStyles from './SectionContents.module.css';
+import mui from '../../styles/MeasurementsUI.module.css';
 
 export interface SectionContentPropsWithContext {
   sectionId: SectionId;
@@ -93,8 +97,8 @@ export function VisitInformationSection({ context }: SectionContentPropsWithCont
           <option key={doc} value={doc} />
         ))}
       </datalist>
-      <div className="visit-info-optional">
-        <div className="visit-info-optional-fields">
+      <div className={sectionStyles.optional}>
+        <div className={sectionStyles.optionalFields}>
           {showTitle && (
             <FormField
               label="Title"
@@ -143,7 +147,7 @@ export function AttachmentsSection({ context }: SectionContentPropsWithContext) 
     return (
       <>
         {loadingAttachments ? (
-          <div className="attachments-loading">Loading attachments...</div>
+          <div className={loadingStyles.attachmentLoading}>Loading attachments...</div>
         ) : attachments.length > 0 ? (
           <VisitAttachmentsList
             attachments={attachments}
@@ -164,23 +168,23 @@ export function AttachmentsSection({ context }: SectionContentPropsWithContext) 
   return (
     <>
       {pendingFiles.length > 0 && (
-        <div className="pending-attachments">
+        <div className={fileUploadStyles.pendingAttachments}>
           <h4 style={{ marginBottom: 'var(--spacing-sm)' }}>Pending Attachments ({pendingFiles.length})</h4>
-          <ul className="attachments-list">
+          <ul className={fileUploadStyles.attachmentsList}>
             {pendingFiles.map((file, index) => (
-              <li key={index} className="attachment-item">
-                <span className="attachment-icon">
+              <li key={index} className={fileUploadStyles.attachmentItem}>
+                <span className={fileUploadStyles.attachmentIcon}>
                   {file.type.startsWith('image/') ? '🖼️' : file.type === 'application/pdf' ? '📄' : '📎'}
                 </span>
-                <span className="attachment-info">
-                  <span className="attachment-filename">{file.name}</span>
-                  <span className="attachment-meta">{(file.size / 1024).toFixed(1)} KB</span>
+                <span className={fileUploadStyles.attachmentInfo}>
+                  <span className={fileUploadStyles.attachmentFilename}>{file.name}</span>
+                  <span className={fileUploadStyles.attachmentMeta}>{(file.size / 1024).toFixed(1)} KB</span>
                 </span>
                 <button
                   type="button"
                   onClick={() => handleRemoveFile(index)}
                   disabled={submitting}
-                  className="btn-delete-attachment"
+                  className={fileUploadStyles.btnDeleteAttachment}
                   title="Remove file"
                 >
                   ✕
@@ -273,7 +277,7 @@ export function InjurySection({ context }: SectionContentPropsWithContext) {
   const setForm = setFormData as React.Dispatch<React.SetStateAction<any>>;
   return (
     <>
-      <div className="form-row">
+      <div className={sectionStyles.formRow}>
         <FormField
           label="Injury Type"
           type="text"
@@ -310,15 +314,15 @@ export function VisionSection({ context }: SectionContentPropsWithContext) {
   const setForm = setFormData as React.Dispatch<React.SetStateAction<any>>;
   const fd = formData as any;
   return (
-    <div className="measurements-ui vision-ui">
-      <div className="measurements-cards vision-refraction-cards">
+    <div className={`${mui.root} ${mui.visionUi}`}>
+      <div className={`${mui.cards} ${mui.visionRefractionCards}`}>
         <VisionRefractionCard
           value={fd.vision_refraction}
           onChange={(v: VisionRefraction) => setForm((prev: any) => ({ ...prev, vision_refraction: v }))}
           readOnly={submitting}
         />
       </div>
-      <div className="vision-checkboxes">
+      <div className={mui.visionCheckboxes}>
         <Checkbox
           label="Ordered Glasses"
           checked={fd.ordered_glasses || false}

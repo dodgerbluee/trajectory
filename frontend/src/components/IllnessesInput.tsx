@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, type MouseEvent as ReactMouseEvent } from 'react';
 import { HiX } from 'react-icons/hi';
 import type { IllnessType } from '../types/api';
+import styles from './IllnessesInput.module.css';
+import mui from '../styles/MeasurementsUI.module.css';
 
 interface IllnessesInputProps {
     value: IllnessType[];
@@ -66,19 +68,19 @@ function IllnessesInput({ value, onChange, disabled }: IllnessesInputProps) {
     const filtered = COMMON_ILLNESSES.filter(i => i.label.toLowerCase().includes(search.toLowerCase()));
 
     return (
-        <div className="illnesses-input-modern" ref={outerRef}>
+        <div className={styles.root} ref={outerRef}>
             {value.length > 0 ? (
-                <div className="illnesses-badges-wrap">
-                    <div className="vaccine-badges-list">
+                <div className={styles.badgesWrap}>
+                    <div className={styles.badgesList}>
                         {value.map((v) => (
-                            <span key={v} className="vaccine-badge-item">
-                                <span className="vaccine-badge-icon">🤒</span>
-                                <span className="vaccine-badge-text">{titleCase(v)}</span>
+                            <span key={v} className={styles.badgeItem}>
+                                <span className={styles.badgeIcon}>🤒</span>
+                                <span className={styles.badgeText}>{titleCase(v)}</span>
                                 {!disabled && (
                                     <button
                                         type="button"
                                         onClick={() => handleRemove(v)}
-                                        className="vaccine-badge-remove"
+                                        className={styles.badgeRemove}
                                         title="Remove illness"
                                     >
                                         <HiX />
@@ -91,85 +93,85 @@ function IllnessesInput({ value, onChange, disabled }: IllnessesInputProps) {
                         type="button"
                         onClick={() => setOpen(true)}
                         disabled={disabled}
-                        className="measurement-card-add"
+                        className={mui.cardAdd}
                         title="Add Illness"
                     >
-                        <span className="measurement-card-icon" aria-hidden>🤒</span>
-                        <span className="measurement-card-add-label">Add Illness</span>
+                        <span className={mui.cardIcon} aria-hidden>🤒</span>
+                        <span className={mui.cardAddLabel}>Add Illness</span>
                     </button>
                 </div>
             ) : (
-                <div className="vaccine-empty">
+                <div className={styles.empty}>
                     <button
                         type="button"
                         onClick={() => setOpen(true)}
                         disabled={disabled}
-                        className="measurement-card-add"
+                        className={mui.cardAdd}
                         title="Add Illness"
                     >
-                        <span className="measurement-card-icon" aria-hidden>🤒</span>
-                        <span className="measurement-card-add-label">Add Illness</span>
+                        <span className={mui.cardIcon} aria-hidden>🤒</span>
+                        <span className={mui.cardAddLabel}>Add Illness</span>
                     </button>
                 </div>
             )}
             {open && (
-                <div className="vaccine-modal-overlay">
-                    <div className="vaccine-modal-content" ref={modalRef}>
-                        <div className="vaccine-modal-header">
-                            <h3 className="vaccine-modal-title">Select Illness</h3>
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modalContent} ref={modalRef}>
+                        <div className={styles.modalHeader}>
+                            <h3 className={styles.modalTitle}>Select Illness</h3>
                             <button
                                 type="button"
                                 onClick={() => setOpen(false)}
-                                className="vaccine-modal-close"
+                                className={styles.modalClose}
                                 title="Close"
                             >
                                 <HiX />
                             </button>
                         </div>
 
-                        <div className="vaccine-modal-body">
-                            <div className="vaccine-search">
+                        <div className={styles.modalBody}>
+                            <div className={styles.search}>
                                 <input
                                     type="text"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     placeholder="Search illnesses..."
-                                    className="vaccine-search-input"
+                                    className={styles.searchInput}
                                     autoFocus
                                 />
                             </div>
 
-                            <div className="vaccine-list">
+                            <div className={styles.list}>
                                 {filtered.length === 0 ? (
-                                    <p className="vaccine-list-empty">No illnesses found matching "{search}"</p>
+                                    <p className={styles.listEmpty}>No illnesses found matching "{search}"</p>
                                 ) : (
                                     filtered.map((ill) => (
-                                        <label key={ill.value} className="vaccine-checkbox-item">
+                                        <label key={ill.value} className={styles.checkboxItem}>
                                             <input
                                                 type="checkbox"
                                                 checked={selectedLocal.includes(ill.value)}
                                                 onChange={() => toggle(ill.value)}
-                                                className="vaccine-checkbox"
+                                                className={styles.checkbox}
                                             />
-                                            <span className="vaccine-checkbox-label">{ill.label}</span>
+                                            <span className={styles.checkboxLabel}>{ill.label}</span>
                                         </label>
                                     ))
                                 )}
                             </div>
                         </div>
 
-                        <div className="vaccine-modal-footer">
+                        <div className={styles.modalFooter}>
                             <button
                                 type="button"
                                 onClick={() => setOpen(false)}
-                                className="vaccine-modal-button vaccine-modal-button-cancel"
+                                className={`${styles.modalButton} ${styles.modalButtonCancel}`}
                             >
                                 Cancel
                             </button>
                             <button
                                 type="button"
                                 onClick={handleSave}
-                                className="vaccine-modal-button vaccine-modal-button-save"
+                                className={`${styles.modalButton} ${styles.modalButtonSave}`}
                             >
                                 Save ({selectedLocal.length})
                             </button>

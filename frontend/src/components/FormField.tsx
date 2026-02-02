@@ -1,4 +1,5 @@
 import { InputHTMLAttributes, TextareaHTMLAttributes } from 'react';
+import styles from './FormField.module.css';
 
 interface BaseFieldProps {
   label?: string;
@@ -35,20 +36,22 @@ type FormFieldProps = InputFieldProps | TextareaFieldProps | SelectFieldProps;
 
 function FormField({ label, error, required, type = 'text', ...props }: FormFieldProps) {
   const inputId = props.id || (label ? `field-${label.toLowerCase().replace(/\s+/g, '-')}` : `field-${Math.random().toString(36).substr(2, 9)}`);
-  
+  const inputClass = [styles.input, 'form-input', error && 'error'].filter(Boolean).join(' ');
+  const textareaClass = [styles.textarea, 'form-textarea', error && 'error'].filter(Boolean).join(' ');
+
   return (
-    <div className="form-field">
+    <div className={`${styles.root} form-field`}>
       {label && (
-        <label htmlFor={inputId} className="form-label">
+        <label htmlFor={inputId} className={`${styles.label} form-label`}>
           {label}
-          {required && <span className="required-indicator">*</span>}
+          {required && <span className={styles.requiredIndicator}>*</span>}
         </label>
       )}
-      
+
       {type === 'select' ? (
         <select
           id={inputId}
-          className={`form-input ${error ? 'error' : ''}`}
+          className={inputClass}
           value={(props as SelectFieldProps).value}
           onChange={(props as SelectFieldProps).onChange}
           disabled={(props as SelectFieldProps).disabled}
@@ -63,19 +66,19 @@ function FormField({ label, error, required, type = 'text', ...props }: FormFiel
       ) : type === 'textarea' ? (
         <textarea
           id={inputId}
-          className={`form-textarea ${error ? 'error' : ''}`}
+          className={textareaClass}
           {...(props as TextareaHTMLAttributes<HTMLTextAreaElement>)}
         />
       ) : (
         <input
           id={inputId}
           type={type}
-          className={`form-input ${error ? 'error' : ''}`}
+          className={inputClass}
           {...(props as InputHTMLAttributes<HTMLInputElement>)}
         />
       )}
-      
-      {error && <span className="form-error">{error}</span>}
+
+      {error && <span className={`${styles.error} form-error`}>{error}</span>}
     </div>
   );
 }

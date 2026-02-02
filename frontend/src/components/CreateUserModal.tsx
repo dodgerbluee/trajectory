@@ -5,6 +5,8 @@ import { authApi, ApiClientError } from '../lib/api-client';
 import FormField from './FormField';
 import Button from './Button';
 import ErrorMessage from './ErrorMessage';
+import modalStyles from './Modal.module.css';
+import styles from './CreateUserModal.module.css';
 
 interface CreateUserModalProps {
   isOpen: boolean;
@@ -194,9 +196,9 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="create-user-modal-title">
-      <div className="modal-content card create-user-modal">
-        <div className="modal-header">
+    <div className={modalStyles.overlay} role="dialog" aria-modal="true" aria-labelledby="create-user-modal-title">
+      <div className={`${modalStyles.content} ${styles.root}`}>
+        <div className={modalStyles.header}>
           <h2 id="create-user-modal-title">
             {step === 'code' || step === 'code-required'
               ? 'Create first account'
@@ -204,27 +206,27 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
           </h2>
           <button
             type="button"
-            className="modal-close"
+            className={modalStyles.close}
             onClick={onClose}
             aria-label="Close"
           >
             ×
           </button>
         </div>
-        <div className="modal-body">
+        <div className={modalStyles.body}>
           {step === 'loading' && (
-            <p className="modal-subtitle">Checking registration…</p>
+            <p className={styles.subtitle}>Checking registration…</p>
           )}
 
           {step === 'code-required' && (
-            <p className="modal-subtitle">
+            <p className={styles.subtitle}>
               No users exist yet. An administrator must generate a registration code first (e.g. from server logs or an admin tool), then you can create the first account.
             </p>
           )}
 
           {step === 'code' && (
-            <form onSubmit={handleVerifyCode} className="create-user-modal-form" noValidate>
-              <p className="modal-subtitle">
+            <form onSubmit={handleVerifyCode} className={styles.form} noValidate>
+              <p className={styles.subtitle}>
                 Enter the registration code to create the first account.
               </p>
               {error && (
@@ -241,7 +243,7 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
                 autoComplete="one-time-code"
                 disabled={loading}
               />
-              <div className="create-user-modal-footer">
+              <div className={styles.footer}>
                 <Button type="button" variant="secondary" onClick={onClose}>
                   Cancel
                 </Button>
@@ -253,7 +255,7 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
           )}
 
           {step === 'form' && (
-            <form onSubmit={handleSubmitForm} className="create-user-modal-form" noValidate>
+            <form onSubmit={handleSubmitForm} className={styles.form} noValidate>
               {error && (
                 <ErrorMessage message={error} onRetry={() => setError(null)} />
               )}
@@ -278,15 +280,15 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
                 autoComplete="email"
                 disabled={loading}
               />
-              <div className="form-field">
-                <label htmlFor="create-user-password" className="form-label">
-                  Password <span className="required-indicator">*</span>
+              <div className={styles.formField}>
+                <label htmlFor="create-user-password" className={styles.label}>
+                  Password <span className={styles.requiredIndicator}>*</span>
                 </label>
-                <div className="password-input-wrapper">
+                <div className={styles.passwordWrapper}>
                   <input
                     id="create-user-password"
                     type={showPassword ? 'text' : 'password'}
-                    className={`form-input ${errors.password ? 'error' : ''}`}
+                    className={errors.password ? `${styles.input} form-input error` : `${styles.input} form-input`}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -295,34 +297,34 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
                   />
                   <button
                     type="button"
-                    className="password-toggle"
+                    className={styles.passwordToggle}
                     onClick={() => setShowPassword(!showPassword)}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                     tabIndex={-1}
                   >
                     {showPassword ? (
-                      <LuEyeOff className="password-toggle-icon" size={20} aria-hidden />
+                      <LuEyeOff size={20} aria-hidden />
                     ) : (
-                      <LuEye className="password-toggle-icon" size={20} aria-hidden />
+                      <LuEye size={20} aria-hidden />
                     )}
                   </button>
                 </div>
                 {errors.password && (
-                  <span className="form-error">{errors.password}</span>
+                  <span className={styles.error}>{errors.password}</span>
                 )}
-                <div className="form-hint">
+                <div className={styles.hint}>
                   At least 8 characters with uppercase, lowercase, number, and special character
                 </div>
               </div>
-              <div className="form-field">
-                <label htmlFor="create-user-confirm" className="form-label">
-                  Confirm password <span className="required-indicator">*</span>
+              <div className={styles.formField}>
+                <label htmlFor="create-user-confirm" className={styles.label}>
+                  Confirm password <span className={styles.requiredIndicator}>*</span>
                 </label>
-                <div className="password-input-wrapper">
+                <div className={styles.passwordWrapper}>
                   <input
                     id="create-user-confirm"
                     type={showConfirmPassword ? 'text' : 'password'}
-                    className={`form-input ${errors.confirmPassword ? 'error' : ''}`}
+                    className={errors.confirmPassword ? `${styles.input} form-input error` : `${styles.input} form-input`}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
@@ -331,23 +333,23 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
                   />
                   <button
                     type="button"
-                    className="password-toggle"
+                    className={styles.passwordToggle}
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                     tabIndex={-1}
                   >
                     {showConfirmPassword ? (
-                      <LuEyeOff className="password-toggle-icon" size={20} aria-hidden />
+                      <LuEyeOff size={20} aria-hidden />
                     ) : (
-                      <LuEye className="password-toggle-icon" size={20} aria-hidden />
+                      <LuEye size={20} aria-hidden />
                     )}
                   </button>
                 </div>
                 {errors.confirmPassword && (
-                  <span className="form-error">{errors.confirmPassword}</span>
+                  <span className={styles.error}>{errors.confirmPassword}</span>
                 )}
               </div>
-              <div className="create-user-modal-footer">
+              <div className={styles.footer}>
                 <Button type="button" variant="secondary" onClick={onClose}>
                   Cancel
                 </Button>
@@ -359,7 +361,7 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
           )}
 
           {step === 'code-required' && (
-            <div className="create-user-modal-footer">
+            <div className={styles.footer}>
               <Button type="button" variant="primary" onClick={onClose}>
                 Close
               </Button>

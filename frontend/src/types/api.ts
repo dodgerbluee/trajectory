@@ -79,6 +79,46 @@ export interface ApiError {
 }
 
 // ============================================================================
+// Admin Types
+// ============================================================================
+
+export type AdminLogLevel = 'info' | 'debug';
+
+export interface AdminConfig {
+  log_level: AdminLogLevel;
+}
+
+export interface AdminUser {
+  id: number;
+  email: string;
+  username: string;
+  is_instance_admin: boolean;
+  created_at: string;
+  last_login_at: string | null;
+}
+
+export interface AdminUserDetail extends AdminUser {
+  total_kids: number;
+  total_visits: number;
+  total_illnesses: number;
+}
+
+export interface AdminLogEntry {
+  timestamp: string;
+  level: 'ERROR' | 'WARN' | 'INFO' | 'DEBUG';
+  message: string;
+  error?: { name: string; message: string; stack?: string; statusCode?: number };
+  request?: { method: string; path: string; params?: Record<string, unknown>; query?: Record<string, unknown>; ip?: string };
+}
+
+export interface AdminLogsResponse {
+  entries: AdminLogEntry[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+// ============================================================================
 // Domain Types
 // ============================================================================
 
@@ -417,37 +457,6 @@ export interface ChildAttachment {
 }
 
 // ============================================================================
-// Medical Events
-// ============================================================================
-
-export type EventType = 'doctor_visit' | 'illness';
-
-export interface MedicalEvent {
-  id: number;
-  child_id: number;
-  event_type: EventType;
-  start_date: string; // YYYY-MM-DD
-  end_date: string | null; // YYYY-MM-DD
-  description: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CreateMedicalEventInput {
-  event_type: EventType;
-  start_date: string;
-  end_date?: string;
-  description: string;
-}
-
-export interface UpdateMedicalEventInput {
-  event_type?: EventType;
-  start_date?: string;
-  end_date?: string;
-  description?: string;
-}
-
-// ============================================================================
 // Query Parameters
 // ============================================================================
 
@@ -459,10 +468,6 @@ export interface PaginationParams {
 export interface DateRangeParams {
   start_date?: string;
   end_date?: string;
-}
-
-export interface MedicalEventFilters extends DateRangeParams {
-  event_type?: EventType;
 }
 
 // ============================================================================

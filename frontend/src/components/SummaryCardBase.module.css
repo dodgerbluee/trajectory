@@ -1,0 +1,69 @@
+/* SummaryCardBase – modern summary card; tokens in styles/tokens.css */
+
+.root {
+  display: flex;
+  align-items: center;
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-sm);
+  gap: var(--spacing-md);
+}
+
+.content {
+  display: grid;
+  grid-template-columns: 1fr 20rem;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+.title {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.stats {
+  display: flex;
+  gap: var(--spacing-lg);
+  align-items: center;
+}
+
+.grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(5rem, 1fr);
+  gap: var(--spacing-lg);
+  align-items: center;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.statValue {
+  font-weight: var(--font-weight-semibold);
+}
+
+.statLabel {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.children {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  width: 20rem;
+  justify-self: end;
+}
+
+@media (prefers-color-scheme: dark) {
+  .root {
+    background: var(--color-background-card);
+    border-color: var(--color-border);
+  }
+}

@@ -8,6 +8,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { LuUsers, LuBaby, LuBookOpen, LuHouse, LuSparkles } from 'react-icons/lu';
 import Button from '../components/Button';
 import Card from '../components/Card';
+import loadingStyles from '../components/LoadingSpinner.module.css';
+import w from './WelcomePage.module.css';
 import { familiesApi, completeOnboarding, ApiClientError } from '../lib/api-client';
 import { useAuth } from '../contexts/AuthContext';
 import type { Family } from '../types/api';
@@ -25,7 +27,7 @@ function Streamers() {
   ];
 
   return (
-    <div className="welcome-streamers" aria-hidden="true">
+    <div className={w.streamers} aria-hidden="true">
       {streamers.map((index) => {
         const color = colors[index % colors.length];
         const left = `${(index * 5) % 100}%`;
@@ -34,7 +36,7 @@ function Streamers() {
         return (
           <div
             key={index}
-            className="welcome-streamer"
+            className={w.streamer}
             style={{
               left,
               backgroundColor: color,
@@ -154,23 +156,23 @@ export default function WelcomePage() {
   };
 
   return (
-    <div className="welcome-page">
+    <div className={w.page}>
       <Streamers />
-      <div className="welcome-page-inner">
-        <Card className="welcome-card">
-          <div className="welcome-content">
+      <div className={w.pageInner}>
+        <Card className={w.card}>
+          <div className={w.content}>
             {step === 1 && (
-              <div className="welcome-step" data-step="1">
-                <div className="welcome-logo-section">
-                  <img src="/logo/trajectory.png" alt="" className="welcome-logo" />
+              <div className={w.step} data-step="1">
+                <div className={w.logoSection}>
+                  <img src="/logo/trajectory.png" alt="" className={w.logo} />
                 </div>
-                <h1 className="welcome-title">Welcome to Trajectory</h1>
-                <p className="welcome-subtitle">
+                <h1 className={w.title}>Welcome to Trajectory</h1>
+                <p className={w.subtitle}>
                   Let's set up your family in a few quick steps. You can skip anytime.
                 </p>
-                <div className="welcome-actions">
+                <div className={w.actions}>
                   <Button variant="primary" size="lg" onClick={handleNextFromStep1}>
-                    <LuSparkles className="welcome-btn-icon" aria-hidden />
+                    <LuSparkles className={w.btnIcon} aria-hidden />
                     Get started
                   </Button>
                 </div>
@@ -178,14 +180,14 @@ export default function WelcomePage() {
             )}
 
             {step === 2 && (
-              <div className="welcome-step" data-step="2">
-                <h2 className="welcome-step-title">Name your family</h2>
-                <p className="welcome-step-copy">
+              <div className={w.step} data-step="2">
+                <h2 className={w.stepTitle}>Name your family</h2>
+                <p className={w.stepCopy}>
                   This helps you tell families apart if you're in more than one (e.g. after joining an
                   invite).
                 </p>
                 {loading ? (
-                  <p className="welcome-loading">Loading…</p>
+                  <p className={loadingStyles.welcomeLoading}>Loading…</p>
                 ) : (
                   <>
                     <div className="form-field">
@@ -203,8 +205,8 @@ export default function WelcomePage() {
                         autoFocus
                       />
                     </div>
-                    {error && <p className="welcome-error">{error}</p>}
-                    <div className="welcome-actions">
+                    {error && <p className={loadingStyles.welcomeError}>{error}</p>}
+                    <div className={w.actions}>
                       <Button variant="secondary" size="lg" onClick={handleBackFromStep2} disabled={savingName}>
                         Back
                       </Button>
@@ -218,14 +220,14 @@ export default function WelcomePage() {
             )}
 
             {step === 3 && (
-              <div className="welcome-step" data-step="3">
-                <h2 className="welcome-step-title">Add your first child</h2>
-                <p className="welcome-step-copy">
+              <div className={w.step} data-step="3">
+                <h2 className={w.stepTitle}>Add your first child</h2>
+                <p className={w.stepCopy}>
                   You can add a child now or do it later from the Family tab or Settings.
                 </p>
-                <div className="welcome-feature-list">
-                  <div className="welcome-feature-item">
-                    <span className="welcome-feature-icon" aria-hidden>
+                <div className={w.featureList}>
+                  <div className={w.featureItem}>
+                    <span className={w.featureIcon} aria-hidden>
                       <LuBaby size={24} />
                     </span>
                     <div>
@@ -234,12 +236,12 @@ export default function WelcomePage() {
                     </div>
                   </div>
                 </div>
-                <div className="welcome-actions">
+                <div className={w.actions}>
                   <Button variant="secondary" size="lg" onClick={handleBackFromStep3}>
                     Back
                   </Button>
                   <Button variant="primary" size="lg" onClick={handleAddChild}>
-                    <LuBaby className="welcome-btn-icon" aria-hidden />
+                    <LuBaby className={w.btnIcon} aria-hidden />
                     Add a child
                   </Button>
                 </div>
@@ -247,53 +249,53 @@ export default function WelcomePage() {
             )}
 
             {step === 4 && (
-              <div className="welcome-step" data-step="4">
-                <h2 className="welcome-step-title">You're all set</h2>
-                <p className="welcome-step-copy">
+              <div className={w.step} data-step="4">
+                <h2 className={w.stepTitle}>You're all set</h2>
+                <p className={w.stepCopy}>
                   Your family is ready! Manage your family in <strong>Settings → Family</strong>. You
                   can invite other caregivers from <strong>Settings → Family → Management</strong>.
                 </p>
-                <h3 className="welcome-whats-next">What's next?</h3>
-                <div className="welcome-feature-list">
-                  <div className="welcome-feature-item">
-                    <span className="welcome-feature-icon" aria-hidden>
+                <h3 className={w.whatsNext}>What's next?</h3>
+                <div className={w.featureList}>
+                  <div className={w.featureItem}>
+                    <span className={w.featureIcon} aria-hidden>
                       <LuUsers size={24} />
                     </span>
                     <div>Invite parents or caregivers and manage roles.</div>
                   </div>
-                  <div className="welcome-feature-item">
-                    <span className="welcome-feature-icon" aria-hidden>
+                  <div className={w.featureItem}>
+                    <span className={w.featureIcon} aria-hidden>
                       <LuBookOpen size={24} />
                     </span>
                     <div>Record visits, illnesses, and growth over time.</div>
                   </div>
                 </div>
-                <div className="welcome-actions">
+                <div className={w.actions}>
                   <Button variant="secondary" size="lg" onClick={() => setStep(3)}>
                     Back
                   </Button>
                   <Button variant="primary" size="lg" onClick={handleGoHome}>
-                    <LuHouse className="welcome-btn-icon" aria-hidden />
+                    <LuHouse className={w.btnIcon} aria-hidden />
                     Go to Home
                   </Button>
                 </div>
               </div>
             )}
 
-            <div className="welcome-progress" aria-label={`Step ${step} of 4`}>
-              <div className="welcome-progress-top">
-                <span className="welcome-progress-text">Step {step} of 4</span>
+            <div className={w.progress} aria-label={`Step ${step} of 4`}>
+              <div className={w.progressTop}>
+                <span className={w.progressText}>Step {step} of 4</span>
                 {step >= 1 && step <= 3 && (
-                  <Button variant="secondary" size="lg" onClick={handleSkip} className="welcome-skip-in-progress">
+                  <Button variant="secondary" size="lg" onClick={handleSkip} className={w.skipInProgress}>
                     Skip
                   </Button>
                 )}
               </div>
-              <div className="welcome-progress-dots">
+              <div className={w.progressDots}>
                 {[1, 2, 3, 4].map((i) => (
                   <span
                     key={i}
-                    className={`welcome-progress-dot ${i <= step ? 'active' : ''}`}
+                    className={`${w.progressDot} ${i <= step ? w.active : ''}`}
                     aria-hidden="true"
                   />
                 ))}

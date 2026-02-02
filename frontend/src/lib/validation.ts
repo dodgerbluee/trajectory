@@ -157,51 +157,6 @@ export function validateChildForm(data: {
 }
 
 /**
- * Validate medical event form
- */
-export function validateMedicalEventForm(data: {
-  event_type: string;
-  start_date: string;
-  end_date?: string;
-  description: string;
-}): ValidationResult {
-  const errors: Record<string, string> = {};
-
-  // Event type required
-  if (!data.event_type || !['doctor_visit', 'illness'].includes(data.event_type)) {
-    errors.event_type = 'Event type must be either "Doctor Visit" or "Illness"';
-  }
-
-  // Start date required
-  const startDateError = validateDate(data.start_date, 'Start date');
-  if (startDateError) errors.start_date = startDateError;
-
-  // End date optional but must be valid and after start date
-  if (data.end_date) {
-    const endDateError = validateDate(data.end_date, 'End date');
-    if (endDateError) {
-      errors.end_date = endDateError;
-    } else if (data.start_date) {
-      // Validate range
-      const start = new Date(data.start_date);
-      const end = new Date(data.end_date);
-      if (end < start) {
-        errors.end_date = 'End date must be on or after start date';
-      }
-    }
-  }
-
-  // Description required
-  const descriptionError = validateRequired(data.description, 'Description');
-  if (descriptionError) errors.description = descriptionError;
-
-  return {
-    isValid: Object.keys(errors).length === 0,
-    errors,
-  };
-}
-
-/**
  * Validate measurement form
  */
 export function validateMeasurementForm(data: {

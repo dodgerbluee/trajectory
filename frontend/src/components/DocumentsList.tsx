@@ -12,6 +12,9 @@ import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
 // formatDate not needed here; document entries show visit type and title instead of date
 import LoadingSpinner from './LoadingSpinner';
 import DocumentsSummary from './DocumentsSummary';
+import loadingStyles from './LoadingSpinner.module.css';
+import t from './TimelineItem.module.css';
+import d from './DocumentsList.module.css';
 
 interface DocumentWithVisit extends VisitAttachment {
   visit: Visit;
@@ -132,14 +135,14 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
 
   if (documents.length === 0) {
     return (
-      <div className="documents-empty">
+      <div className={d.empty}>
         <p>No documents found. Documents can be attached to visits or uploaded as vaccine reports.</p>
       </div>
     );
   }
 
   return (
-    <div className="documents-list">
+    <div className={d.list}>
       {showHeader && (
         <DocumentsSummary
           total={totalDocsCount}
@@ -148,12 +151,12 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
         />
       )}
       {documents.map((doc) => (
-        <div key={`${doc.type}-${doc.id}`} className="document-item timeline-item-modern">
-          <div className="document-icon timeline-item-icon">{getFileIcon(doc.file_type)}</div>
+        <div key={`${doc.type}-${doc.id}`} className={`${d.item} ${t.item}`}>
+          <div className={`${d.icon} ${t.icon}`}>{getFileIcon(doc.file_type)}</div>
 
-          <div className="document-info timeline-item-content">
+          <div className={`${d.info} ${t.content}`}>
             {editingId === doc.id ? (
-              <div className="document-edit-form">
+              <div className={d.editForm}>
                 <input
                   type="text"
                   value={editValue}
@@ -165,14 +168,14 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
                       handleEditCancel();
                     }
                   }}
-                  className="document-edit-input"
+                  className={d.editInput}
                   autoFocus
                 />
-                <div className="document-edit-actions">
+                <div className={d.editActions}>
                   <button
                     type="button"
                     onClick={() => handleEditSave(doc.id, doc.type)}
-                    className="btn-icon-small btn-save"
+                    className={`${d.btnIconSmall} ${d.btnSave}`}
                     title="Save"
                   >
                     ✓
@@ -180,7 +183,7 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
                   <button
                     type="button"
                     onClick={handleEditCancel}
-                    className="btn-icon-small btn-cancel"
+                    className={`${d.btnIconSmall} ${d.btnCancel}`}
                     title="Cancel"
                   >
                     ✕
@@ -188,34 +191,31 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
                 </div>
               </div>
             ) : (
-              <div className="timeline-item-header-compact">
-                <div className="timeline-item-main">
-                  <div className="timeline-item-label-row timeline-item-wellness-single-line">
+              <div className={t.headerCompact}>
+                <div className={t.main}>
+                  <div className={`${t.labelRow} ${t.wellnessSingleLine}`}>
                     <button
                       type="button"
                       onClick={() => handleClick(doc.id, doc.type)}
-                      className="document-filename-link"
+                      className={d.filenameLink}
                       title="Click to open document"
                     >
                       {doc.original_filename}
                     </button>
 
-                    <div className="document-badges-group wellness-badges-group">
+                    <div className={`${t.badgesGroup}`}>
                       {doc.type === 'visit' ? (
                         <>
-                          <span className="timeline-badge">{doc.visit.visit_type === 'wellness' ? 'Wellness' : doc.visit.visit_type === 'sick' ? 'Sick' : doc.visit.visit_type === 'vision' ? 'Vision' : 'Injury'}</span>
+                          <span className={t.badge}>{doc.visit.visit_type === 'wellness' ? 'Wellness' : doc.visit.visit_type === 'sick' ? 'Sick' : doc.visit.visit_type === 'vision' ? 'Vision' : 'Injury'}</span>
                           {doc.visit.visit_type === 'wellness' && doc.visit.title && (
-                            <span className="wellness-title-badge">{doc.visit.title}</span>
+                            <span className={t.wellnessTitleBadge}>{doc.visit.title}</span>
                           )}
-                          {/* {doc.visit.visit_type === 'wellness' && doc.visit.title && (
-                            <span className="wellness-title-badge">{doc.visit.title}</span>
-                          )} */}
                         </>
                       ) : (
-                        <span className="timeline-badge">Vaccine Report</span>
+                        <span className={t.badge}>Vaccine Report</span>
                       )}
 
-                      <span className="timeline-badge file-size-badge">{formatFileSize(doc.file_size)}</span>
+                      <span className={`${t.badge} ${d.fileSizeBadge}`}>{formatFileSize(doc.file_size)}</span>
                     </div>
                   </div>
                 </div>
@@ -223,13 +223,13 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
             )}
           </div>
 
-          <div className="document-actions">
+          <div className={d.actions}>
             {editingId === doc.id ? null : (
               <>
                 <button
                   type="button"
                   onClick={() => handleDownload(doc.id, doc.original_filename, doc.type)}
-                  className="btn-icon-action btn-download"
+                  className={`${d.btnIconAction} ${d.btnDownload}`}
                   title="Download document"
                 >
                   <HiDownload />
@@ -239,7 +239,7 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
                     <button
                       type="button"
                       onClick={() => handleEditStart(doc)}
-                      className="btn-icon-action btn-edit"
+                      className={`${d.btnIconAction} ${d.btnEdit}`}
                       title="Rename document"
                     >
                       <HiPencil />
@@ -248,11 +248,11 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
                       type="button"
                       onClick={() => handleDelete(doc.id, doc.type)}
                       disabled={deletingId === doc.id}
-                      className="btn-icon-action btn-delete"
+                      className={`${d.btnIconAction} ${d.btnDelete}`}
                       title="Delete document"
                     >
                       {deletingId === doc.id ? (
-                        <div className="btn-spinner-wrapper">
+                        <div className={loadingStyles.btnSpinnerWrapper}>
                           <LoadingSpinner message="" />
                         </div>
                       ) : (

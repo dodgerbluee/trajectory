@@ -9,6 +9,9 @@ import Button from '../components/Button';
 import Notification from '../components/Notification';
 import LoadingSpinner from '../components/LoadingSpinner';
 import IllnessEntryFormFields from '../components/IllnessEntryFormFields';
+import { SectionWrapper } from '../visit-form/SectionWrapper';
+import layoutStyles from '../styles/visit-detail-layout.module.css';
+import pageLayout from '../styles/page-layout.module.css';
 
 function AddIllnessPage() {
   const navigate = useNavigate();
@@ -150,7 +153,7 @@ function AddIllnessPage() {
   };
 
   return (
-    <div className="page-container">
+    <div className={pageLayout.pageContainer}>
       {notification && (
         <Notification
           message={notification.message}
@@ -161,12 +164,12 @@ function AddIllnessPage() {
 
       <form onSubmit={handleSubmit}>
         <Card>
-          <div className="visit-detail-body">
-            <div className="visit-detail-header">
-              <Link to={backHref} state={{ tab: 'illnesses' }} className="breadcrumb">
+          <div className={layoutStyles.detailBody}>
+            <div className={layoutStyles.detailHeader}>
+              <Link to={backHref} state={{ tab: 'illnesses' }} className={pageLayout.breadcrumb}>
                 ← Back to {backLabel}
               </Link>
-              <div className="visit-detail-actions">
+              <div className={layoutStyles.detailActions}>
                 <Button type="submit" disabled={submitting}>
                   {submitting ? 'Adding Illness...' : 'Add Illness'}
                 </Button>
@@ -188,13 +191,9 @@ function AddIllnessPage() {
               </div>
             </div>
 
-            <h2 className="visit-header-title">Add Illness</h2>
+            <h2 className={layoutStyles.headerTitle}>Add Illness</h2>
 
-            <section className="visit-detail-section visit-detail-section-last">
-              <div className="visit-detail-section-header">
-                <h3 className="visit-detail-section-title">Illness</h3>
-              </div>
-              <div className="visit-detail-section-body">
+            <SectionWrapper sectionId="illness" label="Illness" removable={false} isLast>
                 {!initialChildId && (
                   <FormField
                     label="Child"
@@ -250,8 +249,7 @@ function AddIllnessPage() {
                   placeholder="Any additional notes..."
                   rows={3}
                 />
-              </div>
-            </section>
+            </SectionWrapper>
           </div>
         </Card>
       </form>

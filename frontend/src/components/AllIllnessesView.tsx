@@ -1,17 +1,14 @@
 import { useEffect, useState, useMemo } from 'react';
-import { /* Link removed - not used */ } from 'react-router-dom';
 import { illnessesApi, childrenApi, ApiClientError } from '../lib/api-client';
 import type { Illness, Child, IllnessType } from '../types/api';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 import TimelineItem from './TimelineItem';
 import Card from './Card';
-// Button removed - Add action moved into summary section
-// HiPlus removed — using summary-section controls for adding illness
 import IllnessesSidebar from './IllnessesSidebar';
+import tl from './TimelineList.module.css';
+import visitsLayout from '../styles/VisitsLayout.module.css';
 import { LuActivity } from 'react-icons/lu';
-
-// Illness types constant removed - not used by the modernized UI
 
 function AllIllnessesView() {
   // keep an unfiltered source for stable stats and a displayed list filtered client-side
@@ -90,7 +87,7 @@ function AllIllnessesView() {
   }
 
   return (
-    <div className="visits-page-layout">
+    <div className={visitsLayout.pageLayout}>
       <IllnessesSidebar
         stats={[
           { label: 'Total Illnesses', value: statsSource.length, icon: LuActivity, color: 'blue', onClick: () => { setFilterIllnessType(undefined); setFilterIllnessStatus(undefined); }, active: !filterIllnessType && !filterIllnessStatus },
@@ -102,7 +99,7 @@ function AllIllnessesView() {
         onSelectChild={(id) => setFilterChildId(id)}
       />
 
-      <main className="visits-main">
+      <main className={visitsLayout.main}>
         {/* Illnesses Timeline */}
         {sortedIllnesses.length === 0 ? (
           <Card>
@@ -112,7 +109,7 @@ function AllIllnessesView() {
           </Card>
         ) : (
           <Card>
-            <div className="timeline-list-modern">
+            <div className={tl.list}>
               {sortedIllnesses.map((illness) => {
                 const child = childMap.get(illness.child_id);
                 return (

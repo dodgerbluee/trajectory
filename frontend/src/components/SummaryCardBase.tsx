@@ -1,3 +1,5 @@
+import styles from './SummaryCardBase.module.css';
+
 interface StatItem {
   label: string;
   value: number | string | React.ReactNode;
@@ -12,21 +14,21 @@ interface Props {
 
 function SummaryCardBase({ title, stats, children, className = '' }: Props) {
   return (
-    <div className={`summary-card-modern summary-card-base ${className}`.trim()}>
-      <div className="summary-card-content">
-        {title && <div className="summary-card-title">{title}</div>}
+    <div className={[styles.root, className].filter(Boolean).join(' ')}>
+      <div className={styles.content}>
+        {title && <div className={styles.title}>{title}</div>}
 
-        <div className="summary-card-stats summary-card-grid">
+        <div className={`${styles.stats} ${styles.grid}`}>
           {stats.map((s) => (
-            <div key={String(s.label)} className="summary-card-stat">
-              <div className="summary-card-stat-value">{s.value}</div>
-              <div className="summary-card-stat-label">{s.label}</div>
+            <div key={String(s.label)} className={styles.stat}>
+              <div className={styles.statValue}>{s.value}</div>
+              <div className={styles.statLabel}>{s.label}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {children && <div className="summary-card-children">{children}</div>}
+      {children && <div className={styles.children} data-summary-children>{children}</div>}
     </div>
   );
 }

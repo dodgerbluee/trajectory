@@ -1,0 +1,12 @@
+/* ============================================================================
+   Reset – minimal global reset
+   ============================================================================
+   This file contains ONLY normalize/reset rules (box-sizing, margins, etc.).
+   No layout, page, or component styles. Component styles belong in CSS Modules.
+   ============================================================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}

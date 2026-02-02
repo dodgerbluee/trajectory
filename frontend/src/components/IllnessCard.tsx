@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 import { LuPaperclip, LuThermometer } from 'react-icons/lu';
 import type { Illness } from '../types/api';
 import { formatDate } from '../lib/date-utils';
+import t from './TimelineItem.module.css';
+import vi from '../styles/VisitIcons.module.css';
 
 interface IllnessCardProps {
   illness: Illness;
@@ -31,34 +33,34 @@ function IllnessCard({ illness, childName, childId, hasAttachments }: IllnessCar
   }
 
   return (
-    <Link to={url} state={linkState} className="timeline-item-link">
-      <div className="timeline-item-modern">
-        <div className="timeline-item-icon">
-            <div className="visit-icon-outline visit-icon--illness" aria-hidden="true">
-            <LuThermometer className="visit-type-svg" />
+    <Link to={url} state={linkState} className={t.link}>
+      <div className={t.item}>
+        <div className={t.icon}>
+            <div className={`${vi.iconOutline} ${vi.iconIllness}`} aria-hidden="true">
+            <LuThermometer className={vi.typeSvg} />
           </div>
         </div>
-        <div className="timeline-item-content">
-          <div className="timeline-item-header-compact">
-            <div className="timeline-item-main">
-              <div className="timeline-item-label-row timeline-item-wellness-single-line">
-                <span className="timeline-item-label-compact">{label}</span>
-                <div className="wellness-badges-group">
+        <div className={t.content}>
+          <div className={t.headerCompact}>
+            <div className={t.main}>
+              <div className={`${t.labelRow} ${t.wellnessSingleLine}`}>
+                <span className={t.labelCompact}>{label}</span>
+                <div className={t.badgesGroup}>
                   {childName && (
-                    <Link to={childId ? `/children/${childId}` : '#'} className="child-name-badge" onClick={(e) => { if (!childId) e.preventDefault(); else e.stopPropagation(); }}>
+                    <Link to={childId ? `/children/${childId}` : '#'} className={t.childNameBadge} onClick={(e) => { if (!childId) e.preventDefault(); else e.stopPropagation(); }}>
                       {childName}
                     </Link>
                   )}
-                  {headerBadges.map((b, i) => <span key={i} className="timeline-badge">{b}</span>)}
+                  {headerBadges.map((b, i) => <span key={i} className={t.badge}>{b}</span>)}
                 </div>
                 {hasAttachments && (
-                  <span className="attachment-indicator" title="Has attachments">
-                    <LuPaperclip className="attachment-icon" aria-hidden="true" />
+                  <span className={t.attachmentIndicator} title="Has attachments">
+                    <LuPaperclip className={t.attachmentIcon} aria-hidden="true" />
                   </span>
                 )}
               </div>
             </div>
-            <span className="timeline-item-arrow-compact">→</span>
+            <span className={t.arrowCompact} aria-hidden>→</span>
           </div>
         </div>
       </div>

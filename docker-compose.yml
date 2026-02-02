@@ -4,6 +4,8 @@ services:
     container_name: trajectory-db
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Optional: run "docker compose exec database psql -U trajectory_user -d trajectory -f /scripts/make-dodgerbluee-admin.sql" to make dodgerbluee an instance admin
+      - ./database/make-dodgerbluee-admin.sql:/scripts/make-dodgerbluee-admin.sql
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-trajectory}
       POSTGRES_USER: ${POSTGRES_USER:-trajectory_user}
@@ -33,7 +35,7 @@ services:
       - avatars_data:/app/avatars
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-trajectory_user}:${DB_PASSWORD:-development_password}@database:5432/${POSTGRES_DB:-trajectory}
-      NODE_ENV: production
+      NODE_ENV: development
       PORT: 3001
       TZ: ${TZ:-UTC}
       UPLOAD_DIR: /app/uploads
@@ -51,6 +53,27 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  # One-off: make user dodgerbluee an instance admin. Run after that user has registered.
+  # Usage: docker compose run make-admin
+  make-admin:
+    image: postgres:16-alpine
+    container_name: trajectory-make-admin
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      PGHOST: database
+      PGPORT: 5432
+      PGUSER: ${POSTGRES_USER:-trajectory_user}
+      PGPASSWORD: ${DB_PASSWORD:-development_password}
+      PGDATABASE: ${POSTGRES_DB:-trajectory}
+    command: psql -c "UPDATE users SET is_instance_admin = true WHERE username = 'dodgerbluee';"
+    networks:
+      - trajectory-network
+    restart: "no"
+    profiles:
+      - admin-setup
 
 networks:
   trajectory-network:

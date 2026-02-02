@@ -4,6 +4,7 @@
  */
 
 import { useId } from 'react';
+import mui from '../styles/MeasurementsUI.module.css';
 
 export type EyeRefraction = {
   sphere: number | null;
@@ -41,26 +42,26 @@ export function VisionRefractionCard({
   const hasValue = hasRefractionValue(value);
 
   return (
-    <div className="measurement-card" data-key="refraction" aria-labelledby="vision-refraction-heading">
-      <div className={`measurement-card-header ${hasValue ? 'has-value' : ''}`}>
-        <span className="measurement-card-icon" aria-hidden>
+    <div className={mui.card} data-key="refraction" aria-labelledby="vision-refraction-heading">
+      <div className={`${mui.cardHeader} ${hasValue ? mui.hasValue : ''}`}>
+        <span className={mui.cardIcon} aria-hidden>
           👁
         </span>
-        <span className="measurement-card-title" id="vision-refraction-heading">
+        <span className={mui.cardTitle} id="vision-refraction-heading">
           Refraction
         </span>
       </div>
-      <div className="measurement-card-body expanded">
-        <div className="measurement-card-inner">
-          <div className="vision-refraction-fields">
-            <div className="vision-refraction-row vision-refraction-row-header">
-              <span className="vision-refraction-eye-label" aria-hidden />
-              <span className="measurement-field-label">Sphere</span>
-              <span className="measurement-field-label">Cylinder</span>
-              <span className="measurement-field-label">Axis</span>
+      <div className={mui.cardBody}>
+        <div className={mui.cardInner}>
+          <div className={mui.visionRefractionFields}>
+            <div className={`${mui.visionRefractionRow} ${mui.visionRefractionRowHeader}`}>
+              <span className={mui.visionRefractionEyeLabel} aria-hidden />
+              <span className={mui.fieldLabel}>Sphere</span>
+              <span className={mui.fieldLabel}>Cylinder</span>
+              <span className={mui.fieldLabel}>Axis</span>
             </div>
-            <div className="vision-refraction-row">
-              <span className="vision-refraction-eye-label">OD</span>
+            <div className={mui.visionRefractionRow}>
+              <span className={mui.visionRefractionEyeLabel}>OD</span>
               <RefractionNumberInput
                 value={value.od.sphere}
                 onChange={(v) => updateEye('od', { ...value.od, sphere: v })}
@@ -87,8 +88,8 @@ export function VisionRefractionCard({
                 ariaLabel="OD axis"
               />
             </div>
-            <div className="vision-refraction-row">
-              <span className="vision-refraction-eye-label">OS</span>
+            <div className={mui.visionRefractionRow}>
+              <span className={mui.visionRefractionEyeLabel}>OS</span>
               <RefractionNumberInput
                 value={value.os.sphere}
                 onChange={(v) => updateEye('os', { ...value.os, sphere: v })}
@@ -116,13 +117,13 @@ export function VisionRefractionCard({
               />
             </div>
           </div>
-          <div className="measurement-field vision-refraction-notes-field">
-            <label htmlFor="vision-refraction-notes" className="measurement-field-label">
+          <div className={`${mui.field} ${mui.visionRefractionNotesField}`}>
+            <label htmlFor="vision-refraction-notes" className={mui.fieldLabel}>
               Notes
             </label>
             <textarea
               id="vision-refraction-notes"
-              className="measurement-input vision-input-textarea"
+              className={`${mui.input} ${mui.visionInputTextarea}`}
               placeholder="Refraction notes"
               value={value.notes ?? ''}
               onChange={(e) => onChange({ ...value, notes: e.target.value })}
@@ -160,16 +161,16 @@ function RefractionNumberInput({
 }: RefractionNumberInputProps) {
   const id = useId();
   return (
-    <div className="measurement-field">
+    <div className={mui.field}>
       <label htmlFor={id} className="visually-hidden">
         {ariaLabel}
       </label>
-      <div className="measurement-input-with-suffix">
+      <div className={mui.inputWithSuffix}>
         <input
           id={id}
           type="number"
           inputMode="decimal"
-          className="measurement-input"
+          className={mui.input}
           aria-label={ariaLabel}
           value={value ?? ''}
           step={step}
@@ -181,7 +182,7 @@ function RefractionNumberInput({
           disabled={readOnly}
           placeholder="—"
         />
-        {suffix ? <span className="measurement-suffix">{suffix}</span> : null}
+        {suffix ? <span className={mui.suffix}>{suffix}</span> : null}
       </div>
     </div>
   );

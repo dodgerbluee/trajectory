@@ -10,6 +10,7 @@ import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 import Card from './Card';
 import SingleMetricGrowthChart from './SingleMetricGrowthChart';
+import styles from './GrowthChartTab.module.css';
 
 interface GrowthChartTabProps {
   filterChildId?: number;
@@ -59,15 +60,15 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
 
   return (
     <Card>
-      <div className="growth-chart-body">
-        <div className="growth-chart-section">
-          <h3 className="growth-chart-section-title">Growth Charts</h3>
-          <div className="growth-charts-grid">
+      <div className={styles.body}>
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>Growth Charts</h3>
+          <div className={styles.grid}>
             {(
               <>
-                <div className="growth-chart-item">
-                  <h4 className="growth-chart-item-title">Weight Over Time (by Age)</h4>
-                  <p className="growth-chart-description">
+                <div className={styles.item}>
+                  <h4 className={styles.itemTitle}>Weight Over Time (by Age)</h4>
+                  <p className={styles.description}>
                     {filterChildId
                       ? 'Weight plotted by age at time of wellness visit.'
                       : 'Weight for all children plotted by age. Each child is shown with a different color.'}
@@ -80,9 +81,9 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                     filterChildId={filterChildId}
                   />
                 </div>
-                <div className="growth-chart-item">
-                  <h4 className="growth-chart-item-title">Weight Percentiles Over Time (by Age)</h4>
-                  <p className="growth-chart-description">
+                <div className={styles.item}>
+                  <h4 className={styles.itemTitle}>Weight Percentiles Over Time (by Age)</h4>
+                  <p className={styles.description}>
                     {filterChildId
                       ? 'Weight percentile plotted by age at time of wellness visit.'
                       : 'Weight percentiles for all children plotted by age. Each child is shown with a different color.'}
@@ -100,9 +101,9 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
 
             {(
               <>
-                <div className="growth-chart-item">
-                  <h4 className="growth-chart-item-title">Height Over Time (by Age)</h4>
-                  <p className="growth-chart-description">
+                <div className={styles.item}>
+                  <h4 className={styles.itemTitle}>Height Over Time (by Age)</h4>
+                  <p className={styles.description}>
                     {filterChildId
                       ? 'Height plotted by age at time of wellness visit.'
                       : 'Height for all children plotted by age. Each child is shown with a different color.'}
@@ -115,9 +116,9 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                     filterChildId={filterChildId}
                   />
                 </div>
-                <div className="growth-chart-item">
-                  <h4 className="growth-chart-item-title">Height Percentiles Over Time (by Age)</h4>
-                  <p className="growth-chart-description">
+                <div className={styles.item}>
+                  <h4 className={styles.itemTitle}>Height Percentiles Over Time (by Age)</h4>
+                  <p className={styles.description}>
                     {filterChildId
                       ? 'Height percentile plotted by age at time of wellness visit.'
                       : 'Height percentiles for all children plotted by age. Each child is shown with a different color.'}
@@ -135,9 +136,9 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
 
             {(
               <>
-                <div className="growth-chart-item">
-                  <h4 className="growth-chart-item-title">Head Circumference Over Time (by Age)</h4>
-                  <p className="growth-chart-description">
+                <div className={styles.item}>
+                  <h4 className={styles.itemTitle}>Head Circumference Over Time (by Age)</h4>
+                  <p className={styles.description}>
                     {filterChildId
                       ? 'Head circumference plotted by age at time of wellness visit.'
                       : 'Head circumference for all children plotted by age. Each child is shown with a different color.'}
@@ -150,9 +151,9 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                     filterChildId={filterChildId}
                   />
                 </div>
-                <div className="growth-chart-item">
-                  <h4 className="growth-chart-item-title">Head Circumference Percentiles Over Time (by Age)</h4>
-                  <p className="growth-chart-description">
+                <div className={styles.item}>
+                  <h4 className={styles.itemTitle}>Head Circumference Percentiles Over Time (by Age)</h4>
+                  <p className={styles.description}>
                     {filterChildId
                       ? 'Head circumference percentile plotted by age at time of wellness visit.'
                       : 'Head circumference percentiles for all children plotted by age. Each child is shown with a different color.'}
@@ -170,9 +171,9 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
 
             {(
               <>
-                <div className="growth-chart-item">
-                  <h4 className="growth-chart-item-title">BMI Over Time (by Age)</h4>
-                  <p className="growth-chart-description">
+                <div className={styles.item}>
+                  <h4 className={styles.itemTitle}>BMI Over Time (by Age)</h4>
+                  <p className={styles.description}>
                     {filterChildId
                       ? 'BMI plotted by age at time of wellness visit.'
                       : 'BMI for all children plotted by age. Each child is shown with a different color.'}
@@ -185,9 +186,9 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                     filterChildId={filterChildId}
                   />
                 </div>
-                <div className="growth-chart-item">
-                  <h4 className="growth-chart-item-title">BMI Percentiles Over Time (by Age)</h4>
-                  <p className="growth-chart-description">
+                <div className={styles.item}>
+                  <h4 className={styles.itemTitle}>BMI Percentiles Over Time (by Age)</h4>
+                  <p className={styles.description}>
                     {filterChildId
                       ? 'BMI percentile plotted by age at time of wellness visit.'
                       : 'BMI percentiles for all children plotted by age. Each child is shown with a different color.'}
