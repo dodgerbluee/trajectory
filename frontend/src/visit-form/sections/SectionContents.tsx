@@ -39,7 +39,7 @@ export function VisitInformationSection({ context }: SectionContentPropsWithCont
   const allowFutureDate = context.mode === 'edit' && formDateIsFuture;
   const futureDateConstraint = context.mode === 'add' ? {} : allowFutureDate ? {} : { max: getTodayDate() };
   return (
-    <div className="visit-info-form">
+    <div className={sectionStyles.root}>
       {context.mode === 'add' && children && children.length > 0 && setSelectedChildId && (
         <FormField
           label="Child"
@@ -51,7 +51,7 @@ export function VisitInformationSection({ context }: SectionContentPropsWithCont
           disabled={submitting}
         />
       )}
-      <div className="visit-info-primary">
+      <div className={sectionStyles.primary}>
         <FormField
           label="Visit Date"
           type="date"
@@ -109,7 +109,7 @@ export function VisitInformationSection({ context }: SectionContentPropsWithCont
               placeholder="e.g., 1 Year Appointment"
             />
           )}
-          <div className="visit-info-tags-field">
+          <div className={sectionStyles.tagsField}>
             <label className="form-label">Tags</label>
             <TagInput
               tags={formData.tags || []}

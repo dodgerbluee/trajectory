@@ -606,11 +606,17 @@ router.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
 
 router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    console.log('[POST /api/visits] Request body:', JSON.stringify(req.body, null, 2));
+
     const childId = parseInt(req.body.child_id);
+    console.log('[POST /api/visits] Parsed childId:', childId);
+
     if (!(await canAccessChild(req.userId!, childId))) {
+      console.log('[POST /api/visits] User cannot access child:', childId);
       throw new NotFoundError('Child');
     }
     if (!(await canEditChild(req.userId!, childId))) {
+      console.log('[POST /api/visits] User cannot edit child:', childId);
       throw new ForbiddenError('You do not have permission to add visits for this child.');
     }
     const input: CreateVisitInput = {
@@ -660,14 +666,18 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
 
       vaccines_administered: req.body.vaccines_administered,
       prescriptions: req.body.prescriptions,
+      tags: Array.isArray(req.body.tags) ? req.body.tags : null,
 
       notes: validateOptionalString(req.body.notes),
       create_illness: req.body.create_illness === true,
       illness_severity: validateOptionalNumber(req.body.illness_severity, 1, 10) ?? null,
     };
 
+    console.log('[POST /api/visits] Validated input object:', JSON.stringify(input, null, 2));
+
     // Support illnesses array (multiple illnesses)
     const illnesses = validateIllnessesArray(req.body.illnesses);
+    console.log('[POST /api/visits] Validated illnesses:', illnesses);
     const todayStr = new Date().toISOString().slice(0, 10);
     const isFutureVisit = input.visit_date > todayStr;
     // Require illness/injury_type only for past/today (completed) visits; pending future appointments may omit
@@ -683,11 +693,17 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
     // Process vaccines and prescriptions
     const vaccines = validateVaccines(input.vaccines_administered);
     const prescriptions = validatePrescriptions(input.prescriptions);
-    
+
+    console.log('[POST /api/visits] Validated vaccines:', vaccines);
+    console.log('[POST /api/visits] Validated prescriptions:', prescriptions);
+
     // Process tags - store as JSON array string
-    const tagsJson = input.tags && input.tags.length > 0 
+    const tagsJson = input.tags && input.tags.length > 0
       ? JSON.stringify(input.tags.filter(t => t && t.trim()))
       : null;
+
+    console.log('[POST /api/visits] Tags JSON:', tagsJson);
+    console.log('[POST /api/visits] About to INSERT into visits table...');
 
     let result;
     try {
@@ -736,10 +752,10 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
     } catch (dbErr: unknown) {
       // Log for debugging; never log request body in production (may contain health data)
       const e = dbErr as Partial<{ message: unknown; code: unknown; stack: unknown }>;
-      console.error('Failed to INSERT visit', {
+      console.error('[POST /api/visits] Failed to INSERT visit:', {
         message: e.message,
         code: e.code,
-        ...(process.env.NODE_ENV !== 'production' && { stack: e.stack, body: req.body }),
+        stack: e.stack,
       });
 
       // Provide clearer client-facing guidance for common schema mismatch
@@ -751,6 +767,7 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
     }
 
     const visit = convertVisitRow(result.rows[0]);
+    console.log('[POST /api/visits] Visit created successfully, id:', visit.id);
 
     // Persist illnesses into join table if provided
     if (illnesses && illnesses.length > 0) {
@@ -805,6 +822,7 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
 
     res.status(201).json(createResponse(visit));
   } catch (error) {
+    console.error('[POST /api/visits] Error caught:', error);
     next(error);
   }
 });

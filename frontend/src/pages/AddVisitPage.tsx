@@ -401,7 +401,7 @@ function AddVisitPage() {
                 </Button>
               </div>
             </div>
-            <div className="visit-form-sidebar-cell">
+            <div className={formLayout.sidebarCell}>
               <VisitFormSidebar
                 activeSections={activeSections}
                 onAddSection={addSection}

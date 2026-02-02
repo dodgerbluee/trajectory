@@ -76,6 +76,19 @@
   flex-direction: column;
 }
 
+/* Make sidebar inside form page stretch to fill full height */
+.sidebarCell > aside {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebarCell > aside > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 .topRow {
   grid-column: 2;
   grid-row: 2;

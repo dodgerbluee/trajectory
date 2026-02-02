@@ -8,9 +8,8 @@
 import FormField from './FormField';
 import IllnessesInput from './IllnessesInput';
 import SeveritySelector from './SeveritySelector';
-import Checkbox from './Checkbox';
 import type { IllnessType } from '../types/api';
-import formLayout from '../styles/FormLayout.module.css';
+import styles from './IllnessEntryFormFields.module.css';
 
 export interface IllnessEntryFormValue {
   illness_type?: IllnessType | null;
@@ -55,8 +54,8 @@ export default function IllnessEntryFormFields({
   };
 
   return (
-    <>
-      <div className="form-field">
+    <div className={styles.root}>
+      <div className={styles.illnessSelector}>
         <IllnessesInput
           value={selectedIllnesses}
           onChange={(ills) => {
@@ -77,34 +76,28 @@ export default function IllnessEntryFormFields({
         rows={3}
       />
 
-      <FormField
-        label="Temperature (°F)"
-        type="number"
-        value={value.temperature ?? ''}
-        onChange={(e) => set({ temperature: e.target.value ? parseFloat(e.target.value) : null })}
-        disabled={disabled}
-        placeholder="e.g., 102.5"
-        step="0.1"
-        min="95"
-        max="110"
-      />
-
-      <div className="form-field">
-        <Checkbox
-          label="Fever"
-          checked={value.temperature != null}
-          onChange={(checked) => set({ temperature: checked ? 100.4 : null })}
+      <div className={styles.row}>
+        <FormField
+          label="Temperature (°F)"
+          type="number"
+          value={value.temperature ?? ''}
+          onChange={(e) => set({ temperature: e.target.value ? parseFloat(e.target.value) : null })}
           disabled={disabled}
+          placeholder="e.g., 102.5"
+          step="0.1"
+          min="95"
+          max="110"
         />
+        <div className={styles.severityField}>
+          <SeveritySelector
+            value={value.illness_severity ?? null}
+            onChange={(severity) => set({ illness_severity: severity })}
+            disabled={disabled}
+          />
+        </div>
       </div>
 
-      <SeveritySelector
-        value={value.illness_severity ?? null}
-        onChange={(severity) => set({ illness_severity: severity })}
-        disabled={disabled}
-      />
-
-      <div className={formLayout.formRow}>
+      <div className={styles.row}>
         <FormField
           label={dateMode === 'visit' ? 'Illness Start Date' : 'Start Date'}
           type="date"
@@ -122,6 +115,6 @@ export default function IllnessEntryFormFields({
           min={minEndDate}
         />
       </div>
-    </>
+    </div>
   );
 }

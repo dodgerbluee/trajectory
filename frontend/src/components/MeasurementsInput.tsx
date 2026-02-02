@@ -201,14 +201,14 @@ function MeasurementsInput({
   if (!visibleSections.has('bmi')) addable.push({ key: 'bmi', title: 'BMI', icon: '📊' });
 
   return (
-    <div className="measurements-ui">
-      <div className="measurements-cards">
+    <div className={mui.root}>
+      <div className={mui.cards}>
         {visibleSections.has('weight') &&
           renderCard(
             'weight',
             'Weight',
             '⚖',
-            <div className="measurement-fields">
+            <div className={mui.fields}>
               <MeasurementFieldWithSuffix
                 label="Weight"
                 value={weightValue ?? ''}
@@ -278,7 +278,7 @@ function MeasurementsInput({
             'vitals',
             'Vitals',
             '❤',
-            <div className="measurement-fields">
+            <div className={mui.fields}>
               <MeasurementFieldWithSuffix
                 label="Blood pressure"
                 value={bloodPressure ?? ''}
@@ -336,7 +336,7 @@ function MeasurementsInput({
             'bmi',
             'BMI',
             '📊',
-            <div className="measurement-fields">
+            <div className={mui.fields}>
               <MeasurementFieldWithSuffix
                 label="BMI"
                 value={bmiValue ?? ''}

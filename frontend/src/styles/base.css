@@ -98,3 +98,29 @@ select.form-input.error {
   box-shadow: 0 0 0 3px var(--color-accent-muted-fill), var(--elevation-1);
   outline: none;
 }
+
+/* Modern select dropdown styling */
+select.form-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+  cursor: pointer;
+  background-color: var(--color-background-card);
+  color: var(--color-text-primary);
+}
+
+[data-theme="dark"] select.form-input {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a3a3a3' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+}
+
+select.form-input option {
+  background-color: var(--color-background-card);
+  color: var(--color-text-primary);
+}
+
+select.form-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

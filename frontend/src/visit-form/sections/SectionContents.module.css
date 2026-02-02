@@ -6,12 +6,12 @@
 }
 
 .root > :global(.form-field) {
-  margin-bottom: 0;
+  margin-bottom: var(--spacing-md);
 }
 
 .primary {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--spacing-md) var(--spacing-lg);
   align-items: start;
 }
