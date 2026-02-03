@@ -5,17 +5,17 @@ import type { Child, UpdateVisitInput, IllnessType, Visit, VisitAttachment } fro
 import { getTodayDate } from '../lib/validation';
 import { isFutureVisit, isFutureDate } from '../lib/date-utils';
 import { visitHasOutcomeData } from '../lib/visit-utils';
-import Card from '../components/Card';
-import Button from '../components/Button';
-import Notification from '../components/Notification';
-import LoadingSpinner from '../components/LoadingSpinner';
+import Card from '../shared/components/Card';
+import Button from '../shared/components/Button';
+import Notification from '../shared/components/Notification';
+import LoadingSpinner from '../shared/components/LoadingSpinner';
 import { getDefaultSectionsForVisitType } from '../visit-form/visitTypeDefaults';
 import { getSectionById } from '../visit-form/sectionRegistry';
 import { SectionWrapper } from '../visit-form/SectionWrapper';
 import { VisitFormSidebar } from '../visit-form/VisitFormSidebar';
-import layoutStyles from '../styles/visit-detail-layout.module.css';
-import pageLayout from '../styles/page-layout.module.css';
-import formLayout from '../styles/VisitFormLayout.module.css';
+import layoutStyles from '../shared/styles/visit-detail-layout.module.css';
+import pageLayout from '../shared/styles/page-layout.module.css';
+import formLayout from '../shared/styles/VisitFormLayout.module.css';
 import styles from './EditVisitPage.module.css';
 
 

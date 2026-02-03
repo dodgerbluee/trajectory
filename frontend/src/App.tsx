@@ -1,14 +1,13 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import Layout from './components/Layout';
-import ErrorBoundary from './components/ErrorBoundary';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import { AdminRoute } from './components/AdminRoute';
+import Layout from './shared/components/Layout';
+import ErrorBoundary from './shared/components/ErrorBoundary';
+import { ProtectedRoute } from './shared/components/ProtectedRoute';
+import { AdminRoute } from './shared/components/AdminRoute';
 import { HomeTabRequestProvider } from './contexts/HomeTabRequestContext';
 import { FamilyPermissionsProvider } from './contexts/FamilyPermissionsContext';
 import { OnboardingProvider } from './contexts/OnboardingContext';
-import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
+import { HomePage } from './features/home';
+import { LoginPage, SignupPage, InvitePage } from './features/auth';
 import ChildDetailPage from './pages/ChildDetailPage';
 import AddChildPage from './pages/AddChildPage';
 import EditChildPage from './pages/EditChildPage';
@@ -17,7 +16,6 @@ import EditVisitPage from './pages/EditVisitPage';
 import VisitDetailPage from './pages/VisitDetailPage';
 import SettingsPage from './pages/SettingsPage';
 import AdminPage from './pages/AdminPage';
-import InviteAcceptPage from './pages/InviteAcceptPage';
 import WelcomePage from './pages/WelcomePage';
 import AddIllnessPage from './pages/AddIllnessPage';
 import EditIllnessPage from './pages/EditIllnessPage';
@@ -30,8 +28,8 @@ function App() {
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/invite" element={<InviteAcceptPage />} />
+        <Route path="/register" element={<SignupPage />} />
+        <Route path="/invite" element={<InvitePage />} />
         <Route path="/forgot-password" element={<Navigate to="/login" replace />} />
         
         {/* Protected routes */}

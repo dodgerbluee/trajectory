@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import type { Visit, Child } from '../../../types/api';
-import TimelineItem from '../../../components/TimelineItem';
-import Card from '../../../components/Card';
-import tl from '../../../components/TimelineList.module.css';
+import TimelineItem from '../../../shared/components/TimelineItem';
+import Card from '../../../shared/components/Card';
+import tl from '../../../shared/components/TimelineList.module.css';
 
 interface VisitsTimelineProps {
   visits: Visit[];

@@ -4,6 +4,6 @@
    Component and page styles live in CSS Modules. See REFACTOR_STYLING_ACTION_PLAN.md.
    ============================================================================ */
 
-@import './styles/reset.css';
-@import './styles/tokens.css';
-@import './styles/base.css';
+@import './shared/styles/reset.css';
+@import './shared/styles/tokens.css';
+@import './shared/styles/base.css';

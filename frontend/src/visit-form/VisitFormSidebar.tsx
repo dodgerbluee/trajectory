@@ -6,9 +6,9 @@
  */
 
 import { getAddableSectionIds, getSectionById } from './sectionRegistry';
-import layout from '../styles/VisitsLayout.module.css';
+import layout from '../shared/styles/VisitsLayout.module.css';
 import sidebarStyles from './VisitFormSidebar.module.css';
-import mui from '../styles/MeasurementsUI.module.css';
+import mui from '../shared/styles/MeasurementsUI.module.css';
 
 export interface VisitFormSidebarProps {
   /** Currently active section IDs; buttons hidden for sections already added. */

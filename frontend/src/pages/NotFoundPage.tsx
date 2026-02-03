@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
-import Card from '../components/Card';
-import Button from '../components/Button';
-import pageLayout from '../styles/page-layout.module.css';
+import Card from '../shared/components/Card';
+import Button from '../shared/components/Button';
+import pageLayout from '../shared/styles/page-layout.module.css';
 
 function NotFoundPage() {
   return (

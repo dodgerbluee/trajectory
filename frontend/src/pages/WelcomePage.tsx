@@ -6,9 +6,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LuUsers, LuBaby, LuBookOpen, LuHouse, LuSparkles } from 'react-icons/lu';
-import Button from '../components/Button';
-import Card from '../components/Card';
-import loadingStyles from '../components/LoadingSpinner.module.css';
+import Button from '../shared/components/Button';
+import Card from '../shared/components/Card';
+import loadingStyles from '../shared/components/LoadingSpinner.module.css';
 import w from './WelcomePage.module.css';
 import { familiesApi, completeOnboarding, ApiClientError } from '../lib/api-client';
 import { useAuth } from '../contexts/AuthContext';

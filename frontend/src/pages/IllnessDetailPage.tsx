@@ -3,14 +3,14 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { illnessesApi, childrenApi, visitsApi, ApiClientError } from '../lib/api-client';
 import type { Illness, Child, Visit } from '../types/api';
 import { formatDate } from '../lib/date-utils';
-import LoadingSpinner from '../components/LoadingSpinner';
-import ErrorMessage from '../components/ErrorMessage';
-import Card from '../components/Card';
-import Button from '../components/Button';
-import Notification from '../components/Notification';
+import LoadingSpinner from '../shared/components/LoadingSpinner';
+import ErrorMessage from '../shared/components/ErrorMessage';
+import Card from '../shared/components/Card';
+import Button from '../shared/components/Button';
+import Notification from '../shared/components/Notification';
 import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
-import layoutStyles from '../styles/visit-detail-layout.module.css';
-import pageLayout from '../styles/page-layout.module.css';
+import layoutStyles from '../shared/styles/visit-detail-layout.module.css';
+import pageLayout from '../shared/styles/page-layout.module.css';
 import styles from './VisitDetailPage.module.css';
 
 const SEVERITY_LABELS: Record<number, string> = {

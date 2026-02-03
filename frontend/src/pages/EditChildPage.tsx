@@ -3,15 +3,15 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { childrenApi, ApiClientError } from '../lib/api-client';
 import { validateChildForm, formatDateForInput, getTodayDate } from '../lib/validation';
 import type { Child, Gender } from '../types/api';
-import Card from '../components/Card';
-import FormField from '../components/FormField';
-import Button from '../components/Button';
-import Notification from '../components/Notification';
-import LoadingSpinner from '../components/LoadingSpinner';
-import ErrorMessage from '../components/ErrorMessage';
-import ImageCropUpload from '../components/ImageCropUpload';
-import pageLayout from '../styles/page-layout.module.css';
-import formLayout from '../styles/FormLayout.module.css';
+import Card from '../shared/components/Card';
+import FormField from '../shared/components/FormField';
+import Button from '../shared/components/Button';
+import Notification from '../shared/components/Notification';
+import LoadingSpinner from '../shared/components/LoadingSpinner';
+import ErrorMessage from '../shared/components/ErrorMessage';
+import ImageCropUpload from '../shared/components/ImageCropUpload';
+import pageLayout from '../shared/styles/page-layout.module.css';
+import formLayout from '../shared/styles/FormLayout.module.css';
 import styles from './EditChildPage.module.css';
 
 function EditChildPage() {

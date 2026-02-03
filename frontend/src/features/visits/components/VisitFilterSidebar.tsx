@@ -1,11 +1,11 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { HiPlus } from 'react-icons/hi';
-import VisitStats from '../../../components/VisitStats';
-import ChildSelector from '../../../components/ChildSelector';
-import Button from '../../../components/Button';
+import VisitStats from '../../../shared/components/VisitStats';
+import ChildSelector from '../../../shared/components/ChildSelector';
+import Button from '../../../shared/components/Button';
 import { useFamilyPermissions } from '../../../contexts/FamilyPermissionsContext';
 import type { Child } from '../../../types/api';
-import layout from '../../../styles/VisitsLayout.module.css';
+import layout from '../../../shared/styles/VisitsLayout.module.css';
 
 interface Stat {
     label: string;

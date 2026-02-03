@@ -3,16 +3,16 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { illnessesApi, childrenApi, visitsApi, ApiClientError } from '../lib/api-client';
 import type { Child, UpdateIllnessInput, IllnessType, Illness } from '../types/api';
 import { getTodayDate } from '../lib/validation';
-import Card from '../components/Card';
-import FormField from '../components/FormField';
-import Button from '../components/Button';
-import Notification from '../components/Notification';
-import LoadingSpinner from '../components/LoadingSpinner';
-import IllnessEntryFormFields from '../components/IllnessEntryFormFields';
+import Card from '../shared/components/Card';
+import FormField from '../shared/components/FormField';
+import Button from '../shared/components/Button';
+import Notification from '../shared/components/Notification';
+import LoadingSpinner from '../shared/components/LoadingSpinner';
+import IllnessEntryFormFields from '../shared/components/IllnessEntryFormFields';
 import { SectionWrapper } from '../visit-form/SectionWrapper';
-import layoutStyles from '../styles/visit-detail-layout.module.css';
-import pageLayout from '../styles/page-layout.module.css';
-import tl from '../components/TimelineList.module.css';
+import layoutStyles from '../shared/styles/visit-detail-layout.module.css';
+import pageLayout from '../shared/styles/page-layout.module.css';
+import tl from '../shared/components/TimelineList.module.css';
 import styles from './EditIllnessPage.module.css';
 
 function EditIllnessPage() {
@@ -126,7 +126,7 @@ function EditIllnessPage() {
     end_date: formData.end_date !== undefined ? formData.end_date : illness.end_date,
   };
 
-  const handleIllnessEntryChange = (next: import('../components/IllnessEntryFormFields').IllnessEntryFormValue) => {
+  const handleIllnessEntryChange = (next: import('../shared/components/IllnessEntryFormFields').IllnessEntryFormValue) => {
     setFormData(prev => ({
       ...prev,
       symptoms: next.symptoms,
