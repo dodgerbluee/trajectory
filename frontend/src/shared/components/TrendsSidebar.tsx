@@ -2,7 +2,7 @@ import { GoGraph } from 'react-icons/go';
 import { LuPill } from 'react-icons/lu';
 import ChildSelector from './ChildSelector';
 import VisitStats from './VisitStats';
-import type { Child } from '../../types/api';
+import type { Child } from '../types/api';
 import layout from '../styles/VisitsLayout.module.css';
 
 interface Props {

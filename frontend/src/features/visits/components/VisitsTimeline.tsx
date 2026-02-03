@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { Visit, Child } from '../../../types/api';
+import type { Visit, Child } from '../../../shared/types/api';
 import TimelineItem from '../../../shared/components/TimelineItem';
 import Card from '../../../shared/components/Card';
 import tl from '../../../shared/components/TimelineList.module.css';

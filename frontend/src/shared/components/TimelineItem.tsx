@@ -1,4 +1,4 @@
-import type { Visit, Illness } from '../../types/api';
+import type { Visit, Illness } from '../types/api';
 import VisitCard from './VisitCard';
 import IllnessCard from './IllnessCard';
 

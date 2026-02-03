@@ -3,8 +3,8 @@ import Button from '../Button';
 import LoadingSpinner from '../LoadingSpinner';
 import ErrorMessage from '../ErrorMessage';
 import { HiRefresh } from 'react-icons/hi';
-import { adminApi } from '../../../lib/api-client';
-import type { AdminLogEntry, AdminLogsResponse } from '../../../types/api';
+import { adminApi } from '../../lib/api-client';
+import type { AdminLogEntry, AdminLogsResponse } from '../../types/api';
 import pageLayout from '../../styles/page-layout.module.css';
 import styles from './AdminLogs.module.css';
 

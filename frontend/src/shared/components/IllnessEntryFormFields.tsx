@@ -8,7 +8,7 @@
 import FormField from './FormField';
 import IllnessesInput from './IllnessesInput';
 import SeveritySelector from './SeveritySelector';
-import type { IllnessType } from '../../types/api';
+import type { IllnessType } from '../types/api';
 import styles from './IllnessEntryFormFields.module.css';
 
 export interface IllnessEntryFormValue {

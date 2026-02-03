@@ -3,7 +3,7 @@
  * Supports text, numbers, dates, booleans, arrays, and null/empty values.
  */
 
-import { formatDate } from '../../lib/date-utils';
+import { formatDate } from '../lib/date-utils';
 import styles from './AuditDiffView.module.css';
 
 export interface AuditDiffViewProps {

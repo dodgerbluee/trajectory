@@ -5,8 +5,8 @@
 
 import { useState } from 'react';
 import { HiPencil, HiTrash, HiDownload } from 'react-icons/hi';
-import type { VisitAttachment } from '../../types/api';
-import { visitsApi } from '../../lib/api-client';
+import type { VisitAttachment } from '../types/api';
+import { visitsApi } from '../lib/api-client';
 import fu from './FileUpload.module.css';
 
 interface VisitAttachmentsListProps {

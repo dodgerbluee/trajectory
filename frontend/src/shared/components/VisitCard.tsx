@@ -3,8 +3,8 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { DentalToothIcon } from '@hugeicons/core-free-icons';
 import { LuPaperclip, LuActivity, LuHeart, LuPill, LuEye } from 'react-icons/lu';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
-import type { Visit } from '../../types/api';
-import { formatDate } from '../../lib/date-utils';
+import type { Visit } from '../types/api';
+import { formatDate } from '../lib/date-utils';
 import t from './TimelineItem.module.css';
 import vi from '../styles/VisitIcons.module.css';
 

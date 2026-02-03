@@ -13,7 +13,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { completeOnboarding } from '../lib/api-client';
+import { completeOnboarding } from '../shared/lib/api-client';
 import { useAuth } from './AuthContext';
 
 export const ONBOARDING_STEPS = [

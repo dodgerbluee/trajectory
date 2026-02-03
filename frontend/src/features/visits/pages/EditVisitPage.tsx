@@ -1,21 +1,18 @@
 import { useState, FormEvent, useEffect, useMemo, useRef, type Dispatch, type SetStateAction } from 'react';
 import { Link, useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { visitsApi, childrenApi, ApiClientError } from '../lib/api-client';
-import type { Child, UpdateVisitInput, IllnessType, Visit, VisitAttachment } from '../types/api';
-import { getTodayDate } from '../lib/validation';
-import { isFutureVisit, isFutureDate } from '../lib/date-utils';
-import { visitHasOutcomeData } from '../lib/visit-utils';
-import Card from '../shared/components/Card';
-import Button from '../shared/components/Button';
-import Notification from '../shared/components/Notification';
-import LoadingSpinner from '../shared/components/LoadingSpinner';
-import { getDefaultSectionsForVisitType } from '../visit-form/visitTypeDefaults';
-import { getSectionById } from '../visit-form/sectionRegistry';
-import { SectionWrapper } from '../visit-form/SectionWrapper';
-import { VisitFormSidebar } from '../visit-form/VisitFormSidebar';
-import layoutStyles from '../shared/styles/visit-detail-layout.module.css';
-import pageLayout from '../shared/styles/page-layout.module.css';
-import formLayout from '../shared/styles/VisitFormLayout.module.css';
+import { visitsApi, childrenApi, ApiClientError } from '../../../shared/lib/api-client';
+import type { Child, UpdateVisitInput, IllnessType, Visit, VisitAttachment } from '../../../shared/types/api';
+import { getTodayDate } from '../../../shared/lib/validation';
+import { isFutureVisit, isFutureDate } from '../../../shared/lib/date-utils';
+import { visitHasOutcomeData } from '../../../shared/lib/visit-utils';
+import Card from '../../../shared/components/Card';
+import Button from '../../../shared/components/Button';
+import Notification from '../../../shared/components/Notification';
+import LoadingSpinner from '../../../shared/components/LoadingSpinner';
+import { VISIT_TYPE_DEFAULTS, getSectionById, SectionWrapper, VisitFormSidebar } from '../visit-form';
+import layoutStyles from '../../../shared/styles/visit-detail-layout.module.css';
+import pageLayout from '../../../shared/styles/page-layout.module.css';
+import formLayout from '../../../shared/styles/VisitFormLayout.module.css';
 import styles from './EditVisitPage.module.css';
 
 
@@ -194,7 +191,7 @@ function EditVisitPage() {
       const futureVisit = isFutureVisit(visitData);
       const hasOutcome = visitHasOutcomeData(visitData);
       const useLimitedForm = futureVisit && !forceFull && !hasOutcome;
-      setActiveSections(useLimitedForm ? ['visit-information', 'notes'] : getDefaultSectionsForVisitType(visitData.visit_type));
+      setActiveSections(useLimitedForm ? ['visit-information', 'notes'] : VISIT_TYPE_DEFAULTS[visitData.visit_type]);
     } catch (error) {
       if (error instanceof ApiClientError) {
         setNotification({ message: error.message, type: 'error' });
@@ -252,7 +249,7 @@ function EditVisitPage() {
   useEffect(() => {
     if (!visit) return;
     setActiveSections(
-      useLimitedForm ? ['visit-information', 'notes'] : getDefaultSectionsForVisitType(visit.visit_type)
+      useLimitedForm ? ['visit-information', 'notes'] : VISIT_TYPE_DEFAULTS[visit.visit_type]
     );
   }, [visit, useLimitedForm]);
 
@@ -406,7 +403,7 @@ function EditVisitPage() {
             </div>
             <div className={`${formLayout.bodyCell} ${layoutStyles.detailBody}`}>
               {(() => {
-                  type SectionId = import('../visit-form/sectionRegistry').SectionId;
+                  type SectionId = import('../visit-form').SectionId;
                   const sectionsToRender: { sectionId: SectionId; entry: NonNullable<ReturnType<typeof getSectionById>> }[] = [];
                   for (const id of activeSections) {
                     const entry = getSectionById(id as SectionId);

@@ -8,18 +8,12 @@ import { FamilyPermissionsProvider } from './contexts/FamilyPermissionsContext';
 import { OnboardingProvider } from './contexts/OnboardingContext';
 import { HomePage } from './features/home';
 import { LoginPage, SignupPage, InvitePage } from './features/auth';
-import ChildDetailPage from './pages/ChildDetailPage';
-import AddChildPage from './pages/AddChildPage';
-import EditChildPage from './pages/EditChildPage';
-import AddVisitPage from './pages/AddVisitPage';
-import EditVisitPage from './pages/EditVisitPage';
-import VisitDetailPage from './pages/VisitDetailPage';
-import SettingsPage from './pages/SettingsPage';
-import AdminPage from './pages/AdminPage';
+import { AddChildPage, EditChildPage, ChildDetailPage } from './features/children';
+import { AddVisitPage, EditVisitPage, VisitDetailPage } from './features/visits';
+import { AddIllnessPage, EditIllnessPage, IllnessDetailPage } from './features/illnesses';
+import { SettingsPage } from './features/settings';
+import { AdminPage } from './features/admin';
 import WelcomePage from './pages/WelcomePage';
-import AddIllnessPage from './pages/AddIllnessPage';
-import EditIllnessPage from './pages/EditIllnessPage';
-import IllnessDetailPage from './pages/IllnessDetailPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function App() {

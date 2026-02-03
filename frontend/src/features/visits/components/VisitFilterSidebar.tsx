@@ -4,7 +4,7 @@ import VisitStats from '../../../shared/components/VisitStats';
 import ChildSelector from '../../../shared/components/ChildSelector';
 import Button from '../../../shared/components/Button';
 import { useFamilyPermissions } from '../../../contexts/FamilyPermissionsContext';
-import type { Child } from '../../../types/api';
+import type { Child } from '../../../shared/types/api';
 import layout from '../../../shared/styles/VisitsLayout.module.css';
 
 interface Stat {

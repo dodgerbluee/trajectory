@@ -6,8 +6,8 @@
 import { useState } from 'react';
 import { HiPencil, HiTrash, HiDownload } from 'react-icons/hi';
 import { LuFileText, LuImage } from 'react-icons/lu';
-import type { VisitAttachment, ChildAttachment, Visit } from '../../types/api';
-import { visitsApi, childrenApi, ApiClientError } from '../../lib/api-client';
+import type { VisitAttachment, ChildAttachment, Visit } from '../types/api';
+import { visitsApi, childrenApi, ApiClientError } from '../lib/api-client';
 import { useFamilyPermissions } from '../../contexts/FamilyPermissionsContext';
 // formatDate not needed here; document entries show visit type and title instead of date
 import LoadingSpinner from './LoadingSpinner';

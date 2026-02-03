@@ -5,7 +5,7 @@ import Card from '../../../shared/components/Card';
 import Button from '../../../shared/components/Button';
 import ErrorMessage from '../../../shared/components/ErrorMessage';
 import CreateUserModal from '../../../shared/components/CreateUserModal';
-import { invitesApi, ApiClientError } from '../../../lib/api-client';
+import { invitesApi, ApiClientError } from '../../../shared/lib/api-client';
 import styles from './InvitePage.module.css';
 
 function InvitePage() {

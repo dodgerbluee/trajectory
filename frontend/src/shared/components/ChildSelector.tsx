@@ -1,5 +1,5 @@
 import { ChildAvatar } from '../../features/children';
-import type { Child } from '../../types/api';
+import type { Child } from '../types/api';
 import layout from '../styles/VisitsLayout.module.css';
 
 interface Props {

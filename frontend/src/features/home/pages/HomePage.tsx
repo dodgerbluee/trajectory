@@ -14,7 +14,7 @@ import FamilyTabView from '../components/FamilyTabView';
 import { useFamilies } from '../hooks/useFamilies';
 import { useUpcomingVisits } from '../hooks/useUpcomingVisits';
 import { useChildren } from '../../children';
-import styles from '../../../pages/HomePage.module.css';
+import styles from './HomePage.module.css';
 import pageLayout from '../../../shared/styles/page-layout.module.css';
 import visitsLayout from '../../../shared/styles/VisitsLayout.module.css';
 

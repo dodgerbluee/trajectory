@@ -13,7 +13,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import type { GrowthDataPoint } from '../../types/api';
+import type { GrowthDataPoint } from '../types/api';
 import growthStyles from './GrowthChartTab.module.css';
 
 interface SingleMetricGrowthChartProps {

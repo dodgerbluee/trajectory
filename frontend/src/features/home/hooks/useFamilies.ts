@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
-import { familiesApi, ApiClientError } from '../../../lib/api-client';
-import type { Family } from '../../../types/api';
+import { familiesApi, ApiClientError } from '../../../shared/lib/api-client';
+import type { Family } from '../../../shared/types/api';
 
 export function useFamilies() {
   const [families, setFamilies] = useState<Family[]>([]);

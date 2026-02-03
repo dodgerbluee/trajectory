@@ -4,8 +4,8 @@ import Button from '../Button';
 import Notification from '../Notification';
 import LoadingSpinner from '../LoadingSpinner';
 import { LuInfo, LuBug } from 'react-icons/lu';
-import { adminApi } from '../../../lib/api-client';
-import type { AdminConfig, AdminLogLevel } from '../../../types/api';
+import { adminApi } from '../../lib/api-client';
+import type { AdminConfig, AdminLogLevel } from '../../types/api';
 import styles from './AdminGeneral.module.css';
 
 export default function AdminGeneral() {

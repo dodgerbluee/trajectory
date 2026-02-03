@@ -5,7 +5,7 @@ import FormField from '../../../shared/components/FormField';
 import Button from '../../../shared/components/Button';
 import Card from '../../../shared/components/Card';
 import CreateUserModal from '../../../shared/components/CreateUserModal';
-import { ApiClientError } from '../../../lib/api-client';
+import { ApiClientError } from '../../../shared/lib/api-client';
 import { useAuth } from '../../../contexts/AuthContext';
 import styles from './LoginPage.module.css';
 

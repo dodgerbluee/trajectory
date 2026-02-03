@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
-import { illnessesApi, childrenApi, ApiClientError } from '../../lib/api-client';
+import { illnessesApi, childrenApi, ApiClientError } from '../lib/api-client';
 import { ChildAvatar } from '../../features/children';
-import type { HeatmapData, Child } from '../../types/api';
+import type { HeatmapData, Child } from '../types/api';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 import Card from './Card';
 import Button from './Button';
 import Heatmap from './Heatmap';
 import GrowthChartTab from './GrowthChartTab';
-import { formatDate } from '../../lib/date-utils';
+import { formatDate } from '../lib/date-utils';
 import { HiChevronLeft, HiChevronRight } from 'react-icons/hi';
 import styles from './MetricsView.module.css';
 

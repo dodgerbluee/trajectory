@@ -1,4 +1,4 @@
-import type { VisitType } from '../../types/api';
+import type { VisitType } from '../types/api';
 import Button from './Button';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { DentalToothIcon } from '@hugeicons/core-free-icons';

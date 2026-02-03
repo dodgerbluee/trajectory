@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { LuPaperclip, LuThermometer } from 'react-icons/lu';
-import type { Illness } from '../../types/api';
-import { formatDate } from '../../lib/date-utils';
+import type { Illness } from '../types/api';
+import { formatDate } from '../lib/date-utils';
 import t from './TimelineItem.module.css';
 import vi from '../styles/VisitIcons.module.css';
 

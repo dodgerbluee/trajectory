@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { illnessesApi, childrenApi, ApiClientError } from '../../lib/api-client';
-import type { Illness, Child } from '../../types/api';
+import { illnessesApi, childrenApi, ApiClientError } from '../lib/api-client';
+import type { Illness, Child } from '../types/api';
 import { HiBell, HiX } from 'react-icons/hi';
-import { formatDate } from '../../lib/date-utils';
+import { formatDate } from '../lib/date-utils';
 import styles from './IllnessNotification.module.css';
 
 function IllnessNotification() {

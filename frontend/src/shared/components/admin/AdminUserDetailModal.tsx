@@ -6,9 +6,9 @@ import ErrorMessage from '../ErrorMessage';
 import Notification from '../Notification';
 import { LuCrown, LuShield } from 'react-icons/lu';
 import { HiX } from 'react-icons/hi';
-import { adminUsersApi } from '../../../lib/api-client';
-import type { AdminUserDetail as AdminUserDetailType } from '../../../types/api';
-import { formatDateTime } from '../../../lib/date-utils';
+import { adminUsersApi } from '../../lib/api-client';
+import type { AdminUserDetail as AdminUserDetailType } from '../../types/api';
+import { formatDateTime } from '../../lib/date-utils';
 import modalStyles from '../Modal.module.css';
 import styles from './AdminUserDetailModal.module.css';
 

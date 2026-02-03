@@ -4,8 +4,8 @@
  */
 
 import { useEffect, useState } from 'react';
-import { visitsApi, ApiClientError } from '../../lib/api-client';
-import type { GrowthDataPoint } from '../../types/api';
+import { visitsApi, ApiClientError } from '../lib/api-client';
+import type { GrowthDataPoint } from '../types/api';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 import Card from './Card';

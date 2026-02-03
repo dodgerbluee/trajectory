@@ -1,7 +1,7 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { LuEye, LuEyeOff } from 'react-icons/lu';
 import { useAuth } from '../../contexts/AuthContext';
-import { authApi, ApiClientError } from '../../lib/api-client';
+import { authApi, ApiClientError } from '../lib/api-client';
 import FormField from './FormField';
 import Button from './Button';
 import ErrorMessage from './ErrorMessage';

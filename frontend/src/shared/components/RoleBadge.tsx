@@ -1,4 +1,4 @@
-import type { FamilyRole } from '../../types/api';
+import type { FamilyRole } from '../types/api';
 import styles from './RoleBadge.module.css';
 
 interface RoleBadgeProps {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { HiX } from 'react-icons/hi';
-import type { Prescription } from '../../types/api';
+import type { Prescription } from '../types/api';
 import Button from './Button';
 import FormField from './FormField';
 import styles from './PrescriptionInput.module.css';

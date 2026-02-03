@@ -1,17 +1,17 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { childrenApi, ApiClientError } from '../lib/api-client';
-import { validateChildForm, formatDateForInput, getTodayDate } from '../lib/validation';
-import type { Child, Gender } from '../types/api';
-import Card from '../shared/components/Card';
-import FormField from '../shared/components/FormField';
-import Button from '../shared/components/Button';
-import Notification from '../shared/components/Notification';
-import LoadingSpinner from '../shared/components/LoadingSpinner';
-import ErrorMessage from '../shared/components/ErrorMessage';
-import ImageCropUpload from '../shared/components/ImageCropUpload';
-import pageLayout from '../shared/styles/page-layout.module.css';
-import formLayout from '../shared/styles/FormLayout.module.css';
+import { childrenApi, ApiClientError } from '../../../shared/lib/api-client';
+import { validateChildForm, formatDateForInput, getTodayDate } from '../../../shared/lib/validation';
+import type { Child, Gender } from '../../../shared/types/api';
+import Card from '../../../shared/components/Card';
+import FormField from '../../../shared/components/FormField';
+import Button from '../../../shared/components/Button';
+import Notification from '../../../shared/components/Notification';
+import LoadingSpinner from '../../../shared/components/LoadingSpinner';
+import ErrorMessage from '../../../shared/components/ErrorMessage';
+import ImageCropUpload from '../../../shared/components/ImageCropUpload';
+import pageLayout from '../../../shared/styles/page-layout.module.css';
+import formLayout from '../../../shared/styles/FormLayout.module.css';
 import styles from './EditChildPage.module.css';
 
 function EditChildPage() {

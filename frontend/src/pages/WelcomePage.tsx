@@ -10,9 +10,9 @@ import Button from '../shared/components/Button';
 import Card from '../shared/components/Card';
 import loadingStyles from '../shared/components/LoadingSpinner.module.css';
 import w from './WelcomePage.module.css';
-import { familiesApi, completeOnboarding, ApiClientError } from '../lib/api-client';
+import { familiesApi, completeOnboarding, ApiClientError } from '../shared/lib/api-client';
 import { useAuth } from '../contexts/AuthContext';
-import type { Family } from '../types/api';
+import type { Family } from '../shared/types/api';
 
 const STORAGE_KEY = 'trajectory_welcome_shown';
 

@@ -6,7 +6,7 @@ import formFieldStyles from '../../../shared/components/FormField.module.css';
 import Button from '../../../shared/components/Button';
 import ErrorMessage from '../../../shared/components/ErrorMessage';
 import Card from '../../../shared/components/Card';
-import { ApiClientError } from '../../../lib/api-client';
+import { ApiClientError } from '../../../shared/lib/api-client';
 import styles from './SignupPage.module.css';
 
 function SignupPage() {

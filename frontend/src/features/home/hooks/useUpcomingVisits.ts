@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
-import { visitsApi, ApiClientError } from '../../../lib/api-client';
-import type { Visit } from '../../../types/api';
-import { isFutureDate } from '../../../lib/date-utils';
-import { visitHasOutcomeData } from '../../../lib/visit-utils';
+import { visitsApi, ApiClientError } from '../../../shared/lib/api-client';
+import type { Visit } from '../../../shared/types/api';
+import { isFutureDate } from '../../../shared/lib/date-utils';
+import { visitHasOutcomeData } from '../../../shared/lib/visit-utils';
 
 export function useUpcomingVisits() {
   const [upcomingVisits, setUpcomingVisits] = useState<Visit[]>([]);

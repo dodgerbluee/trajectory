@@ -4,7 +4,7 @@ import VisitStats from './VisitStats';
 import ChildSelector from './ChildSelector';
 import Button from './Button';
 import { useFamilyPermissions } from '../../contexts/FamilyPermissionsContext';
-import type { Child } from '../../types/api';
+import type { Child } from '../types/api';
 import layout from '../styles/VisitsLayout.module.css';
 
 interface Stat {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, type MouseEvent as ReactMouseEvent } from 'react';
 import { HiX } from 'react-icons/hi';
-import type { IllnessType } from '../../types/api';
+import type { IllnessType } from '../types/api';
 import styles from './IllnessesInput.module.css';
 import mui from '../styles/MeasurementsUI.module.css';
 

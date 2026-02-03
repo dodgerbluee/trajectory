@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import Card from '../../../shared/components/Card';
-import { calculateAge, formatAge, formatDate } from '../../../lib/date-utils';
-import type { Child } from '../../../types/api';
+import { calculateAge, formatAge, formatDate } from '../../../shared/lib/date-utils';
+import type { Child } from '../../../shared/types/api';
 import ChildAvatar from './ChildAvatar';
 import styles from './ChildCard.module.css';
 

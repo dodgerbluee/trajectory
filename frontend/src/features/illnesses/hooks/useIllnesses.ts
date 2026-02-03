@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { illnessesApi, childrenApi, ApiClientError } from '../../../lib/api-client';
-import type { Illness, Child, IllnessType } from '../../../types/api';
+import { illnessesApi, childrenApi, ApiClientError } from '../../../shared/lib/api-client';
+import type { Illness, Child, IllnessType } from '../../../shared/types/api';
 
 export function useIllnesses() {
   const [allIllnesses, setAllIllnesses] = useState<Illness[]>([]);

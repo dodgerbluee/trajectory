@@ -4,7 +4,7 @@
  */
 
 import { useMemo } from 'react';
-import type { HeatmapData, HeatmapDay } from '../../types/api';
+import type { HeatmapData, HeatmapDay } from '../types/api';
 import styles from './Heatmap.module.css';
 
 interface HeatmapProps {

@@ -1,9 +1,9 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { HiPencil, HiTrash, HiDownload } from 'react-icons/hi';
-import type { Visit, ChildAttachment } from '../../types/api';
-import { formatDate } from '../../lib/date-utils';
-import { childrenApi, ApiClientError } from '../../lib/api-client';
+import type { Visit, ChildAttachment } from '../types/api';
+import { formatDate } from '../lib/date-utils';
+import { childrenApi, ApiClientError } from '../lib/api-client';
 import FileUpload from './FileUpload';
 import { useFamilyPermissions } from '../../contexts/FamilyPermissionsContext';
 import LoadingSpinner from './LoadingSpinner';
