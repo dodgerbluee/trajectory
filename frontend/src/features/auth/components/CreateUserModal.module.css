@@ -3,7 +3,7 @@
 .root {
   max-width: 27.5rem;
   width: 100%;
-  padding: var(--spacing-lg);
+  padding: var(--spacing-md);
 }
 
 .root .header {
@@ -26,14 +26,13 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
 }
 
 .formField {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
-  margin-bottom: 0;
+  margin-bottom: var(--spacing-sm);
 }
 
 .label {
@@ -100,11 +99,24 @@
   font-size: var(--font-size-sm-tight);
   color: var(--color-text-secondary);
   line-height: 1.4;
+  padding-left: 10px;
 }
 
 .error {
   margin-top: var(--spacing-xs);
   margin-bottom: 0;
+}
+
+.passwordStatusMismatch {
+  margin-top: var(--spacing-xs);
+  font-size: var(--font-size-sm-tight);
+  color: var(--color-danger);
+}
+
+.passwordStatusMatch {
+  margin-top: var(--spacing-xs);
+  font-size: var(--font-size-sm-tight);
+  color: var(--color-success);
 }
 
 .footer {

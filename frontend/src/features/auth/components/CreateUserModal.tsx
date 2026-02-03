@@ -35,6 +35,11 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const hasPassword = password.length > 0;
+  const hasConfirmPassword = confirmPassword.length > 0;
+  const passwordsMatch = hasPassword && hasConfirmPassword && password === confirmPassword;
+  const showPasswordMismatch = hasConfirmPassword && password !== confirmPassword;
+
   useEffect(() => {
     if (!isOpen) return;
     setStep('loading');
@@ -115,9 +120,7 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
     } else if (username.trim().length < 2) {
       newErrors.username = 'Username must be at least 2 characters';
     }
-    if (!email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (email.trim()) {
       newErrors.email = 'Invalid email format';
     }
     if (!password) {
@@ -276,7 +279,6 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 error={errors.email}
-                required
                 autoComplete="email"
                 disabled={loading}
               />
@@ -324,7 +326,7 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
                   <input
                     id="create-user-confirm"
                     type={showConfirmPassword ? 'text' : 'password'}
-                    className={errors.confirmPassword ? `${styles.input} form-input error` : `${styles.input} form-input`}
+                    className={errors.confirmPassword || showPasswordMismatch ? `${styles.input} form-input error` : `${styles.input} form-input`}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
@@ -348,12 +350,18 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
                 {errors.confirmPassword && (
                   <span className={styles.error}>{errors.confirmPassword}</span>
                 )}
+                {!errors.confirmPassword && showPasswordMismatch && (
+                  <span className={styles.passwordStatusMismatch}>Passwords do not match</span>
+                )}
+                {!errors.confirmPassword && passwordsMatch && (
+                  <span className={styles.passwordStatusMatch}>Passwords match</span>
+                )}
               </div>
               <div className={styles.footer}>
                 <Button type="button" variant="secondary" onClick={onClose}>
                   Cancel
                 </Button>
-                <Button type="submit" variant="primary" disabled={loading}>
+                <Button type="submit" variant="primary" disabled={loading || showPasswordMismatch}>
                   {loading ? 'Creating account…' : 'Create account'}
                 </Button>
               </div>

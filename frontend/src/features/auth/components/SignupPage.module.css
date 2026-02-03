@@ -118,6 +118,16 @@
   color: var(--color-danger);
 }
 
+.passwordStatusMismatch {
+  font-size: 0.85rem;
+  color: var(--color-danger);
+}
+
+.passwordStatusMatch {
+  font-size: 0.85rem;
+  color: var(--color-success);
+}
+
 .button {
   padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--font-size-body);

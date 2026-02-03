@@ -69,6 +69,36 @@ export interface LogEntry {
   };
 }
 
+const SENSITIVE_KEYS = new Set([
+  'password',
+  'passwordHash',
+  'currentPassword',
+  'newPassword',
+  'confirmPassword',
+  'token',
+  'accessToken',
+  'refreshToken',
+  'authorization',
+  'apiKey',
+  'secret',
+]);
+
+function sanitizeValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeValue(item));
+  }
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.entries(record).map(([key, val]) => [
+        key,
+        SENSITIVE_KEYS.has(key) ? '[REDACTED]' : sanitizeValue(val),
+      ])
+    );
+  }
+  return value;
+}
+
 /**
  * Get recent log entries for admin. Filter by level(s), paginate.
  */
@@ -112,10 +142,9 @@ export function logError(
     entry.request = {
       method: req.method,
       path: req.path,
-      params: req.params,
-      query: req.query,
-      // Don't log sensitive body data in production
-      body: process.env.NODE_ENV === 'development' ? req.body : undefined,
+      params: sanitizeValue(req.params) as Record<string, unknown>,
+      query: sanitizeValue(req.query) as Record<string, unknown>,
+      body: sanitizeValue(req.body),
       ip: req.ip,
     };
   }

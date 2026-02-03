@@ -24,7 +24,7 @@ import {
   ConflictError,
   BadRequestError,
 } from '../middleware/error-handler.js';
-import { validateRequired } from '../middleware/validation.js';
+import { validateRequired, validateOptionalString } from '../middleware/validation.js';
 import { createResponse } from '../types/api.js';
 import { asyncHandler } from '../middleware/error-handler.js';
 import { loginRateLimiter, passwordResetRateLimiter } from '../middleware/rate-limit.js';
@@ -119,7 +119,7 @@ authRouter.post(
     const { email, password, username, registrationCode } = req.body;
 
     // Validate input
-    const emailValue = validateRequired(email, 'email');
+    const emailValue = validateOptionalString(email);
     const passwordValue = validateRequired(password, 'password');
     const usernameValue = validateRequired(username, 'username');
 
@@ -138,7 +138,7 @@ authRouter.post(
     }
 
     // Validate email format
-    if (!validateEmail(emailValue)) {
+    if (emailValue && !validateEmail(emailValue)) {
       throw new ValidationError('Invalid email format', 'email');
     }
 
@@ -148,12 +148,14 @@ authRouter.post(
       throw new ValidationError(passwordValidation.errors.join(', '), 'password');
     }
 
-    const existingEmail = await query<UserRow>(
-      'SELECT id FROM users WHERE email = $1',
-      [emailValue.toLowerCase()]
-    );
-    if (existingEmail.rows.length > 0) {
-      throw new ConflictError('User with this email already exists');
+    if (emailValue) {
+      const existingEmail = await query<UserRow>(
+        'SELECT id FROM users WHERE email = $1',
+        [emailValue.toLowerCase()]
+      );
+      if (existingEmail.rows.length > 0) {
+        throw new ConflictError('User with this email already exists');
+      }
     }
 
     const existingUsername = await query<UserRow>(
@@ -172,7 +174,7 @@ authRouter.post(
       `INSERT INTO users (email, password_hash, username, is_instance_admin)
        VALUES ($1, $2, $3, $4)
        RETURNING id, email, username, created_at, onboarding_completed`,
-      [emailValue.toLowerCase(), passwordHash, usernameValue.trim(), isFirstUser]
+      [emailValue ? emailValue.toLowerCase() : null, passwordHash, usernameValue.trim(), isFirstUser]
     );
 
     const user = result.rows[0];
@@ -182,8 +184,8 @@ authRouter.post(
     }
 
     // Generate tokens
-    const accessToken = generateAccessToken(user.id, user.email);
-    const refreshToken = generateRefreshToken(user.id, user.email);
+    const accessToken = generateAccessToken(user.id, user.email || '');
+    const refreshToken = generateRefreshToken(user.id, user.email || '');
 
     // Store refresh token in database
     const tokenHash = hashToken(refreshToken);

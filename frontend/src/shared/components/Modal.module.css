@@ -78,7 +78,7 @@
 }
 
 .body {
-  margin-bottom: var(--spacing-lg);
+  /* margin-bottom: var(--spacing-lg); */
 }
 
 .footer {

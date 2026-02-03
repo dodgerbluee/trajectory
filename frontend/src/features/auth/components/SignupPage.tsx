@@ -28,6 +28,11 @@ function SignupPage() {
     return null;
   }
 
+  const hasPassword = password.length > 0;
+  const hasConfirmPassword = confirmPassword.length > 0;
+  const passwordsMatch = hasPassword && hasConfirmPassword && password === confirmPassword;
+  const showPasswordMismatch = hasConfirmPassword && password !== confirmPassword;
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -37,9 +42,7 @@ function SignupPage() {
       newErrors.username = 'Username must be at least 2 characters';
     }
 
-    if (!email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       newErrors.email = 'Invalid email format';
     }
 
@@ -140,7 +143,6 @@ function SignupPage() {
               value={email}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
               error={errors.email}
-              required
               autoComplete="email"
               disabled={loading}
               aria-describedby={errors.email ? 'email-error' : undefined}
@@ -192,7 +194,7 @@ function SignupPage() {
                 <input
                   id="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
-                  className={`${styles.passwordInput} ${errors.confirmPassword ? 'error' : ''}`}
+                  className={`${styles.passwordInput} ${errors.confirmPassword || showPasswordMismatch ? 'error' : ''}`}
                   value={confirmPassword}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
                   required
@@ -215,13 +217,19 @@ function SignupPage() {
                   {errors.confirmPassword}
                 </span>
               )}
+              {!errors.confirmPassword && showPasswordMismatch && (
+                <span className={styles.passwordStatusMismatch}>Passwords do not match</span>
+              )}
+              {!errors.confirmPassword && passwordsMatch && (
+                <span className={styles.passwordStatusMatch}>Passwords match</span>
+              )}
             </div>
 
             <Button
               type="submit"
               variant="primary"
               fullWidth
-              disabled={loading}
+              disabled={loading || showPasswordMismatch}
               className={styles.button}
             >
               {loading ? 'Creating account...' : 'Sign Up'}

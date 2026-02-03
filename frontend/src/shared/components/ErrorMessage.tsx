@@ -9,7 +9,6 @@ interface ErrorMessageProps {
 function ErrorMessage({ message, onRetry }: ErrorMessageProps) {
   return (
     <div className={styles.root}>
-      <div className={styles.icon}>⚠️</div>
       <p className={styles.text}>{message}</p>
       {onRetry && (
         <Button onClick={onRetry} variant="secondary">

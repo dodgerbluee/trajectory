@@ -14,7 +14,7 @@ $$ LANGUAGE plpgsql;
 -- Auth: users (must exist before families/family_members)
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
-    email VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     username VARCHAR(255) NOT NULL,
     email_verified BOOLEAN NOT NULL DEFAULT FALSE,

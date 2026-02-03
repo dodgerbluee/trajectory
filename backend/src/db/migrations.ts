@@ -6,7 +6,7 @@
  */
 
 import { query, pool } from './connection.js';
-import { readFile } from 'fs/promises';
+import { readFile, readdir } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -30,6 +30,82 @@ async function ensureMigrationsTable(): Promise<void> {
       applied_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
   `);
+}
+
+/**
+ * Get list of migration files from the migrations directory
+ */
+async function getMigrationFiles(): Promise<string[]> {
+  const possibleDirs = [
+    join(__dirname, '..', '..', 'migrations'),
+    join(process.cwd(), 'backend', 'migrations'),
+    join(process.cwd(), 'migrations'),
+  ];
+
+  for (const dir of possibleDirs) {
+    try {
+      const files = await readdir(dir);
+      // Get all SQL files except schema.sql, sorted by name
+      return files
+        .filter(f => f.endsWith('.sql') && f !== 'schema.sql')
+        .sort();
+    } catch {
+      // Try next directory
+      continue;
+    }
+  }
+
+  return [];
+}
+
+/**
+ * Get the path to a migration file
+ */
+async function getMigrationPath(filename: string): Promise<string | null> {
+  const possiblePaths = [
+    join(__dirname, '..', '..', 'migrations', filename),
+    join(process.cwd(), 'backend', 'migrations', filename),
+    join(process.cwd(), 'migrations', filename),
+  ];
+
+  for (const path of possiblePaths) {
+    try {
+      await readFile(path, 'utf-8');
+      return path;
+    } catch {
+      // Try next path
+      continue;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Apply individual migration files (those not named schema.sql)
+ */
+async function applyIncrementalMigrations(): Promise<void> {
+  const appliedMigrations = await getAppliedMigrations();
+  const migrationFiles = await getMigrationFiles();
+
+  if (migrationFiles.length === 0) {
+    return; // No migrations to apply
+  }
+
+  for (const filename of migrationFiles) {
+    if (appliedMigrations.includes(filename)) {
+      continue; // Already applied
+    }
+
+    const path = await getMigrationPath(filename);
+    if (!path) {
+      console.warn(`Warning: Migration file ${filename} not found, skipping`);
+      continue;
+    }
+
+    const sql = await readFile(path, 'utf-8');
+    await executeMigration(filename, sql);
+  }
 }
 
 /**
@@ -124,8 +200,7 @@ async function applyBaseSchema(): Promise<void> {
 }
 
 /**
- * Run database setup: apply schema.sql if not yet applied.
- * Single schema file (no incremental migrations).
+ * Run database setup: apply schema.sql if not yet applied, then apply incremental migrations.
  */
 export async function runMigrations(): Promise<void> {
   console.log('Running database migrations...\n');
@@ -133,6 +208,7 @@ export async function runMigrations(): Promise<void> {
   try {
     await ensureMigrationsTable();
     await applyBaseSchema();
+    await applyIncrementalMigrations();
 
     const appliedMigrations = await getAppliedMigrations();
     console.log(`Applied migrations: ${appliedMigrations.join(', ') || '(none)'}\n`);
