@@ -9,7 +9,6 @@ interface VisitsTimelineViewProps {
   children: Child[];
   visitsWithAttachments: Set<number>;
   showChildName?: boolean;
-  isLoading?: boolean;
   currentPage?: number;
   itemsPerPage?: number;
   totalItems?: number;
@@ -22,7 +21,6 @@ function VisitsTimelineView({
   children,
   visitsWithAttachments,
   showChildName = true,
-  isLoading = false,
   currentPage = 0,
   itemsPerPage = 20,
   totalItems = 0,
@@ -31,12 +29,14 @@ function VisitsTimelineView({
 }: VisitsTimelineViewProps) {
   return (
     <main className={visitsLayout.main}>
-      <VisitsTimeline
-        visits={visits}
-        children={children}
-        visitsWithAttachments={visitsWithAttachments}
-        showChildName={showChildName}
-      />
+      <div className={visitsLayout.mainContent}>
+        <VisitsTimeline
+          visits={visits}
+          children={children}
+          visitsWithAttachments={visitsWithAttachments}
+          showChildName={showChildName}
+        />
+      </div>
       {totalItems > 0 && onPageChange && onItemsPerPageChange && (
         <PaginationControls
           currentPage={currentPage}
@@ -45,11 +45,6 @@ function VisitsTimelineView({
           onPageChange={onPageChange}
           onItemsPerPageChange={onItemsPerPageChange}
         />
-      )}
-      {isLoading && (
-        <div style={{ padding: '10px', textAlign: 'center', color: '#666', fontSize: '0.875rem' }}>
-          Loading attachment info...
-        </div>
       )}
     </main>
   );

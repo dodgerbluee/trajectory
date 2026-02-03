@@ -1,19 +1,19 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { Layout } from './features/layout';
+import { Layout } from './app/components';
 import ErrorBoundary from './shared/components/ErrorBoundary';
 import { ProtectedRoute, AdminRoute } from './features/auth';
 import { HomeTabRequestProvider } from './contexts/HomeTabRequestContext';
 import { FamilyPermissionsProvider } from './contexts/FamilyPermissionsContext';
 import { OnboardingProvider } from './contexts/OnboardingContext';
-import { HomePage } from './features/home';
+import { HomePage } from './app/home';
 import { LoginPage, SignupPage, InvitePage } from './features/auth';
 import { AddChildPage, EditChildPage, ChildDetailPage } from './features/children';
 import { AddVisitPage, EditVisitPage, VisitDetailPage } from './features/visits';
 import { AddIllnessPage, EditIllnessPage, IllnessDetailPage } from './features/illnesses';
 import { SettingsPage } from './features/settings';
 import { AdminPage } from './features/admin';
-import WelcomePage from './pages/WelcomePage';
-import NotFoundPage from './pages/NotFoundPage';
+import { WelcomePage } from './features/onboarding';
+import { NotFoundPage } from './app/errors';
 
 function App() {
   return (

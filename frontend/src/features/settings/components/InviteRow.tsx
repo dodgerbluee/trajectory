@@ -1,7 +1,7 @@
-import Button from '../Button';
-import RoleBadge from '../RoleBadge';
-import type { FamilyInvite } from '../../types/api';
-import type { FamilyRole } from '../../types/api';
+import Button from '@shared/components/Button';
+import RoleBadge from '@shared/components/RoleBadge';
+import type { FamilyInvite } from '@shared/types/api';
+import type { FamilyRole } from '@shared/types/api';
 import styles from './InviteRow.module.css';
 
 interface InviteRowProps {

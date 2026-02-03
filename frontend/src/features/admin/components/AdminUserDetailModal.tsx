@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
-import Button from '../Button';
-import FormField from '../FormField';
-import LoadingSpinner from '../LoadingSpinner';
-import ErrorMessage from '../ErrorMessage';
-import Notification from '../Notification';
+import Button from '@shared/components/Button';
+import FormField from '@shared/components/FormField';
+import LoadingSpinner from '@shared/components/LoadingSpinner';
+import ErrorMessage from '@shared/components/ErrorMessage';
+import Notification from '@shared/components/Notification';
 import { LuCrown, LuShield } from 'react-icons/lu';
 import { HiX } from 'react-icons/hi';
-import { adminUsersApi } from '../../lib/api-client';
-import type { AdminUserDetail as AdminUserDetailType } from '../../types/api';
-import { formatDateTime } from '../../lib/date-utils';
-import modalStyles from '../Modal.module.css';
+import { adminUsersApi } from '@lib/api-client';
+import type { AdminUserDetail as AdminUserDetailType } from '@shared/types/api';
+import { formatDateTime } from '@lib/date-utils';
+import modalStyles from '@shared/components/Modal.module.css';
 import styles from './AdminUserDetailModal.module.css';
 
 interface AdminUserDetailModalProps {

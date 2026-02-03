@@ -6,7 +6,7 @@
   backdrop-filter: blur(var(--size-dot));
   background: rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-md-alt);
-  color: var(--color-text-secondary);
+  color: var(--color-text-three);
   display: inline-flex;
   font-size: var(--font-size-2xs);
   gap: var(--spacing-sm);
@@ -55,7 +55,7 @@
 }
 
 [data-theme="dark"] .root {
-  background: rgba(255, 255, 255, 0.05);
+  background: #0000004d;
 }
 
 [data-theme="light"] .root {

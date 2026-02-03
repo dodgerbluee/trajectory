@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useHomeTabRequest } from '@/contexts/HomeTabRequestContext';
 import { ThemeToggle, AboutDropdown, VersionFooter } from '@features/theme';
 import { IllnessNotification } from '@features/illnesses';
-import OnboardingOverlay from '@shared/components/onboarding/OnboardingOverlay';
+import OnboardingOverlay from '@features/onboarding/components/OnboardingOverlay';
 import styles from './Layout.module.css';
 
 interface LayoutProps {

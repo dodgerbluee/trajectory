@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import Card from '../Card';
-import LoadingSpinner from '../LoadingSpinner';
-import ErrorMessage from '../ErrorMessage';
+import Card from '@shared/components/Card';
+import LoadingSpinner from '@shared/components/LoadingSpinner';
+import ErrorMessage from '@shared/components/ErrorMessage';
 import { LuCrown, LuShield } from 'react-icons/lu';
-import { adminUsersApi } from '../../lib/api-client';
-import type { AdminUser } from '../../types/api';
-import { formatDateTime } from '../../lib/date-utils';
+import { adminUsersApi } from '@lib/api-client';
+import type { AdminUser } from '@shared/types/api';
+import { formatDateTime } from '@lib/date-utils';
 import AdminUserDetailModal from './AdminUserDetailModal';
-import pageLayout from '../../styles/page-layout.module.css';
+import pageLayout from '@shared/styles/page-layout.module.css';
 import styles from './AdminUsers.module.css';
 
 function RoleBadge({ isInstanceAdmin }: { isInstanceAdmin: boolean }) {

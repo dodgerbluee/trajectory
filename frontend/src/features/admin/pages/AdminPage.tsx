@@ -1,9 +1,9 @@
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import Card from '@shared/components/Card';
 import { LuSettings, LuUsers, LuScrollText } from 'react-icons/lu';
-import AdminGeneral from '@shared/components/admin/AdminGeneral';
-import AdminUsers from '@shared/components/admin/AdminUsers';
-import AdminLogs from '@shared/components/admin/AdminLogs';
+import AdminGeneral from '../components/AdminGeneral';
+import AdminUsers from '../components/AdminUsers';
+import AdminLogs from '../components/AdminLogs';
 import layout from '@shared/styles/SettingsLayout.module.css';
 
 function AdminPage() {

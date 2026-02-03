@@ -8,8 +8,8 @@ import { useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { LuSparkles, LuHouse, LuActivity, LuPill, LuTrendingUp } from 'react-icons/lu';
 import { useOnboarding, type OnboardingStep } from '../../../contexts/OnboardingContext';
-import Button from '../Button';
-import Card from '../Card';
+import Button from '@shared/components/Button';
+import Card from '@shared/components/Card';
 import styles from './OnboardingOverlay.module.css';
 
 const STREAMER_COLORS = [

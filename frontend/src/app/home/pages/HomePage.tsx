@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useHomeTabRequest } from '../../../contexts/HomeTabRequestContext';
+import { useHomeTabRequest } from '@/contexts/HomeTabRequestContext';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
 import ErrorMessage from '@shared/components/ErrorMessage';
 import Card from '@shared/components/Card';

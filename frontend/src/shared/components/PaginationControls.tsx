@@ -58,7 +58,7 @@ export default function PaginationControls({
             >
               {itemsPerPageOptions.map((option) => (
                 <option key={option} value={option}>
-                  {option} entries
+                  {option}
                 </option>
               ))}
             </select>

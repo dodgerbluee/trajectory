@@ -3,19 +3,22 @@
 .pageLayout {
   display: flex;
   gap: var(--spacing-lg);
-  align-items: stretch;
+  align-items: flex-start;
 }
 
 .main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.mainContent {
   flex: 1;
 }
 
 .sidebar {
   width: 13.75rem;
   flex: 0 0 13.75rem;
-  position: sticky;
-  align-self: stretch;
-  height: auto;
 }
 
 .sidebarInner {

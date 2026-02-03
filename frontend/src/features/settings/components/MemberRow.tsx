@@ -1,7 +1,7 @@
-import Button from '../Button';
-import RoleBadge from '../RoleBadge';
+import Button from '@shared/components/Button';
+import RoleBadge from '@shared/components/RoleBadge';
 import InitialsAvatar from './InitialsAvatar';
-import type { FamilyMember as FamilyMemberType, FamilyRole } from '../../types/api';
+import type { FamilyMember as FamilyMemberType, FamilyRole } from '@shared/types/api';
 import styles from './MemberRow.module.css';
 
 export type EditableRole = 'parent' | 'read_only';

@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import Card from '../Card';
-import Button from '../Button';
-import type { FamilyMember } from '../../types/api';
+import Card from '@shared/components/Card';
+import Button from '@shared/components/Button';
+import type { FamilyMember } from '@shared/types/api';
 import styles from './FamilyOverviewCard.module.css';
 
 interface FamilyOverviewCardProps {

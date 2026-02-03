@@ -14,7 +14,6 @@ function AllVisitsView() {
     visits,
     children,
     loading,
-    loadingAttachments,
     error,
     filterChildId,
     filterVisitType,
@@ -61,7 +60,6 @@ function AllVisitsView() {
         children={children}
         visitsWithAttachments={visitsWithAttachments}
         showChildName={true}
-        isLoading={loadingAttachments}
         currentPage={currentPage}
         itemsPerPage={itemsPerPage}
         totalItems={totalFilteredVisits}

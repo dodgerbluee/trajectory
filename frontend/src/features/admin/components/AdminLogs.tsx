@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import Button from '../Button';
-import LoadingSpinner from '../LoadingSpinner';
-import ErrorMessage from '../ErrorMessage';
+import Button from '@shared/components/Button';
+import LoadingSpinner from '@shared/components/LoadingSpinner';
+import ErrorMessage from '@shared/components/ErrorMessage';
 import { HiRefresh } from 'react-icons/hi';
-import { adminApi } from '../../lib/api-client';
-import type { AdminLogEntry, AdminLogsResponse } from '../../types/api';
-import pageLayout from '../../styles/page-layout.module.css';
+import { adminApi } from '@lib/api-client';
+import type { AdminLogEntry, AdminLogsResponse } from '@shared/types/api';
+import pageLayout from '@shared/styles/page-layout.module.css';
 import styles from './AdminLogs.module.css';
 
 const LOG_LEVELS = ['info', 'warn', 'error', 'debug'] as const;

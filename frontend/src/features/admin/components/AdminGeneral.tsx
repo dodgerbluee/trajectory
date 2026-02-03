@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import Card from '../Card';
-import Button from '../Button';
-import Notification from '../Notification';
-import LoadingSpinner from '../LoadingSpinner';
+import Card from '@shared/components/Card';
+import Button from '@shared/components/Button';
+import Notification from '@shared/components/Notification';
+import LoadingSpinner from '@shared/components/LoadingSpinner';
 import { LuInfo, LuBug } from 'react-icons/lu';
-import { adminApi } from '../../lib/api-client';
-import type { AdminConfig, AdminLogLevel } from '../../types/api';
+import { adminApi } from '@lib/api-client';
+import type { AdminConfig, AdminLogLevel } from '@shared/types/api';
 import styles from './AdminGeneral.module.css';
 
 export default function AdminGeneral() {

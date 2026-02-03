@@ -1,14 +1,9 @@
 /* Heatmap – grid, cells, legend; tokens in styles/tokens.css */
 
-.container {
-  margin: var(--spacing-lg) 0;
-}
-
 .grid {
   display: flex;
   gap: var(--spacing-xs);
   overflow-x: auto;
-  padding-bottom: var(--spacing-md);
 }
 
 .dayLabels {

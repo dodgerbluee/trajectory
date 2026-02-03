@@ -17,7 +17,7 @@ import { FaLock } from 'react-icons/fa';
 import { LuSun, LuMoon, LuLaptop, LuSave, LuDownload, LuSettings, LuUser, LuUsers, LuUserPlus, LuInfo } from 'react-icons/lu';
 import { ApiClientError, exportApi, familiesApi, childrenApi } from '@lib/api-client';
 import type { Family, FamilyInvite, FamilyMember, Child } from '@shared/types/api';
-import { FamilyOverviewCard, MemberRow, InviteRow } from '@shared/components/family-settings';
+import { FamilyOverviewCard, MemberRow, InviteRow } from '../components';
 import RoleBadge from '@shared/components/RoleBadge';
 import layout from '@shared/styles/SettingsLayout.module.css';
 import pageLayout from '@shared/styles/page-layout.module.css';
