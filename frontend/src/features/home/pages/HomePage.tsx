@@ -1,22 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useHomeTabRequest } from '../../../contexts/HomeTabRequestContext';
-import LoadingSpinner from '../../../shared/components/LoadingSpinner';
-import ErrorMessage from '../../../shared/components/ErrorMessage';
-import Card from '../../../shared/components/Card';
-import Tabs from '../../../shared/components/Tabs';
-import { AllIllnessesView } from '../../illnesses';
-import { AllVisitsView } from '../../visits';
-import MetricsView from '../../../shared/components/MetricsView';
-import TrendsSidebar from '../../../shared/components/TrendsSidebar';
-import VisitTypeModal from '../../../shared/components/VisitTypeModal';
-import FamilyTabView from '../components/FamilyTabView';
-import { useFamilies } from '../hooks/useFamilies';
-import { useUpcomingVisits } from '../hooks/useUpcomingVisits';
-import { useChildren } from '../../children';
+import LoadingSpinner from '@shared/components/LoadingSpinner';
+import ErrorMessage from '@shared/components/ErrorMessage';
+import Card from '@shared/components/Card';
+import Tabs from '@shared/components/Tabs';
+import { AllIllnessesView } from '@features/illnesses';
+import { AllVisitsView } from '@features/visits';
+import MetricsView from '@shared/components/MetricsView';
+import TrendsSidebar from '@shared/components/TrendsSidebar';
+import VisitTypeModal from '@shared/components/VisitTypeModal';
+import { FamilyTabView } from '../components';
+import { useFamilies, useUpcomingVisits } from '../hooks';
+import { useChildren } from '@features/children';
 import styles from './HomePage.module.css';
-import pageLayout from '../../../shared/styles/page-layout.module.css';
-import visitsLayout from '../../../shared/styles/VisitsLayout.module.css';
+import pageLayout from '@shared/styles/page-layout.module.css';
+import visitsLayout from '@shared/styles/VisitsLayout.module.css';
 
 type HomeTab = 'family' | 'illnesses' | 'visits' | 'trends';
 

@@ -11,7 +11,7 @@
  * then add an entry here. No refactor of section or page logic required.
  */
 
-import type { VisitType } from '../../../shared/types/api';
+import type { VisitType } from '@shared/types/api';
 import type { SectionId } from './sectionRegistry';
 
 export const VISIT_TYPE_DEFAULTS: Record<VisitType, SectionId[]> = {

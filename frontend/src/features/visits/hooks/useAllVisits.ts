@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { visitsApi, childrenApi, ApiClientError } from '../../../shared/lib/api-client';
-import type { Visit, Child, VisitType } from '../../../shared/types/api';
+import { visitsApi, childrenApi, ApiClientError } from '@lib/api-client';
+import type { Visit, Child, VisitType } from '@shared/types/api';
 
 export function useAllVisits() {
   const [allVisits, setAllVisits] = useState<Visit[]>([]);

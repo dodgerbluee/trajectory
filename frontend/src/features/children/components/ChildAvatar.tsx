@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { childrenApi } from '../../../shared/lib/api-client';
+import { childrenApi } from '@lib/api-client';
 
 interface ChildAvatarProps {
   avatar: string | null | undefined;

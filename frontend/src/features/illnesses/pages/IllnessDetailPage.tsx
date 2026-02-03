@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { illnessesApi, childrenApi, visitsApi, ApiClientError } from '../../../shared/lib/api-client';
-import type { Illness, Child, Visit } from '../../../shared/types/api';
-import { formatDate } from '../../../shared/lib/date-utils';
-import LoadingSpinner from '../../../shared/components/LoadingSpinner';
-import ErrorMessage from '../../../shared/components/ErrorMessage';
-import Card from '../../../shared/components/Card';
-import Button from '../../../shared/components/Button';
-import Notification from '../../../shared/components/Notification';
+import { illnessesApi, childrenApi, visitsApi, ApiClientError } from '@lib/api-client';
+import type { Illness, Child, Visit } from '@shared/types/api';
+import { formatDate } from '@lib/date-utils';
+import LoadingSpinner from '@shared/components/LoadingSpinner';
+import ErrorMessage from '@shared/components/ErrorMessage';
+import Card from '@shared/components/Card';
+import Button from '@shared/components/Button';
+import Notification from '@shared/components/Notification';
 import { useFamilyPermissions } from '../../../contexts/FamilyPermissionsContext';
-import layoutStyles from '../../../shared/styles/visit-detail-layout.module.css';
-import pageLayout from '../../../shared/styles/page-layout.module.css';
-import styles from '../../visits/pages/VisitDetailPage.module.css';
+import layoutStyles from '@shared/styles/visit-detail-layout.module.css';
+import pageLayout from '@shared/styles/page-layout.module.css';
+import styles from '@features/visits/pages/VisitDetailPage.module.css';
 
 const SEVERITY_LABELS: Record<number, string> = {
   1: '1 - Barely noticeable',

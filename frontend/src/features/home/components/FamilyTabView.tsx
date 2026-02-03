@@ -4,13 +4,13 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { DentalToothIcon } from '@hugeicons/core-free-icons';
 import { LuHeart, LuPill, LuEye, LuActivity } from 'react-icons/lu';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
-import type { Child, Family, Visit } from '../../../shared/types/api';
-import { calculateAge, formatAge, formatDate, isFutureDate } from '../../../shared/lib/date-utils';
-import LoadingSpinner from '../../../shared/components/LoadingSpinner';
-import ErrorMessage from '../../../shared/components/ErrorMessage';
-import Card from '../../../shared/components/Card';
-import { ChildAvatar } from '../../children';
-import tl from '../../../shared/components/TimelineList.module.css';
+import type { Child, Family, Visit } from '@shared/types/api';
+import { calculateAge, formatAge, formatDate, isFutureDate } from '@lib/date-utils';
+import LoadingSpinner from '@shared/components/LoadingSpinner';
+import ErrorMessage from '@shared/components/ErrorMessage';
+import Card from '@shared/components/Card';
+import { ChildAvatar } from '@features/children';
+import tl from '@shared/components/TimelineList.module.css';
 import styles from './FamilyTabView.module.css';
 
 interface FamilyTabViewProps {

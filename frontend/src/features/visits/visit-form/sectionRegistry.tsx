@@ -8,7 +8,7 @@
  */
 
 import type { ComponentType } from 'react';
-import type { VisitType } from '../../../shared/types/api';
+import type { VisitType } from '@shared/types/api';
 import type { VisitFormContext } from './visitFormContext';
 import {
   VisitInformationSection,

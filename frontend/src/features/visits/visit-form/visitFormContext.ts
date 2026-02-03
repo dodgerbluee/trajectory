@@ -4,7 +4,7 @@
  * branch on visit type for "which section to show"—only for display hints (e.g. showTitle).
  */
 
-import type { Child, CreateVisitInput, UpdateVisitInput, IllnessType, Visit, VisitAttachment } from '../../../shared/types/api';
+import type { Child, CreateVisitInput, UpdateVisitInput, IllnessType, Visit, VisitAttachment } from '@shared/types/api';
 
 export type VisitFormMode = 'add' | 'edit';
 

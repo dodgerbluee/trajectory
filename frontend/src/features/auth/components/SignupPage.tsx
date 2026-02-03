@@ -1,12 +1,12 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../../contexts/AuthContext';
-import FormField from '../../../shared/components/FormField';
-import formFieldStyles from '../../../shared/components/FormField.module.css';
-import Button from '../../../shared/components/Button';
-import ErrorMessage from '../../../shared/components/ErrorMessage';
-import Card from '../../../shared/components/Card';
-import { ApiClientError } from '../../../shared/lib/api-client';
+import { useAuth as useAuthContext } from '../../../contexts/AuthContext';
+import FormField from '@shared/components/FormField';
+import formFieldStyles from '@shared/components/FormField.module.css';
+import Button from '@shared/components/Button';
+import ErrorMessage from '@shared/components/ErrorMessage';
+import Card from '@shared/components/Card';
+import { ApiClientError } from '@lib/api-client';
 import styles from './SignupPage.module.css';
 
 function SignupPage() {
@@ -20,7 +20,7 @@ function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { register, isAuthenticated } = useAuth();
+  const { register, isAuthenticated } = useAuthContext();
   const navigate = useNavigate();
 
   if (isAuthenticated) {

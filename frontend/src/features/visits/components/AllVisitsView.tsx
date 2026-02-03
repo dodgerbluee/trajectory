@@ -3,12 +3,11 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { DentalToothIcon } from '@hugeicons/core-free-icons';
 import { LuActivity, LuHeart, LuPill, LuEye } from 'react-icons/lu';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
-import LoadingSpinner from '../../../shared/components/LoadingSpinner';
-import ErrorMessage from '../../../shared/components/ErrorMessage';
-import visitsLayout from '../../../shared/styles/VisitsLayout.module.css';
-import VisitsTimeline from './VisitsTimeline';
-import VisitFilterSidebar from './VisitFilterSidebar';
-import { useAllVisits } from '../hooks/useAllVisits';
+import LoadingSpinner from '@shared/components/LoadingSpinner';
+import ErrorMessage from '@shared/components/ErrorMessage';
+import visitsLayout from '@shared/styles/VisitsLayout.module.css';
+import { VisitsTimeline, VisitFilterSidebar } from '.';
+import { useAllVisits } from '../hooks';
 
 function AllVisitsView() {
   const {

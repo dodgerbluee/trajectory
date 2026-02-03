@@ -1,12 +1,11 @@
 import { useMemo } from 'react';
 import { LuActivity } from 'react-icons/lu';
-import LoadingSpinner from '../../../shared/components/LoadingSpinner';
-import ErrorMessage from '../../../shared/components/ErrorMessage';
-import visitsLayout from '../../../shared/styles/VisitsLayout.module.css';
-import IllnessesTimeline from './IllnessesTimeline';
-import IllnessesSidebar from '../../../shared/components/IllnessesSidebar';
-import { useIllnesses } from '../hooks/useIllnesses';
-
+import LoadingSpinner from '@shared/components/LoadingSpinner';
+import ErrorMessage from '@shared/components/ErrorMessage';
+import visitsLayout from '@shared/styles/VisitsLayout.module.css';
+import { IllnessesTimeline } from '.';
+import IllnessesSidebar from '@shared/components/IllnessesSidebar';
+import { useIllnesses } from '../hooks';
 function AllIllnessesView() {
   const {
     allIllnesses,

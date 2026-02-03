@@ -1,12 +1,12 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LuEye, LuEyeOff } from 'react-icons/lu';
-import FormField from '../../../shared/components/FormField';
-import Button from '../../../shared/components/Button';
-import Card from '../../../shared/components/Card';
-import CreateUserModal from '../../../shared/components/CreateUserModal';
-import { ApiClientError } from '../../../shared/lib/api-client';
-import { useAuth } from '../../../contexts/AuthContext';
+import FormField from '@shared/components/FormField';
+import Button from '@shared/components/Button';
+import Card from '@shared/components/Card';
+import CreateUserModal from '@shared/components/CreateUserModal';
+import { ApiClientError } from '@lib/api-client';
+import { useAuth as useAuthContext } from '../../../contexts/AuthContext';
 import styles from './LoginPage.module.css';
 
 function LoginPage() {
@@ -18,7 +18,7 @@ function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [createUserOpen, setCreateUserOpen] = useState(false);
 
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated } = useAuthContext();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from ?? '/';

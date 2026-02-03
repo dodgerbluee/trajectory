@@ -6,24 +6,24 @@
  * components only render their UI using context (formData, setFormData, etc.).
  */
 
-import FormField from '../../../../shared/components/FormField';
-import TagInput from '../../../../shared/components/TagInput';
-import VaccineInput from '../../../../shared/components/VaccineInput';
-import IllnessEntryFormFields from '../../../../shared/components/IllnessEntryFormFields';
-import MeasurementsInput from '../../../../shared/components/MeasurementsInput';
-import PrescriptionInput from '../../../../shared/components/PrescriptionInput';
-import FileUpload from '../../../../shared/components/FileUpload';
-import fileUploadStyles from '../../../../shared/components/FileUpload.module.css';
-import loadingStyles from '../../../../shared/components/LoadingSpinner.module.css';
-import VisitAttachmentsList from '../../../../shared/components/VisitAttachmentsList';
-import Checkbox from '../../../../shared/components/Checkbox';
-import { VisionRefractionCard } from '../../../../shared/components/VisionRefractionCard';
-import type { VisionRefraction } from '../../../../shared/components/VisionRefractionCard';
+import FormField from '@shared/components/FormField';
+import TagInput from '@shared/components/TagInput';
+import VaccineInput from '@shared/components/VaccineInput';
+import IllnessEntryFormFields from '@shared/components/IllnessEntryFormFields';
+import MeasurementsInput from '@shared/components/MeasurementsInput';
+import PrescriptionInput from '@shared/components/PrescriptionInput';
+import FileUpload from '@shared/components/FileUpload';
+import fileUploadStyles from '@shared/components/FileUpload.module.css';
+import loadingStyles from '@shared/components/LoadingSpinner.module.css';
+import VisitAttachmentsList from '@shared/components/VisitAttachmentsList';
+import Checkbox from '@shared/components/Checkbox';
+import { VisionRefractionCard } from '@shared/components/VisionRefractionCard';
+import type { VisionRefraction } from '@shared/components/VisionRefractionCard';
 import type { SectionId } from '../sectionRegistry';
 import type { VisitFormContext } from '../visitFormContext';
-import { isFutureDate } from '../../../../shared/lib/date-utils';
+import { isFutureDate } from '@lib/date-utils';
 import sectionStyles from './SectionContents.module.css';
-import mui from '../../../../shared/styles/MeasurementsUI.module.css';
+import mui from '@shared/styles/MeasurementsUI.module.css';
 
 export interface SectionContentPropsWithContext {
   sectionId: SectionId;

@@ -1,0 +1,1 @@
+export { useIllnesses } from './useIllnesses';

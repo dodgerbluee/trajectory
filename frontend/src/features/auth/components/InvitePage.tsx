@@ -1,11 +1,11 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { useAuth } from '../../../contexts/AuthContext';
-import Card from '../../../shared/components/Card';
-import Button from '../../../shared/components/Button';
-import ErrorMessage from '../../../shared/components/ErrorMessage';
-import CreateUserModal from '../../../shared/components/CreateUserModal';
-import { invitesApi, ApiClientError } from '../../../shared/lib/api-client';
+import { useAuth as useAuthContext } from '../../../contexts/AuthContext';
+import Card from '@shared/components/Card';
+import Button from '@shared/components/Button';
+import ErrorMessage from '@shared/components/ErrorMessage';
+import CreateUserModal from '@shared/components/CreateUserModal';
+import { invitesApi, ApiClientError } from '@lib/api-client';
 import styles from './InvitePage.module.css';
 
 function InvitePage() {
@@ -16,7 +16,7 @@ function InvitePage() {
   const [error, setError] = useState<string | null>(null);
   const [createUserOpen, setCreateUserOpen] = useState(false);
 
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuthContext();
   const navigate = useNavigate();
 
   useEffect(() => {
