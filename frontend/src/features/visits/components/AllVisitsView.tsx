@@ -6,7 +6,7 @@ import { MdOutlinePersonalInjury } from 'react-icons/md';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
 import ErrorMessage from '@shared/components/ErrorMessage';
 import visitsLayout from '@shared/styles/VisitsLayout.module.css';
-import { VisitsTimeline, VisitFilterSidebar } from '.';
+import { VisitFilterSidebar, VisitsTimelineView } from '.';
 import { useAllVisits } from '../hooks';
 
 function AllVisitsView() {
@@ -50,14 +50,12 @@ function AllVisitsView() {
         onSelectChild={(id: number | undefined) => setFilterChildId(id)}
       />
 
-      <main className={visitsLayout.main}>
-        <VisitsTimeline
-          visits={visits}
-          children={children}
-          visitsWithAttachments={visitsWithAttachments}
-          showChildName={true}
-        />
-      </main>
+      <VisitsTimelineView
+        visits={visits}
+        children={children}
+        visitsWithAttachments={visitsWithAttachments}
+        showChildName={true}
+      />
     </div>
   );
 }

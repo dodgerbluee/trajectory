@@ -1,25 +1,23 @@
-import { useState, FormEvent, useEffect, useMemo, useCallback, type Dispatch, type SetStateAction } from 'react';
+import { useState, FormEvent, useEffect, useMemo, useRef, type Dispatch, type SetStateAction } from 'react';
 import { Link, useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { visitsApi, childrenApi, ApiClientError } from '@lib/api-client';
-import type { Child, CreateVisitInput, VisitType, IllnessType } from '@shared/types/api';
-import { getTodayDate } from '@lib/validation';
-import { isFutureDate } from '@lib/date-utils';
-import Card from '@shared/components/Card';
-import Button from '@shared/components/Button';
-import Notification from '@shared/components/Notification';
-import LoadingSpinner from '@shared/components/LoadingSpinner';
-import VisitTypeModal from '@shared/components/VisitTypeModal';
-import { useFormState } from '@shared/hooks';
-import { VISIT_TYPE_DEFAULTS, getSectionById, SectionWrapper, VisitFormSidebar } from '@visit-form';
-import layoutStyles from '@shared/styles/visit-detail-layout.module.css';
-import pageLayout from '@shared/styles/page-layout.module.css';
-import formLayout from '@shared/styles/VisitFormLayout.module.css';
+import { visitsApi, childrenApi, ApiClientError } from '../lib/api-client';
+import type { Child, CreateVisitInput, VisitType, IllnessType } from '../types/api';
+import { getTodayDate } from '../lib/validation';
+import { isFutureDate } from '../lib/date-utils';
+import Card from '../shared/components/Card';
+import Button from '../shared/components/Button';
+import Notification from '../shared/components/Notification';
+import LoadingSpinner from '../shared/components/LoadingSpinner';
+import VisitTypeModal from '../shared/components/VisitTypeModal';
+import { getDefaultSectionsForVisitType } from '../visit-form/visitTypeDefaults';
+import { getSectionById } from '../visit-form/sectionRegistry';
+import { SectionWrapper } from '../visit-form/SectionWrapper';
+import { VisitFormSidebar } from '../visit-form/VisitFormSidebar';
+import layoutStyles from '../shared/styles/visit-detail-layout.module.css';
+import pageLayout from '../shared/styles/page-layout.module.css';
+import formLayout from '../shared/styles/VisitFormLayout.module.css';
 import styles from './AddVisitPage.module.css';
 
-interface VisitFormState {
-  visit: CreateVisitInput;
-  selectedIllnesses: IllnessType[];
-}
 
 
 function AddVisitPage() {
@@ -38,78 +36,71 @@ function AddVisitPage() {
   const visitTypeFromUrl = searchParams.get('type') as VisitType | null;
   const initialVisitType = visitTypeFromUrl || null;
 
-  const { state: formState, update: updateForm, getCurrent: getCurrentForm } = useFormState<VisitFormState>({
-    initialValue: {
-      visit: {
-        child_id: 0,
-        visit_date: '',
-        visit_time: null,
-        visit_type: initialVisitType || 'wellness',
-        location: null,
-        doctor_name: null,
-        title: null,
-        weight_value: null,
-        weight_ounces: null,
-        weight_percentile: null,
-        height_value: null,
-        height_percentile: null,
-        head_circumference_value: null,
-        head_circumference_percentile: null,
-        bmi_value: null,
-        bmi_percentile: null,
-        blood_pressure: null,
-        heart_rate: null,
-        symptoms: null,
-        temperature: null,
-        illness_start_date: null,
-        end_date: null,
-        injury_type: null,
-        injury_location: null,
-        treatment: null,
-        vision_prescription: null,
-        ordered_glasses: null,
-        ordered_contacts: null,
-        vision_refraction: { od: { sphere: null, cylinder: null, axis: null }, os: { sphere: null, cylinder: null, axis: null }, notes: undefined } as any,
-        dental_procedure_type: null,
-        dental_notes: null,
-        cleaning_type: null,
-        cavities_found: null,
-        cavities_filled: null,
-        xrays_taken: null,
-        fluoride_treatment: null,
-        sealants_applied: null,
-        next_appointment_date: null,
-        dental_procedures: null,
-        vaccines_administered: [],
-        prescriptions: [],
-        tags: [],
-        notes: null,
-        create_illness: false,
-        illness_severity: null,
-      },
-      selectedIllnesses: [],
-    },
+  const [formData, setFormData] = useState<CreateVisitInput>({
+    child_id: 0,
+    visit_date: '',
+    visit_time: null,
+    visit_type: initialVisitType || 'wellness',
+    location: null,
+    doctor_name: null,
+    title: null,
+    weight_value: null,
+    weight_ounces: null,
+    weight_percentile: null,
+    height_value: null,
+    height_percentile: null,
+    head_circumference_value: null,
+    head_circumference_percentile: null,
+    bmi_value: null,
+    bmi_percentile: null,
+    blood_pressure: null,
+    heart_rate: null,
+    symptoms: null,
+    temperature: null,
+    illness_start_date: null,
+    end_date: null,
+    injury_type: null,
+    injury_location: null,
+    treatment: null,
+    vision_prescription: null,
+    ordered_glasses: null,
+    ordered_contacts: null,
+    vision_refraction: { od: { sphere: null, cylinder: null, axis: null }, os: { sphere: null, cylinder: null, axis: null }, notes: undefined } as any,
+    dental_procedure_type: null,
+    dental_notes: null,
+    cleaning_type: null,
+    cavities_found: null,
+    cavities_filled: null,
+    xrays_taken: null,
+    fluoride_treatment: null,
+    sealants_applied: null,
+    next_appointment_date: null,
+    dental_procedures: null,
+    vaccines_administered: [],
+    prescriptions: [],
+    tags: [],
+    notes: null,
+    create_illness: false,
+    illness_severity: null,
   });
 
-  const { visit: formData, selectedIllnesses } = formState;
-
-  const setFormData = useCallback<Dispatch<SetStateAction<CreateVisitInput>>>(
-    (value) => {
-      const current = getCurrentForm().visit;
-      const next = typeof value === 'function' ? (value as (prev: CreateVisitInput) => CreateVisitInput)(current) : value;
-      updateForm('visit', next);
-    },
-    [getCurrentForm, updateForm]
-  );
-
-  const setSelectedIllnesses = useCallback<Dispatch<SetStateAction<IllnessType[]>>>(
-    (value) => {
-      const current = getCurrentForm().selectedIllnesses;
-      const next = typeof value === 'function' ? (value as (prev: IllnessType[]) => IllnessType[])(current) : value;
-      updateForm('selectedIllnesses', next);
-    },
-    [getCurrentForm, updateForm]
-  );
+  // Support multiple illnesses client-side (kept simple and compatible)
+  const [selectedIllnesses, setSelectedIllnesses] = useState<IllnessType[]>([]);
+  // Ref so submit always sees latest (avoids stale closure when user clicks Save then Submit quickly)
+  // Ref updated only in setter so we never overwrite with stale state (e.g. after Save in popup + formData update)
+  const selectedIllnessesRef = useRef<IllnessType[]>([]);
+  const setSelectedIllnessesAndRef: Dispatch<SetStateAction<IllnessType[]>> = (value) => {
+    if (typeof value === 'function') {
+      setSelectedIllnesses((prev) => {
+        const next = value(prev);
+        selectedIllnessesRef.current = next;
+        return next;
+      });
+    } else {
+      selectedIllnessesRef.current = value;
+      setSelectedIllnesses(value);
+    }
+  };
 
   const [recentLocations, setRecentLocations] = useState<string[]>([]);
   const [recentDoctors, setRecentDoctors] = useState<string[]>([]);
@@ -134,7 +125,7 @@ function AddVisitPage() {
     } else if (useShortenedForm) {
       setActiveSections(['visit-information', 'notes']);
     } else {
-      setActiveSections(VISIT_TYPE_DEFAULTS[formData.visit_type]);
+      setActiveSections(getDefaultSectionsForVisitType(formData.visit_type));
     }
   }, [formData.visit_type, noDateYet, useShortenedForm]);
 
@@ -240,7 +231,7 @@ function AddVisitPage() {
       recentDoctors,
       getTodayDate,
       selectedIllnesses,
-      setSelectedIllnesses,
+      setSelectedIllnesses: setSelectedIllnessesAndRef,
       pendingFiles,
       handleRemoveFile,
       handleFileUpload,
@@ -251,12 +242,10 @@ function AddVisitPage() {
     }),
     [
       formData,
-      setFormData,
       submitting,
       recentLocations,
       recentDoctors,
       selectedIllnesses,
-      setSelectedIllnesses,
       pendingFiles,
       children,
       selectedChildId,
@@ -267,9 +256,7 @@ function AddVisitPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    const { visit: currentVisit, selectedIllnesses: currentIllnesses } = getCurrentForm();
-
-    if (!currentVisit.visit_date || !currentVisit.visit_date.trim()) {
+    if (!formData.visit_date || !formData.visit_date.trim()) {
       setNotification({ message: 'Please enter a visit date', type: 'error' });
       return;
     }
@@ -278,13 +265,13 @@ function AddVisitPage() {
       // Future visit: no outcome/type-specific validation; backend allows pending appointments without injury_type/illnesses
     } else {
       // Use ref so we always have latest illnesses (avoids stale closure when Save then Submit quickly)
-      const illnessesToSend = currentVisit.visit_type === 'sick' ? currentIllnesses : null;
-      if (currentVisit.visit_type === 'sick' && (!illnessesToSend || illnessesToSend.length === 0)) {
+      const illnessesToSend = formData.visit_type === 'sick' ? selectedIllnessesRef.current : null;
+      if (formData.visit_type === 'sick' && (!illnessesToSend || illnessesToSend.length === 0)) {
         setNotification({ message: 'Please select at least one illness for sick visits', type: 'error' });
         return;
       }
 
-      if (currentVisit.visit_type === 'injury' && !currentVisit.injury_type) {
+      if (formData.visit_type === 'injury' && !formData.injury_type) {
         setNotification({ message: 'Please enter an injury type', type: 'error' });
         return;
       }
@@ -297,20 +284,20 @@ function AddVisitPage() {
       let payload: CreateVisitInput;
       if (useShortenedForm) {
         payload = {
-          child_id: currentVisit.child_id,
-          visit_date: currentVisit.visit_date,
-          visit_time: currentVisit.visit_time ?? null,
-          visit_type: currentVisit.visit_type,
-          location: currentVisit.location ?? null,
-          doctor_name: currentVisit.doctor_name ?? null,
-          title: currentVisit.title ?? null,
-          notes: currentVisit.notes ?? null,
-          tags: currentVisit.tags ?? null,
+          child_id: formData.child_id,
+          visit_date: formData.visit_date,
+          visit_time: formData.visit_time ?? null,
+          visit_type: formData.visit_type,
+          location: formData.location ?? null,
+          doctor_name: formData.doctor_name ?? null,
+          title: formData.title ?? null,
+          notes: formData.notes ?? null,
+          tags: formData.tags ?? null,
         };
       } else {
-        payload = { ...currentVisit };
-        const illnessesToSend = currentVisit.visit_type === 'sick' ? currentIllnesses : null;
-        if (currentVisit.visit_type === 'sick' && illnessesToSend && illnessesToSend.length > 0) {
+        payload = { ...formData };
+        const illnessesToSend = formData.visit_type === 'sick' ? selectedIllnessesRef.current : null;
+        if (formData.visit_type === 'sick' && illnessesToSend && illnessesToSend.length > 0) {
           (payload as any).illnesses = illnessesToSend;
         }
       }
@@ -455,7 +442,7 @@ function AddVisitPage() {
             </div>
             <div className={`${formLayout.bodyCell} ${layoutStyles.detailBody}`}>
               {(() => {
-                type SectionId = import('../visit-form').SectionId;
+                type SectionId = import('../visit-form/sectionRegistry').SectionId;
                 const sectionsToRender: { sectionId: SectionId; entry: NonNullable<ReturnType<typeof getSectionById>> }[] = [];
                 for (const id of activeSections) {
                   const entry = getSectionById(id as SectionId);

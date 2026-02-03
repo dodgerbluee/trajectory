@@ -1,26 +1,25 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
-import { visitsApi, childrenApi, ApiClientError } from '@lib/api-client';
-import type { Visit, Child, VisitAttachment } from '@shared/types/api';
-import { formatDate, formatTime, safeFormatDateTime, isFutureVisit } from '@lib/date-utils';
-import { visitHasOutcomeData } from '@lib/visit-utils';
-import { getGoogleCalendarAddEventUrl } from '@lib/calendar-export';
-import { getVisitTypeLabel } from '@shared/lib/visit-labels';
-import LoadingSpinner from '@shared/components/LoadingSpinner';
-import loadingStyles from '@shared/components/LoadingSpinner.module.css';
-import ErrorMessage from '@shared/components/ErrorMessage';
-import Card from '@shared/components/Card';
-import Button from '@shared/components/Button';
-import Notification from '@shared/components/Notification';
-import VisitAttachmentsList from '@shared/components/VisitAttachmentsList';
-import Tabs from '@shared/components/Tabs';
-import { useAuth } from '../../../contexts/AuthContext';
-import { useFamilyPermissions } from '../../../contexts/FamilyPermissionsContext';
-import { VisionRefractionCard } from '@shared/components/VisionRefractionCard';
-import AuditDiffView from '@shared/components/AuditDiffView';
-import type { AuditHistoryEvent } from '@shared/types/api';
-import layoutStyles from '@shared/styles/visit-detail-layout.module.css';
-import pageLayout from '@shared/styles/page-layout.module.css';
+import { visitsApi, childrenApi, ApiClientError } from '../lib/api-client';
+import type { Visit, Child, VisitAttachment } from '../types/api';
+import { formatDate, formatTime, safeFormatDateTime, isFutureVisit } from '../lib/date-utils';
+import { visitHasOutcomeData } from '../lib/visit-utils';
+import { getGoogleCalendarAddEventUrl } from '../lib/calendar-export';
+import LoadingSpinner from '../shared/components/LoadingSpinner';
+import loadingStyles from '../shared/components/LoadingSpinner.module.css';
+import ErrorMessage from '../shared/components/ErrorMessage';
+import Card from '../shared/components/Card';
+import Button from '../shared/components/Button';
+import Notification from '../shared/components/Notification';
+import VisitAttachmentsList from '../shared/components/VisitAttachmentsList';
+import Tabs from '../shared/components/Tabs';
+import { useAuth } from '../contexts/AuthContext';
+import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
+import { VisionRefractionCard } from '../shared/components/VisionRefractionCard';
+import AuditDiffView from '../shared/components/AuditDiffView';
+import type { AuditHistoryEvent } from '../types/api';
+import layoutStyles from '../shared/styles/visit-detail-layout.module.css';
+import pageLayout from '../shared/styles/page-layout.module.css';
 import styles from './VisitDetailPage.module.css';
 
 function VisitDetailPage() {
@@ -159,8 +158,19 @@ function VisitDetailPage() {
   // Show limited (upcoming) view only when future-dated and no outcome data; once full form is saved, show full view
   const isFuture = isFutureVisit(visit) && !visitHasOutcomeData(visit);
 
+  const visitTypeLabel = (t: Visit['visit_type']) => {
+    switch (t) {
+      case 'wellness': return 'Wellness';
+      case 'sick': return 'Sick';
+      case 'injury': return 'Injury';
+      case 'vision': return 'Vision';
+      case 'dental': return 'Dental';
+      default: return 'Visit';
+    }
+  };
+
   const handleExportToCalendar = () => {
-    const typeLabel = getVisitTypeLabel(visit.visit_type);
+    const typeLabel = visitTypeLabel(visit.visit_type);
     const title = child.name ? `${child.name}'s ${typeLabel} Appointment` : `${typeLabel} Appointment`;
     const url = getGoogleCalendarAddEventUrl({
       title,
