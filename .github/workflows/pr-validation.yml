@@ -43,12 +43,6 @@ jobs:
             didn't match the configured pattern. Please ensure that the subject
             doesn't start with an uppercase character.
 
-  build:
-    name: Build and Lint (split into separate jobs)
-    runs-on: ubuntu-latest
-    outputs:
-      build-status: ${{ job.status }}
-
   lint-frontend:
     name: Lint Frontend
     runs-on: ubuntu-latest
