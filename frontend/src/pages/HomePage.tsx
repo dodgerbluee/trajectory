@@ -16,7 +16,7 @@ import Card from '../components/Card';
 import ChildAvatar from '../components/ChildAvatar';
 import Tabs from '../components/Tabs';
 import AllIllnessesView from '../components/AllIllnessesView';
-import AllVisitsView from '../components/AllVisitsView';
+import { AllVisitsView } from '../features/visits';
 import MetricsView from '../components/MetricsView';
 import TrendsSidebar from '../components/TrendsSidebar';
 import VisitTypeModal from '../components/VisitTypeModal';

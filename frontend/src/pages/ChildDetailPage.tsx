@@ -16,14 +16,13 @@ import cd from './ChildDetailPage.module.css';
 import pageLayout from '../styles/page-layout.module.css';
 import visitsLayout from '../styles/VisitsLayout.module.css';
 import vi from '../styles/VisitIcons.module.css';
-import VisitsTimeline from '../components/VisitsTimeline';
+import { VisitFilterSidebar, VisitsTimeline } from '../features/visits';
 import IllnessesTimeline from '../components/IllnessesTimeline';
 import Tabs from '../components/Tabs';
 import DocumentsList from '../components/DocumentsList';
 import DocumentsSidebar, { type DocumentTypeFilter } from '../components/DocumentsSidebar';
 import ImageCropUpload from '../components/ImageCropUpload';
 import VaccineHistory from '../components/VaccineHistory';
-import VisitsSidebar from '../components/VisitsSidebar';
 import IllnessesSidebar from '../components/IllnessesSidebar';
 import TrendsSidebar from '../components/TrendsSidebar';
 import MetricsView from '../components/MetricsView';
@@ -547,7 +546,7 @@ function ChildDetailPage() {
                 label: 'Visits',
                 content: (
                   <div className={visitsLayout.pageLayout}>
-                    <VisitsSidebar
+                    <VisitFilterSidebar
                       stats={[
                         {
                           label: 'Total Visits',

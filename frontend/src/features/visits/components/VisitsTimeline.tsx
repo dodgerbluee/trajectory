@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import type { Visit, Child } from '../types/api';
-import TimelineItem from './TimelineItem';
-import Card from './Card';
-import tl from './TimelineList.module.css';
+import type { Visit, Child } from '../../../types/api';
+import TimelineItem from '../../../components/TimelineItem';
+import Card from '../../../components/Card';
+import tl from '../../../components/TimelineList.module.css';
 
 interface VisitsTimelineProps {
   visits: Visit[];
@@ -23,19 +23,17 @@ export default function VisitsTimeline({
   showChildName = true,
   emptyMessage = 'No visits recorded yet. Click "Add Visit" to get started.',
 }: VisitsTimelineProps) {
-  // Create a map for quick child lookup
   const childMap = useMemo(() => {
     const map = new Map<number, Child>();
     children.forEach(child => map.set(child.id, child));
     return map;
   }, [children]);
 
-  // Sort visits by visit_date (most recent first)
   const sortedVisits = useMemo(() => {
     return [...visits].sort((a, b) => {
       const dateA = new Date(a.visit_date).getTime();
       const dateB = new Date(b.visit_date).getTime();
-      return dateB - dateA; // Descending = most recent first
+      return dateB - dateA;
     });
   }, [visits]);
 

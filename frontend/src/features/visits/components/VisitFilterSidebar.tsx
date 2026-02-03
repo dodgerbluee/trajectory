@@ -1,11 +1,11 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { HiPlus } from 'react-icons/hi';
-import VisitStats from './VisitStats';
-import ChildSelector from './ChildSelector';
-import Button from './Button';
-import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
-import type { Child } from '../types/api';
-import layout from '../styles/VisitsLayout.module.css';
+import VisitStats from '../../../components/VisitStats';
+import ChildSelector from '../../../components/ChildSelector';
+import Button from '../../../components/Button';
+import { useFamilyPermissions } from '../../../contexts/FamilyPermissionsContext';
+import type { Child } from '../../../types/api';
+import layout from '../../../styles/VisitsLayout.module.css';
 
 interface Stat {
     label: string;
@@ -26,7 +26,7 @@ interface Props {
     onAddVisitClick?: () => void;
 }
 
-export default function VisitsSidebar({ stats, childrenList, selectedChildId, onSelectChild, hideChildFilter = false, onAddVisitClick }: Props) {
+export default function VisitFilterSidebar({ stats, childrenList, selectedChildId, onSelectChild, hideChildFilter = false, onAddVisitClick }: Props) {
     const location = useLocation();
     const { canEdit } = useFamilyPermissions();
     const isHome = location.pathname === '/';
