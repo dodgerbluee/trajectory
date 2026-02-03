@@ -107,6 +107,36 @@
   margin-bottom: 0;
 }
 
+.passwordRequirements {
+  list-style: none;
+  padding: 0;
+  margin: var(--spacing-xs) 0 0;
+  display: grid;
+  gap: var(--spacing-xs);
+}
+
+.requirementIcon {
+  display: inline-flex;
+  width: 1rem;
+  justify-content: center;
+  margin-right: var(--spacing-xs);
+}
+
+.requirementPending,
+.requirementMet {
+  font-size: var(--font-size-sm-tight);
+  display: flex;
+  align-items: center;
+}
+
+.requirementPending {
+  color: var(--color-text-secondary);
+}
+
+.requirementMet {
+  color: var(--color-success);
+}
+
 .passwordStatusMismatch {
   margin-top: var(--spacing-xs);
   font-size: var(--font-size-sm-tight);

@@ -32,6 +32,20 @@ function SignupPage() {
   const hasConfirmPassword = confirmPassword.length > 0;
   const passwordsMatch = hasPassword && hasConfirmPassword && password === confirmPassword;
   const showPasswordMismatch = hasConfirmPassword && password !== confirmPassword;
+  const hasLowercase = /[a-z]/.test(password);
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[^a-zA-Z0-9]/.test(password);
+  const hasMinLength = password.length >= 8;
+  const passwordMeetsRequirements =
+    hasMinLength && hasLowercase && hasUppercase && hasNumber && hasSpecial;
+  const passwordRequirements = [
+    { label: 'At least 8 characters', met: hasMinLength },
+    { label: 'One lowercase letter', met: hasLowercase },
+    { label: 'One uppercase letter', met: hasUppercase },
+    { label: 'One number', met: hasNumber },
+    { label: 'One special character', met: hasSpecial },
+  ];
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -181,8 +195,21 @@ function SignupPage() {
                 </span>
               )}
               <div className={formFieldStyles.hint}>
-                Must be at least 8 characters with uppercase, lowercase, number, and special character
+                Password must include all of the following:
               </div>
+              <ul className={styles.passwordRequirements} aria-live="polite">
+                {passwordRequirements.map((requirement) => (
+                  <li
+                    key={requirement.label}
+                    className={requirement.met ? styles.requirementMet : styles.requirementPending}
+                  >
+                    <span className={styles.requirementIcon} aria-hidden>
+                      {requirement.met ? '✓' : '•'}
+                    </span>
+                    {requirement.label}
+                  </li>
+                ))}
+              </ul>
             </div>
 
             <div className={styles.passwordField}>
@@ -229,7 +256,7 @@ function SignupPage() {
               type="submit"
               variant="primary"
               fullWidth
-              disabled={loading || showPasswordMismatch}
+              disabled={loading || showPasswordMismatch || !passwordMeetsRequirements}
               className={styles.button}
             >
               {loading ? 'Creating account...' : 'Sign Up'}

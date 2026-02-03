@@ -39,6 +39,20 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
   const hasConfirmPassword = confirmPassword.length > 0;
   const passwordsMatch = hasPassword && hasConfirmPassword && password === confirmPassword;
   const showPasswordMismatch = hasConfirmPassword && password !== confirmPassword;
+  const hasLowercase = /[a-z]/.test(password);
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[^a-zA-Z0-9]/.test(password);
+  const hasMinLength = password.length >= 8;
+  const passwordMeetsRequirements =
+    hasMinLength && hasLowercase && hasUppercase && hasNumber && hasSpecial;
+  const passwordRequirements = [
+    { label: 'At least 8 characters', met: hasMinLength },
+    { label: 'One lowercase letter', met: hasLowercase },
+    { label: 'One uppercase letter', met: hasUppercase },
+    { label: 'One number', met: hasNumber },
+    { label: 'One special character', met: hasSpecial },
+  ];
 
   useEffect(() => {
     if (!isOpen) return;
@@ -315,8 +329,21 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
                   <span className={styles.error}>{errors.password}</span>
                 )}
                 <div className={styles.hint}>
-                  At least 8 characters with uppercase, lowercase, number, and special character
+                  Password must include all of the following:
                 </div>
+                <ul className={styles.passwordRequirements} aria-live="polite">
+                  {passwordRequirements.map((requirement) => (
+                    <li
+                      key={requirement.label}
+                      className={requirement.met ? styles.requirementMet : styles.requirementPending}
+                    >
+                      <span className={styles.requirementIcon} aria-hidden>
+                        {requirement.met ? '✓' : '•'}
+                      </span>
+                      {requirement.label}
+                    </li>
+                  ))}
+                </ul>
               </div>
               <div className={styles.formField}>
                 <label htmlFor="create-user-confirm" className={styles.label}>
@@ -361,7 +388,11 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
                 <Button type="button" variant="secondary" onClick={onClose}>
                   Cancel
                 </Button>
-                <Button type="submit" variant="primary" disabled={loading || showPasswordMismatch}>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  disabled={loading || showPasswordMismatch || !passwordMeetsRequirements}
+                >
                   {loading ? 'Creating account…' : 'Create account'}
                 </Button>
               </div>
