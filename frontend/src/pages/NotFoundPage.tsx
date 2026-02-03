@@ -1,14 +1,16 @@
 import { Link } from 'react-router-dom';
 import Card from '../components/Card';
+import Button from '../components/Button';
+import pageLayout from '../styles/page-layout.module.css';
 
 function NotFoundPage() {
   return (
-    <div className="page-container">
+    <div className={pageLayout.pageContainer}>
       <Card>
         <h1>404 - Page Not Found</h1>
         <p>The page you're looking for doesn't exist.</p>
         <Link to="/">
-          <button className="btn btn-primary">Go Home</button>
+          <Button variant="primary">Go Home</Button>
         </Link>
       </Card>
     </div>

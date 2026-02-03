@@ -7,7 +7,10 @@ import { childrenApi, ApiClientError } from '../lib/api-client';
 import FileUpload from './FileUpload';
 import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
 import LoadingSpinner from './LoadingSpinner';
+import loadingStyles from './LoadingSpinner.module.css';
 import VaccineSidebar from './VaccineSidebar';
+import styles from './VaccineHistory.module.css';
+import visitsLayout from '../styles/VisitsLayout.module.css';
 
 interface VaccineHistoryProps {
   visits: Visit[];
@@ -184,7 +187,7 @@ function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProp
 
   if (vaccineRecords.length === 0) {
     return (
-      <div className="empty-state">
+      <div className={visitsLayout.emptyState}>
         <p>No vaccines recorded yet. Vaccines will appear here when added to wellness visits.</p>
       </div>
     );
@@ -193,36 +196,36 @@ function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProp
   const totalDoses = vaccineRecords.reduce((sum, record) => sum + record.dates.length, 0);
 
   return (
-    <div className="visits-page-layout">
+    <div className={visitsLayout.pageLayout}>
       <VaccineSidebar
         vaccineTypesCount={vaccineRecords.length}
         totalDosesCount={totalDoses}
         reportsCount={vaccineReports.length}
       />
-      <main className="visits-main">
-        <div className="vaccine-history-container">
-          <div className="vaccine-history-list">
+      <main className={visitsLayout.main}>
+        <div className={styles.container}>
+          <div className={styles.list}>
         {vaccineRecords.map((record) => (
-          <div key={record.name} className="vaccine-history-item">
-            <div className="vaccine-history-header">
-              <div className="vaccine-history-name">
-                <span className="vaccine-icon">💉</span>
-                <span className="vaccine-name-text">{record.name}</span>
+          <div key={record.name} className={styles.item}>
+            <div className={styles.header}>
+              <div className={styles.name}>
+                <span className={styles.icon}>💉</span>
+                <span className={styles.nameText}>{record.name}</span>
               </div>
-              <div className="vaccine-history-count">
+              <div className={styles.count}>
                 {record.dates.length} {record.dates.length === 1 ? 'dose' : 'doses'}
               </div>
             </div>
-            <div className="vaccine-history-dates">
+            <div className={styles.dates}>
               {record.dates.map((dose, index) => (
                 <Link
                   key={`${dose.visitId}-${index}`}
                   to={`/visits/${dose.visitId}`}
-                  className="vaccine-dose-item"
+                  className={styles.doseItem}
                 >
-                  <span className="vaccine-dose-number">#{index + 1}</span>
-                  <span className="vaccine-dose-date">{formatDate(dose.date)}</span>
-                  <span className="vaccine-dose-arrow">→</span>
+                  <span className={styles.doseNumber}>#{index + 1}</span>
+                  <span className={styles.doseDate}>{formatDate(dose.date)}</span>
+                  <span className={styles.doseArrow}>→</span>
                 </Link>
               ))}
             </div>
@@ -231,20 +234,20 @@ function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProp
       </div>
 
       {loadingReports ? (
-        <div className="vaccine-reports-loading">
+        <div className={styles.reportsLoading}>
           <LoadingSpinner message="Loading vaccine reports..." />
         </div>
       ) : vaccineReports.length > 0 ? (
-        <div className="vaccine-reports-section">
-          <h4 className="vaccine-reports-title">Vaccine Report Documents</h4>
-          <div className="vaccine-reports-list">
+        <div className={styles.reportsSection}>
+          <h4 className={styles.reportsTitle}>Vaccine Report Documents</h4>
+          <div className={styles.reportsList}>
             {vaccineReports.map((doc) => (
-              <div key={doc.id} className="vaccine-report-item">
-                <div className="vaccine-report-icon">{getFileIcon(doc.file_type)}</div>
+              <div key={doc.id} className={styles.reportItem}>
+                <div className={styles.reportIcon}>{getFileIcon(doc.file_type)}</div>
                 
-                <div className="vaccine-report-info">
+                <div className={styles.reportInfo}>
                   {editingId === doc.id ? (
-                    <div className="vaccine-report-edit-form">
+                    <div className={styles.reportEditForm}>
                       <input
                         type="text"
                         value={editValue}
@@ -256,14 +259,14 @@ function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProp
                             handleEditCancel();
                           }
                         }}
-                        className="vaccine-report-edit-input"
+                        className={styles.reportEditInput}
                         autoFocus
                       />
-                      <div className="vaccine-report-edit-actions">
+                      <div className={styles.reportEditActions}>
                         <button
                           type="button"
                           onClick={() => handleEditSave(doc.id)}
-                          className="btn-icon-small btn-save"
+                          className={`${styles.btnIconSmall} ${styles.btnSave}`}
                           title="Save"
                         >
                           ✓
@@ -271,7 +274,7 @@ function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProp
                         <button
                           type="button"
                           onClick={handleEditCancel}
-                          className="btn-icon-small btn-cancel"
+                          className={`${styles.btnIconSmall} ${styles.btnCancel}`}
                           title="Cancel"
                         >
                           ✕
@@ -283,27 +286,27 @@ function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProp
                       <button
                         type="button"
                         onClick={() => handleClick(doc.id)}
-                        className="vaccine-report-filename-link"
+                        className={styles.reportFilenameLink}
                         title="Click to open document"
                       >
                         {doc.original_filename}
                       </button>
-                      <div className="vaccine-report-meta">
-                        <span className="vaccine-report-meta-item">{formatFileSize(doc.file_size)}</span>
-                        <span className="vaccine-report-meta-separator">•</span>
-                        <span className="vaccine-report-meta-item">{formatDate(doc.created_at)}</span>
+                      <div className={styles.reportMeta}>
+                        <span className={styles.reportMetaItem}>{formatFileSize(doc.file_size)}</span>
+                        <span className={styles.reportMetaSeparator}>•</span>
+                        <span className={styles.reportMetaItem}>{formatDate(doc.created_at)}</span>
                       </div>
                     </>
                   )}
                 </div>
 
-                <div className="vaccine-report-actions">
+                <div className={styles.reportActions}>
                   {editingId === doc.id ? null : (
                     <>
                       <button
                         type="button"
                         onClick={() => handleDownload(doc.id, doc.original_filename)}
-                        className="btn-icon-action btn-download"
+                        className={`${styles.btnIconAction} ${styles.btnDownload}`}
                         title="Download document"
                       >
                         <HiDownload />
@@ -313,7 +316,7 @@ function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProp
                           <button
                             type="button"
                             onClick={() => handleEditStart(doc)}
-                            className="btn-icon-action btn-edit"
+                            className={`${styles.btnIconAction} ${styles.btnEdit}`}
                             title="Rename document"
                           >
                             <HiPencil />
@@ -322,12 +325,12 @@ function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProp
                             type="button"
                             onClick={() => handleDelete(doc.id)}
                             disabled={deletingId === doc.id}
-                            className="btn-icon-action btn-delete"
+                            className={`${styles.btnIconAction} ${styles.btnDelete}`}
                             title="Delete document"
                           >
                             {deletingId === doc.id ? (
-                              <div className="btn-spinner-wrapper">
-                                <div className="spinner"></div>
+                              <div className={loadingStyles.btnSpinnerWrapper}>
+                                <LoadingSpinner message="" />
                               </div>
                             ) : (
                               <HiTrash />
@@ -345,9 +348,9 @@ function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProp
       ) : null}
 
       {canEdit && (
-      <div className="vaccine-history-upload-section">
-        <h4 className="vaccine-history-upload-title">Upload Vaccine Report</h4>
-        <p className="vaccine-history-upload-description">
+      <div className={styles.uploadSection}>
+        <h4 className={styles.uploadTitle}>Upload Vaccine Report</h4>
+        <p className={styles.uploadDescription}>
           Upload vaccine report documents (PDFs or images) to keep track of official vaccination records.
         </p>
         <FileUpload onUpload={handleFileUpload} disabled={uploading} />

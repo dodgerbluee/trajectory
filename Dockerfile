@@ -50,6 +50,9 @@ COPY --from=backend-builder /app/backend/dist ./dist
 # Copy migrations directory (needed at runtime)
 COPY --from=backend-builder /app/backend/migrations ./migrations
 
+# Copy scripts directory (for seeding, etc.)
+COPY --from=backend-builder /app/backend/dist/scripts ./dist/scripts
+
 # Copy frontend build to public directory
 COPY --from=frontend-builder /app/frontend/dist ./public
 

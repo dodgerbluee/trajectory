@@ -92,11 +92,22 @@ describe('canViewAuditHistory', () => {
     expect(result).toBe(false);
   });
 
-  it('returns true if entity exists and user is authenticated', async () => {
-    mockQuery.mockResolvedValue({ rows: [{ child_id: 1 }], rowCount: 1 } as never);
+  it('returns true if entity exists and user can access the child (same family)', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ child_id: 1 }], rowCount: 1 } as never)
+      .mockResolvedValueOnce({ rows: [{ family_id: 1 }], rowCount: 1 } as never);
 
     const result = await canViewAuditHistory('visit', 42, 5);
     expect(result).toBe(true);
+  });
+
+  it('returns false if user cannot access the child (different family)', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ child_id: 1 }], rowCount: 1 } as never)
+      .mockResolvedValueOnce({ rows: [], rowCount: 0 } as never);
+
+    const result = await canViewAuditHistory('visit', 42, 5);
+    expect(result).toBe(false);
   });
 });
 

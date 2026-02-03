@@ -2,11 +2,12 @@ import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { HiChevronDown } from 'react-icons/hi';
 import { useAuth } from '../contexts/AuthContext';
+import styles from './AboutDropdown.module.css';
 
 function AboutDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
 
   const handleLogout = async () => {
     setIsOpen(false);
@@ -30,30 +31,43 @@ function AboutDropdown() {
   }, [isOpen]);
 
   return (
-    <div className="about-dropdown" ref={dropdownRef}>
+    <div className={styles.root} ref={dropdownRef}>
       <button
-        className="about-dropdown-trigger"
+        type="button"
+        className={styles.trigger}
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
         aria-haspopup="true"
         data-onboarding="settings-menu"
       >
-        <HiChevronDown className="about-dropdown-icon" />
+        <HiChevronDown className={styles.icon} aria-hidden />
       </button>
       {isOpen && (
-        <div className="about-dropdown-menu">
+        <div className={styles.menu} role="menu">
           <Link
             to="/settings"
-            className="about-dropdown-item"
+            className={styles.item}
             onClick={() => setIsOpen(false)}
             data-onboarding="settings-menu-item"
+            role="menuitem"
           >
             Settings
           </Link>
+          {user?.isInstanceAdmin && (
+            <Link
+              to="/admin"
+              className={styles.item}
+              onClick={() => setIsOpen(false)}
+              role="menuitem"
+            >
+              Admin
+            </Link>
+          )}
           <button
             type="button"
-            className="about-dropdown-item"
+            className={styles.item}
             onClick={handleLogout}
+            role="menuitem"
           >
             Logout
           </button>

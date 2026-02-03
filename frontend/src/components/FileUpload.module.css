@@ -1,0 +1,279 @@
+/* File upload and attachments – shared by FileUpload, ImageCropUpload, SectionContents, VisitAttachmentsList */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.uploadError {
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+  padding: var(--spacing-sm);
+  background-color: var(--color-danger-light);
+  border-radius: var(--radius-sm);
+}
+
+.uploadHint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.attachmentsSection {
+  margin-top: var(--spacing-lg);
+}
+
+.pendingAttachments {
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.pendingAttachments h4 {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.attachmentsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.attachmentsListCompact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.attachmentsEmpty {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.attachmentItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  transition: background-color var(--transition-base);
+}
+
+.attachmentItem .attachmentIcon {
+  margin-top: var(--spacing-2);
+  align-self: flex-start;
+}
+
+.attachmentItem:hover {
+  background-color: var(--color-border);
+}
+
+.attachmentItemCompact {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  transition: background-color 0.2s;
+  margin-bottom: var(--spacing-md);
+}
+
+.attachmentItemCompact:hover {
+  background-color: var(--color-border);
+}
+
+.attachmentIcon {
+  font-size: var(--font-size-3xl);
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: var(--spacing-2);
+  line-height: 1;
+}
+
+.attachmentIconCompact {
+  font-size: var(--font-size-xl);
+  flex-shrink: 0;
+}
+
+.attachmentImagePreview {
+  width: var(--spacing-2xl);
+  height: var(--spacing-2xl);
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.attachmentPreviewImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.attachmentInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.attachmentInfoCompact {
+  flex: 1;
+  min-width: 0;
+}
+
+.attachmentFilenameLink {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  text-decoration: none;
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
+  padding: 0;
+  text-align: left;
+  display: inline;
+}
+
+.attachmentFilenameLink:hover {
+  text-decoration: underline;
+}
+
+.attachmentFilename {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+  word-break: break-word;
+}
+
+.attachmentFilename:hover {
+  text-decoration: underline;
+}
+
+.attachmentMeta {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-top: var(--spacing-xs);
+}
+
+.attachmentMetaCompact {
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-secondary);
+  margin-top: var(--spacing-2);
+}
+
+.attachmentFilenameLinkCompact {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  text-decoration: none;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  padding: 0;
+  text-align: left;
+}
+
+.attachmentFilenameLinkCompact:hover {
+  text-decoration: underline;
+}
+
+.attachmentActionsCompact {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+}
+
+.btnIconSmall {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-icon-sm);
+  height: var(--size-icon-sm);
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  font-size: var(--font-size-sm);
+}
+
+.btnIconSmall:hover {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  border-color: var(--color-primary);
+}
+
+.btnIconSmallDanger:hover {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: var(--color-text-inverse);
+}
+
+.attachmentEditForm {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex: 1;
+}
+
+.attachmentEditInput {
+  flex: 1;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.btnDeleteAttachment {
+  background: none;
+  border: none;
+  font-size: var(--font-size-xl);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  opacity: 0.6;
+  transition: opacity var(--transition-base);
+  flex-shrink: 0;
+}
+
+.btnDeleteAttachment:hover:not(:disabled) {
+  opacity: 1;
+}
+
+.btnDeleteAttachment:disabled {
+  cursor: not-allowed;
+  opacity: 0.3;
+}
+
+@media (max-width: 640px) {
+  .attachmentItem {
+    flex-wrap: wrap;
+  }
+
+  .attachmentInfo {
+    flex: 1 1 100%;
+  }
+
+  .btnDeleteAttachment {
+    margin-left: auto;
+  }
+}

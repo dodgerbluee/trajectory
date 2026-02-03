@@ -20,6 +20,8 @@ import dotenv from 'dotenv';
 import { createApp } from './app.js';
 import { testConnection, closePool } from './db/connection.js';
 import { runMigrations } from './db/migrations.js';
+import { ensureInstanceSettingsTable, getInstanceSetting } from './lib/instance-settings.js';
+import { setRuntimeLogLevel, type LogLevelValue } from './lib/admin-config.js';
 
 // Load environment variables
 dotenv.config();
@@ -51,6 +53,13 @@ async function main() {
     // - Only applies new migrations that haven't been run yet
     // - Ensures schema is always up-to-date
     await runMigrations();
+
+    // Load global instance settings (e.g. log_level) from DB into runtime
+    await ensureInstanceSettingsTable();
+    const savedLogLevel = await getInstanceSetting('log_level');
+    if (savedLogLevel === 'info' || savedLogLevel === 'debug') {
+      setRuntimeLogLevel(savedLogLevel as LogLevelValue);
+    }
 
     // Step 3: Create Express application
     // Only create the app after database is ready to ensure all routes

@@ -20,6 +20,10 @@ import AllVisitsView from '../components/AllVisitsView';
 import MetricsView from '../components/MetricsView';
 import TrendsSidebar from '../components/TrendsSidebar';
 import VisitTypeModal from '../components/VisitTypeModal';
+import styles from './HomePage.module.css';
+import pageLayout from '../styles/page-layout.module.css';
+import visitsLayout from '../styles/VisitsLayout.module.css';
+import tl from '../components/TimelineList.module.css';
 
 type HomeTab = 'family' | 'illnesses' | 'visits' | 'trends';
 
@@ -149,12 +153,12 @@ function HomePage() {
   };
 
   const VisitTypeIcon = ({ visitType }: { visitType: Visit['visit_type'] }) => {
-    if (visitType === 'wellness') return <LuHeart className="home-upcoming-icon" aria-hidden />;
-    if (visitType === 'sick') return <LuPill className="home-upcoming-icon" aria-hidden />;
-    if (visitType === 'injury') return <MdOutlinePersonalInjury className="home-upcoming-icon" aria-hidden />;
-    if (visitType === 'vision') return <LuEye className="home-upcoming-icon" aria-hidden />;
-    if (visitType === 'dental') return <HugeiconsIcon icon={DentalToothIcon} className="home-upcoming-icon" size={16} color="currentColor" aria-hidden />;
-    return <LuActivity className="home-upcoming-icon" aria-hidden />;
+    if (visitType === 'wellness') return <LuHeart className={styles.upcomingIcon} aria-hidden />;
+    if (visitType === 'sick') return <LuPill className={styles.upcomingIcon} aria-hidden />;
+    if (visitType === 'injury') return <MdOutlinePersonalInjury className={styles.upcomingIcon} aria-hidden />;
+    if (visitType === 'vision') return <LuEye className={styles.upcomingIcon} aria-hidden />;
+    if (visitType === 'dental') return <HugeiconsIcon icon={DentalToothIcon} className={styles.upcomingIcon} size={16} color="currentColor" aria-hidden />;
+    return <LuActivity className={styles.upcomingIcon} aria-hidden />;
   };
 
   /** Upcoming visits grouped by child, children sorted by name, visits per child sorted by date. */
@@ -177,33 +181,33 @@ function HomePage() {
   }, [upcomingVisits, children]);
 
   const familyContent = (
-    <div className="home-family-tab">
+    <div className={styles.familyTab}>
       {loading && <LoadingSpinner message="Loading family..." />}
       {error && <ErrorMessage message={error} onRetry={loadChildren} />}
       {!loading && !error && (
-        <div className="home-tabs-content">
+        <div className={styles.tabsContent}>
           {/* Upcoming Visits – own tabs-content div with border */}
           {!loadingUpcoming && upcomingVisits.length > 0 && (
-            <div className="home-tabs-content-box">
-              <section className="home-upcoming-section" aria-labelledby="home-upcoming-heading">
-                <h2 id="home-upcoming-heading" className="home-upcoming-title">Upcoming Visits</h2>
-                <div className="home-upcoming-by-child">
+            <div className={styles.tabsContentBox}>
+              <section className={styles.upcomingSection} aria-labelledby="home-upcoming-heading">
+                <h2 id="home-upcoming-heading" className={styles.upcomingTitle}>Upcoming Visits</h2>
+                <div className={styles.upcomingByChild}>
                   {upcomingByChild.map(({ child, visits }) => (
-                    <div key={child.id} className="home-upcoming-child-row">
-                      <span className="home-upcoming-child-label">{child.name}</span>
-                      <div className="home-upcoming-chips" role="list">
+                    <div key={child.id} className={styles.upcomingChildRow}>
+                      <span className={styles.upcomingChildLabel}>{child.name}</span>
+                      <div className={styles.upcomingChips} role="list">
                         {visits.map((v) => {
                           const isOverdue = !isFutureDate(v.visit_date);
                           return (
                             <Link
                               key={v.id}
                               to={`/visits/${v.id}`}
-                              className={`home-upcoming-chip${isOverdue ? ' home-upcoming-chip--overdue' : ''}`}
+                              className={isOverdue ? `${styles.upcomingChip} ${styles.upcomingChipOverdue}` : styles.upcomingChip}
                               role="listitem"
                               title={isOverdue ? 'Past due – add visit outcome' : undefined}
                             >
                               <VisitTypeIcon visitType={v.visit_type} />
-                              <span className="home-upcoming-chip-text">
+                              <span className={styles.upcomingChipText}>
                                 {visitTypeLabel(v.visit_type)} · {formatDate(v.visit_date)}
                               </span>
                             </Link>
@@ -224,49 +228,49 @@ function HomePage() {
               const kids = childrenByFamilyId[family.id] ?? [];
               const canEditFamily = family.role === 'owner' || family.role === 'parent';
               return (
-                <div key={family.id} className="home-tabs-content-box">
-                  <section className="home-family-section" aria-labelledby={`home-family-heading-${family.id}`}>
-                    <h2 id={`home-family-heading-${family.id}`} className="home-family-tab-title">
+                <div key={family.id} className={styles.tabsContentBox}>
+                  <section className={styles.familySection} aria-labelledby={`home-family-heading-${family.id}`}>
+                    <h2 id={`home-family-heading-${family.id}`} className={styles.familyTabTitle}>
                       {family.name}
                     </h2>
                   {kids.length === 0 && !canEditFamily ? (
-                    <p className="empty-state">No children in this family.</p>
+                    <p className={tl.empty}>No children in this family.</p>
                   ) : kids.length === 0 ? (
                     <Card>
-                      <p className="empty-state">No children yet.</p>
+                      <p className={tl.empty}>No children yet.</p>
                     </Card>
                   ) : (
-                    <div className="children-grid-cards">
+                    <div className={styles.grid}>
                       {kids.map((child) => {
                         const age = calculateAge(child.date_of_birth);
                         const ageText = formatAge(age.years, age.months);
                         const birthdateText = formatDate(child.date_of_birth);
                         return (
-                          <Link key={child.id} to={`/children/${child.id}`} className="child-card-link" data-onboarding="child-card">
-                            <Card className="child-card-compact">
-                              <div className="child-card-avatar">
+                          <Link key={child.id} to={`/children/${child.id}`} className={styles.cardLink} data-onboarding="child-card">
+                            <Card className={styles.compact}>
+                              <div className={styles.avatar}>
                                 <ChildAvatar
                                   avatar={child.avatar}
                                   gender={child.gender}
                                   alt={`${child.name}'s avatar`}
-                                  className="child-avatar-large"
+                                  className={styles.avatarLarge}
                                 />
                               </div>
-                              <div className="child-card-content">
-                                <div className="child-card-header">
-                                  <h2 className="child-name">{child.name}</h2>
+                              <div className={styles.content}>
+                                <div className={styles.header}>
+                                  <h2 className={styles.name}>{child.name}</h2>
                                 </div>
-                                <div className="child-card-details">
-                                  <div className="child-detail-item">
-                                    <span className="detail-icon">🎂</span>
-                                    <span className="detail-text">{ageText}</span>
+                                <div className={styles.details}>
+                                  <div className={styles.detailItem}>
+                                    <span className={styles.detailIcon} aria-hidden>🎂</span>
+                                    <span className={styles.detailText}>{ageText}</span>
                                   </div>
-                                  <div className="child-detail-item">
-                                    <span className="detail-icon">📅</span>
-                                    <span className="detail-text">{birthdateText}</span>
+                                  <div className={styles.detailItem}>
+                                    <span className={styles.detailIcon} aria-hidden>📅</span>
+                                    <span className={styles.detailText}>{birthdateText}</span>
                                   </div>
                                 </div>
-                                <span className="child-card-arrow">→</span>
+                                <span className={styles.arrow} aria-hidden>→</span>
                               </div>
                             </Card>
                           </Link>
@@ -279,9 +283,9 @@ function HomePage() {
               );
             })}
           {families.length === 0 && (
-            <div className="home-tabs-content-box">
+            <div className={styles.tabsContentBox}>
               <Card>
-                <p className="empty-state">No families yet. Join a family via an invite link or create an account.</p>
+                <p className={tl.empty}>No families yet. Join a family via an invite link or create an account.</p>
               </Card>
             </div>
           )}
@@ -289,6 +293,7 @@ function HomePage() {
       )}
     </div>
   );
+
 
   const tabs = [
     {
@@ -310,17 +315,18 @@ function HomePage() {
       id: 'trends',
       label: 'Trends',
       content: (
-        <div className="visits-page-layout">
+        <div className={visitsLayout.pageLayout}>
           <TrendsSidebar
             activeTab={metricsActiveTab}
             onChangeTab={(t) => setMetricsActiveTab(t)}
             childrenList={children}
             selectedChildId={metricsFilterChildId}
             onSelectChild={(id) => setMetricsFilterChildId(id)}
-            
+            showIllnessTab={true}
+            showGrowthTab={true}
           />
 
-          <main className="visits-main">
+          <main className={visitsLayout.main}>
             <MetricsView
               activeTab={metricsActiveTab}
               onActiveTabChange={(t) => setMetricsActiveTab(t)}
@@ -336,11 +342,11 @@ function HomePage() {
   ];
 
   return (
-    <div className="page-container">
+    <div className={pageLayout.pageContainer}>
       {successMessage && (
         <div
           role="alert"
-          className="success-banner"
+          className={styles.successBanner}
           style={{
             marginBottom: '1rem',
             padding: '0.75rem 1rem',

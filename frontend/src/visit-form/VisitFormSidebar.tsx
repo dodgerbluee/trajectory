@@ -6,6 +6,9 @@
  */
 
 import { getAddableSectionIds, getSectionById } from './sectionRegistry';
+import layout from '../styles/VisitsLayout.module.css';
+import sidebarStyles from './VisitFormSidebar.module.css';
+import mui from '../styles/MeasurementsUI.module.css';
 
 export interface VisitFormSidebarProps {
   /** Currently active section IDs; buttons hidden for sections already added. */
@@ -18,6 +21,17 @@ export interface VisitFormSidebarProps {
   showUseFullFormButton?: boolean;
   /** Called when user clicks "Use full visit form". */
   onUseFullForm?: () => void;
+  /** Optional form layout overrides (from VisitFormLayout.module.css) when used inside Add/Edit visit page. */
+  formLayoutStyles?: {
+    formSidebar?: string;
+    formSidebarInner?: string;
+    formSidebarDivider?: string;
+    formSidebarSection?: string;
+    formSidebarSectionTitle?: string;
+    formSidebarAction?: string;
+    formSidebarActionStack?: string;
+    sidebarEmpty?: string;
+  };
 }
 
 const ADDABLE_LABELS: Record<string, string> = {
@@ -25,6 +39,7 @@ const ADDABLE_LABELS: Record<string, string> = {
   illness: 'Illness',
   injury: 'Injury',
   vision: 'Vision',
+  dental: 'Dental',
   vaccines: 'Vaccines',
   prescriptions: 'Prescriptions',
 };
@@ -34,13 +49,15 @@ const ADDABLE_ICONS: Record<string, string> = {
   illness: '🤒',
   injury: '🩹',
   vision: '👁️',
+  dental: '🦷',
   vaccines: '💉',
   prescriptions: '💊',
 };
 
-export function VisitFormSidebar({ activeSections, onAddSection, isFutureVisit, showUseFullFormButton, onUseFullForm }: VisitFormSidebarProps) {
+export function VisitFormSidebar({ activeSections, onAddSection, isFutureVisit, showUseFullFormButton, onUseFullForm, formLayoutStyles }: VisitFormSidebarProps) {
   const addableIds = isFutureVisit ? [] : getAddableSectionIds();
   const activeSet = new Set(activeSections);
+  const f = formLayoutStyles;
 
   const buttons = addableIds
     .filter((id) => !activeSet.has(id))
@@ -52,44 +69,46 @@ export function VisitFormSidebar({ activeSections, onAddSection, isFutureVisit, 
         <button
           key={id}
           type="button"
-          className="measurement-card-add"
+          className={mui.cardAdd}
+          data-measurement-add
           onClick={() => onAddSection(id)}
           title={`Add ${label} to this visit`}
         >
-          <span className="measurement-card-icon" aria-hidden>
+          <span className={mui.cardIcon} aria-hidden>
             {icon}
           </span>
-          <span className="measurement-card-add-label">Add {label}</span>
+          <span className={mui.cardAddLabel}>Add {label}</span>
         </button>
       );
     });
 
   return (
-    <aside className="visits-sidebar" aria-label="Add to visit">
-      <div className="visits-sidebar-inner">
+    <aside className={`${layout.sidebar} ${f?.formSidebar ?? ''}`.trim()} aria-label="Add to visit">
+      <div className={`${layout.sidebarInner} ${f?.formSidebarInner ?? ''}`.trim()}>
         <header>
-          <div className="sidebar-brand">Add to visit</div>
+          <div className={layout.sidebarBrand}>Add to visit</div>
         </header>
-        <div className="sidebar-divider" />
-        <div className="sidebar-section">
-          <h4 className="sidebar-section-title">Add section</h4>
-          <div className="sidebar-action" style={{ marginTop: 12 }}>
+        <div className={`${layout.sidebarDivider} ${f?.formSidebarDivider ?? ''}`.trim()} />
+        <div className={`${f?.formSidebarSection ?? ''}`.trim()}>
+          <h4 className={`${layout.sidebarSectionTitle} ${f?.formSidebarSectionTitle ?? ''}`.trim()}>Add section</h4>
+          <div className={`${layout.sidebarAction} ${f?.formSidebarAction ?? ''}`.trim()} style={{ marginTop: 12 }}>
             {showUseFullFormButton && onUseFullForm ? (
               <button
                 type="button"
-                className="measurement-card-add visit-form-use-full"
+                className={`${mui.cardAdd} ${sidebarStyles.useFullFormButton}`}
+                data-measurement-add
                 onClick={onUseFullForm}
                 title="Show all visit fields and save as a full visit"
               >
-                <span className="measurement-card-icon" aria-hidden>📋</span>
-                <span className="measurement-card-add-label">Use full visit form</span>
+                <span className={mui.cardIcon} aria-hidden>📋</span>
+                <span className={mui.cardAddLabel}>Use full visit form</span>
               </button>
             ) : buttons.length === 0 ? (
-              <p className="visit-form-sidebar-empty">No more sections to add.</p>
+              <p className={f?.sidebarEmpty ?? layout.sidebarEmpty}>No more sections to add.</p>
             ) : buttons.length === 1 ? (
               buttons[0]
             ) : (
-              <div className="sidebar-action-stack">{buttons}</div>
+              <div className={`${layout.sidebarActionStack} ${f?.formSidebarActionStack ?? ''}`.trim()}>{buttons}</div>
             )}
           </div>
         </div>

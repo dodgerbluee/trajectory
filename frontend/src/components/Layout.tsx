@@ -7,6 +7,7 @@ import AboutDropdown from './AboutDropdown';
 import IllnessNotification from './IllnessNotification';
 import VersionFooter from './VersionFooter';
 import { OnboardingOverlay } from './onboarding';
+import styles from './Layout.module.css';
 
 interface LayoutProps {
   children: ReactNode;
@@ -24,21 +25,21 @@ function Layout({ children }: LayoutProps) {
   };
 
   return (
-    <div className="app-container">
+    <div className={styles.container}>
       <OnboardingOverlay />
-      <header className="app-header">
-        <div className="header-content">
-          <Link to="/" className="header-brand" onClick={handleLogoClick}>
-            <img 
-              src="/logo/trajectory.png" 
-              alt="Trajectory Logo" 
-              className="app-logo"
+      <header className={styles.header}>
+        <div className={styles.headerContent}>
+          <Link to="/" className={styles.headerBrand} onClick={handleLogoClick}>
+            <img
+              src="/logo/trajectory.png"
+              alt="Trajectory Logo"
+              className={styles.appLogo}
             />
-            <h1 className="app-title">Trajectory</h1>
+            <h1 className={styles.appTitle}>Trajectory</h1>
           </Link>
-          <div className="header-actions">
+          <div className={styles.headerActions}>
             {user && (
-              <span className="user-name" title={user.email}>
+              <span className={styles.userName} title={user.email}>
                 {user.username}
               </span>
             )}
@@ -48,13 +49,13 @@ function Layout({ children }: LayoutProps) {
           </div>
         </div>
       </header>
-      
-      <main className="app-main">
-        <div className="content-wrapper">
+
+      <main className={styles.main}>
+        <div className={styles.contentWrapper}>
           {children}
         </div>
       </main>
-      <div className="footer-wrapper">
+      <div className={styles.footerWrapper}>
         <VersionFooter />
       </div>
     </div>

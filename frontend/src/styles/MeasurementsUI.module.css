@@ -1,0 +1,394 @@
+/* Measurements UI – shared by MeasurementsInput, VisionRefractionCard, SectionContents, VisitFormSidebar, PrescriptionInput, IllnessesInput, SettingsPage */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--m-space-2);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--m-space-2);
+  align-items: stretch;
+}
+
+.addRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--m-space-1);
+  padding-top: var(--m-space-1);
+}
+
+[data-theme="dark"] .addRow {
+  border-top-color: var(--color-border);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-background-card);
+  box-shadow: var(--elevation-0);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.card:hover {
+  border-color: var(--color-border);
+  box-shadow: var(--elevation-1);
+}
+
+[data-theme="dark"] .card {
+  background: var(--color-surface-subtle);
+  border-color: var(--color-border);
+}
+
+[data-theme="dark"] .card:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--elevation-2);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--m-space-1);
+  width: 100%;
+  padding: var(--m-space-2) var(--m-space-2);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  min-height: var(--size-touch-min);
+}
+
+[data-theme="dark"] .cardHeader {
+  border-bottom-color: var(--color-border);
+}
+
+.cardHeader.hasValue {
+  font-weight: var(--font-weight-semibold);
+}
+
+.cardIcon {
+  font-size: var(--font-size-base);
+  line-height: 1;
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+.cardTitle {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardRemove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-icon-sm);
+  height: var(--size-icon-sm);
+  padding: 0;
+  margin-left: auto;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xl);
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color var(--transition-base), color var(--transition-base);
+}
+
+.cardRemove:hover:not(:disabled) {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+.cardRemove:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+[data-theme="dark"] .cardRemove:hover:not(:disabled) {
+  background: var(--color-audit-danger-bg);
+  color: var(--color-danger);
+}
+
+.cardBody {
+  display: block;
+  overflow: hidden;
+}
+
+.cardInner {
+  min-height: 0;
+  padding: var(--m-space-2);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+}
+
+[data-theme="dark"] .cardInner {
+  background: var(--color-surface);
+  border-top-color: var(--color-border);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--size-grid-min), 1fr));
+  gap: var(--m-space-2);
+  align-items: start;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--m-space-1);
+}
+
+.fieldLabel {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  letter-spacing: 0.02em;
+}
+
+.inputWithSuffix {
+  display: flex;
+  align-items: stretch;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+  overflow: hidden;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.inputWithSuffix:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+[data-theme="dark"] .inputWithSuffix {
+  background: var(--entry-background-color);
+  border-color: var(--color-border-strong);
+}
+
+[data-theme="dark"] .inputWithSuffix:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--m-space-1) var(--m-space-2);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--color-text-secondary);
+  opacity: 0.7;
+  font-weight: var(--font-weight-normal);
+}
+
+.suffix {
+  padding: var(--m-space-1) var(--m-space-2);
+  font-size: var(--font-size-sm-tight);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .suffix {
+  background: var(--color-surface-elevated);
+  border-left-color: var(--color-border-strong);
+}
+
+.fieldHelper {
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-secondary);
+  opacity: 0.85;
+}
+
+.cardAdd {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--m-space-1);
+  padding: var(--m-space-1) var(--m-space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  font: inherit;
+  color: var(--color-text-secondary);
+}
+
+.cardAdd:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.cardAdd.active {
+  transform: translateY(-2px);
+}
+
+.cardAdd:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.cardAdd .cardIcon {
+  opacity: 0.7;
+}
+
+.cardAdd:hover:not(:disabled) .cardIcon {
+  opacity: 1;
+}
+
+.cardAddLabel {
+  font-size: var(--font-size-sm-tight);
+  font-weight: var(--font-weight-medium);
+}
+
+[data-theme="dark"] .cardAdd {
+  background: var(--color-surface);
+  border-color: var(--color-border-strong);
+}
+
+/* Vision section – .visionUi on root; .visionRefractionCards on child */
+.visionUi {
+  /* combined with .root for vision section layout */
+}
+
+.root.visionUi .visionRefractionCards {
+  grid-template-columns: 1fr;
+  margin-bottom: var(--m-space-2);
+}
+
+.visionCheckboxes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--m-space-2);
+}
+
+.visionCheckboxes [data-checkbox-wrapper] {
+  margin-bottom: 0;
+}
+
+.visionRefractionFields {
+  display: grid;
+  grid-template-columns: auto repeat(3, 1fr);
+  gap: var(--m-space-2);
+  align-items: end;
+}
+
+.visionRefractionRow {
+  display: contents;
+}
+
+.visionRefractionRowHeader .fieldLabel {
+  margin-bottom: 0;
+}
+
+.visionRefractionEyeLabel {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  padding-bottom: var(--m-space-1);
+}
+
+.visionRefractionRowHeader .visionRefractionEyeLabel {
+  padding-bottom: 0;
+}
+
+.visionRefractionNotesField {
+  margin-top: var(--m-space-2);
+}
+
+.visionInputTextarea {
+  display: block;
+  width: 100%;
+  min-height: 60px;
+  padding: var(--m-space-1) var(--m-space-2);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  resize: vertical;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+  font-family: inherit;
+}
+
+.visionInputTextarea::placeholder {
+  color: var(--color-text-secondary);
+  opacity: 0.7;
+  font-weight: 400;
+}
+
+.visionInputTextarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+[data-theme="dark"] .visionInputTextarea {
+  background: var(--entry-background-color);
+  border-color: var(--color-border-strong);
+}
+
+[data-theme="dark"] .visionInputTextarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.visionUi :global(.visually-hidden) {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 768px) {
+  .cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}

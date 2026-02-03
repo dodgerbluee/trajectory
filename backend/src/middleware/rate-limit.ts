@@ -57,28 +57,3 @@ export const passwordResetRateLimiter = rateLimit({
     });
   },
 });
-
-/**
- * General rate limiter for API endpoints
- * 100 requests per 15 minutes per IP
- */
-export const generalRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests per window
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res) => {
-    res.status(429).json({
-      error: {
-        message: 'Too many requests, please try again later',
-        type: 'RateLimitError',
-        statusCode: 429,
-      },
-      meta: {
-        timestamp: new Date().toISOString(),
-        path: req.path,
-        method: req.method,
-      },
-    });
-  },
-});

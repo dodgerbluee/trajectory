@@ -1,0 +1,328 @@
+/* Vaccine history: container, list, items, dose links, reports, upload section */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.summary {
+  display: flex;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.summaryStat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.summaryLabel {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.summaryValue {
+  font-size: var(--font-size-icon-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.item {
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  transition: all var(--transition-base);
+}
+
+.item:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.name {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.icon {
+  font-size: var(--font-size-xl);
+}
+
+.nameText {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.count {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+}
+
+.dates {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.doseItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: inherit;
+  transition: all var(--transition-base);
+}
+
+.doseItem:hover {
+  background: var(--color-surface);
+}
+
+.doseNumber {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  min-width: var(--spacing-xl);
+}
+
+.doseDate {
+  flex: 1;
+  font-size: var(--font-size-touch);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.doseArrow {
+  font-size: var(--font-size-base);
+  color: var(--color-text-tertiary);
+  transition: color var(--transition-base);
+}
+
+.doseItem:hover .doseArrow {
+  color: var(--color-primary);
+}
+
+.reportsSection {
+  margin-top: var(--spacing-lg);
+}
+
+.reportsTitle {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+.reportsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.reportItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-base);
+}
+
+.reportItem:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.reportIcon {
+  font-size: var(--font-size-xl);
+  flex-shrink: 0;
+}
+
+.reportInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.reportFilenameLink {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  text-decoration: none;
+  cursor: pointer;
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 0;
+  margin-bottom: var(--spacing-xs);
+}
+
+.reportFilenameLink:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+.reportMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.reportMetaSeparator {
+  color: var(--color-text-tertiary);
+}
+
+.reportMetaItem {
+  color: var(--color-text-secondary);
+}
+
+.reportEditForm {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+}
+
+.reportEditInput {
+  flex: 1;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.reportEditActions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.reportActions {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+}
+
+.reportsLoading {
+  margin-bottom: var(--spacing-lg);
+}
+
+.uploadSection {
+  padding: var(--spacing-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.uploadTitle {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.uploadDescription {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+/* Button styles (same as DocumentsList) */
+.btnIconAction {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-base);
+  width: var(--size-icon-box);
+  height: var(--size-icon-box);
+}
+
+.btnIconAction:hover {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.btnDownload:hover {
+  color: var(--color-primary);
+}
+
+.btnEdit:hover {
+  color: var(--color-primary);
+}
+
+.btnDelete:hover {
+  color: var(--color-danger);
+}
+
+.btnIconSmall {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xs);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  transition: all var(--transition-base);
+  width: var(--size-icon-sm);
+  height: var(--size-icon-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btnIconSmall:hover {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  border-color: var(--color-primary);
+}
+
+.btnSave:hover {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.btnCancel:hover {
+  background: var(--color-danger);
+  color: var(--color-text-inverse);
+}

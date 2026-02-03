@@ -15,7 +15,7 @@ Trajectory uses a **unified container** approach - a single pre-built container 
 ## Deployment Options
 
 - **Direct Port Access**: Expose app port directly
-- **Nginx Proxy Manager**: Recommended - see [NPM_SETUP.md](./NPM_SETUP.md)
+- **Nginx Proxy Manager**: Recommended - configure a reverse proxy to your app URL
 
 ## Portainer Deployment
 
@@ -71,6 +71,8 @@ Required in `.env`:
 - `DB_PASSWORD` - Strong password for PostgreSQL
 - `POSTGRES_DB` - Database name (default: `trajectory`)
 - `POSTGRES_USER` - Database user (default: `trajectory_user`)
+- `JWT_SECRET` - Strong random secret for access tokens (e.g. `openssl rand -base64 32`). The app refuses to start in production if this is unset or still the placeholder value.
+- `JWT_REFRESH_SECRET` - Strong random secret for refresh tokens. Same requirement as `JWT_SECRET`.
 
 Optional:
 - `PORT` - App port (default: `3001`) - Only needed for direct access
@@ -86,8 +88,7 @@ Optional:
 - Backend API: `http://your-host:${PORT:-3001}/api`
 
 **Nginx Proxy Manager:**
-- See [NPM_SETUP.md](./NPM_SETUP.md) for detailed configuration
-- Access via: `https://yourdomain.com/trajectory` (or your configured path)
+- Configure a reverse proxy to your app URL (e.g. `https://yourdomain.com/trajectory` or your path)
 
 **TLS:** The app does not terminate TLS. Configure your reverse proxy to use **TLS 1.2 or newer** and strong ciphers. Disable TLS 1.0/1.1 for production.
 
@@ -98,8 +99,10 @@ Optional:
 ### Volumes
 Data is persisted in Docker volumes:
 - `trajectory_data` - PostgreSQL data
-- `trajectory_uploads` - File uploads
-- `trajectory_avatars` - Avatar images
+- `trajectory_uploads` - File uploads (backend uses `UPLOAD_DIR`, default `/app/uploads` in container)
+- `trajectory_avatars` - Avatar images (backend uses `AVATAR_DIR`, default `/app/avatars` in container)
+
+You can override `UPLOAD_DIR` and `AVATAR_DIR` in the app environment if your compose mounts volumes to different paths inside the container.
 
 ### Backup
 

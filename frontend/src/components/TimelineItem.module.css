@@ -1,0 +1,242 @@
+/* Shared timeline item layout – used by VisitCard, IllnessCard, DocumentsList. */
+
+.link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base) ease;
+  cursor: pointer;
+  min-height: 3.5rem;
+}
+
+.item:hover {
+  background: var(--color-surface);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+  transform: translateX(var(--spacing-2, 2px));
+}
+
+.icon {
+  flex-shrink: 0;
+  width: var(--size-icon-box);
+  height: var(--size-icon-box);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-lg);
+  line-height: 1;
+  border-radius: var(--radius-sm);
+}
+
+.icon svg,
+.icon > *,
+.icon :global(.visit-type-svg),
+.icon :global(.document-file-icon) {
+  display: block;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  align-items: stretch;
+}
+
+.headerCompact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+.main {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 1;
+  min-width: 0;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.labelCompact,
+.labelRow :global(.document-filename-link) {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.wellnessSingleLine {
+  flex-wrap: nowrap;
+  overflow: hidden;
+  min-width: 0;
+  gap: var(--spacing-xs);
+  align-items: center;
+}
+
+.wellnessSingleLine .labelCompact {
+  flex-shrink: 0;
+  margin-right: 0;
+}
+
+.wellnessSingleLine :global(.wellness-title-badge-inline) {
+  flex-shrink: 0;
+}
+
+.wellnessSingleLine .badge {
+  flex-shrink: 0;
+  white-space: nowrap;
+  margin: 0;
+}
+
+.wellnessSingleLine .dateCompact {
+  flex-shrink: 0;
+  margin-right: 0;
+}
+
+.wellnessSingleLine .attachmentIndicator {
+  flex-shrink: 0;
+  margin-left: var(--spacing-xs);
+  margin-right: 0;
+}
+
+.badgesGroup {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.wellnessTitleBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-2) var(--spacing-xs);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.badgesRow {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+  margin-top: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.arrowCompact {
+  flex-shrink: 0;
+  font-size: var(--font-size-base);
+  color: var(--color-primary);
+  transition: transform var(--transition-base);
+  opacity: 0.6;
+  line-height: 1;
+}
+
+.item:hover .arrowCompact {
+  transform: translateX(var(--spacing-sm));
+  opacity: 1;
+}
+
+.dateRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.dateCompact {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.attachmentIndicator {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-left: var(--spacing-xs);
+}
+
+.attachmentIndicator .attachmentIcon,
+.attachmentIcon {
+  width: var(--spacing-md);
+  height: var(--spacing-md);
+  display: inline-block;
+  color: inherit;
+}
+
+.attachmentIndicator .attachmentIcon svg,
+.attachmentIcon svg {
+  stroke: currentColor;
+  fill: none;
+}
+
+.childNameBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-2) var(--spacing-xs);
+  background: var(--color-primary-light);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+  white-space: nowrap;
+  text-decoration: none;
+  transition: all var(--transition-base) ease;
+  line-height: 1.2;
+  margin-left: var(--spacing-xs);
+}
+
+.childNameBadge:hover {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  transform: translateY(calc(-1 * var(--spacing-2, 2px)));
+  box-shadow: var(--shadow-sm);
+}
+
+:global([data-theme="dark"]) .childNameBadge {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+:global([data-theme="dark"]) .childNameBadge:hover {
+  background: var(--color-primary);
+  color: var(--color-text-inverse, #ffffff);
+}

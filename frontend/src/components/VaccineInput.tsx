@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { HiX } from 'react-icons/hi';
+import styles from './VaccineInput.module.css';
 
 interface VaccineInputProps {
   value: string[];
@@ -69,17 +70,17 @@ function VaccineInput({ value, onChange, disabled }: VaccineInputProps) {
   );
 
   return (
-    <div className="vaccine-input-modern">
-      <div className="vaccine-badges-list">
+    <div className={styles.root}>
+      <div className={styles.badgesList}>
         {value.map((vaccine) => (
-          <span key={vaccine} className="vaccine-badge-item">
-            <span className="vaccine-badge-icon">💉</span>
-            <span className="vaccine-badge-text">{vaccine}</span>
+          <span key={vaccine} className={styles.badgeItem}>
+            <span className={styles.badgeIcon}>💉</span>
+            <span className={styles.badgeText}>{vaccine}</span>
             {!disabled && (
               <button
                 type="button"
                 onClick={() => handleRemove(vaccine)}
-                className="vaccine-badge-remove"
+                className={styles.badgeRemove}
                 title="Remove vaccine"
               >
                 <HiX />
@@ -87,76 +88,78 @@ function VaccineInput({ value, onChange, disabled }: VaccineInputProps) {
             )}
           </span>
         ))}
-        <button
-          type="button"
-          onClick={() => setIsModalOpen(true)}
-          disabled={disabled}
-          className="measurement-card-add"
-          title="Add Vaccine"
-        >
-          <span className="measurement-card-icon" aria-hidden>💉</span>
-          <span className="measurement-card-add-label">Add Vaccine</span>
-        </button>
+        <div className={value.length === 0 ? styles.empty : ''}>
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            disabled={disabled}
+            className={styles.addButton}
+            title="Add Vaccine"
+          >
+            <span aria-hidden>💉</span>
+            {value.length === 0 && <span>Add Vaccine</span>}
+          </button>
+        </div>
       </div>
 
       {isModalOpen && (
-        <div className="vaccine-modal-overlay">
-          <div className="vaccine-modal-content" ref={modalRef}>
-            <div className="vaccine-modal-header">
-              <h3 className="vaccine-modal-title">Select Vaccines</h3>
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent} ref={modalRef}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>Select Vaccines</h3>
               <button
                 type="button"
                 onClick={handleCancel}
-                className="vaccine-modal-close"
+                className={styles.modalClose}
                 title="Close"
               >
                 <HiX />
               </button>
             </div>
 
-            <div className="vaccine-modal-body">
-              <div className="vaccine-search">
+            <div className={styles.modalBody}>
+              <div className={styles.search}>
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search vaccines..."
-                  className="vaccine-search-input"
+                  className={styles.searchInput}
                   autoFocus
                 />
               </div>
 
-              <div className="vaccine-list">
+              <div className={styles.list}>
                 {filteredVaccines.length === 0 ? (
-                  <p className="vaccine-list-empty">No vaccines found matching "{searchQuery}"</p>
+                  <p className={styles.listEmpty}>No vaccines found matching "{searchQuery}"</p>
                 ) : (
                   filteredVaccines.map((vaccine) => (
-                    <label key={vaccine} className="vaccine-checkbox-item">
+                    <label key={vaccine} className={styles.checkboxItem}>
                       <input
                         type="checkbox"
                         checked={selectedInModal.includes(vaccine)}
                         onChange={() => handleToggleVaccine(vaccine)}
-                        className="vaccine-checkbox"
+                        className={styles.checkbox}
                       />
-                      <span className="vaccine-checkbox-label">{vaccine}</span>
+                      <span className={styles.checkboxLabel}>{vaccine}</span>
                     </label>
                   ))
                 )}
               </div>
             </div>
 
-            <div className="vaccine-modal-footer">
+            <div className={styles.modalFooter}>
               <button
                 type="button"
                 onClick={handleCancel}
-                className="vaccine-modal-button vaccine-modal-button-cancel"
+                className={`${styles.modalButton} ${styles.modalButtonCancel}`}
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleSave}
-                className="vaccine-modal-button vaccine-modal-button-save"
+                className={`${styles.modalButton} ${styles.modalButtonSave}`}
               >
                 Save ({selectedInModal.length})
               </button>

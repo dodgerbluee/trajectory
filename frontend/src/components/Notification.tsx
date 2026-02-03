@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import styles from './Notification.module.css';
 
 interface NotificationProps {
   message: string;
@@ -17,16 +18,16 @@ function Notification({ message, type, onClose, duration = 5000 }: NotificationP
   }, [duration, onClose]);
 
   return (
-    <div className={`notification notification-${type}`}>
-      <div className="notification-content">
-        <span className="notification-icon">
+    <div className={`${styles.root} ${styles[type]}`}>
+      <div className={styles.content}>
+        <span className={styles.icon}>
           {type === 'success' && '✓'}
           {type === 'error' && '✗'}
           {type === 'info' && 'ℹ'}
         </span>
-        <span className="notification-message">{message}</span>
+        <span className={styles.message}>{message}</span>
       </div>
-      <button onClick={onClose} className="notification-close">
+      <button type="button" onClick={onClose} className={styles.close} aria-label="Close">
         ×
       </button>
     </div>

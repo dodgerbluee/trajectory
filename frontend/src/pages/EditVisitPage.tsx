@@ -13,6 +13,10 @@ import { getDefaultSectionsForVisitType } from '../visit-form/visitTypeDefaults'
 import { getSectionById } from '../visit-form/sectionRegistry';
 import { SectionWrapper } from '../visit-form/SectionWrapper';
 import { VisitFormSidebar } from '../visit-form/VisitFormSidebar';
+import layoutStyles from '../styles/visit-detail-layout.module.css';
+import pageLayout from '../styles/page-layout.module.css';
+import formLayout from '../styles/VisitFormLayout.module.css';
+import styles from './EditVisitPage.module.css';
 
 
 
@@ -352,7 +356,7 @@ function EditVisitPage() {
   }
 
   return (
-    <div className="page-container">
+    <div className={pageLayout.pageContainer}>
       {notification && (
         <Notification
           message={notification.message}
@@ -363,15 +367,15 @@ function EditVisitPage() {
 
       <form onSubmit={handleSubmit}>
         <Card>
-          <div className="visit-form-page visit-form-layout-grid">
-            <div className="visit-form-back-row">
+          <div className={formLayout.root}>
+            <div className={formLayout.backRow}>
               <Link
                 to={`/children/${visit.child_id}`}
-                className="breadcrumb visit-form-back"
+                className={`${pageLayout.breadcrumb} ${formLayout.backLink}`}
               >
                 ← Back to {child.name}
               </Link>
-              <div className="visit-detail-actions">
+              <div className={styles.visitDetailActions}>
                 <Button type="submit" disabled={submitting} size="sm">
                   {submitting ? 'Saving...' : 'Save'}
                 </Button>
@@ -382,7 +386,7 @@ function EditVisitPage() {
                 </Link>
               </div>
             </div>
-            <div className="visit-form-sidebar-cell">
+            <div className={formLayout.sidebarCell}>
               <VisitFormSidebar
               activeSections={activeSections}
               onAddSection={addSection}
@@ -391,8 +395,8 @@ function EditVisitPage() {
               onUseFullForm={() => setUserChoseFullForm(true)}
             />
             </div>
-            <div className="visit-form-top-row">
-              <h2 className="visit-header-title">
+            <div className={formLayout.topRow}>
+              <h2 className={`${layoutStyles.headerTitle} ${formLayout.headerTitle}`}>
                 Edit {visit.visit_type === 'wellness' ? 'Wellness' : 
                      visit.visit_type === 'sick' ? 'Sick' : 
                      visit.visit_type === 'injury' ? 'Injury' :
@@ -400,7 +404,7 @@ function EditVisitPage() {
                      visit.visit_type === 'dental' ? 'Dental' : 'Visit'} Visit
               </h2>
             </div>
-            <div className="visit-form-body-cell visit-detail-body">
+            <div className={`${formLayout.bodyCell} ${layoutStyles.detailBody}`}>
               {(() => {
                   type SectionId = import('../visit-form/sectionRegistry').SectionId;
                   const sectionsToRender: { sectionId: SectionId; entry: NonNullable<ReturnType<typeof getSectionById>> }[] = [];

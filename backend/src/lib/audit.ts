@@ -5,6 +5,7 @@
 import { query } from '../db/connection.js';
 import type { AuditChanges } from './field-diff.js';
 import { auditChangesSummary } from './field-diff.js';
+import { canAccessChild } from './family-access.js';
 
 export type AuditEntityType = 'visit' | 'illness';
 
@@ -22,29 +23,23 @@ export interface RecordAuditEventParams {
 
 /**
  * Check if user has permission to view audit history for an entity.
- * Users can only view history for entities they can access (e.g., visits/illnesses
+ * Users can only view history for entities they can access (visits/illnesses
  * for children in their family).
- * 
- * Note: Currently assumes single-family app. For multi-family apps, add family_id checks.
  */
 export async function canViewAuditHistory(
   entityType: AuditEntityType,
   entityId: number,
   userId: number | null
 ): Promise<boolean> {
-  if (!userId) return false; // Unauthenticated users cannot view history
+  if (!userId) return false;
 
   if (entityType === 'visit') {
-    // Check if visit exists (user must have access to the visit's child)
     const result = await query<{ child_id: number }>(
       `SELECT child_id FROM visits WHERE id = $1`,
       [entityId]
     );
     if (result.rows.length === 0) return false;
-    
-    // TODO: In multi-family app, check: user's family_id matches child's family_id
-    // For now, assume all authenticated users can access (single-family app)
-    return true;
+    return canAccessChild(userId, result.rows[0].child_id);
   }
 
   if (entityType === 'illness') {
@@ -53,8 +48,7 @@ export async function canViewAuditHistory(
       [entityId]
     );
     if (result.rows.length === 0) return false;
-    // Same access check as visits
-    return true;
+    return canAccessChild(userId, result.rows[0].child_id);
   }
 
   return false;

@@ -3,18 +3,20 @@ services:
     image: postgres:16-alpine
     container_name: trajectory-db
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # Local DB data (instead of named volume)
+      - ../trajectory-data/data:/var/lib/postgresql/data
+      # Optional admin script (unchanged)
+      - ./database/make-dodgerbluee-admin.sql:/scripts/make-dodgerbluee-admin.sql
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-trajectory}
       POSTGRES_USER: ${POSTGRES_USER:-trajectory_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-development_password}
+      TZ: ${TZ:-UTC}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-trajectory_user} -d ${POSTGRES_DB:-trajectory}"]
       interval: 5s
       timeout: 5s
       retries: 5
-    networks:
-      - trajectory-network
     restart: unless-stopped
 
   app:
@@ -22,18 +24,18 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        # Use empty string to make API calls relative (served by same app)
         VITE_API_URL: ""
         VITE_BASE_PATH: ""
     container_name: trajectory-app
     ports:
       - "3000:3001"
     volumes:
-      - uploads_data:/app/uploads
-      - avatars_data:/app/avatars
+      # Local app data (instead of named volumes)
+      - ../trajectory-data/uploads_data:/app/uploads
+      - ../trajectory-data/avatars_data:/app/avatars
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-trajectory_user}:${DB_PASSWORD:-development_password}@database:5432/${POSTGRES_DB:-trajectory}
-      NODE_ENV: production
+      NODE_ENV: development
       PORT: 3001
       TZ: ${TZ:-UTC}
       UPLOAD_DIR: /app/uploads
@@ -42,28 +44,10 @@ services:
     depends_on:
       database:
         condition: service_healthy
-    networks:
-      - trajectory-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health', r => process.exit(r.statusCode === 200 ? 0 : 1))"]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 10s
-
-networks:
-  trajectory-network:
-    name: trajectory-network
-    driver: bridge
-
-volumes:
-  postgres_data:
-    name: trajectory_data
-    external: true
-  uploads_data:
-    name: trajectory_uploads
-    external: true
-  avatars_data:
-    name: trajectory_avatars
-    external: true

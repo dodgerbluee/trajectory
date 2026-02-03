@@ -1,5 +1,6 @@
 import { Component, ReactNode } from 'react';
 import ErrorMessage from './ErrorMessage';
+import pageLayout from '../styles/page-layout.module.css';
 
 interface Props {
   children: ReactNode;
@@ -28,7 +29,7 @@ class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return this.props.fallback || (
-        <div className="page-container">
+        <div className={pageLayout.pageContainer}>
           <ErrorMessage 
             message={this.state.error?.message || 'Something went wrong'} 
             onRetry={() => this.setState({ hasError: false, error: null })}

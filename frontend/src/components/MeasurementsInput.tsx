@@ -4,6 +4,7 @@
  */
 
 import { useState, useId } from 'react';
+import mui from '../styles/MeasurementsUI.module.css';
 
 interface MeasurementsInputProps {
   weightValue: number | null;
@@ -77,13 +78,13 @@ function MeasurementFieldWithSuffix({
     if (!Number.isNaN(n)) onChange?.(n);
   };
   return (
-    <div className="measurement-field">
-      <label htmlFor={id} className="measurement-field-label">{label}</label>
-      <div className="measurement-input-with-suffix">
+    <div className={mui.field}>
+      <label htmlFor={id} className={mui.fieldLabel}>{label}</label>
+      <div className={mui.inputWithSuffix}>
         <input
           id={id}
           type={type}
-          className="measurement-input"
+          className={mui.input}
           value={strVal}
           onChange={handleChange}
           placeholder={placeholder}
@@ -92,9 +93,9 @@ function MeasurementFieldWithSuffix({
           step={step}
           disabled={disabled}
         />
-        {suffix ? <span className="measurement-suffix">{suffix}</span> : null}
+        {suffix ? <span className={mui.suffix}>{suffix}</span> : null}
       </div>
-      {helper ? <span className="measurement-field-helper">{helper}</span> : null}
+      {helper ? <span className={mui.fieldHelper}>{helper}</span> : null}
     </div>
   );
 }
@@ -170,13 +171,13 @@ function MeasurementsInput({
     const hasValue = hasVal(key);
 
     return (
-      <div className="measurement-card" data-key={key}>
-        <div className={`measurement-card-header ${hasValue ? 'has-value' : ''}`}>
-          <span className="measurement-card-icon" aria-hidden>{icon}</span>
-          <span className="measurement-card-title">{title}</span>
+      <div className={mui.card} data-key={key}>
+        <div className={`${mui.cardHeader} ${hasValue ? mui.hasValue : ''}`}>
+          <span className={mui.cardIcon} aria-hidden>{icon}</span>
+          <span className={mui.cardTitle}>{title}</span>
           <button
             type="button"
-            className="measurement-card-remove"
+            className={mui.cardRemove}
             onClick={() => removeSection(key)}
             disabled={disabled}
             title={`Remove ${title}`}
@@ -185,8 +186,8 @@ function MeasurementsInput({
             ×
           </button>
         </div>
-        <div className="measurement-card-body expanded">
-          <div className="measurement-card-inner">{children}</div>
+        <div className={mui.cardBody}>
+          <div className={mui.cardInner}>{children}</div>
         </div>
       </div>
     );
@@ -200,14 +201,14 @@ function MeasurementsInput({
   if (!visibleSections.has('bmi')) addable.push({ key: 'bmi', title: 'BMI', icon: '📊' });
 
   return (
-    <div className="measurements-ui">
-      <div className="measurements-cards">
+    <div className={mui.root}>
+      <div className={mui.cards}>
         {visibleSections.has('weight') &&
           renderCard(
             'weight',
             'Weight',
             '⚖',
-            <div className="measurement-fields">
+            <div className={mui.fields}>
               <MeasurementFieldWithSuffix
                 label="Weight"
                 value={weightValue ?? ''}
@@ -248,7 +249,7 @@ function MeasurementsInput({
             'height',
             'Height',
             '📏',
-            <div className="measurement-fields">
+            <div className={mui.fields}>
               <MeasurementFieldWithSuffix
                 label="Height"
                 value={heightValue ?? ''}
@@ -277,7 +278,7 @@ function MeasurementsInput({
             'vitals',
             'Vitals',
             '❤',
-            <div className="measurement-fields">
+            <div className={mui.fields}>
               <MeasurementFieldWithSuffix
                 label="Blood pressure"
                 value={bloodPressure ?? ''}
@@ -306,7 +307,7 @@ function MeasurementsInput({
             'head',
             'Head Circumference',
             '👤',
-            <div className="measurement-fields">
+            <div className={mui.fields}>
               <MeasurementFieldWithSuffix
                 label="Head circ"
                 value={headCircumferenceValue ?? ''}
@@ -335,7 +336,7 @@ function MeasurementsInput({
             'bmi',
             'BMI',
             '📊',
-            <div className="measurement-fields">
+            <div className={mui.fields}>
               <MeasurementFieldWithSuffix
                 label="BMI"
                 value={bmiValue ?? ''}
@@ -361,17 +362,17 @@ function MeasurementsInput({
       </div>
 
       {addable.length > 0 && (
-        <div className="measurements-add-row">
+        <div className={mui.addRow}>
           {addable.map(({ key, title, icon }) => (
             <button
               key={key}
               type="button"
-              className="measurement-card-add"
+              className={mui.cardAdd}
               onClick={() => addSection(key)}
               disabled={disabled}
             >
-              <span className="measurement-card-icon" aria-hidden>{icon}</span>
-              <span className="measurement-card-add-label">Add {title}</span>
+              <span className={mui.cardIcon} aria-hidden>{icon}</span>
+              <span className={mui.cardAddLabel}>Add {title}</span>
             </button>
           ))}
         </div>

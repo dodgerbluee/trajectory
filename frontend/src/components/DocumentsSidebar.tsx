@@ -5,6 +5,7 @@
 
 import { LuFileText, LuClipboardList } from 'react-icons/lu';
 import VisitStats from './VisitStats';
+import layout from '../styles/VisitsLayout.module.css';
 
 export type DocumentTypeFilter = 'all' | 'visit' | 'vaccine';
 
@@ -51,15 +52,15 @@ export default function DocumentsSidebar({
   ];
 
   return (
-    <aside className="visits-sidebar">
-      <div className="visits-sidebar-inner">
+    <aside className={layout.sidebar}>
+      <div className={layout.sidebarInner}>
         <header>
-          <div className="sidebar-brand">Filters</div>
+          <div className={layout.sidebarBrand}>Filters</div>
         </header>
 
-        <div className="sidebar-divider" />
+        <div className={layout.sidebarDivider} />
 
-        <nav className="sidebar-stats">
+        <nav className={layout.sidebarStats}>
           <VisitStats stats={stats as any} vertical />
         </nav>
       </div>

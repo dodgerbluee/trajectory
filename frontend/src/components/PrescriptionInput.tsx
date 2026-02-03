@@ -3,6 +3,7 @@ import { HiX } from 'react-icons/hi';
 import type { Prescription } from '../types/api';
 import Button from './Button';
 import FormField from './FormField';
+import styles from './PrescriptionInput.module.css';
 
 interface PrescriptionInputProps {
   value: Prescription[];
@@ -86,17 +87,17 @@ function PrescriptionInput({ value, onChange, disabled }: PrescriptionInputProps
     (tempPrescription.duration?.trim() ?? '') !== '';
 
   return (
-    <div className="prescription-input-modern">
+    <div className={styles.root}>
       {value.length > 0 && (
-        <div className="prescription-list">
+        <div className={styles.list}>
           {value.map((rx, index) => (
-            <div key={index} className="prescription-item">
-              <div className="prescription-details">
+            <div key={index} className={styles.item}>
+              <div className={styles.details}>
                 <strong>{rx.medication}</strong>
                 <span> — {rx.dosage}, {rx.duration}</span>
-                {rx.notes && <div className="prescription-notes">{rx.notes}</div>}
+                {rx.notes && <div className={styles.notes}>{rx.notes}</div>}
               </div>
-              <div className="prescription-actions">
+              <div className={styles.actions}>
                 <Button variant="secondary" size="sm" onClick={() => handleEdit(index)} disabled={disabled}>
                   Edit
                 </Button>
@@ -108,26 +109,28 @@ function PrescriptionInput({ value, onChange, disabled }: PrescriptionInputProps
           ))}
         </div>
       )}
-      <button
-        type="button"
-        onClick={handleAdd}
-        disabled={disabled}
-        className="measurement-card-add"
-        title="Add Prescription"
-      >
-        <span className="measurement-card-icon" aria-hidden>💊</span>
-        <span className="measurement-card-add-label">Add Prescription</span>
-      </button>
+      <div className={value.length === 0 ? styles.empty : ''}>
+        <button
+          type="button"
+          onClick={handleAdd}
+          disabled={disabled}
+          className={styles.addButton}
+          title="Add Prescription"
+        >
+          <span aria-hidden>💊</span>
+          {value.length === 0 && <span>Add Prescription</span>}
+        </button>
+      </div>
 
       {isModalOpen && (
-        <div className="vaccine-modal-overlay">
-          <div className="vaccine-modal-content prescription-modal-content" ref={modalRef}>
-            <div className="vaccine-modal-header">
-              <h3 className="vaccine-modal-title">{modalTitle}</h3>
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent} ref={modalRef}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>{modalTitle}</h3>
               <button
                 type="button"
                 onClick={handleCancel}
-                className="vaccine-modal-close"
+                className={styles.modalClose}
                 title="Close"
                 aria-label="Close"
               >
@@ -135,8 +138,8 @@ function PrescriptionInput({ value, onChange, disabled }: PrescriptionInputProps
               </button>
             </div>
 
-            <div className="vaccine-modal-body">
-              <div className="prescription-modal-fields">
+            <div className={styles.modalBody}>
+              <div className={styles.modalFields}>
                 <FormField
                   label="Medication Name"
                   type="text"
@@ -173,11 +176,11 @@ function PrescriptionInput({ value, onChange, disabled }: PrescriptionInputProps
               </div>
             </div>
 
-            <div className="vaccine-modal-footer">
+            <div className={styles.modalFooter}>
               <button
                 type="button"
                 onClick={handleCancel}
-                className="vaccine-modal-button vaccine-modal-button-cancel"
+                className={`${styles.modalButton} ${styles.modalButtonCancel}`}
               >
                 Cancel
               </button>
@@ -185,7 +188,7 @@ function PrescriptionInput({ value, onChange, disabled }: PrescriptionInputProps
                 type="button"
                 onClick={handleSave}
                 disabled={!canSave || disabled}
-                className="vaccine-modal-button vaccine-modal-button-save"
+                className={`${styles.modalButton} ${styles.modalButtonSave}`}
               >
                 {isAdding ? 'Add' : 'Save'}
               </button>

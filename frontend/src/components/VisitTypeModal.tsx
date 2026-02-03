@@ -4,7 +4,9 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { DentalToothIcon } from '@hugeicons/core-free-icons';
 import { LuClipboard, LuEye, LuPill } from 'react-icons/lu';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
-// removed phosphor-react Pill import; using Lucide `LuPill` instead
+import modalStyles from './Modal.module.css';
+import styles from './VisitTypeModal.module.css';
+import vi from '../styles/VisitIcons.module.css';
 
 interface VisitTypeModalProps {
   isOpen: boolean;
@@ -16,79 +18,79 @@ function VisitTypeModal({ isOpen, onSelect, onClose }: VisitTypeModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <h2 className="modal-title">Select Visit Type</h2>
-        <p className="modal-subtitle">Choose the type of visit you want to add</p>
+    <div className={modalStyles.overlay} onClick={onClose}>
+      <div className={modalStyles.content} onClick={(e) => e.stopPropagation()}>
+        <h2 className={modalStyles.title}>Select Visit Type</h2>
+        <p className={modalStyles.subtitle}>Choose the type of visit you want to add</p>
 
-        <div className="visit-type-selection">
+        <div className={styles.selection}>
           <button
-            className="visit-type-button wellness"
+            className={`${styles.button} ${styles.buttonWellness}`}
             onClick={() => onSelect('wellness')}
           >
-            <div className="visit-type-icon">
-              <div className="visit-icon-outline visit-icon--wellness">
-                <LuClipboard className="visit-type-svg" />
+            <div className={`${styles.iconWrapper} ${vi.typeIcon}`}>
+              <div className={`${vi.iconOutline} ${vi.iconWellness}`}>
+                <LuClipboard className={vi.typeSvg} />
               </div>
             </div>
-            <div className="visit-type-label">Wellness Visit</div>
-            <div className="visit-type-description">Routine checkup with measurements</div>
+            <div className={styles.label}>Wellness Visit</div>
+            <div className={styles.description}>Routine checkup with measurements</div>
           </button>
 
           <button
-            className="visit-type-button sick"
+            className={`${styles.button} ${styles.buttonSick}`}
             onClick={() => onSelect('sick')}
           >
-            <div className="visit-type-icon">
-              <div className="visit-icon-outline visit-icon--sick">
-                <LuPill className="visit-type-svg" />
+            <div className={`${styles.iconWrapper} ${vi.typeIcon}`}>
+              <div className={`${vi.iconOutline} ${vi.iconSick}`}>
+                <LuPill className={vi.typeSvg} />
               </div>
             </div>
-            <div className="visit-type-label">Sick Visit</div>
-            <div className="visit-type-description">Illness with symptoms and prescriptions</div>
+            <div className={styles.label}>Sick Visit</div>
+            <div className={styles.description}>Illness with symptoms and prescriptions</div>
           </button>
 
           <button
-            className="visit-type-button injury"
+            className={`${styles.button} ${styles.buttonInjury}`}
             onClick={() => onSelect('injury')}
           >
-            <div className="visit-type-icon">
-              <div className="visit-icon-outline visit-icon--injury">
-                <MdOutlinePersonalInjury className="visit-type-svg visit-type-svg--filled" />
+            <div className={`${styles.iconWrapper} ${vi.typeIcon}`}>
+              <div className={`${vi.iconOutline} ${vi.iconInjury}`}>
+                <MdOutlinePersonalInjury className={`${vi.typeSvg} ${vi.typeSvgFilled}`} />
               </div>
             </div>
-            <div className="visit-type-label">Injury Visit</div>
-            <div className="visit-type-description">Sprains, cuts, fractures, and other injuries</div>
+            <div className={styles.label}>Injury Visit</div>
+            <div className={styles.description}>Sprains, cuts, fractures, and other injuries</div>
           </button>
 
           <button
-            className="visit-type-button dental"
+            className={`${styles.button} ${styles.buttonDental}`}
             onClick={() => onSelect('dental')}
           >
-            <div className="visit-type-icon">
-              <div className="visit-icon-outline visit-icon--dental">
-                <HugeiconsIcon icon={DentalToothIcon} className="visit-type-svg" size={24} color="currentColor" />
+            <div className={`${styles.iconWrapper} ${vi.typeIcon}`}>
+              <div className={`${vi.iconOutline} ${vi.iconDental}`}>
+                <HugeiconsIcon icon={DentalToothIcon} className={vi.typeSvg} size={24} color="currentColor" />
               </div>
             </div>
-            <div className="visit-type-label">Dental Visit</div>
-            <div className="visit-type-description">Cleanings, checkups, and dental procedures</div>
+            <div className={styles.label}>Dental Visit</div>
+            <div className={styles.description}>Cleanings, checkups, and dental procedures</div>
           </button>
 
           <button
-            className="visit-type-button vision"
+            className={`${styles.button} ${styles.buttonVision}`}
             onClick={() => onSelect('vision')}
           >
-            <div className="visit-type-icon">
-              <div className="visit-icon-outline visit-icon--vision">
-                <LuEye className="visit-type-svg" />
+            <div className={`${styles.iconWrapper} ${vi.typeIcon}`}>
+              <div className={`${vi.iconOutline} ${vi.iconVision}`}>
+                <LuEye className={vi.typeSvg} />
               </div>
             </div>
-            <div className="visit-type-label">Vision Visit</div>
-            <div className="visit-type-description">Eye exams, prescriptions, and vision care</div>
+            <div className={styles.label}>Vision Visit</div>
+            <div className={styles.description}>Eye exams, prescriptions, and vision care</div>
           </button>
         </div>
 
-        <div className="modal-actions">
+        <div className={modalStyles.actions}>
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>

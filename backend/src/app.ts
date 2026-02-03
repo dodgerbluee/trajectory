@@ -17,7 +17,9 @@ import { usersRouter } from './routes/users.js';
 import { familiesRouter } from './routes/families.js';
 import { invitesRouter } from './routes/invites.js';
 import exportRouter from './routes/export.js';
+import { adminRouter } from './routes/admin.js';
 import { errorHandler } from './middleware/error-handler.js';
+import { logRequest } from './middleware/error-logger.js';
 
 export function createApp(): express.Application {
   const app = express();
@@ -27,10 +29,13 @@ export function createApp(): express.Application {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // Request logging (simple); skipped in test to keep output clean
+  // Request logging: console + in-memory buffer for Admin Logs page (API and health only)
   if (process.env.NODE_ENV !== 'test') {
     app.use((req, _res, next) => {
       console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
+      if (req.path.startsWith('/api') || req.path === '/health') {
+        logRequest(req);
+      }
       next();
     });
   }
@@ -53,6 +58,7 @@ export function createApp(): express.Application {
   app.use('/api/families', familiesRouter); // Family list and invites
   app.use('/api/invites', invitesRouter); // Accept invite by token
   app.use('/api/export', exportRouter);
+  app.use('/api/admin', adminRouter);
   app.use('/api/children', childrenRouter);
   app.use('/api/visits', visitsRouter); // Unified visits endpoint
   app.use('/api/illnesses', illnessesRouter); // Illness tracking

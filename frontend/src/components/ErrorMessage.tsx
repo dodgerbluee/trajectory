@@ -1,3 +1,6 @@
+import styles from './ErrorMessage.module.css';
+import Button from './Button';
+
 interface ErrorMessageProps {
   message: string;
   onRetry?: () => void;
@@ -5,13 +8,13 @@ interface ErrorMessageProps {
 
 function ErrorMessage({ message, onRetry }: ErrorMessageProps) {
   return (
-    <div className="error-message">
-      <div className="error-icon">⚠️</div>
-      <p className="error-text">{message}</p>
+    <div className={styles.root}>
+      <div className={styles.icon}>⚠️</div>
+      <p className={styles.text}>{message}</p>
       {onRetry && (
-        <button onClick={onRetry} className="btn btn-secondary">
+        <Button onClick={onRetry} variant="secondary">
           Retry
-        </button>
+        </Button>
       )}
     </div>
   );

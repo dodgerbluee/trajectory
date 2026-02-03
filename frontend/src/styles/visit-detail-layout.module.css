@@ -1,0 +1,40 @@
+/* Shared visit detail / form layout (detail body, header, actions); tokens in styles/tokens.css */
+
+.detailBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* No bottom space after last section in form body */
+.detailBody > *:last-child {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+  border-bottom: none !important;
+}
+
+.detailHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.detailHeader :global(.breadcrumb) {
+  margin-bottom: 0;
+}
+
+.detailActions {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+.headerTitle {
+  font-size: var(--font-size-icon-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-xs) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}

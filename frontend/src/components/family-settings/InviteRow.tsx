@@ -2,6 +2,7 @@ import Button from '../Button';
 import RoleBadge from '../RoleBadge';
 import type { FamilyInvite } from '../../types/api';
 import type { FamilyRole } from '../../types/api';
+import styles from './InviteRow.module.css';
 
 interface InviteRowProps {
   invite: FamilyInvite;
@@ -20,12 +21,12 @@ function InviteRow({ invite, hasToken, onCopyLink, onRevoke }: InviteRowProps) {
   });
 
   return (
-    <div className="family-settings-invite-row" role="row">
-      <div className="family-settings-invite-row__main">
-        <RoleBadge role={invite.role as FamilyRole} className="family-settings-invite-row__badge" />
-        <span className="family-settings-invite-row__expires">Expires {expiresAt}</span>
+    <div className={styles.row} role="row">
+      <div className={styles.main}>
+        <RoleBadge role={invite.role as FamilyRole} className={styles.badge} />
+        <span className={styles.expires}>Expires {expiresAt}</span>
       </div>
-      <div className="family-settings-invite-row__actions">
+      <div className={styles.actions}>
         {hasToken && (
           <Button variant="secondary" size="sm" onClick={onCopyLink}>
             Copy link

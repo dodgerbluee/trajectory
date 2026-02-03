@@ -1,0 +1,33 @@
+/* IllnessEntryFormFields – uniform spacing for illness section */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.root :global(.form-field) {
+  margin-bottom: 0;
+}
+
+.illnessSelector {
+  margin-bottom: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+  align-items: start;
+}
+
+.severityField {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+}

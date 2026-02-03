@@ -1,0 +1,65 @@
+/* Checkbox – custom checkbox; tokens in styles/tokens.css */
+
+.wrapper {
+  /* optional: flex, gap if needed by parent */
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  user-select: none;
+}
+
+.input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.custom {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-background);
+  transition: all var(--transition-base);
+  flex-shrink: 0;
+}
+
+.label:hover .custom {
+  border-color: var(--color-primary);
+}
+
+.input:checked + .custom {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.input:disabled + .custom {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.checkmark {
+  width: 0.875rem;
+  height: 0.875rem;
+  color: var(--color-text-inverse);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.input:checked + .custom .checkmark {
+  opacity: 1;
+}
+
+.text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}

@@ -1,0 +1,101 @@
+/* Visit type modal – selection grid, buttons. Composes with Modal.module.css. Icon styles from visit-icons.css. */
+
+.selection {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+  border: 3px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-background-card);
+  cursor: pointer;
+  transition: border-color var(--transition-base), background-color var(--transition-base);
+  text-align: center;
+  min-height: 10rem;
+}
+
+.button:hover {
+  border-color: var(--color-primary);
+}
+
+.buttonWellness:hover {
+  background: var(--color-surface);
+  border-color: var(--color-success);
+}
+
+.buttonSick:hover {
+  background: var(--color-surface);
+  border-color: var(--color-danger);
+}
+
+.buttonInjury:hover {
+  background: var(--color-surface);
+  border-color: var(--color-visit-accent);
+}
+
+.buttonVision:hover {
+  background: var(--color-surface);
+  border-color: var(--color-vision);
+}
+
+.buttonDental:hover {
+  background: var(--color-dental-light);
+  border-color: var(--color-dental);
+}
+
+[data-theme="dark"] .buttonWellness:hover {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+[data-theme="dark"] .buttonSick:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+[data-theme="dark"] .buttonInjury:hover {
+  background: rgba(11, 61, 145, 0.12);
+}
+
+[data-theme="dark"] .buttonVision:hover {
+  background: var(--color-vision-light);
+}
+
+[data-theme="dark"] .buttonDental:hover {
+  background: var(--color-dental-light);
+}
+
+.iconWrapper {
+  font-size: var(--font-size-3xl);
+  margin-bottom: var(--spacing-md);
+}
+
+.label {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-text-primary);
+}
+
+.description {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 1024px) {
+  .selection {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .selection {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,204 @@
+/* Visit form page layout (AddVisitPage, EditVisitPage). Grid + date banner + sidebar cell overrides. */
+
+.root {
+  display: grid;
+  grid-template-columns: 14.0625rem 1fr;
+  grid-template-rows: auto auto 1fr;
+  gap: var(--spacing-sm-plus) var(--spacing-lg);
+  align-items: stretch;
+}
+
+.root.hasDateBanner {
+  grid-template-rows: auto auto auto 1fr;
+}
+
+.root.hasDateBanner .backRow {
+  grid-row: 1;
+}
+
+.root.hasDateBanner .sidebarCell {
+  grid-row: 2 / -1;
+}
+
+.root.hasDateBanner .topRow {
+  grid-row: 2;
+}
+
+.root.hasDateBanner .dateBanner {
+  grid-row: 3;
+  grid-column: 2;
+}
+
+.root.hasDateBanner .bodyCell {
+  grid-row: 4;
+}
+
+.dateBanner {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-elevated, rgba(255, 255, 255, 0.06));
+  color: var(--color-text-secondary, rgba(255, 255, 255, 0.8));
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+.dateBannerBullets {
+  margin-top: 0.25em;
+  padding-left: 2em;
+}
+
+.dateBannerBullet {
+  margin-bottom: 0.15em;
+}
+
+.dateBannerBullet:last-child {
+  margin-bottom: 0;
+}
+
+.backRow {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.backRow .backLink {
+  margin-bottom: 0;
+}
+
+.sidebarCell {
+  grid-column: 1;
+  grid-row: 2 / -1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Make sidebar inside form page stretch to fill full height */
+.sidebarCell > aside {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebarCell > aside > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.topRow {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+}
+
+.topRow .headerTitle {
+  margin: 0;
+}
+
+.bodyCell {
+  grid-column: 2;
+  grid-row: 3;
+  min-width: 0;
+}
+
+/* Sidebar when inside form page: overrides applied alongside VisitsLayout classes */
+.sidebarCell .formSidebar {
+  flex: 1;
+  min-height: 0;
+  align-self: stretch;
+}
+
+.formSidebar {
+  width: 100%;
+  max-width: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.formSidebarInner {
+  padding: var(--spacing-sm-plus) var(--spacing-sm-plus);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.formSidebarDivider {
+  margin: var(--spacing-sm) 0;
+}
+
+.formSidebarSection {
+  margin-top: var(--spacing-sm-plus);
+}
+
+.formSidebarSectionTitle {
+  margin-bottom: var(--spacing-6);
+}
+
+.formSidebarAction {
+  padding-top: var(--spacing-sm);
+}
+
+.formSidebarActionStack {
+  gap: var(--spacing-6);
+}
+
+.formSidebar [data-measurement-add] {
+  padding-top: var(--spacing-xs);
+  padding-bottom: var(--spacing-xs);
+}
+
+.sidebarEmpty {
+  margin: 0;
+  font-size: var(--font-size-sm-tight);
+  color: var(--color-sidebar-muted, rgba(255, 255, 255, 0.75));
+  line-height: var(--line-height-normal);
+}
+
+@media (max-width: 900px) {
+  .root {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto 1fr;
+  }
+  .backRow {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .topRow {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .sidebarCell {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .bodyCell {
+    grid-column: 1;
+    grid-row: 4;
+  }
+  .root.hasDateBanner {
+    grid-template-rows: auto auto auto auto 1fr;
+  }
+  .root.hasDateBanner .backRow {
+    grid-row: 1;
+  }
+  .root.hasDateBanner .topRow {
+    grid-row: 2;
+  }
+  .root.hasDateBanner .dateBanner {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .root.hasDateBanner .sidebarCell {
+    grid-row: 4;
+  }
+  .root.hasDateBanner .bodyCell {
+    grid-row: 5;
+  }
+}

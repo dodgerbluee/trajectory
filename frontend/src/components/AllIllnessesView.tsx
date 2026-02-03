@@ -1,17 +1,12 @@
 import { useEffect, useState, useMemo } from 'react';
-import { /* Link removed - not used */ } from 'react-router-dom';
 import { illnessesApi, childrenApi, ApiClientError } from '../lib/api-client';
 import type { Illness, Child, IllnessType } from '../types/api';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
-import TimelineItem from './TimelineItem';
-import Card from './Card';
-// Button removed - Add action moved into summary section
-// HiPlus removed — using summary-section controls for adding illness
+import IllnessesTimeline from './IllnessesTimeline';
 import IllnessesSidebar from './IllnessesSidebar';
+import visitsLayout from '../styles/VisitsLayout.module.css';
 import { LuActivity } from 'react-icons/lu';
-
-// Illness types constant removed - not used by the modernized UI
 
 function AllIllnessesView() {
   // keep an unfiltered source for stable stats and a displayed list filtered client-side
@@ -62,22 +57,6 @@ function AllIllnessesView() {
     }
   };
 
-  // Create a map for quick child lookup
-  const childMap = useMemo(() => {
-    const map = new Map<number, Child>();
-    children.forEach(child => map.set(child.id, child));
-    return map;
-  }, [children]);
-
-  // Sort illnesses by start_date (most recent first)
-  const sortedIllnesses = useMemo(() => {
-    return [...illnesses].sort((a, b) => {
-      const dateA = new Date(a.start_date).getTime();
-      const dateB = new Date(b.start_date).getTime();
-      return dateB - dateA; // Descending = most recent first
-    });
-  }, [illnesses]);
-
   // stats source (unfiltered) so counts remain stable when filtering
   const statsSource = useMemo(() => allIllnesses, [allIllnesses]);
 
@@ -90,7 +69,7 @@ function AllIllnessesView() {
   }
 
   return (
-    <div className="visits-page-layout">
+    <div className={visitsLayout.pageLayout}>
       <IllnessesSidebar
         stats={[
           { label: 'Total Illnesses', value: statsSource.length, icon: LuActivity, color: 'blue', onClick: () => { setFilterIllnessType(undefined); setFilterIllnessStatus(undefined); }, active: !filterIllnessType && !filterIllnessStatus },
@@ -102,32 +81,12 @@ function AllIllnessesView() {
         onSelectChild={(id) => setFilterChildId(id)}
       />
 
-      <main className="visits-main">
-        {/* Illnesses Timeline */}
-        {sortedIllnesses.length === 0 ? (
-          <Card>
-            <p className="empty-state">
-              No illnesses recorded yet. Click "Add Illness" to get started.
-            </p>
-          </Card>
-        ) : (
-          <Card>
-            <div className="timeline-list-modern">
-              {sortedIllnesses.map((illness) => {
-                const child = childMap.get(illness.child_id);
-                return (
-                  <TimelineItem 
-                    key={illness.id}
-                    type="illness" 
-                    data={illness}
-                    childName={child?.name || `Child #${illness.child_id}`}
-                    childId={illness.child_id}
-                  />
-                );
-              })}
-            </div>
-          </Card>
-        )}
+      <main className={visitsLayout.main}>
+        <IllnessesTimeline
+          illnesses={illnesses}
+          children={children}
+          showChildName={true}
+        />
       </main>
     </div>
   );

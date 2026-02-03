@@ -1,0 +1,81 @@
+/* Member row – avatar, info, role select, remove. */
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color var(--transition-fast) ease;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.row:hover {
+  background: var(--color-surface);
+}
+
+.main {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  min-width: 0;
+  flex: 1;
+}
+
+.avatar {
+  flex-shrink: 0;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  min-width: 0;
+}
+
+.name {
+  font-size: var(--font-size-touch);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.you {
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-secondary);
+}
+
+.email {
+  font-size: var(--font-size-sm-tight);
+  color: var(--color-text-secondary);
+}
+
+.badge {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.roleSelect {
+  flex-shrink: 0;
+  margin-left: auto;
+  width: auto;
+  min-width: 8.75rem;
+}
+
+.actions {
+  flex-shrink: 0;
+}
+
+.btnRemove {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+  background: transparent;
+}
+
+.btnRemove:hover {
+  background: var(--color-danger-light);
+  border-color: var(--color-danger);
+}

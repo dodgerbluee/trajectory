@@ -12,13 +12,8 @@ import type {
   Measurement,
   CreateMeasurementInput,
   UpdateMeasurementInput,
-  MedicalEvent,
-  CreateMedicalEventInput,
-  UpdateMedicalEventInput,
-  MeasurementAttachment,
   PaginationParams,
   DateRangeParams,
-  MedicalEventFilters,
   Visit,
   CreateVisitInput,
   UpdateVisitInput,
@@ -36,10 +31,12 @@ import type {
   FamilyInvite,
   FamilyMember,
   CreateInviteResponse,
+  AdminConfig,
+  AdminLogsResponse,
+  AdminUser,
+  AdminUserDetail,
 } from '../types/api';
-
-// Base API URL - use relative URL in production (served by unified app), absolute for development
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+import { API_BASE_URL } from './env.js';
 
 /**
  * API Error class for structured error handling
@@ -336,12 +333,51 @@ export const childrenApi = {
     formData.append('file', file);
     formData.append('document_type', documentType);
 
+    const accessToken = getAccessToken();
+    const headers: Record<string, string> = {};
+    
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/children/${childId}/attachments`, {
       method: 'POST',
+      headers,
       body: formData,
     });
 
     if (!response.ok) {
+      // Handle 401 with token refresh
+      if (response.status === 401 && accessToken) {
+        const newToken = await tryRefreshToken();
+        if (newToken) {
+          // Retry with new token
+          const retryHeaders: Record<string, string> = {
+            'Authorization': `Bearer ${newToken}`,
+          };
+          const retryResponse = await fetch(`${API_BASE_URL}/api/children/${childId}/attachments`, {
+            method: 'POST',
+            headers: retryHeaders,
+            body: formData,
+          });
+          
+          if (!retryResponse.ok) {
+            const error = await retryResponse.json();
+            throw new ApiClientError(
+              error.error?.message || 'Failed to upload attachment',
+              retryResponse.status,
+              error.error?.type || 'UploadError'
+            );
+          }
+          
+          return retryResponse.json();
+        } else {
+          clearAuthStorage();
+          redirectToLogin();
+          throw new ApiClientError('Authentication failed', 401, 'UnauthorizedError');
+        }
+      }
+      
       const error = await response.json();
       throw new ApiClientError(
         error.error?.message || 'Failed to upload attachment',
@@ -361,10 +397,12 @@ export const childrenApi = {
   },
 
   /**
-   * Get download URL for a child attachment
+   * Get download URL for a child attachment (with token in query for img src/download).
    */
   getAttachmentDownloadUrl(attachmentId: number): string {
-    return `${API_BASE_URL}/api/attachments/${attachmentId}`;
+    const base = `${API_BASE_URL}/api/attachments/${attachmentId}`;
+    const token = getAccessToken();
+    return token ? `${base}?token=${encodeURIComponent(token)}` : base;
   },
 
   /**
@@ -441,123 +479,6 @@ export const measurementsApi = {
    */
   async delete(id: number): Promise<void> {
     await request<void>(`/api/measurements/${id}`, { method: 'DELETE' });
-  },
-};
-
-// ============================================================================
-// Medical Events API
-// ============================================================================
-
-export const medicalEventsApi = {
-  /**
-   * Get all medical events for a child with pagination and filtering
-   */
-  async getByChild(
-    childId: number,
-    params?: PaginationParams & MedicalEventFilters
-  ): Promise<ApiResponse<MedicalEvent[]>> {
-    const queryString = buildQueryString(params || {});
-    return request<MedicalEvent[]>(`/api/children/${childId}/medical-events${queryString}`);
-  },
-
-  /**
-   * Get a single medical event by ID
-   */
-  async getById(id: number): Promise<ApiResponse<MedicalEvent>> {
-    return request<MedicalEvent>(`/api/medical-events/${id}`);
-  },
-
-  /**
-   * Create a new medical event
-   */
-  async create(
-    childId: number,
-    input: CreateMedicalEventInput
-  ): Promise<ApiResponse<MedicalEvent>> {
-    return request<MedicalEvent>(`/api/children/${childId}/medical-events`, {
-      method: 'POST',
-      body: JSON.stringify(input),
-    });
-  },
-
-  /**
-   * Update a medical event
-   */
-  async update(
-    id: number,
-    input: UpdateMedicalEventInput
-  ): Promise<ApiResponse<MedicalEvent>> {
-    return request<MedicalEvent>(`/api/medical-events/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(input),
-    });
-  },
-
-  /**
-   * Delete a medical event
-   */
-  async delete(id: number): Promise<void> {
-    await request<void>(`/api/medical-events/${id}`, { method: 'DELETE' });
-  },
-};
-
-// ============================================================================
-// Measurement Attachments
-// ============================================================================
-
-export const attachmentsApi = {
-  /**
-   * Upload attachment to measurement
-   */
-  async upload(measurementId: number, file: File): Promise<ApiResponse<MeasurementAttachment>> {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const response = await fetch(
-      `${API_BASE_URL}/api/measurements/${measurementId}/attachments`,
-      {
-        method: 'POST',
-        body: formData,
-        // Don't set Content-Type - let browser set it with boundary
-      }
-    );
-
-    if (!response.ok) {
-      const error: ApiError = await response.json();
-      throw new ApiClientError(
-        error.error.message,
-        error.error.statusCode,
-        error.error.type,
-        error.error.details
-      );
-    }
-
-    return response.json();
-  },
-
-  /**
-   * Get all attachments for a measurement
-   */
-  async getByMeasurement(
-    measurementId: number
-  ): Promise<ApiResponse<MeasurementAttachment[]>> {
-    return request<MeasurementAttachment[]>(
-      `${API_BASE_URL}/api/measurements/${measurementId}/attachments`
-    );
-  },
-
-  /**
-   * Get attachment download URL
-   */
-  getDownloadUrl(attachmentId: number): string {
-    return `${API_BASE_URL}/api/attachments/${attachmentId}`;
-  },
-
-  /**
-   * Delete attachment
-   */
-  async delete(attachmentId: number): Promise<void> {
-    await request<void>(`/api/attachments/${attachmentId}`, { method: 'DELETE' });
   },
 };
 
@@ -644,13 +565,49 @@ export const visitsApi = {
     const formData = new FormData();
     formData.append('file', file);
 
+    const accessToken = getAccessToken();
+    const headers: Record<string, string> = {};
+    
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
     // Manually handle FormData upload
     const response = await fetch(`${API_BASE_URL}/api/visits/${visitId}/attachments`, {
       method: 'POST',
+      headers,
       body: formData,
     });
 
     if (!response.ok) {
+      // Handle 401 with token refresh
+      if (response.status === 401 && accessToken) {
+        const newToken = await tryRefreshToken();
+        if (newToken) {
+          // Retry with new token
+          const retryHeaders: Record<string, string> = {
+            'Authorization': `Bearer ${newToken}`,
+          };
+          const retryResponse = await fetch(`${API_BASE_URL}/api/visits/${visitId}/attachments`, {
+            method: 'POST',
+            headers: retryHeaders,
+            body: formData,
+          });
+          
+          if (!retryResponse.ok) {
+            const error = await retryResponse.json();
+            throw new ApiClientError(error.error?.message || 'Upload failed', retryResponse.status, 'UploadError');
+          }
+          
+          const result = await retryResponse.json();
+          return result as ApiResponse<VisitAttachment>;
+        } else {
+          clearAuthStorage();
+          redirectToLogin();
+          throw new ApiClientError('Authentication failed', 401, 'UnauthorizedError');
+        }
+      }
+      
       const error = await response.json();
       throw new ApiClientError(error.error?.message || 'Upload failed', response.status, 'UploadError');
     }
@@ -660,10 +617,12 @@ export const visitsApi = {
   },
 
   /**
-   * Get attachment download URL
+   * Get attachment download URL (with token in query for img src/download).
    */
   getAttachmentDownloadUrl(attachmentId: number): string {
-    return `${API_BASE_URL}/api/attachments/${attachmentId}`;
+    const base = `${API_BASE_URL}/api/attachments/${attachmentId}`;
+    const token = getAccessToken();
+    return token ? `${base}?token=${encodeURIComponent(token)}` : base;
   },
 
   /**
@@ -978,6 +937,62 @@ export const invitesApi = {
         body: JSON.stringify({ token }),
       }
     );
+  },
+};
+
+// ============================================================================
+// Admin API (instance admin only)
+// ============================================================================
+
+export const adminApi = {
+  async getConfig(): Promise<ApiResponse<AdminConfig>> {
+    return request<AdminConfig>('/api/admin/config');
+  },
+
+  async updateConfig(body: { log_level: 'info' | 'debug' }): Promise<ApiResponse<AdminConfig>> {
+    return request<AdminConfig>('/api/admin/config', {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+  },
+
+  async getLogs(params: {
+    level?: ('info' | 'debug' | 'warn' | 'error')[];
+    limit?: number;
+    offset?: number;
+  }): Promise<ApiResponse<AdminLogsResponse>> {
+    const search = new URLSearchParams();
+    if (params.level?.length) {
+      params.level.forEach((l) => search.append('level', l));
+    }
+    if (params.limit != null) search.set('limit', String(params.limit));
+    if (params.offset != null) search.set('offset', String(params.offset));
+    const q = search.toString();
+    return request<AdminLogsResponse>(`/api/admin/logs${q ? `?${q}` : ''}`);
+  },
+};
+
+export const adminUsersApi = {
+  async getAll(): Promise<ApiResponse<AdminUser[]>> {
+    return request<AdminUser[]>('/api/users');
+  },
+
+  async getById(id: number): Promise<ApiResponse<AdminUserDetail>> {
+    return request<AdminUserDetail>(`/api/users/${id}`);
+  },
+
+  async setInstanceAdmin(userId: number, isInstanceAdmin: boolean): Promise<ApiResponse<{ success: boolean; is_instance_admin: boolean }>> {
+    return request<{ success: boolean; is_instance_admin: boolean }>(`/api/users/${userId}/instance-admin`, {
+      method: 'PUT',
+      body: JSON.stringify({ is_instance_admin: isInstanceAdmin }),
+    });
+  },
+
+  async changePassword(userId: number, newPassword: string): Promise<ApiResponse<{ success: boolean }>> {
+    return request<{ success: boolean }>(`/api/users/${userId}/change-password`, {
+      method: 'POST',
+      body: JSON.stringify({ newPassword }),
+    });
   },
 };
 

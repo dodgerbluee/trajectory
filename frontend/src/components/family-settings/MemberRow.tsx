@@ -2,6 +2,7 @@ import Button from '../Button';
 import RoleBadge from '../RoleBadge';
 import InitialsAvatar from './InitialsAvatar';
 import type { FamilyMember as FamilyMemberType, FamilyRole } from '../../types/api';
+import styles from './MemberRow.module.css';
 
 export type EditableRole = 'parent' | 'read_only';
 
@@ -37,23 +38,23 @@ function MemberRow({
   };
 
   return (
-    <div className="family-settings-member-row" role="row">
-      <div className="family-settings-member-row__main">
-        <InitialsAvatar name={member.username} className="family-settings-member-row__avatar" size={40} />
-        <div className="family-settings-member-row__info">
-          <span className="family-settings-member-row__name">
+    <div className={styles.row} role="row">
+      <div className={styles.main}>
+        <InitialsAvatar name={member.username} className={styles.avatar} size={40} />
+        <div className={styles.info}>
+          <span className={styles.name}>
             {member.username}
             {isCurrentUser && (
-              <span className="family-settings-member-row__you" aria-label="You"> (you)</span>
+              <span className={styles.you} aria-label="You"> (you)</span>
             )}
           </span>
           {member.email && (
-            <span className="family-settings-member-row__email">{member.email}</span>
+            <span className={styles.email}>{member.email}</span>
           )}
         </div>
         {canChangeRole ? (
           <select
-            className="family-settings-member-row__role-select form-input"
+            className={`${styles.roleSelect} form-input`}
             value={displayRole}
             onChange={handleRoleSelect}
             disabled={isSaving}
@@ -63,12 +64,12 @@ function MemberRow({
             <option value="read_only">Read only</option>
           </select>
         ) : (
-          <RoleBadge role={member.role as FamilyRole} className="family-settings-member-row__badge" />
+          <RoleBadge role={member.role as FamilyRole} className={styles.badge} />
         )}
       </div>
       {showRemove && (
-        <div className="family-settings-member-row__actions">
-          <Button variant="secondary" size="sm" onClick={onRemove} className="family-settings-btn-remove">
+        <div className={styles.actions}>
+          <Button variant="secondary" size="sm" onClick={onRemove} className={styles.btnRemove}>
             Remove
           </Button>
         </div>

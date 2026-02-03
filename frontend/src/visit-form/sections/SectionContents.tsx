@@ -13,6 +13,8 @@ import IllnessEntryFormFields from '../../components/IllnessEntryFormFields';
 import MeasurementsInput from '../../components/MeasurementsInput';
 import PrescriptionInput from '../../components/PrescriptionInput';
 import FileUpload from '../../components/FileUpload';
+import fileUploadStyles from '../../components/FileUpload.module.css';
+import loadingStyles from '../../components/LoadingSpinner.module.css';
 import VisitAttachmentsList from '../../components/VisitAttachmentsList';
 import Checkbox from '../../components/Checkbox';
 import { VisionRefractionCard } from '../../components/VisionRefractionCard';
@@ -20,6 +22,8 @@ import type { VisionRefraction } from '../../components/VisionRefractionCard';
 import type { SectionId } from '../sectionRegistry';
 import type { VisitFormContext } from '../visitFormContext';
 import { isFutureDate } from '../../lib/date-utils';
+import sectionStyles from './SectionContents.module.css';
+import mui from '../../styles/MeasurementsUI.module.css';
 
 export interface SectionContentPropsWithContext {
   sectionId: SectionId;
@@ -35,7 +39,7 @@ export function VisitInformationSection({ context }: SectionContentPropsWithCont
   const allowFutureDate = context.mode === 'edit' && formDateIsFuture;
   const futureDateConstraint = context.mode === 'add' ? {} : allowFutureDate ? {} : { max: getTodayDate() };
   return (
-    <div className="visit-info-form">
+    <div className={sectionStyles.root}>
       {context.mode === 'add' && children && children.length > 0 && setSelectedChildId && (
         <FormField
           label="Child"
@@ -47,7 +51,7 @@ export function VisitInformationSection({ context }: SectionContentPropsWithCont
           disabled={submitting}
         />
       )}
-      <div className="visit-info-primary">
+      <div className={sectionStyles.primary}>
         <FormField
           label="Visit Date"
           type="date"
@@ -93,8 +97,8 @@ export function VisitInformationSection({ context }: SectionContentPropsWithCont
           <option key={doc} value={doc} />
         ))}
       </datalist>
-      <div className="visit-info-optional">
-        <div className="visit-info-optional-fields">
+      <div className={sectionStyles.optional}>
+        <div className={sectionStyles.optionalFields}>
           {showTitle && (
             <FormField
               label="Title"
@@ -105,8 +109,8 @@ export function VisitInformationSection({ context }: SectionContentPropsWithCont
               placeholder="e.g., 1 Year Appointment"
             />
           )}
-          <div className="visit-info-tags-field">
-            <label className="form-label">Tags</label>
+          <div className={sectionStyles.tagsField}>
+            <label className={sectionStyles.formLabel}>Tags</label>
             <TagInput
               tags={formData.tags || []}
               onChange={(tags) => setForm((prev: any) => ({ ...prev, tags }))}
@@ -143,7 +147,7 @@ export function AttachmentsSection({ context }: SectionContentPropsWithContext) 
     return (
       <>
         {loadingAttachments ? (
-          <div className="attachments-loading">Loading attachments...</div>
+          <div className={loadingStyles.attachmentLoading}>Loading attachments...</div>
         ) : attachments.length > 0 ? (
           <VisitAttachmentsList
             attachments={attachments}
@@ -164,23 +168,23 @@ export function AttachmentsSection({ context }: SectionContentPropsWithContext) 
   return (
     <>
       {pendingFiles.length > 0 && (
-        <div className="pending-attachments">
+        <div className={fileUploadStyles.pendingAttachments}>
           <h4 style={{ marginBottom: 'var(--spacing-sm)' }}>Pending Attachments ({pendingFiles.length})</h4>
-          <ul className="attachments-list">
+          <ul className={fileUploadStyles.attachmentsList}>
             {pendingFiles.map((file, index) => (
-              <li key={index} className="attachment-item">
-                <span className="attachment-icon">
+              <li key={index} className={fileUploadStyles.attachmentItem}>
+                <span className={fileUploadStyles.attachmentIcon}>
                   {file.type.startsWith('image/') ? '🖼️' : file.type === 'application/pdf' ? '📄' : '📎'}
                 </span>
-                <span className="attachment-info">
-                  <span className="attachment-filename">{file.name}</span>
-                  <span className="attachment-meta">{(file.size / 1024).toFixed(1)} KB</span>
+                <span className={fileUploadStyles.attachmentInfo}>
+                  <span className={fileUploadStyles.attachmentFilename}>{file.name}</span>
+                  <span className={fileUploadStyles.attachmentMeta}>{(file.size / 1024).toFixed(1)} KB</span>
                 </span>
                 <button
                   type="button"
                   onClick={() => handleRemoveFile(index)}
                   disabled={submitting}
-                  className="btn-delete-attachment"
+                  className={fileUploadStyles.btnDeleteAttachment}
                   title="Remove file"
                 >
                   ✕
@@ -252,14 +256,14 @@ export function IllnessSection({ context }: SectionContentPropsWithContext) {
         minEndDate={formData.illness_start_date || formData.visit_date || undefined}
       />
       {selectedIllnesses.length > 0 && (
-        <div className="form-field illness-create-entry-field">
+        <div className={`${sectionStyles.formField} illness-create-entry-field`}>
           <Checkbox
             label="Create illness entry (auto-track this illness)"
             checked={(formData as any).create_illness || false}
             onChange={(checked) => setForm((prev: any) => ({ ...prev, create_illness: checked }))}
             disabled={submitting}
           />
-          <p className="form-field-hint form-field-hint-italic">
+          <p className={`${sectionStyles.formFieldHint} ${sectionStyles.formFieldHintItalic}`}>
             This will create a separate illness record that can be tracked independently from the visit.
           </p>
         </div>
@@ -273,7 +277,7 @@ export function InjurySection({ context }: SectionContentPropsWithContext) {
   const setForm = setFormData as React.Dispatch<React.SetStateAction<any>>;
   return (
     <>
-      <div className="form-row">
+      <div className={sectionStyles.formRow}>
         <FormField
           label="Injury Type"
           type="text"
@@ -310,15 +314,15 @@ export function VisionSection({ context }: SectionContentPropsWithContext) {
   const setForm = setFormData as React.Dispatch<React.SetStateAction<any>>;
   const fd = formData as any;
   return (
-    <div className="measurements-ui vision-ui">
-      <div className="measurements-cards vision-refraction-cards">
+    <div className={`${mui.root} ${mui.visionUi}`}>
+      <div className={`${mui.cards} ${mui.visionRefractionCards}`}>
         <VisionRefractionCard
           value={fd.vision_refraction}
           onChange={(v: VisionRefraction) => setForm((prev: any) => ({ ...prev, vision_refraction: v }))}
           readOnly={submitting}
         />
       </div>
-      <div className="vision-checkboxes">
+      <div className={mui.visionCheckboxes}>
         <Checkbox
           label="Ordered Glasses"
           checked={fd.ordered_glasses || false}
@@ -363,8 +367,8 @@ export function DentalSection({ context }: SectionContentPropsWithContext) {
   ];
   
   return (
-    <div className="dental-ui">
-      <div className="dental-form-fields">
+    <div className={sectionStyles.dentalUi}>
+      <div className={sectionStyles.dentalFormFields}>
         <FormField
           label="Dental Visit Type"
           type="select"
@@ -385,7 +389,7 @@ export function DentalSection({ context }: SectionContentPropsWithContext) {
           />
         )}
         
-        <div className="dental-checkboxes" style={{ display: 'flex', gap: 'var(--spacing-md)', flexWrap: 'wrap', marginBottom: 'var(--spacing-md)' }}>
+        <div className={sectionStyles.dentalCheckboxes}>
           <Checkbox
             label="X-Rays Taken"
             checked={fd.xrays_taken || false}
@@ -406,7 +410,7 @@ export function DentalSection({ context }: SectionContentPropsWithContext) {
           />
         </div>
         
-        <div className="dental-numbers" style={{ display: 'flex', gap: '16px' }}>
+        <div className={sectionStyles.dentalNumbers}>
           <div style={{ flex: 1 }}>
             <FormField
               label="Cavities Found"

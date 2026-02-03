@@ -6,6 +6,7 @@ import { formatDate, formatTime, safeFormatDateTime, isFutureVisit } from '../li
 import { visitHasOutcomeData } from '../lib/visit-utils';
 import { getGoogleCalendarAddEventUrl } from '../lib/calendar-export';
 import LoadingSpinner from '../components/LoadingSpinner';
+import loadingStyles from '../components/LoadingSpinner.module.css';
 import ErrorMessage from '../components/ErrorMessage';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -17,6 +18,9 @@ import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
 import { VisionRefractionCard } from '../components/VisionRefractionCard';
 import AuditDiffView from '../components/AuditDiffView';
 import type { AuditHistoryEvent } from '../types/api';
+import layoutStyles from '../styles/visit-detail-layout.module.css';
+import pageLayout from '../styles/page-layout.module.css';
+import styles from './VisitDetailPage.module.css';
 
 function VisitDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -178,7 +182,7 @@ function VisitDetailPage() {
   };
 
   return (
-    <div className="page-container">
+    <div className={pageLayout.pageContainer}>
       {notification && (
         <Notification
           message={notification.message}
@@ -188,13 +192,13 @@ function VisitDetailPage() {
       )}
 
       <Card>
-        <div className="visit-detail-body">
+        <div className={layoutStyles.detailBody}>
           {/* Header with Back button and Actions */}
-          <div className="visit-detail-header">
-            <Link to={`/children/${visit.child_id}`} className="breadcrumb">
+          <div className={layoutStyles.detailHeader}>
+            <Link to={`/children/${visit.child_id}`} className={pageLayout.breadcrumb}>
               ← Back to {child.name}
             </Link>
-            <div className="visit-detail-actions">
+            <div className={layoutStyles.detailActions}>
               <Button variant="secondary" size="sm" onClick={handleExportToCalendar}>
                 Export to Calendar
               </Button>
@@ -216,17 +220,17 @@ function VisitDetailPage() {
 
           {/* Visit Header */}
           <div>
-            <h2 className="visit-header-title">
+            <h2 className={styles.headerTitle}>
               {visit.visit_type === 'wellness' ? 'Wellness Visit' : 
                visit.visit_type === 'sick' ? 'Sick Visit' : 
                visit.visit_type === 'injury' ? 'Injury Visit' :
                visit.visit_type === 'vision' ? 'Vision Visit' :
                visit.visit_type === 'dental' ? 'Dental Visit' : 'Visit'}
-              {isFuture && <span className="visit-header-badge">Upcoming</span>}
+              {isFuture && <span className={styles.headerBadge}>Upcoming</span>}
             </h2>
-            <p className="visit-header-date">
+            <p className={styles.headerDate}>
               {formatDate(visit.visit_date)}
-              {visit.visit_time && <span className="visit-header-time"> at {formatTime(visit.visit_time)}</span>}
+              {visit.visit_time && <span className={styles.visitHeaderTime}> at {formatTime(visit.visit_time)}</span>}
             </p>
           </div>
 
@@ -238,32 +242,32 @@ function VisitDetailPage() {
                 id: 'visit',
                 label: 'Visit',
                 content: (
-                  <div className="visit-tab-content">
+                  <div className={styles.tabContent}>
                     {/* Basic Information - Stacked Vertically */}
-                    <div className="visit-info-stacked">
+                    <div className={styles.infoStacked}>
                       {visit.visit_type === 'wellness' && visit.title && (
-                        <div className="visit-info-item">
-                          <span className="visit-info-label">Title:</span>
-                          <span className="visit-title-badge">{visit.title}</span>
+                        <div className={styles.infoItem}>
+                          <span className={styles.infoLabel}>Title:</span>
+                          <span className={styles.titleBadge}>{visit.title}</span>
                         </div>
                       )}
                       {visit.location && (
-                        <div className="visit-info-item">
-                          <span className="visit-info-label">Location:</span>
-                          <span className="visit-info-value">{visit.location}</span>
+                        <div className={styles.infoItem}>
+                          <span className={styles.infoLabel}>Location:</span>
+                          <span className={styles.infoValue}>{visit.location}</span>
                         </div>
                       )}
                       {visit.doctor_name && (
-                        <div className="visit-info-item">
-                          <span className="visit-info-label">Doctor:</span>
-                          <span className="visit-info-value">{visit.doctor_name}</span>
+                        <div className={styles.infoItem}>
+                          <span className={styles.infoLabel}>Doctor:</span>
+                          <span className={styles.infoValue}>{visit.doctor_name}</span>
                         </div>
                       )}
                     </div>
                     {visit.tags && visit.tags.length > 0 && (
-                      <div className="visit-tags">
+                      <div className={styles.visitTags}>
                         {visit.tags.map((tag, index) => (
-                          <span key={index} className="tag-badge">
+                          <span key={index} className={styles.tagBadge}>
                             {tag}
                           </span>
                         ))}
@@ -272,142 +276,142 @@ function VisitDetailPage() {
 
                     {/* Pre-appointment notes always visible */}
                     {visit.notes && (
-                      <div className="visit-notes-section">
-                        <h3 className="visit-section-header">Notes</h3>
-                        <p className="visit-notes-text">{visit.notes}</p>
+                      <div className={styles.notesSection}>
+                        <h3 className={styles.sectionHeader}>Notes</h3>
+                        <p className={styles.notesText}>{visit.notes}</p>
                       </div>
                     )}
 
                     {/* Outcome sections only when not a future visit */}
                     {!isFuture && visit.visit_type === 'sick' && (
-                      <div className="visit-info-stacked">
+                      <div className={styles.infoStacked}>
                         {visit.illnesses && visit.illnesses.length > 0 && (
-                          <div className="visit-info-item">
-                            <span className="visit-info-label">Illnesses:</span>
-                            <span className="visit-info-value">{visit.illnesses.map(i => i.replace('_', ' ')).join(', ')}</span>
+                          <div className={styles.infoItem}>
+                            <span className={styles.infoLabel}>Illnesses:</span>
+                            <span className={styles.infoValue}>{visit.illnesses.map(i => i.replace('_', ' ')).join(', ')}</span>
                           </div>
                         )}
                         {visit.temperature && (
-                          <div className="visit-info-item">
-                            <span className="visit-info-label">Temperature:</span>
-                            <span className="visit-info-value">{visit.temperature}°F</span>
+                          <div className={styles.infoItem}>
+                            <span className={styles.infoLabel}>Temperature:</span>
+                            <span className={styles.infoValue}>{visit.temperature}°F</span>
                           </div>
                         )}
                         {visit.illness_start_date && (
-                          <div className="visit-info-item">
-                            <span className="visit-info-label">Illness start:</span>
-                            <span className="visit-info-value">{formatDate(visit.illness_start_date)}</span>
+                          <div className={styles.infoItem}>
+                            <span className={styles.infoLabel}>Illness start:</span>
+                            <span className={styles.infoValue}>{formatDate(visit.illness_start_date)}</span>
                           </div>
                         )}
                         {visit.end_date && (
-                          <div className="visit-info-item">
-                            <span className="visit-info-label">Resolved:</span>
-                            <span className="visit-info-value">{formatDate(visit.end_date)}</span>
+                          <div className={styles.infoItem}>
+                            <span className={styles.infoLabel}>Resolved:</span>
+                            <span className={styles.infoValue}>{formatDate(visit.end_date)}</span>
                           </div>
                         )}
                         {visit.symptoms && (
-                          <div className="visit-info-item">
-                            <span className="visit-info-label">Symptoms:</span>
-                            <span className="visit-info-value">{visit.symptoms}</span>
+                          <div className={styles.infoItem}>
+                            <span className={styles.infoLabel}>Symptoms:</span>
+                            <span className={styles.infoValue}>{visit.symptoms}</span>
                           </div>
                         )}
                       </div>
                     )}
 
                     {!isFuture && visit.visit_type === 'injury' && (
-                      <div className="visit-info-stacked">
+                      <div className={styles.infoStacked}>
                         {visit.injury_type && (
-                          <div className="visit-info-item">
-                            <span className="visit-info-label">Injury Type:</span>
-                            <span className="visit-info-value">{visit.injury_type}</span>
+                          <div className={styles.infoItem}>
+                            <span className={styles.infoLabel}>Injury Type:</span>
+                            <span className={styles.infoValue}>{visit.injury_type}</span>
                           </div>
                         )}
                         {visit.injury_location && (
-                          <div className="visit-info-item">
-                            <span className="visit-info-label">Injury Location:</span>
-                            <span className="visit-info-value">{visit.injury_location}</span>
+                          <div className={styles.infoItem}>
+                            <span className={styles.infoLabel}>Injury Location:</span>
+                            <span className={styles.infoValue}>{visit.injury_location}</span>
                           </div>
                         )}
                         {visit.treatment && (
-                          <div className="visit-info-item">
-                            <span className="visit-info-label">Treatment:</span>
-                            <span className="visit-info-value">{visit.treatment}</span>
+                          <div className={styles.infoItem}>
+                            <span className={styles.infoLabel}>Treatment:</span>
+                            <span className={styles.infoValue}>{visit.treatment}</span>
                           </div>
                         )}
                       </div>
                     )}
 
                     {!isFuture && visit.visit_type === 'vision' && (
-                      <div className="visit-info-stacked">
+                      <div className={styles.infoStacked}>
                         {(visit as any).vision_refraction ? (
-                          <div className="visit-info-item">
+                          <div className={styles.infoItem}>
                             <VisionRefractionCard value={(visit as any).vision_refraction} onChange={() => {}} readOnly />
                           </div>
                         ) : visit.vision_prescription ? (
-                          <div className="visit-info-item">
-                            <span className="visit-info-label">👁️ Prescription:</span>
-                            <span className="visit-info-value">{visit.vision_prescription}</span>
+                          <div className={styles.infoItem}>
+                            <span className={styles.infoLabel}>👁️ Prescription:</span>
+                            <span className={styles.infoValue}>{visit.vision_prescription}</span>
                           </div>
                         ) : null}
-                        <div className="visit-info-item">
-                          <span className="visit-info-label">Ordered Glasses:</span>
-                          <span className="visit-info-value">{(visit as any).ordered_glasses ? 'Yes' : 'No'}</span>
+                        <div className={styles.infoItem}>
+                          <span className={styles.infoLabel}>Ordered Glasses:</span>
+                          <span className={styles.infoValue}>{(visit as any).ordered_glasses ? 'Yes' : 'No'}</span>
                         </div>
-                        <div className="visit-info-item">
-                          <span className="visit-info-label">Ordered Contacts:</span>
-                          <span className="visit-info-value">{(visit as any).ordered_contacts ? 'Yes' : 'No'}</span>
+                        <div className={styles.infoItem}>
+                          <span className={styles.infoLabel}>Ordered Contacts:</span>
+                          <span className={styles.infoValue}>{(visit as any).ordered_contacts ? 'Yes' : 'No'}</span>
                         </div>
                       </div>
                     )}
 
                     {!isFuture && visit.visit_type === 'dental' && (
-                      <div className="visit-info-stacked">
+                      <div className={styles.infoStacked}>
                         {(visit as any).dental_procedure_type && (
-                          <div className="visit-info-item">
-                            <span className="visit-info-label">Dental Visit Type:</span>
-                            <span className="visit-info-value">{(visit as any).dental_procedure_type}</span>
+                          <div className={styles.infoItem}>
+                            <span className={styles.infoLabel}>Dental Visit Type:</span>
+                            <span className={styles.infoValue}>{(visit as any).dental_procedure_type}</span>
                           </div>
                         )}
                         {(visit as any).cleaning_type && (
-                          <div className="visit-info-item">
-                            <span className="visit-info-label">Cleaning Type:</span>
-                            <span className="visit-info-value">{(visit as any).cleaning_type}</span>
+                          <div className={styles.infoItem}>
+                            <span className={styles.infoLabel}>Cleaning Type:</span>
+                            <span className={styles.infoValue}>{(visit as any).cleaning_type}</span>
                           </div>
                         )}
                         {(visit as any).cavities_found !== null && (
-                          <div className="visit-info-item">
-                            <span className="visit-info-label">Cavities Found:</span>
-                            <span className="visit-info-value">{(visit as any).cavities_found}</span>
+                          <div className={styles.infoItem}>
+                            <span className={styles.infoLabel}>Cavities Found:</span>
+                            <span className={styles.infoValue}>{(visit as any).cavities_found}</span>
                           </div>
                         )}
                         {(visit as any).cavities_filled !== null && (
-                          <div className="visit-info-item">
-                            <span className="visit-info-label">Cavities Filled:</span>
-                            <span className="visit-info-value">{(visit as any).cavities_filled}</span>
+                          <div className={styles.infoItem}>
+                            <span className={styles.infoLabel}>Cavities Filled:</span>
+                            <span className={styles.infoValue}>{(visit as any).cavities_filled}</span>
                           </div>
                         )}
-                        <div className="visit-info-item">
-                          <span className="visit-info-label">X-Rays Taken:</span>
-                          <span className="visit-info-value">{(visit as any).xrays_taken ? 'Yes' : 'No'}</span>
+                        <div className={styles.infoItem}>
+                          <span className={styles.infoLabel}>X-Rays Taken:</span>
+                          <span className={styles.infoValue}>{(visit as any).xrays_taken ? 'Yes' : 'No'}</span>
                         </div>
-                        <div className="visit-info-item">
-                          <span className="visit-info-label">Fluoride Treatment:</span>
-                          <span className="visit-info-value">{(visit as any).fluoride_treatment ? 'Yes' : 'No'}</span>
+                        <div className={styles.infoItem}>
+                          <span className={styles.infoLabel}>Fluoride Treatment:</span>
+                          <span className={styles.infoValue}>{(visit as any).fluoride_treatment ? 'Yes' : 'No'}</span>
                         </div>
-                        <div className="visit-info-item">
-                          <span className="visit-info-label">Sealants Applied:</span>
-                          <span className="visit-info-value">{(visit as any).sealants_applied ? 'Yes' : 'No'}</span>
+                        <div className={styles.infoItem}>
+                          <span className={styles.infoLabel}>Sealants Applied:</span>
+                          <span className={styles.infoValue}>{(visit as any).sealants_applied ? 'Yes' : 'No'}</span>
                         </div>
                         {(visit as any).next_appointment_date && (
-                          <div className="visit-info-item">
-                            <span className="visit-info-label">Next Appointment:</span>
-                            <span className="visit-info-value">{formatDate((visit as any).next_appointment_date)}</span>
+                          <div className={styles.infoItem}>
+                            <span className={styles.infoLabel}>Next Appointment:</span>
+                            <span className={styles.infoValue}>{formatDate((visit as any).next_appointment_date)}</span>
                           </div>
                         )}
                         {(visit as any).dental_notes && (
-                          <div className="visit-info-item">
-                            <span className="visit-info-label">Notes:</span>
-                            <span className="visit-info-value">{(visit as any).dental_notes}</span>
+                          <div className={styles.infoItem}>
+                            <span className={styles.infoLabel}>Notes:</span>
+                            <span className={styles.infoValue}>{(visit as any).dental_notes}</span>
                           </div>
                         )}
                       </div>
@@ -415,57 +419,57 @@ function VisitDetailPage() {
 
                     {/* Measurements Section - only for past/today visits */}
                     {!isFuture && (visit.weight_value || visit.height_value || visit.head_circumference_value || visit.bmi_value || visit.blood_pressure || visit.heart_rate) && (
-                      <div className="visit-measurements-section">
-                        <h3 className="visit-section-header">Measurements</h3>
-                        <div className="visit-measurements-grid">
+                      <div className={styles.measurementsSection}>
+                        <h3 className={styles.sectionHeader}>Measurements</h3>
+                        <div className={styles.measurementsGrid}>
                           {visit.weight_value && (
-                            <div className="measurement-card">
-                              <div className="measurement-card-label">Weight</div>
-                              <div className="measurement-card-value">
+                            <div className={styles.measurementCard}>
+                              <div className={styles.measurementCardLabel}>Weight</div>
+                              <div className={styles.measurementCardValue}>
                                 {visit.weight_value}{visit.weight_ounces ? ` + ${visit.weight_ounces}oz` : 'lbs'}
                               </div>
                               {visit.weight_percentile && (
-                                <div className="measurement-card-percentile">{visit.weight_percentile}th %ile</div>
+                                <div className={styles.measurementCardPercentile}>{visit.weight_percentile}th %ile</div>
                               )}
                             </div>
                           )}
                           {visit.height_value && (
-                            <div className="measurement-card">
-                              <div className="measurement-card-label">Height</div>
-                              <div className="measurement-card-value">{visit.height_value}"</div>
+                            <div className={styles.measurementCard}>
+                              <div className={styles.measurementCardLabel}>Height</div>
+                              <div className={styles.measurementCardValue}>{visit.height_value}"</div>
                               {visit.height_percentile && (
-                                <div className="measurement-card-percentile">{visit.height_percentile}th %ile</div>
+                                <div className={styles.measurementCardPercentile}>{visit.height_percentile}th %ile</div>
                               )}
                             </div>
                           )}
                           {visit.head_circumference_value && (
-                            <div className="measurement-card">
-                              <div className="measurement-card-label">Head Circ</div>
-                              <div className="measurement-card-value">{visit.head_circumference_value}"</div>
+                            <div className={styles.measurementCard}>
+                              <div className={styles.measurementCardLabel}>Head Circ</div>
+                              <div className={styles.measurementCardValue}>{visit.head_circumference_value}"</div>
                               {visit.head_circumference_percentile && (
-                                <div className="measurement-card-percentile">{visit.head_circumference_percentile}th %ile</div>
+                                <div className={styles.measurementCardPercentile}>{visit.head_circumference_percentile}th %ile</div>
                               )}
                             </div>
                           )}
                           {visit.bmi_value && (
-                            <div className="measurement-card">
-                              <div className="measurement-card-label">BMI</div>
-                              <div className="measurement-card-value">{visit.bmi_value}</div>
+                            <div className={styles.measurementCard}>
+                              <div className={styles.measurementCardLabel}>BMI</div>
+                              <div className={styles.measurementCardValue}>{visit.bmi_value}</div>
                               {visit.bmi_percentile && (
-                                <div className="measurement-card-percentile">{visit.bmi_percentile}th %ile</div>
+                                <div className={styles.measurementCardPercentile}>{visit.bmi_percentile}th %ile</div>
                               )}
                             </div>
                           )}
                           {visit.blood_pressure && (
-                            <div className="measurement-card">
-                              <div className="measurement-card-label">Blood Pressure</div>
-                              <div className="measurement-card-value">{visit.blood_pressure}</div>
+                            <div className={styles.measurementCard}>
+                              <div className={styles.measurementCardLabel}>Blood Pressure</div>
+                              <div className={styles.measurementCardValue}>{visit.blood_pressure}</div>
                             </div>
                           )}
                           {visit.heart_rate && (
-                            <div className="measurement-card">
-                              <div className="measurement-card-label">Heart Rate</div>
-                              <div className="measurement-card-value">{visit.heart_rate} bpm</div>
+                            <div className={styles.measurementCard}>
+                              <div className={styles.measurementCardLabel}>Heart Rate</div>
+                              <div className={styles.measurementCardValue}>{visit.heart_rate} bpm</div>
                             </div>
                           )}
                         </div>
@@ -474,11 +478,11 @@ function VisitDetailPage() {
 
                     {/* Compact Vaccines - only for past/today visits */}
                     {!isFuture && visit.vaccines_administered && visit.vaccines_administered.length > 0 && (
-                      <div className="visit-vaccines-compact">
-                        <span className="visit-vaccines-label">Vaccines:</span>
-                        <div className="visit-vaccines-badges">
+                      <div className={styles.vaccinesCompact}>
+                        <span className={styles.vaccinesLabel}>Vaccines:</span>
+                        <div className={styles.vaccinesBadges}>
                           {visit.vaccines_administered.map((vaccine, index) => (
-                            <span key={index} className="vaccine-badge-compact">
+                            <span key={index} className={styles.vaccineBadgeCompact}>
                               {vaccine}
                             </span>
                           ))}
@@ -488,11 +492,11 @@ function VisitDetailPage() {
 
                     {/* Prescriptions - only for past/today visits */}
                     {!isFuture && visit.prescriptions && visit.prescriptions.length > 0 && (
-                      <div className="visit-prescriptions-compact">
+                      <div className={styles.prescriptionsCompact}>
                         {visit.prescriptions.map((rx, index) => (
-                          <div key={index} className="prescription-compact">
+                          <div key={index} className={styles.prescriptionCompact}>
                             <strong>{rx.medication}</strong> - {rx.dosage} for {rx.duration}
-                            {rx.notes && <span className="prescription-notes"> ({rx.notes})</span>}
+                            {rx.notes && <span className={styles.prescriptionNotes}> ({rx.notes})</span>}
                           </div>
                         ))}
                       </div>
@@ -513,9 +517,9 @@ function VisitDetailPage() {
                 id: 'attachments',
                 label: 'Attachments',
                 content: (
-                  <div className="visit-attachments-tab">
+                  <div className={styles.attachmentsTab}>
                     {loadingAttachments ? (
-                      <div className="attachments-loading">Loading attachments...</div>
+                      <div className={loadingStyles.attachmentLoading}>Loading attachments...</div>
                     ) : (
                       <VisitAttachmentsList
                         attachments={attachments}
@@ -557,16 +561,16 @@ function VisitHistory({ history, loading, user }: VisitHistoryProps) {
   }, [selectedEntry]);
 
   if (loading) {
-    return <div className="visit-history-loading">Loading history...</div>;
+    return <div className={styles.historyListCompact}>Loading history...</div>;
   }
 
   if (history.length === 0) {
-    return <div className="visit-history-empty">No history available</div>;
+    return <div className={styles.historyListCompact}>No history available</div>;
   }
 
   return (
     <>
-      <div className="visit-history-list-compact" role="list">
+      <div className={styles.historyListCompact} role="list">
         {history.map((entry) => {
           const dateDisplay = safeFormatDateTime(entry.changed_at);
           const summaryDisplay = entry.summary ?? (entry.action === 'created' ? 'Visit created' : entry.action === 'updated' ? 'Updated' : entry.action === 'deleted' ? 'Deleted' : entry.action);
@@ -574,17 +578,17 @@ function VisitHistory({ history, loading, user }: VisitHistoryProps) {
             <button
               key={entry.id}
               type="button"
-              className="visit-history-entry-compact visit-history-entry-clickable"
+              className={`${styles.historyEntryCompact} ${styles.historyEntryClickable}`}
               onClick={() => setSelectedEntry(entry)}
               role="listitem"
             >
-              <span className="visit-history-icon-compact" aria-hidden>
+              <span className={styles.historyIconCompact} aria-hidden>
                 {entry.action === 'created' ? '➕' : entry.action === 'updated' ? '✏️' : entry.action === 'deleted' ? '🗑️' : '📎'}
               </span>
-              <span className="visit-history-description-compact">{summaryDisplay}</span>
-              <span className="visit-history-date-compact">{dateDisplay}</span>
-              <span className="visit-history-user-compact">{entry.user_name || user?.username || 'Unknown'}</span>
-              <span className="visit-history-chevron" aria-hidden>›</span>
+              <span className={styles.historyDescriptionCompact}>{summaryDisplay}</span>
+              <span className={styles.historyDateCompact}>{dateDisplay}</span>
+              <span className={styles.historyUserCompact}>{entry.user_name || user?.username || 'Unknown'}</span>
+              <span className={styles.historyChevron} aria-hidden>›</span>
             </button>
           );
         })}
@@ -592,42 +596,42 @@ function VisitHistory({ history, loading, user }: VisitHistoryProps) {
 
       {selectedEntry && (
         <div
-          className="history-detail-overlay"
+          className={styles.historyDetailOverlay}
           onClick={handleCloseModal}
           role="dialog"
           aria-modal="true"
           aria-labelledby="history-detail-title"
         >
           <div
-            className="history-detail-modal"
+            className={styles.historyDetailModal}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="history-detail-header">
-              <h2 id="history-detail-title" className="history-detail-title">
+            <div className={styles.historyDetailHeader}>
+              <h2 id="history-detail-title" className={styles.historyDetailTitle}>
                 {selectedEntry.summary ?? (selectedEntry.action === 'created' ? 'Visit created' : selectedEntry.action === 'updated' ? 'Updated' : selectedEntry.action === 'deleted' ? 'Deleted' : selectedEntry.action)}
               </h2>
               <button
                 type="button"
-                className="history-detail-close"
+                className={styles.historyDetailClose}
                 onClick={handleCloseModal}
                 aria-label="Close"
               >
                 ×
               </button>
             </div>
-            <div className="history-detail-meta">
-              <span className="history-detail-date">{safeFormatDateTime(selectedEntry.changed_at)}</span>
-              <span className="history-detail-sep">·</span>
-              <span className="history-detail-user">{selectedEntry.user_name || user?.username || 'Unknown'}</span>
+            <div className={styles.historyDetailMeta}>
+              <span className={styles.historyDetailDate}>{safeFormatDateTime(selectedEntry.changed_at)}</span>
+              <span className={styles.historyDetailSep}>·</span>
+              <span>{selectedEntry.user_name || user?.username || 'Unknown'}</span>
             </div>
-            <div className="history-detail-body">
+            <div className={styles.historyDetailBody}>
               {selectedEntry.changes && Object.keys(selectedEntry.changes).length > 0 ? (
                 <AuditDiffView
                   changes={selectedEntry.changes}
                   fieldLabels={{ _legacy: 'Note' }}
                 />
               ) : (
-                <p className="history-detail-empty">No field-level changes recorded.</p>
+                <p className={styles.historyDetailEmpty}>No field-level changes recorded.</p>
               )}
             </div>
           </div>

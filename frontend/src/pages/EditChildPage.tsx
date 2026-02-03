@@ -10,6 +10,9 @@ import Notification from '../components/Notification';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import ImageCropUpload from '../components/ImageCropUpload';
+import pageLayout from '../styles/page-layout.module.css';
+import formLayout from '../styles/FormLayout.module.css';
+import styles from './EditChildPage.module.css';
 
 function EditChildPage() {
   const { id } = useParams<{ id: string }>();
@@ -162,10 +165,10 @@ function EditChildPage() {
   }
 
   return (
-    <div className="page-container">
-      <div className="page-header">
+    <div className={pageLayout.pageContainer}>
+      <div className={pageLayout.pageHeader}>
         <div>
-          <Link to={`/children/${id}`} className="breadcrumb">← Back to Child</Link>
+          <Link to={`/children/${id}`} className={pageLayout.breadcrumb}>← Back to Child</Link>
           <h1>Edit {child.name}</h1>
         </div>
       </div>
@@ -179,7 +182,7 @@ function EditChildPage() {
       )}
 
       <Card>
-        <form onSubmit={handleSubmit} className="form">
+        <form onSubmit={handleSubmit} className={styles.form}>
           <FormField
             label="Name"
             type="text"
@@ -211,8 +214,8 @@ function EditChildPage() {
             disabled={submitting}
           />
 
-          <div className="form-field">
-            <label className="form-label">Birth Weight (Optional)</label>
+          <div className={styles.formField}>
+            <label className={styles.formLabel}>Birth Weight (Optional)</label>
             <div style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'flex-end' }}>
               <div style={{ flex: 1 }}>
                 <FormField
@@ -253,15 +256,15 @@ function EditChildPage() {
             disabled={submitting}
           />
 
-          <div className="form-field">
-              <label htmlFor="gender" className="form-label">
-                Gender <span className="required">*</span>
+          <div className={styles.formField}>
+              <label htmlFor="gender" className={styles.formLabel}>
+                Gender <span className={styles.required}>*</span>
               </label>
               <select
                 id="gender"
                 value={formData.gender}
                 onChange={(e) => setFormData({ ...formData, gender: e.target.value as Gender })}
-                className="form-input"
+                className={styles.formInput}
                 disabled={submitting}
                 required
               >
@@ -270,8 +273,8 @@ function EditChildPage() {
               </select>
             </div>
 
-            <div className="form-field">
-              <label className="form-label">
+            <div className={styles.formField}>
+              <label className={styles.formLabel}>
                 Avatar (Optional)
               </label>
               <ImageCropUpload
@@ -279,7 +282,7 @@ function EditChildPage() {
                 currentImageUrl={currentAvatarUrl}
                 disabled={submitting}
               />
-              {errors.avatar && <span className="form-error">{errors.avatar}</span>}
+              {errors.avatar && <span className={styles.formError}>{errors.avatar}</span>}
             </div>
 
             <FormField
@@ -292,7 +295,7 @@ function EditChildPage() {
               disabled={submitting}
             />
 
-          <div className="form-actions">
+          <div className={formLayout.formActions}>
             <Button type="submit" disabled={submitting}>
               {submitting ? 'Saving...' : 'Save Changes'}
             </Button>

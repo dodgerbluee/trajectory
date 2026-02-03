@@ -3,6 +3,7 @@ import { LuPill } from 'react-icons/lu';
 import ChildSelector from './ChildSelector';
 import VisitStats from './VisitStats';
 import type { Child } from '../types/api';
+import layout from '../styles/VisitsLayout.module.css';
 
 interface Props {
   activeTab: 'illness' | 'growth';
@@ -12,6 +13,10 @@ interface Props {
   onSelectChild: (id?: number) => void;
   /** When false, hide the Child Filter section (e.g. on child detail page where context is already one child). Default true. */
   showChildFilter?: boolean;
+  /** When false, hide the Illness tab (e.g. child has no illness data). Default true. */
+  showIllnessTab?: boolean;
+  /** When false, hide the Growth tab (e.g. child has no growth data). Default true. */
+  showGrowthTab?: boolean;
 }
 
 export default function TrendsSidebar({
@@ -21,46 +26,60 @@ export default function TrendsSidebar({
   selectedChildId,
   onSelectChild,
   showChildFilter = true,
+  showIllnessTab = true,
+  showGrowthTab = true,
 }: Props) {
+  const stats = [
+    ...(showIllnessTab
+      ? [
+          {
+            label: 'Illness',
+            value: 0,
+            icon: LuPill as any,
+            color: 'red' as const,
+            onClick: () => onChangeTab('illness'),
+            active: activeTab === 'illness',
+          },
+        ]
+      : []),
+    ...(showGrowthTab
+      ? [
+          {
+            label: 'Growth',
+            value: 0,
+            icon: GoGraph as any,
+            color: 'blue' as const,
+            onClick: () => onChangeTab('growth'),
+            active: activeTab === 'growth',
+          },
+        ]
+      : []),
+  ];
+
   return (
-    <aside className="visits-sidebar">
-      <div className="visits-sidebar-inner">
+    <aside className={layout.sidebar}>
+      <div className={layout.sidebarInner}>
         <header>
-          <div className="sidebar-brand">Filters</div>
+          <div className={layout.sidebarBrand}>Filters</div>
         </header>
 
-        <div className="sidebar-divider" />
+        <div className={layout.sidebarDivider} />
 
         <div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <VisitStats
-              stats={[
-                {
-                  label: 'Illness',
-                  value: 0,
-                  icon: LuPill as any,
-                  color: 'red',
-                  onClick: () => onChangeTab('illness'),
-                  active: activeTab === 'illness',
-                },
-                {
-                  label: 'Growth',
-                  value: 0,
-                  icon: GoGraph as any,
-                  color: 'blue',
-                  onClick: () => onChangeTab('growth'),
-                  active: activeTab === 'growth',
-                },
-              ]}
-              vertical
-              showValues={false}
-            />
+            {stats.length > 0 && (
+              <VisitStats
+                stats={stats}
+                vertical
+                showValues={false}
+              />
+            )}
           </div>
         </div>
 
         {showChildFilter && (
-          <div className="sidebar-section">
-            <h4 className="sidebar-section-title">Child Filter</h4>
+          <div className={layout.childSidebarSection}>
+            <h4 className={layout.sidebarSectionTitle}>Child Filter</h4>
             <ChildSelector childrenList={childrenList} selectedChildId={selectedChildId} onSelect={onSelectChild} />
           </div>
         )}

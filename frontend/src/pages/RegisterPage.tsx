@@ -2,10 +2,12 @@ import { useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import FormField from '../components/FormField';
+import formFieldStyles from '../components/FormField.module.css';
 import Button from '../components/Button';
 import ErrorMessage from '../components/ErrorMessage';
 import Card from '../components/Card';
 import { ApiClientError } from '../lib/api-client';
+import styles from './RegisterPage.module.css';
 
 function RegisterPage() {
   const [username, setUsername] = useState('');
@@ -100,17 +102,17 @@ function RegisterPage() {
   };
 
   return (
-    <div className="login-page">
-      <div className="login-container">
-        <Card className="login-card">
-          <div className="login-header">
+    <div className={styles.root}>
+      <div className={styles.container}>
+        <Card className={styles.card}>
+          <div className={styles.header}>
             <img 
               src="/logo/trajectory.png" 
               alt="Trajectory Logo" 
-              className="login-logo"
+              className={styles.logo}
             />
-            <h1 className="login-title">Create Account</h1>
-            <p className="login-subtitle">Sign up for Trajectory</p>
+            <h1 className={styles.title}>Create Account</h1>
+            <p className={styles.subtitle}>Sign up for Trajectory</p>
           </div>
 
           {error && (
@@ -120,7 +122,7 @@ function RegisterPage() {
             />
           )}
 
-          <form onSubmit={handleSubmit} className="login-form" noValidate>
+          <form onSubmit={handleSubmit} className={styles.form} noValidate>
             <FormField
               label="Username"
               type="text"
@@ -146,16 +148,16 @@ function RegisterPage() {
               aria-describedby={errors.email ? 'email-error' : undefined}
             />
 
-            <div className="form-field">
-              <label htmlFor="password" className="form-label">
+            <div className={styles.passwordField}>
+              <label htmlFor="password" className={styles.passwordLabel}>
                 Password
-                <span className="required-indicator">*</span>
+                <span className={styles.requiredIndicator}>*</span>
               </label>
-              <div className="password-input-wrapper">
+              <div className={styles.passwordInputWrapper}>
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  className={`form-input ${errors.password ? 'error' : ''}`}
+                  className={`${styles.passwordInput} ${errors.password ? 'error' : ''}`}
                   value={password}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                   required
@@ -165,7 +167,7 @@ function RegisterPage() {
                 />
                 <button
                   type="button"
-                  className="password-toggle"
+                  className={styles.passwordToggle}
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                   tabIndex={-1}
@@ -174,25 +176,25 @@ function RegisterPage() {
                 </button>
               </div>
               {errors.password && (
-                <span className="form-error" id="password-error">
+                <span className={styles.passwordError} id="password-error">
                   {errors.password}
                 </span>
               )}
-              <div className="form-hint">
+              <div className={formFieldStyles.hint}>
                 Must be at least 8 characters with uppercase, lowercase, number, and special character
               </div>
             </div>
 
-            <div className="form-field">
-              <label htmlFor="confirmPassword" className="form-label">
+            <div className={styles.passwordField}>
+              <label htmlFor="confirmPassword" className={styles.passwordLabel}>
                 Confirm Password
-                <span className="required-indicator">*</span>
+                <span className={styles.requiredIndicator}>*</span>
               </label>
-              <div className="password-input-wrapper">
+              <div className={styles.passwordInputWrapper}>
                 <input
                   id="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
-                  className={`form-input ${errors.confirmPassword ? 'error' : ''}`}
+                  className={`${styles.passwordInput} ${errors.confirmPassword ? 'error' : ''}`}
                   value={confirmPassword}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
                   required
@@ -202,7 +204,7 @@ function RegisterPage() {
                 />
                 <button
                   type="button"
-                  className="password-toggle"
+                  className={styles.passwordToggle}
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                   tabIndex={-1}
@@ -211,7 +213,7 @@ function RegisterPage() {
                 </button>
               </div>
               {errors.confirmPassword && (
-                <span className="form-error" id="confirm-password-error">
+                <span className={styles.passwordError} id="confirm-password-error">
                   {errors.confirmPassword}
                 </span>
               )}
@@ -222,16 +224,16 @@ function RegisterPage() {
               variant="primary"
               fullWidth
               disabled={loading}
-              className="login-button"
+              className={styles.button}
             >
               {loading ? 'Creating account...' : 'Sign Up'}
             </Button>
           </form>
 
-          <div className="login-footer">
+          <div className={styles.footer}>
             <p>
               Already have an account?{' '}
-              <Link to="/login" className="register-link">
+              <Link to="/login" className={styles.registerLink}>
                 Sign in
               </Link>
             </p>

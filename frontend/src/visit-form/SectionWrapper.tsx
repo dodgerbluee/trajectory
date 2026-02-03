@@ -8,6 +8,7 @@
  */
 
 import type { ReactNode } from 'react';
+import styles from './SectionWrapper.module.css';
 
 export interface SectionWrapperProps {
   /** Section id; used for scroll target and data attributes. */
@@ -37,17 +38,17 @@ export function SectionWrapper({
 }: SectionWrapperProps) {
   return (
     <section
-      className={`visit-detail-section${isLast ? ' visit-detail-section-last' : ''}`}
+      className={isLast ? `${styles.section} ${styles.sectionLast}` : styles.section}
       data-section-id={sectionId}
       id={`section-${sectionId}`}
     >
       {!hideTitle && (
-      <div className="visit-detail-section-header">
-        <h3 className="visit-detail-section-title">{label}</h3>
+      <div className={styles.sectionHeader}>
+        <h3 className={styles.sectionTitle}>{label}</h3>
         {removable && (
           <button
             type="button"
-            className="visit-detail-section-remove"
+            className={styles.sectionRemove}
             onClick={onRemove}
             title={`Remove ${label}`}
             aria-label={`Remove ${label}`}
@@ -57,7 +58,7 @@ export function SectionWrapper({
         )}
       </div>
       )}
-      <div className="visit-detail-section-body">{children}</div>
+      <div className={styles.sectionBody}>{children}</div>
     </section>
   );
 }

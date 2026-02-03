@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { LuEye, LuEyeOff } from 'react-icons/lu';
 import { useAuth } from '../contexts/AuthContext';
 import FormField from '../components/FormField';
@@ -7,6 +7,7 @@ import Button from '../components/Button';
 import Card from '../components/Card';
 import CreateUserModal from '../components/CreateUserModal';
 import { ApiClientError } from '../lib/api-client';
+import styles from './LoginPage.module.css';
 
 function LoginPage() {
   const [username, setUsername] = useState('');
@@ -75,26 +76,26 @@ function LoginPage() {
   };
 
   return (
-    <div className="login-page">
-      <div className="login-container">
-        <Card className="login-card">
-          <div className="login-header">
-            <img 
-              src="/logo/trajectory.png" 
-              alt="Trajectory Logo" 
-              className="login-logo"
+    <div className={styles.root}>
+      <div className={styles.container}>
+        <Card className={styles.card}>
+          <div className={styles.header}>
+            <img
+              src="/logo/trajectory.png"
+              alt="Trajectory Logo"
+              className={styles.logo}
             />
-            <h1 className="login-title">Welcome to Trajectory</h1>
-            <p className="login-subtitle">Sign in to your account</p>
+            <h1 className={styles.title}>Welcome to Trajectory</h1>
+            <p className={styles.subtitle}>Sign in to your account</p>
           </div>
 
           {error && (
-            <div role="alert" className="login-alert">
+            <div role="alert" className={styles.alert}>
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="login-form" noValidate>
+          <form onSubmit={handleSubmit} className={styles.form} noValidate>
             <FormField
               label="Username"
               type="text"
@@ -108,16 +109,16 @@ function LoginPage() {
               aria-describedby={errors.username ? 'username-error' : undefined}
             />
 
-            <div className="form-field">
-              <label htmlFor="password" className="form-label">
+            <div className={styles.formField}>
+              <label htmlFor="password" className={styles.formLabel}>
                 Password
-                <span className="required-indicator">*</span>
+                <span className={styles.requiredIndicator}>*</span>
               </label>
-              <div className="password-input-wrapper">
+              <div className={styles.passwordWrapper}>
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  className={`form-input ${errors.password ? 'error' : ''}`}
+                  className={errors.password ? `${styles.formInput} ${styles.error}` : styles.formInput}
                   value={password}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                   required
@@ -127,29 +128,23 @@ function LoginPage() {
                 />
                 <button
                   type="button"
-                  className="password-toggle"
+                  className={styles.passwordToggle}
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                   tabIndex={-1}
                 >
                   {showPassword ? (
-                    <LuEyeOff className="password-toggle-icon" size={20} aria-hidden />
+                    <LuEyeOff className={styles.passwordToggleIcon} size={20} aria-hidden />
                   ) : (
-                    <LuEye className="password-toggle-icon" size={20} aria-hidden />
+                    <LuEye className={styles.passwordToggleIcon} size={20} aria-hidden />
                   )}
                 </button>
               </div>
               {errors.password && (
-                <span className="form-error" id="password-error">
+                <span className={styles.formError} id="password-error">
                   {errors.password}
                 </span>
               )}
-            </div>
-
-            <div className="login-actions">
-              <Link to="/forgot-password" className="forgot-password-link">
-                Forgot password?
-              </Link>
             </div>
 
             <Button
@@ -157,18 +152,18 @@ function LoginPage() {
               variant="primary"
               fullWidth
               disabled={loading}
-              className="login-button"
+              className={styles.button}
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
 
-          <div className="login-footer">
+          <div className={styles.footer}>
             <p>
               Don't have an account?{' '}
               <button
                 type="button"
-                className="register-link button-as-link"
+                className={`${styles.registerLink} ${styles.buttonAsLink}`}
                 onClick={() => setCreateUserOpen(true)}
               >
                 Create account

@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import Cropper, { Area } from 'react-easy-crop';
 import Button from './Button';
+import fileUploadStyles from './FileUpload.module.css';
+import cropStyles from './ImageCropUpload.module.css';
 
 interface ImageCropUploadProps {
   onImageCropped: (croppedImage: File) => void;
@@ -127,11 +129,11 @@ function ImageCropUpload({ onImageCropped, currentImageUrl, disabled }: ImageCro
   };
 
   return (
-    <div className="image-crop-upload">
+    <div className={cropStyles.root}>
       {!showCropper ? (
-        <div className="upload-section">
+        <div className={cropStyles.uploadSection}>
           {(pendingPreviewUrl || currentImageUrl) && (
-            <div className="current-avatar-preview">
+            <div className={cropStyles.currentAvatarPreview}>
               <img src={pendingPreviewUrl || currentImageUrl || undefined} alt="Avatar preview" />
             </div>
           )}
@@ -157,19 +159,19 @@ function ImageCropUpload({ onImageCropped, currentImageUrl, disabled }: ImageCro
             </Button>
           </label>
           
-          <p className="upload-hint">
+          <p className={fileUploadStyles.uploadHint}>
             Max 10MB. Images will be cropped to a circle.
           </p>
         </div>
       ) : (
-        <div className="cropper-modal">
-          <div className="cropper-container">
-            <div className="cropper-header">
+        <div className={cropStyles.cropperModal}>
+          <div className={cropStyles.cropperContainer}>
+            <div className={cropStyles.cropperHeader}>
               <h3>Adjust Your Avatar</h3>
               <p>Move and zoom to select the area you want</p>
             </div>
-            
-            <div className="cropper-area">
+
+            <div className={cropStyles.cropperArea}>
               {imageSrc && (
                 <Cropper
                   image={imageSrc}
@@ -185,8 +187,8 @@ function ImageCropUpload({ onImageCropped, currentImageUrl, disabled }: ImageCro
               )}
             </div>
             
-            <div className="cropper-controls">
-              <div className="zoom-control">
+            <div className={cropStyles.cropperControls}>
+              <div className={cropStyles.zoomControl}>
                 <label htmlFor="zoom-slider">Zoom</label>
                 <input
                   id="zoom-slider"
@@ -196,11 +198,11 @@ function ImageCropUpload({ onImageCropped, currentImageUrl, disabled }: ImageCro
                   step={0.1}
                   value={zoom}
                   onChange={(e) => setZoom(Number(e.target.value))}
-                  className="zoom-slider"
+                  className={cropStyles.zoomSlider}
                 />
               </div>
               
-              <div className="cropper-actions">
+              <div className={cropStyles.cropperActions}>
                 <Button type="button" onClick={handleCancel} variant="secondary">
                   Cancel
                 </Button>

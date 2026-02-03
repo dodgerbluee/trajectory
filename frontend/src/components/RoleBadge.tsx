@@ -1,4 +1,5 @@
 import type { FamilyRole } from '../types/api';
+import styles from './RoleBadge.module.css';
 
 interface RoleBadgeProps {
   role: FamilyRole;
@@ -11,10 +12,16 @@ const LABELS: Record<FamilyRole, string> = {
   read_only: 'View only',
 };
 
+const ROLE_CLASS: Record<FamilyRole, string> = {
+  owner: styles.owner,
+  parent: styles.parent,
+  read_only: styles.readOnly,
+};
+
 function RoleBadge({ role, className = '' }: RoleBadgeProps) {
   return (
     <span
-      className={`role-badge role-badge--${role.replace(/_/g, '-')} ${className}`}
+      className={[styles.root, ROLE_CLASS[role], className].filter(Boolean).join(' ')}
       title={LABELS[role]}
     >
       {LABELS[role]}

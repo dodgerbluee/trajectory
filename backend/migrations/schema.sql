@@ -1,6 +1,6 @@
--- Trajectory database schema (setup / configuration)
--- Idempotent: safe to run on fresh install or existing DB (IF NOT EXISTS / no-op when objects exist)
--- Applied by the app on startup (backend db setup runner).
+-- Trajectory database schema (single source of truth for 0.1.0)
+-- Idempotent: safe to run on fresh install (IF NOT EXISTS / no-op when objects exist)
+-- Applied by the app on startup (backend db migrations runner).
 
 -- Helper function for updated_at timestamps
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -11,9 +11,60 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Children
+-- Auth: users (must exist before families/family_members)
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    username VARCHAR(255) NOT NULL,
+    email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    is_instance_admin BOOLEAN NOT NULL DEFAULT FALSE,
+    theme VARCHAR(20) DEFAULT 'system',
+    date_format VARCHAR(20) DEFAULT 'MM/DD/YYYY',
+    onboarding_completed BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    last_login_at TIMESTAMP,
+    failed_login_attempts INTEGER NOT NULL DEFAULT 0,
+    locked_until TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_lower_unique ON users (LOWER(username));
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+-- Families and membership (before children)
+CREATE TABLE IF NOT EXISTS families (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS family_members (
+    family_id INTEGER NOT NULL REFERENCES families(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    role VARCHAR(20) NOT NULL DEFAULT 'parent' CHECK (role IN ('owner', 'parent', 'read_only')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (family_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_family_members_user ON family_members(user_id);
+
+CREATE TABLE IF NOT EXISTS family_invites (
+    id SERIAL PRIMARY KEY,
+    family_id INTEGER NOT NULL REFERENCES families(id) ON DELETE CASCADE,
+    role VARCHAR(20) NOT NULL CHECK (role IN ('parent', 'read_only')),
+    token_hash VARCHAR(255) NOT NULL UNIQUE,
+    created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_family_invites_family ON family_invites(family_id);
+CREATE INDEX IF NOT EXISTS idx_family_invites_token ON family_invites(token_hash);
+CREATE INDEX IF NOT EXISTS idx_family_invites_expires ON family_invites(expires_at);
+
+-- Children (belong to a family)
 CREATE TABLE IF NOT EXISTS children (
     id SERIAL PRIMARY KEY,
+    family_id INTEGER NOT NULL REFERENCES families(id) ON DELETE RESTRICT,
     name VARCHAR(255) NOT NULL,
     date_of_birth DATE NOT NULL,
     gender VARCHAR(20) NOT NULL CHECK (gender IN ('male', 'female')),
@@ -27,6 +78,7 @@ CREATE TABLE IF NOT EXISTS children (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     CONSTRAINT check_birth_weight_ounces CHECK (birth_weight_ounces IS NULL OR (birth_weight_ounces >= 0 AND birth_weight_ounces < 16))
 );
+CREATE INDEX IF NOT EXISTS idx_children_family ON children(family_id);
 
 -- Measurements
 CREATE TABLE IF NOT EXISTS measurements (
@@ -67,7 +119,7 @@ CREATE TABLE IF NOT EXISTS medical_events (
     CONSTRAINT check_date_range CHECK (end_date IS NULL OR end_date >= start_date)
 );
 
--- Visits (current schema: no illness_type, no follow_up_date; has vision_refraction, ordered_glasses/contacts, illness_start_date)
+-- Visits (wellness, sick, injury, vision, dental; no next_appointment_date)
 CREATE TABLE IF NOT EXISTS visits (
     id SERIAL PRIMARY KEY,
     child_id INTEGER NOT NULL REFERENCES children(id) ON DELETE CASCADE,
@@ -108,7 +160,6 @@ CREATE TABLE IF NOT EXISTS visits (
     xrays_taken BOOLEAN,
     fluoride_treatment BOOLEAN,
     sealants_applied BOOLEAN,
-    next_appointment_date DATE,
     dental_procedures JSONB,
     vaccines_administered TEXT,
     prescriptions JSONB,
@@ -131,9 +182,6 @@ CREATE TABLE IF NOT EXISTS visits (
     CONSTRAINT check_cavities_filled CHECK (cavities_filled IS NULL OR cavities_filled >= 0),
     CONSTRAINT check_cavities_filled_vs_found CHECK (
         cavities_filled IS NULL OR cavities_found IS NULL OR cavities_filled <= cavities_found
-    ),
-    CONSTRAINT check_next_appointment_date CHECK (
-        next_appointment_date IS NULL OR next_appointment_date >= visit_date
     )
 );
 
@@ -144,7 +192,7 @@ CREATE TABLE IF NOT EXISTS visit_illnesses (
     illness_type VARCHAR(100) NOT NULL
 );
 
--- Illnesses (standalone records; types in illness_illness_types)
+-- Illnesses (standalone; types in illness_illness_types)
 CREATE TABLE IF NOT EXISTS illnesses (
     id SERIAL PRIMARY KEY,
     child_id INTEGER NOT NULL REFERENCES children(id) ON DELETE CASCADE,
@@ -205,20 +253,7 @@ CREATE TABLE IF NOT EXISTS child_attachments (
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Auth (users, sessions, reset tokens, login attempts)
-CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    email_verified BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    last_login_at TIMESTAMP,
-    failed_login_attempts INTEGER NOT NULL DEFAULT 0,
-    locked_until TIMESTAMP
-);
-
+-- Sessions and auth support
 CREATE TABLE IF NOT EXISTS user_sessions (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -247,6 +282,14 @@ CREATE TABLE IF NOT EXISTS login_attempts (
     attempted_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+-- Global instance settings (e.g. log_level for admin)
+CREATE TABLE IF NOT EXISTS instance_settings (
+    key VARCHAR(255) PRIMARY KEY,
+    value TEXT NOT NULL
+);
+INSERT INTO instance_settings (key, value) VALUES ('log_level', 'info')
+ON CONFLICT (key) DO NOTHING;
+
 -- Audit (change history for visits/illnesses)
 CREATE TABLE IF NOT EXISTS audit_events (
     id BIGSERIAL PRIMARY KEY,
@@ -273,7 +316,6 @@ CREATE INDEX IF NOT EXISTS idx_illnesses_severity ON illnesses(severity) WHERE s
 CREATE INDEX IF NOT EXISTS idx_measurement_attachments_measurement ON measurement_attachments(measurement_id);
 CREATE INDEX IF NOT EXISTS idx_visit_attachments_visit ON visit_attachments(visit_id);
 CREATE INDEX IF NOT EXISTS idx_child_attachments_child ON child_attachments(child_id);
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON user_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_token ON user_sessions(token_hash);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires ON user_sessions(expires_at);

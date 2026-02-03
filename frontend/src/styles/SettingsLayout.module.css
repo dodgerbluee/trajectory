@@ -1,0 +1,88 @@
+/* Settings/Admin page layout: sidebar + main. Used by SettingsPage and AdminPage. */
+
+.pageGrid {
+  max-width: 100rem;
+  margin: 0 auto;
+}
+
+.bodyHeader {
+  padding-bottom: var(--spacing-md);
+}
+
+.card {
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: 13.75rem 1fr;
+  gap: var(--spacing-md);
+  align-items: start;
+  padding: var(--spacing-md);
+}
+
+.cardHeader {
+  grid-column: 1 / -1;
+  padding: 0 var(--spacing-md) 0 var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-2xl);
+}
+
+.saveRow {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--spacing-md) 0 0 0;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.sidebarItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm-plus) var(--spacing-sm-plus);
+  background: transparent;
+  border: none;
+  text-align: left;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.sidebarItem.active,
+.sidebarItem:hover {
+  background: var(--color-primary-light);
+}
+
+.sidebarIcon {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex-shrink: 0;
+}
+
+.main {
+  display: block;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+  background: transparent;
+}

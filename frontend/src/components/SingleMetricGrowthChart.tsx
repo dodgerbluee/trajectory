@@ -14,6 +14,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import type { GrowthDataPoint } from '../types/api';
+import growthStyles from './GrowthChartTab.module.css';
 
 interface SingleMetricGrowthChartProps {
   data: GrowthDataPoint[];
@@ -37,9 +38,9 @@ function SingleMetricGrowthChart({
 
   if (filteredData.length === 0) {
     return (
-      <div className="chart-empty">
+      <div className={growthStyles.chartEmpty}>
         <p>No {metric} data available.</p>
-        <p className="chart-empty-subtitle">Add wellness visits with {metric} measurements to see growth trends.</p>
+        <p className={growthStyles.chartEmptySubtitle}>Add wellness visits with {metric} measurements to see growth trends.</p>
       </div>
     );
   }
@@ -156,9 +157,9 @@ function SingleMetricGrowthChart({
   
   if (dataWithValues.length === 0) {
     return (
-      <div className="chart-empty">
+      <div className={growthStyles.chartEmpty}>
         <p>No {metric} {mode} data available.</p>
-        <p className="chart-empty-subtitle">Add wellness visits with {metric} {mode === 'percentile' ? 'percentile' : ''} measurements to see growth trends.</p>
+        <p className={growthStyles.chartEmptySubtitle}>Add wellness visits with {metric} {mode === 'percentile' ? 'percentile' : ''} measurements to see growth trends.</p>
       </div>
     );
   }
@@ -324,7 +325,7 @@ function SingleMetricGrowthChart({
   const yAxisLabel = mode === 'percentile' ? config.yAxisLabelPercentile : config.yAxisLabel;
 
   return (
-    <div className="growth-chart-container">
+    <div className={growthStyles.container}>
       <ResponsiveContainer width="100%" height={400}>
         <LineChart 
           data={transformedChartData} 
@@ -396,7 +397,7 @@ function SingleMetricGrowthChart({
                   stroke={childColors[idx % childColors.length]}
                   strokeWidth={2}
                   dot={{ r: 4 }}
-                  name={`${config.label}${mode === 'percentile' ? ' %ile' : ''} - ${child.name}`}
+                  name={child.name}
                   connectNulls={true}
                 />
               );

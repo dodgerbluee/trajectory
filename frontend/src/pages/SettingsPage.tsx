@@ -5,6 +5,7 @@ import { usePreferences } from '../contexts/PreferencesContext';
 import { useAuth } from '../contexts/AuthContext';
 import Card from '../components/Card';
 import FormField from '../components/FormField';
+import formFieldStyles from '../components/FormField.module.css';
 import Button from '../components/Button';
 import Notification from '../components/Notification';
 import Tabs from '../components/Tabs';
@@ -18,9 +19,18 @@ import { ApiClientError, exportApi, familiesApi, childrenApi } from '../lib/api-
 import type { Family, FamilyInvite, FamilyMember, Child } from '../types/api';
 import { FamilyOverviewCard, MemberRow, InviteRow } from '../components/family-settings';
 import RoleBadge from '../components/RoleBadge';
+import layout from '../styles/SettingsLayout.module.css';
+import pageLayout from '../styles/page-layout.module.css';
+import s from './SettingsPage.module.css';
+import modalStyles from '../components/Modal.module.css';
+import mui from '../styles/MeasurementsUI.module.css';
 import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
 import { useOnboarding } from '../contexts/OnboardingContext';
 import { formatDate, calculateAge, formatAge, type DateFormat } from '../lib/date-utils';
+
+const NOTIFICATION_DISMISS_MS = 3000;
+const NOTIFICATION_DISMISS_MS_LONG = 4000;
+const NOTIFICATION_DISMISS_MS_SHORT = 2000;
 
 function SettingsPage() {
   const location = useLocation();
@@ -232,7 +242,7 @@ function SettingsPage() {
       await childrenApi.delete(child.id);
       setChildrenList((prev) => prev.filter((c) => c.id !== child.id));
       setNotification({ message: `${child.name} has been deleted`, type: 'success' });
-      setTimeout(() => setNotification(null), 3000);
+      setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS);
       setDeleteConfirmChild(null);
       setConfirmDeleteChildInput('');
     } catch (err) {
@@ -241,7 +251,7 @@ function SettingsPage() {
       } else {
         setNotification({ message: 'Failed to delete child', type: 'error' });
       }
-      setTimeout(() => setNotification(null), 4000);
+      setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS_LONG);
     } finally {
       setDeletingChildId(null);
     }
@@ -266,13 +276,13 @@ function SettingsPage() {
   const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
     setTheme(newTheme);
     setNotification({ message: 'Theme preference saved', type: 'success' });
-    setTimeout(() => setNotification(null), 3000);
+    setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS);
   };
 
   const handleDateFormatChange = (newFormat: DateFormat) => {
     setDateFormat(newFormat);
     setNotification({ message: 'Date format preference saved', type: 'success' });
-    setTimeout(() => setNotification(null), 3000);
+    setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS);
   };
 
   const handleExportData = async () => {
@@ -281,14 +291,14 @@ function SettingsPage() {
     try {
       await exportApi.download();
       setNotification({ message: 'Export downloaded (ZIP with JSON, HTML report, and attachments)', type: 'success' });
-      setTimeout(() => setNotification(null), 4000);
+      setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS_LONG);
     } catch (err) {
       if (err instanceof ApiClientError) {
         setNotification({ message: err.message || 'Export failed', type: 'error' });
       } else {
         setNotification({ message: 'Export failed', type: 'error' });
       }
-      setTimeout(() => setNotification(null), 4000);
+      setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS_LONG);
     } finally {
       setLoading((l) => ({ ...l, export: false }));
     }
@@ -321,7 +331,7 @@ function SettingsPage() {
       setNewUsername('');
       setUsernamePassword('');
       setUsernameExpanded(false);
-      setTimeout(() => setNotification(null), 3000);
+      setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS);
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.statusCode === 401) {
@@ -330,11 +340,11 @@ function SettingsPage() {
           setErrors({ username: 'Username is already taken' });
         } else {
           setNotification({ message: err.message || 'Failed to update username', type: 'error' });
-          setTimeout(() => setNotification(null), 3000);
+          setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS);
         }
       } else {
         setNotification({ message: 'An unexpected error occurred', type: 'error' });
-        setTimeout(() => setNotification(null), 3000);
+        setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS);
       }
     } finally {
       setLoading({ ...loading, username: false });
@@ -389,11 +399,11 @@ function SettingsPage() {
           setErrors({ newPassword: err.message || 'Invalid password' });
         } else {
           setNotification({ message: err.message || 'Failed to update password', type: 'error' });
-          setTimeout(() => setNotification(null), 3000);
+          setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS);
         }
       } else {
         setNotification({ message: 'An unexpected error occurred', type: 'error' });
-        setTimeout(() => setNotification(null), 3000);
+        setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS);
       }
       setLoading({ ...loading, password: false });
     }
@@ -433,7 +443,7 @@ function SettingsPage() {
       } else {
         setNotification({ message: 'Failed to create invite', type: 'error' });
       }
-      setTimeout(() => setNotification(null), 4000);
+      setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS_LONG);
     } finally {
       setLoading((l) => ({ ...l, invite: false }));
     }
@@ -458,14 +468,14 @@ function SettingsPage() {
         await refreshPermissions();
       }
       setNotification({ message: 'Role updated', type: 'success' });
-      setTimeout(() => setNotification(null), 3000);
+      setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS);
     } catch (err) {
       if (err instanceof ApiClientError) {
         setNotification({ message: err.message || 'Failed to update role', type: 'error' });
       } else {
         setNotification({ message: 'Failed to update role', type: 'error' });
       }
-      setTimeout(() => setNotification(null), 4000);
+      setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS_LONG);
     } finally {
       setSavingMemberRole(null);
     }
@@ -480,14 +490,14 @@ function SettingsPage() {
         [familyId]: (prev[familyId] || []).filter((m) => m.user_id !== userId),
       }));
       setNotification({ message: 'Member removed from family', type: 'success' });
-      setTimeout(() => setNotification(null), 3000);
+      setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS);
     } catch (err) {
       if (err instanceof ApiClientError) {
         setNotification({ message: err.message || 'Failed to remove member', type: 'error' });
       } else {
         setNotification({ message: 'Failed to remove member', type: 'error' });
       }
-      setTimeout(() => setNotification(null), 4000);
+      setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS_LONG);
     }
   };
 
@@ -506,14 +516,14 @@ function SettingsPage() {
         [familyId]: (prev[familyId] || []).filter((inv) => inv.id !== inviteId),
       }));
       setNotification({ message: 'Invite revoked', type: 'success' });
-      setTimeout(() => setNotification(null), 3000);
+      setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS);
     } catch (err) {
       if (err instanceof ApiClientError) {
         setNotification({ message: err.message || 'Failed to revoke invite', type: 'error' });
       } else {
         setNotification({ message: 'Failed to revoke invite', type: 'error' });
       }
-      setTimeout(() => setNotification(null), 4000);
+      setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS_LONG);
     }
   };
 
@@ -527,14 +537,14 @@ function SettingsPage() {
         prev.map((f) => (f.id === familyId ? { ...f, name } : f))
       );
       setNotification({ message: 'Family renamed', type: 'success' });
-      setTimeout(() => setNotification(null), 3000);
+      setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS);
     } catch (err) {
       if (err instanceof ApiClientError) {
         setNotification({ message: err.message || 'Failed to rename family', type: 'error' });
       } else {
         setNotification({ message: 'Failed to rename family', type: 'error' });
       }
-      setTimeout(() => setNotification(null), 4000);
+      setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS_LONG);
     } finally {
       setLoading((l) => ({ ...l, familyRename: false }));
       setFamilyActionId(null);
@@ -559,14 +569,14 @@ function SettingsPage() {
         return next;
       });
       setNotification({ message: 'Family deleted', type: 'success' });
-      setTimeout(() => setNotification(null), 3000);
+      setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS);
     } catch (err) {
       if (err instanceof ApiClientError) {
         setNotification({ message: err.message || 'Failed to delete family', type: 'error' });
       } else {
         setNotification({ message: 'Failed to delete family', type: 'error' });
       }
-      setTimeout(() => setNotification(null), 4000);
+      setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS_LONG);
     } finally {
       setLoading((l) => ({ ...l, familyDelete: false }));
       setFamilyActionId(null);
@@ -592,14 +602,14 @@ function SettingsPage() {
         return next;
       });
       setNotification({ message: 'Left family', type: 'success' });
-      setTimeout(() => setNotification(null), 3000);
+      setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS);
     } catch (err) {
       if (err instanceof ApiClientError) {
         setNotification({ message: err.message || 'Failed to leave family', type: 'error' });
       } else {
         setNotification({ message: 'Failed to leave family', type: 'error' });
       }
-      setTimeout(() => setNotification(null), 4000);
+      setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS_LONG);
     } finally {
       setLoading((l) => ({ ...l, familyLeave: false }));
       setFamilyActionId(null);
@@ -607,37 +617,37 @@ function SettingsPage() {
   };
 
   const generalContent = (
-    <div className="settings-layout">
+    <div className={s.layout}>
       <Card title="Preferences">
-        <div className="settings-section">
-          <label className="settings-label">Theme</label>
-          <p className="settings-description">Choose your preferred color theme</p>
-          <div className="theme-selector">
+        <div className={s.section}>
+          <label className={s.label}>Theme</label>
+          <p className={s.description}>Choose your preferred color theme</p>
+          <div className={s.themeSelector}>
             <button
-              className={`theme-option ${theme === 'light' ? 'active' : ''}`}
+              className={`${s.themeOption} ${theme === 'light' ? s.active : ''}`}
               onClick={() => handleThemeChange('light')}
             >
-              <LuSun className="theme-option-icon" />
-              <span className="theme-option-label">Light</span>
+              <LuSun className={s.themeOptionIcon} />
+              <span className={s.themeOptionLabel}>Light</span>
             </button>
             <button
-              className={`theme-option ${theme === 'dark' ? 'active' : ''}`}
+              className={`${s.themeOption} ${theme === 'dark' ? s.active : ''}`}
               onClick={() => handleThemeChange('dark')}
             >
-              <LuMoon className="theme-option-icon" />
-              <span className="theme-option-label">Dark</span>
+              <LuMoon className={s.themeOptionIcon} />
+              <span className={s.themeOptionLabel}>Dark</span>
             </button>
             <button
-              className={`theme-option ${theme === 'system' ? 'active' : ''}`}
+              className={`${s.themeOption} ${theme === 'system' ? s.active : ''}`}
               onClick={() => handleThemeChange('system')}
             >
-              <LuLaptop className="theme-option-icon" />
-              <span className="theme-option-label">System</span>
+              <LuLaptop className={s.themeOptionIcon} />
+              <span className={s.themeOptionLabel}>System</span>
             </button>
           </div>
         </div>
 
-        <div className="settings-section">
+        <div className={s.section}>
           <FormField
             label="Date Format"
             type="select"
@@ -651,28 +661,28 @@ function SettingsPage() {
           />
         </div>
 
-        <div className="settings-save-row">
-          <Button variant="primary" type="button" onClick={() => { setNotification({ message: 'Settings saved', type: 'success' }); setTimeout(() => setNotification(null), 3000); }}>
+        <div className={layout.saveRow}>
+          <Button variant="primary" type="button" onClick={() => { setNotification({ message: 'Settings saved', type: 'success' }); setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS); }}>
             <LuSave style={{ marginRight: 8 }} /> Save
           </Button>
         </div>
 
-        <div className="support-section">
-          <h4 className="support-section-title">Support</h4>
-          <div className="support-content">
+        <div className={s.supportSection}>
+          <h4 className={s.supportSectionTitle}>Support</h4>
+          <div className={s.supportContent}>
             <a
               href="https://www.buymeacoffee.com/dodgerbluel"
               target="_blank"
               rel="noopener noreferrer"
-              className="support-coffee-link"
+              className={s.supportCoffeeLink}
             >
               <img
                 src="https://cdn.buymeacoffee.com/buttons/v2/default-blue.png"
                 alt="Buy Me A Coffee"
-                className="support-coffee-button"
+                className={s.supportCoffeeButton}
               />
             </a>
-            <p className="support-text">
+            <p className={s.supportText}>
               Enjoying Trajectory? Consider supporting the project to help keep it running and improving.
             </p>
           </div>
@@ -682,16 +692,16 @@ function SettingsPage() {
   );
 
   const dataContent = (
-    <div className="settings-layout">
+    <div className={s.layout}>
       <Card title="Data Management">
-        <div className="settings-section">
-          <label className="settings-label">Export Data</label>
-          <p className="settings-description">
+        <div className={s.section}>
+          <label className={s.label}>Export Data</label>
+          <p className={s.description}>
             {canEdit
               ? 'Download all your data as a ZIP (JSON, HTML report, and attachments). Only parents and owners can export.'
               : 'Only parents and owners can export data. Read-only members do not have export access.'}
           </p>
-          <p className="settings-description" style={{ fontStyle: 'italic', color: 'var(--color-text-secondary)' }}>
+          <p className={s.description} style={{ fontStyle: 'italic', color: 'var(--color-text-secondary)' }}>
             This feature is in dev/beta and is not functional yet.
           </p>
           {canEdit && (
@@ -705,16 +715,16 @@ function SettingsPage() {
   );
 
   const aboutContent = (
-    <div className="settings-layout">
+    <div className={s.layout}>
       <Card title="About">
-        <div className="settings-section">
-          <div className="about-item">
-            <span className="about-label">Version:</span>
-            <span className="about-value">1.0.0</span>
+        <div className={s.section}>
+          <div className={s.aboutItem}>
+            <span className={s.aboutLabel}>Version:</span>
+            <span className={s.aboutValue}>1.0.0</span>
           </div>
-          <div className="about-item">
-            <span className="about-label">License:</span>
-            <span className="about-value">Private</span>
+          <div className={s.aboutItem}>
+            <span className={s.aboutLabel}>License:</span>
+            <span className={s.aboutValue}>Private</span>
           </div>
         </div>
       </Card>
@@ -722,20 +732,20 @@ function SettingsPage() {
   );
 
   const familyManagementContent = loading.family ? (
-    <div className="family-settings-loading">Loading…</div>
+    <div className={s.familySettingsLoading}>Loading…</div>
   ) : families.length === 0 ? (
-    <div className="family-settings-empty">No families found.</div>
+    <div className={s.familySettingsEmpty}>No families found.</div>
   ) : (
-    <div className="family-management-list">
+    <div className={s.familyManagementList}>
       {families.map((family) => (
-        <Card key={family.id} className="family-management-family-card">
-          <header className="family-management-family-header" aria-label={`Family: ${family.name}`}>
-            <h2 id={`family-management-heading-${family.id}`} className="family-management-family-name">
+        <Card key={family.id} className={s.familyManagementFamilyCard}>
+          <header className={s.familyManagementFamilyHeader} aria-label={`Family: ${family.name}`}>
+            <h2 id={`family-management-heading-${family.id}`} className={s.familyManagementFamilyName}>
               {family.name}
             </h2>
             {family.role && <RoleBadge role={family.role} />}
           </header>
-          <div className="family-management-family-body">
+          <div className={s.familyManagementFamilyBody}>
             <FamilyOverviewCard
               familyName={family.name}
               members={membersByFamily[family.id] ?? []}
@@ -764,15 +774,15 @@ function SettingsPage() {
               noCard
             />
 
-            <section className="family-management-section" aria-labelledby={`family-members-heading-${family.id}`}>
-              <h3 id={`family-members-heading-${family.id}`} className="family-management-section-title">
+            <section className={s.familyManagementSection} aria-labelledby={`family-members-heading-${family.id}`}>
+              <h3 id={`family-members-heading-${family.id}`} className={s.familyManagementSectionTitle}>
                 Members
               </h3>
-              <div className="family-management-section-content">
+              <div className={s.familyManagementSectionContent}>
                 {!(membersByFamily[family.id]?.length) ? (
-                  <div className="family-settings-loading">Loading members…</div>
+                  <div className={s.familySettingsLoading}>Loading members…</div>
                 ) : (
-                  <div className="family-settings-members-list" role="list">
+                  <div className={s.familySettingsMembersList} role="list">
                     {(membersByFamily[family.id] || []).map((member) => (
                       <MemberRow
                         key={member.user_id}
@@ -794,53 +804,49 @@ function SettingsPage() {
 
             {(family.role === 'owner' || family.role === 'parent') && (
               <>
-                <section className="family-management-section" aria-labelledby={`family-invite-heading-${family.id}`}>
-                  <h3 id={`family-invite-heading-${family.id}`} className="family-management-section-title">
+                <section className={s.familyManagementSection} aria-labelledby={`family-invite-heading-${family.id}`}>
+                  <h3 id={`family-invite-heading-${family.id}`} className={s.familyManagementSectionTitle}>
                     Invite member
                   </h3>
-                  <div className="family-management-section-content">
-                    <div className="family-settings-invite-form">
-                    <div className="form-field" style={{ marginBottom: 0 }}>
-                      <label htmlFor={`invite-role-${family.id}`} className="form-label">
-                        Role
-                      </label>
-                      <select
-                        id={`invite-role-${family.id}`}
-                        className="form-input"
-                        value={createInviteRole}
-                        onChange={(e) => setCreateInviteRole(e.target.value as 'parent' | 'read_only')}
-                        style={{ width: 'auto', minWidth: 160 }}
-                        aria-label="Invite role"
-                      >
-                        <option value="parent">Parent (can edit)</option>
-                        <option value="read_only">View only</option>
-                      </select>
-                    </div>
+                  <div className={s.familyManagementSectionContent}>
+                    <div className={s.familySettingsInviteForm}>
+                    <FormField
+                      label="Role"
+                      type="select"
+                      id={`invite-role-${family.id}`}
+                      value={createInviteRole}
+                      onChange={(e) => setCreateInviteRole(e.target.value as 'parent' | 'read_only')}
+                      options={[
+                        { value: 'parent', label: 'Parent (can edit)' },
+                        { value: 'read_only', label: 'View only' },
+                      ]}
+                      aria-label="Invite role"
+                    />
                     <button
                       type="button"
-                      className="measurement-card-add"
+                      className={mui.cardAdd}
                       disabled={loading.invite}
                       onClick={() => handleCreateInvite(family.id)}
                       title="Create invite"
                     >
-                      <LuUserPlus className="measurement-card-icon" size={18} aria-hidden />
-                      <span className="measurement-card-add-label">
+                      <LuUserPlus className={mui.cardIcon} size={18} aria-hidden />
+                      <span className={mui.cardAddLabel}>
                         {loading.invite ? 'Creating…' : 'Create invite'}
                       </span>
                     </button>
                   </div>
-                  <p className="family-settings-invite-helper">
+                  <p className={s.familySettingsInviteHelper}>
                     Share the invite link with the person you want to add. They'll need to sign in or create an account to join.
                   </p>
                   {newInviteToken?.familyId === family.id && (
-                    <div className="family-settings-invite-link-box">
-                      <span className="family-settings-invite-link-label">Invite link — copy and share</span>
-                      <div className="family-settings-invite-link-code">
+                    <div className={s.familySettingsInviteLinkBox}>
+                      <span className={s.familySettingsInviteLinkLabel}>Invite link — copy and share</span>
+                      <div className={s.familySettingsInviteLinkCode}>
                         {typeof window !== 'undefined'
                           ? `${window.location.origin}/invite?token=${newInviteToken.token}`
                           : `/invite?token=${newInviteToken.token}`}
                       </div>
-                      <div className="family-settings-invite-link-actions">
+                      <div className={s.familySettingsInviteLinkActions}>
                         <Button
                           variant="secondary"
                           size="sm"
@@ -851,7 +857,7 @@ function SettingsPage() {
                                 : `/invite?token=${newInviteToken.token}`;
                             navigator.clipboard.writeText(inviteUrl);
                             setNotification({ message: 'Invite link copied to clipboard', type: 'success' });
-                            setTimeout(() => setNotification(null), 2000);
+                            setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS_SHORT);
                           }}
                         >
                           Copy link
@@ -865,15 +871,15 @@ function SettingsPage() {
                   </div>
                 </section>
 
-                <section className="family-management-section" aria-labelledby={`family-pending-heading-${family.id}`}>
-                  <h3 id={`family-pending-heading-${family.id}`} className="family-management-section-title">
+                <section className={s.familyManagementSection} aria-labelledby={`family-pending-heading-${family.id}`}>
+                  <h3 id={`family-pending-heading-${family.id}`} className={s.familyManagementSectionTitle}>
                     Pending invites
                   </h3>
-                  <div className="family-management-section-content">
+                  <div className={s.familyManagementSectionContent}>
                   {(invitesByFamily[family.id]?.length ?? 0) === 0 ? (
-                    <div className="family-settings-empty">No pending invites.</div>
+                    <div className={s.familySettingsEmpty}>No pending invites.</div>
                   ) : (
-                    <div className="family-settings-invites-list" role="list">
+                    <div className={s.familySettingsInvitesList} role="list">
                       {(invitesByFamily[family.id] || []).map((inv) => (
                         <InviteRow
                           key={inv.id}
@@ -886,7 +892,7 @@ function SettingsPage() {
                                 : `/invite?token=${encodeURIComponent(inviteTokens[inv.id])}`;
                             navigator.clipboard.writeText(url);
                             setNotification({ message: 'Invite link copied', type: 'success' });
-                            setTimeout(() => setNotification(null), 2000);
+                            setTimeout(() => setNotification(null), NOTIFICATION_DISMISS_MS_SHORT);
                           }}
                           onRevoke={() => handleRevokeInvite(family.id, inv.id)}
                         />
@@ -904,9 +910,8 @@ function SettingsPage() {
   );
 
   const familyContent = (
-    <div className="card">
-      <h1 className="card-title">Family Settings</h1>
-      <p className="family-settings-page-subtitle">
+    <Card title="Family Settings">
+      <p className={s.familySettingsPageSubtitle}>
         See who's in your family, invite others, and manage access.
       </p>
       <Tabs
@@ -917,43 +922,43 @@ function SettingsPage() {
             id: 'members',
             label: 'Members',
             content: (
-              <div className="family-members-tab">
+              <div className={s.familyMembersTab}>
                 {loadingKids && <LoadingSpinner message="Loading children…" />}
                 {errorKids && <ErrorMessage message={errorKids} onRetry={loadChildren} />}
                 {!loadingKids && !errorKids && (
-                  <div className="family-members-by-family">
+                  <div className={s.familyMembersByFamily}>
                     {[...families]
                       .sort((a, b) => a.id - b.id)
                       .map((family) => {
                         const kids = childrenByFamilyId[family.id] ?? [];
                         const canEditFamily = family.role === 'owner' || family.role === 'parent';
                         return (
-                          <Card key={family.id} title={family.name} className="family-members-family-card">
-                            <div className="family-members-kids-grid">
+                          <Card key={family.id} title={family.name} className={s.familyMembersFamilyCard}>
+                            <div className={s.familyMembersKidsGrid}>
                               {kids.map((child) => {
                                 const age = calculateAge(child.date_of_birth);
                                 const ageText = formatAge(age.years, age.months);
                                 return (
-                                  <Card key={child.id} className="family-card">
-                                    <div className="family-content">
-                                      <div className="family-avatar">
+                                  <Card key={child.id} className={s.familyCard}>
+                                    <div className={s.familyContent}>
+                                      <div className={s.familyAvatar}>
                                         <ChildAvatar
                                           avatar={child.avatar}
                                           gender={child.gender}
                                           alt={`${child.name}'s avatar`}
-                                          className="family-avatar-img"
+                                          className={s.familyAvatarImg}
                                         />
                                       </div>
-                                      <div className="family-info">
-                                        <h2 className="family-name">{child.name}</h2>
-                                        <div className="family-details">
+                                      <div className={s.familyInfo}>
+                                        <h2 className={s.familyName}>{child.name}</h2>
+                                        <div className={s.familyDetails}>
                                           <span>{ageText}</span>
                                           <span>•</span>
                                           <span>{formatDate(child.date_of_birth)}</span>
                                         </div>
                                       </div>
                                       {canEditFamily && (
-                                        <div className="family-actions">
+                                        <div className={s.familyActions}>
                                           <Link to={`/children/${child.id}/edit`}>
                                             <Button variant="secondary" size="sm">Edit</Button>
                                           </Link>
@@ -978,17 +983,17 @@ function SettingsPage() {
                                 <Link
                                   to="/children/new"
                                   state={{ familyId: family.id, fromOnboarding: onboarding?.isActive }}
-                                  className="family-add-link"
+                                  className={s.familyAddLink}
                                   data-onboarding={families.length > 0 && family.id === families[0].id ? 'add-child' : undefined}
                                 >
-                                  <Card className="family-card family-add-card">
-                                    <div className="family-content">
-                                      <div className="family-avatar">
-                                        <div className="family-add-avatar">+</div>
+                                  <Card className={`${s.familyCard} ${s.familyAddCard}`}>
+                                    <div className={s.familyContent}>
+                                      <div className={s.familyAvatar}>
+                                        <div className={s.familyAddAvatar}>+</div>
                                       </div>
-                                      <div className="family-info">
-                                        <h2 className="family-name">Add Child</h2>
-                                        <div className="family-details">
+                                      <div className={s.familyInfo}>
+                                        <h2 className={s.familyName}>Add Child</h2>
+                                        <div className={s.familyDetails}>
                                           <span>Add a child to {family.name}</span>
                                         </div>
                                       </div>
@@ -1003,17 +1008,17 @@ function SettingsPage() {
                     <button
                       type="button"
                       onClick={() => setShowAddFamilyModal(true)}
-                      className="family-add-family-button"
+                      className={s.familyAddFamilyButton}
                       data-onboarding="add-family"
                     >
-                      <Card className="family-card family-add-card">
-                        <div className="family-content">
-                          <div className="family-avatar">
-                            <div className="family-add-avatar">+</div>
+                      <Card className={`${s.familyCard} ${s.familyAddCard}`}>
+                        <div className={s.familyContent}>
+                          <div className={s.familyAvatar}>
+                            <div className={s.familyAddAvatar}>+</div>
                           </div>
-                          <div className="family-info">
-                            <h2 className="family-name">Add Family</h2>
-                            <div className="family-details">
+                          <div className={s.familyInfo}>
+                            <h2 className={s.familyName}>Add Family</h2>
+                            <div className={s.familyDetails}>
                               <span>Create a new family</span>
                             </div>
                           </div>
@@ -1032,50 +1037,54 @@ function SettingsPage() {
           },
         ]}
       />
-    </div>
+    </Card>
   );
 
   const userContent = (
-    <div className="settings-layout">
+    <div className={s.layout}>
       <Card title="User Settings">
         {/* User Information Display */}
-        <div className="user-info-card">
-          <div className="user-info-row">
-            <span className="user-info-label">Username:</span>
-            <span className="user-info-value">{user?.username || 'N/A'}</span>
+        <div className={s.userInfoCard}>
+          <div className={s.userInfoRow}>
+            <span className={s.userInfoLabel}>Username:</span>
+            <span className={s.userInfoValue}>{user?.username || 'N/A'}</span>
           </div>
-          <div className="user-info-row">
-            <span className="user-info-label">Email:</span>
-            <span className="user-info-value">{user?.email || 'N/A'}</span>
+          <div className={s.userInfoRow}>
+            <span className={s.userInfoLabel}>Email:</span>
+            <span className={s.userInfoValue}>{user?.email || 'N/A'}</span>
           </div>
-          <div className="user-info-row">
-            <span className="user-info-label">Account Created:</span>
-            <span className="user-info-value">{user?.createdAt ? formatDate(user.createdAt) : 'N/A'}</span>
+          <div className={s.userInfoRow}>
+            <span className={s.userInfoLabel}>Account Created:</span>
+            <span className={s.userInfoValue}>{user?.createdAt ? formatDate(user.createdAt) : 'N/A'}</span>
+          </div>
+          <div className={s.userInfoRow}>
+            <span className={s.userInfoLabel}>Role:</span>
+            <span className={s.userInfoValue}>{user?.isInstanceAdmin ? 'Instance admin' : 'User'}</span>
           </div>
         </div>
 
         {/* Change Username Section */}
-        <div className="settings-expandable">
+        <div className={s.expandable}>
           <button
-            className="settings-expandable-header"
+            className={s.expandableHeader}
             onClick={() => {
               setUsernameExpanded(!usernameExpanded);
               setPasswordExpanded(false);
             }}
             aria-expanded={usernameExpanded}
           >
-            <div className="settings-expandable-title">
-              <LuUser className="settings-expandable-icon" />
+            <div className={s.expandableTitle}>
+              <LuUser className={s.expandableIcon} />
               <span>Change Username</span>
             </div>
             {usernameExpanded ? (
-              <HiChevronUp className="settings-expandable-chevron" />
+              <HiChevronUp className={s.expandableChevron} />
             ) : (
-              <HiChevronDown className="settings-expandable-chevron" />
+              <HiChevronDown className={s.expandableChevron} />
             )}
           </button>
           {usernameExpanded && (
-            <div className="settings-expandable-content">
+            <div className={s.expandableContent}>
               <form onSubmit={handleUpdateUsername}>
                 <FormField
                   label="New Username"
@@ -1087,19 +1096,19 @@ function SettingsPage() {
                   disabled={loading.username}
                 />
                 {!errors.username && (
-                  <div className="form-hint">Must be at least 2 characters long</div>
+                  <div className={formFieldStyles.hint}>Must be at least 2 characters long</div>
                 )}
 
-                <div className="form-field">
-                  <label htmlFor="username-password" className="form-label">
+                <div className={s.passwordField}>
+                  <label htmlFor="username-password" className={s.passwordLabel}>
                     Current Password
-                    <span className="required-indicator">*</span>
+                    <span className={s.requiredIndicator}>*</span>
                   </label>
-                  <div className="password-input-wrapper">
+                  <div className={s.passwordInputWrapper}>
                     <input
                       id="username-password"
                       type={showPasswords.usernamePassword ? 'text' : 'password'}
-                      className={`form-input ${errors.usernamePassword ? 'error' : ''}`}
+                      className={`${s.passwordInput} ${errors.usernamePassword ? 'error' : ''}`}
                       value={usernamePassword}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsernamePassword(e.target.value)}
                       required
@@ -1108,7 +1117,7 @@ function SettingsPage() {
                     />
                     <button
                       type="button"
-                      className="password-toggle"
+                      className={s.passwordToggle}
                       onClick={() => setShowPasswords({ ...showPasswords, usernamePassword: !showPasswords.usernamePassword })}
                       aria-label={showPasswords.usernamePassword ? 'Hide password' : 'Show password'}
                       tabIndex={-1}
@@ -1117,10 +1126,10 @@ function SettingsPage() {
                     </button>
                   </div>
                   {errors.usernamePassword && (
-                    <span className="form-error">{errors.usernamePassword}</span>
+                    <span className={s.passwordError}>{errors.usernamePassword}</span>
                   )}
                   {!errors.usernamePassword && (
-                    <div className="form-hint">Enter your current password to confirm</div>
+                    <div className={formFieldStyles.hint}>Enter your current password to confirm</div>
                   )}
                 </div>
 
@@ -1128,7 +1137,7 @@ function SettingsPage() {
                   type="submit"
                   variant="primary"
                   disabled={loading.username}
-                  className="settings-update-button"
+                  className={s.updateButton}
                 >
                   {loading.username ? 'Updating...' : 'Update Username'}
                 </Button>
@@ -1138,38 +1147,38 @@ function SettingsPage() {
         </div>
 
         {/* Change Password Section */}
-        <div className="settings-expandable">
+        <div className={s.expandable}>
           <button
-            className="settings-expandable-header"
+            className={s.expandableHeader}
             onClick={() => {
               setPasswordExpanded(!passwordExpanded);
               setUsernameExpanded(false);
             }}
             aria-expanded={passwordExpanded}
           >
-            <div className="settings-expandable-title">
-              <FaLock className="settings-expandable-icon" />
+            <div className={s.expandableTitle}>
+              <FaLock className={s.expandableIcon} />
               <span>Change Password</span>
             </div>
             {passwordExpanded ? (
-              <HiChevronUp className="settings-expandable-chevron" />
+              <HiChevronUp className={s.expandableChevron} />
             ) : (
-              <HiChevronDown className="settings-expandable-chevron" />
+              <HiChevronDown className={s.expandableChevron} />
             )}
           </button>
           {passwordExpanded && (
-            <div className="settings-expandable-content">
+            <div className={s.expandableContent}>
               <form onSubmit={handleUpdatePassword}>
-                <div className="form-field">
-                  <label htmlFor="current-password" className="form-label">
+                <div className={s.passwordField}>
+                  <label htmlFor="current-password" className={s.passwordLabel}>
                     Current Password
-                    <span className="required-indicator">*</span>
+                    <span className={s.requiredIndicator}>*</span>
                   </label>
-                  <div className="password-input-wrapper">
+                  <div className={s.passwordInputWrapper}>
                     <input
                       id="current-password"
                       type={showPasswords.currentPassword ? 'text' : 'password'}
-                      className={`form-input ${errors.currentPassword ? 'error' : ''}`}
+                      className={`${s.passwordInput} ${errors.currentPassword ? 'error' : ''}`}
                       value={currentPassword}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCurrentPassword(e.target.value)}
                       required
@@ -1178,7 +1187,7 @@ function SettingsPage() {
                     />
                     <button
                       type="button"
-                      className="password-toggle"
+                      className={s.passwordToggle}
                       onClick={() => setShowPasswords({ ...showPasswords, currentPassword: !showPasswords.currentPassword })}
                       aria-label={showPasswords.currentPassword ? 'Hide password' : 'Show password'}
                       tabIndex={-1}
@@ -1187,20 +1196,20 @@ function SettingsPage() {
                     </button>
                   </div>
                   {errors.currentPassword && (
-                    <span className="form-error">{errors.currentPassword}</span>
+                    <span className={s.passwordError}>{errors.currentPassword}</span>
                   )}
                 </div>
 
-                <div className="form-field">
-                  <label htmlFor="new-password" className="form-label">
+                <div className={s.passwordField}>
+                  <label htmlFor="new-password" className={s.passwordLabel}>
                     New Password
-                    <span className="required-indicator">*</span>
+                    <span className={s.requiredIndicator}>*</span>
                   </label>
-                  <div className="password-input-wrapper">
+                  <div className={s.passwordInputWrapper}>
                     <input
                       id="new-password"
                       type={showPasswords.newPassword ? 'text' : 'password'}
-                      className={`form-input ${errors.newPassword ? 'error' : ''}`}
+                      className={`${s.passwordInput} ${errors.newPassword ? 'error' : ''}`}
                       value={newPassword}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPassword(e.target.value)}
                       required
@@ -1209,7 +1218,7 @@ function SettingsPage() {
                     />
                     <button
                       type="button"
-                      className="password-toggle"
+                      className={s.passwordToggle}
                       onClick={() => setShowPasswords({ ...showPasswords, newPassword: !showPasswords.newPassword })}
                       aria-label={showPasswords.newPassword ? 'Hide password' : 'Show password'}
                       tabIndex={-1}
@@ -1218,23 +1227,23 @@ function SettingsPage() {
                     </button>
                   </div>
                   {errors.newPassword && (
-                    <span className="form-error">{errors.newPassword}</span>
+                    <span className={s.passwordError}>{errors.newPassword}</span>
                   )}
                   {!errors.newPassword && (
-                    <div className="form-hint">Must be at least 8 characters with uppercase, lowercase, number, and special character</div>
+                    <div className={formFieldStyles.hint}>Must be at least 8 characters with uppercase, lowercase, number, and special character</div>
                   )}
                 </div>
 
-                <div className="form-field">
-                  <label htmlFor="confirm-password" className="form-label">
+                <div className={s.passwordField}>
+                  <label htmlFor="confirm-password" className={s.passwordLabel}>
                     Confirm New Password
-                    <span className="required-indicator">*</span>
+                    <span className={s.requiredIndicator}>*</span>
                   </label>
-                  <div className="password-input-wrapper">
+                  <div className={s.passwordInputWrapper}>
                     <input
                       id="confirm-password"
                       type={showPasswords.confirmPassword ? 'text' : 'password'}
-                      className={`form-input ${errors.confirmPassword ? 'error' : ''}`}
+                      className={`${s.passwordInput} ${errors.confirmPassword ? 'error' : ''}`}
                       value={confirmPassword}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
                       required
@@ -1243,7 +1252,7 @@ function SettingsPage() {
                     />
                     <button
                       type="button"
-                      className="password-toggle"
+                      className={s.passwordToggle}
                       onClick={() => setShowPasswords({ ...showPasswords, confirmPassword: !showPasswords.confirmPassword })}
                       aria-label={showPasswords.confirmPassword ? 'Hide password' : 'Show password'}
                       tabIndex={-1}
@@ -1252,7 +1261,7 @@ function SettingsPage() {
                     </button>
                   </div>
                   {errors.confirmPassword && (
-                    <span className="form-error">{errors.confirmPassword}</span>
+                    <span className={s.passwordError}>{errors.confirmPassword}</span>
                   )}
                 </div>
 
@@ -1260,7 +1269,7 @@ function SettingsPage() {
                   type="submit"
                   variant="primary"
                   disabled={loading.password}
-                  className="settings-update-button"
+                  className={s.updateButton}
                 >
                   {loading.password ? 'Updating...' : 'Update Password'}
                 </Button>
@@ -1273,7 +1282,7 @@ function SettingsPage() {
   );
 
   return (
-    <div className="page-container">
+    <div className={pageLayout.pageContainer}>
       {notification && (
         <Notification
           message={notification.message}
@@ -1282,40 +1291,40 @@ function SettingsPage() {
         />
       )}
 
-      <div className="settings-page-grid">
-        <Card className="settings-card">
-          <div className="settings-card-grid">
-            <div className="settings-card-header">
-              <h1 className="settings-title">Settings</h1>
+      <div className={layout.pageGrid}>
+        <Card className={layout.card}>
+          <div className={layout.cardGrid}>
+            <div className={layout.cardHeader}>
+              <h1 className={layout.title}>Settings</h1>
             </div>
-            <aside className="settings-sidebar">
-              <button className={`sidebar-item ${activeTab === 'general' ? 'active' : ''}`} onClick={() => setActiveTab('general')}>
-                <LuSettings className="sidebar-icon" />
+            <aside className={layout.sidebar}>
+              <button className={`${layout.sidebarItem} ${activeTab === 'general' ? layout.active : ''}`} onClick={() => setActiveTab('general')}>
+                <LuSettings className={layout.sidebarIcon} />
                 <span>General</span>
               </button>
               <button
-                className={`sidebar-item ${activeTab === 'family' ? 'active' : ''}`}
+                className={`${layout.sidebarItem} ${activeTab === 'family' ? layout.active : ''}`}
                 onClick={() => setActiveTab('family')}
                 data-onboarding="settings-family-tab"
               >
-                <LuUsers className="sidebar-icon" />
+                <LuUsers className={layout.sidebarIcon} />
                 <span>Family</span>
               </button>
-              <button className={`sidebar-item ${activeTab === 'user' ? 'active' : ''}`} onClick={() => setActiveTab('user')}>
-                <LuUser className="sidebar-icon" />
+              <button className={`${layout.sidebarItem} ${activeTab === 'user' ? layout.active : ''}`} onClick={() => setActiveTab('user')}>
+                <LuUser className={layout.sidebarIcon} />
                 <span>User</span>
               </button>
-              <button className={`sidebar-item ${activeTab === 'data' ? 'active' : ''}`} onClick={() => setActiveTab('data')}>
-                <LuDownload className="sidebar-icon" />
+              <button className={`${layout.sidebarItem} ${activeTab === 'data' ? layout.active : ''}`} onClick={() => setActiveTab('data')}>
+                <LuDownload className={layout.sidebarIcon} />
                 <span>Data</span>
               </button>
-              <button className={`sidebar-item ${activeTab === 'about' ? 'active' : ''}`} onClick={() => setActiveTab('about')}>
-                <LuInfo className="sidebar-icon" />
+              <button className={`${layout.sidebarItem} ${activeTab === 'about' ? layout.active : ''}`} onClick={() => setActiveTab('about')}>
+                <LuInfo className={layout.sidebarIcon} />
                 <span>About</span>
               </button>
             </aside>
 
-                <main className="settings-main">
+                <main className={layout.main}>
                   {activeTab === 'general' && generalContent}
                   {activeTab === 'user' && userContent}
                   {activeTab === 'data' && dataContent}
@@ -1329,38 +1338,38 @@ function SettingsPage() {
 
       {leaveConfirmFamily && (
         <div
-          className="modal-overlay"
+          className={modalStyles.overlay}
           role="dialog"
           aria-modal="true"
           aria-labelledby="leave-family-modal-title"
           onClick={() => setLeaveConfirmFamily(null)}
         >
           <div
-            className="modal-content delete-family-modal"
+            className={`${modalStyles.content} ${s.deleteFamilyContent}`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="modal-header">
+            <div className={modalStyles.header}>
               <h2 id="leave-family-modal-title">
                 ⚠️ Leave family
               </h2>
               <button
                 type="button"
-                className="modal-close"
+                className={modalStyles.close}
                 aria-label="Close"
                 onClick={() => setLeaveConfirmFamily(null)}
               >
                 ×
               </button>
             </div>
-            <div className="modal-body">
-              <p className="delete-family-modal-alert">
+            <div className={modalStyles.body}>
+              <p className={s.deleteFamilyAlert}>
                 🚨 You will lose access to <strong>{leaveConfirmFamily.name}</strong> and all of its data. You can only rejoin if someone invites you again.
               </p>
-              <p className="delete-family-modal-instruction">
+              <p className={s.deleteFamilyInstruction}>
                 Are you sure you want to leave this family?
               </p>
             </div>
-            <div className="modal-footer">
+            <div className={modalStyles.footer}>
               <Button
                 variant="secondary"
                 onClick={() => setLeaveConfirmFamily(null)}
@@ -1384,7 +1393,7 @@ function SettingsPage() {
 
       {deleteConfirmFamily && (
         <div
-          className="modal-overlay"
+          className={modalStyles.overlay}
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-family-modal-title"
@@ -1394,16 +1403,16 @@ function SettingsPage() {
           }}
         >
           <div
-            className="modal-content delete-family-modal"
+            className={`${modalStyles.content} ${s.deleteFamilyContent}`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="modal-header">
+            <div className={modalStyles.header}>
               <h2 id="delete-family-modal-title">
                 ⚠️ Delete family
               </h2>
               <button
                 type="button"
-                className="modal-close"
+                className={modalStyles.close}
                 aria-label="Close"
                 onClick={() => {
                   setDeleteConfirmFamily(null);
@@ -1413,16 +1422,16 @@ function SettingsPage() {
                 ×
               </button>
             </div>
-            <div className="modal-body">
-              <p className="delete-family-modal-alert">
+            <div className={modalStyles.body}>
+              <p className={s.deleteFamilyAlert}>
                 🚨 <strong>This action cannot be undone.</strong> All members will lose access to this family and its data.
               </p>
-              <p className="delete-family-modal-instruction">
+              <p className={s.deleteFamilyInstruction}>
                 Type <strong>delete {deleteConfirmFamily.name}</strong> below to confirm.
               </p>
               <input
                 type="text"
-                className="form-input delete-family-modal-input"
+                className={`form-input ${s.deleteFamilyInput}`}
                 value={confirmDeleteInput}
                 onChange={(e) => setConfirmDeleteInput(e.target.value)}
                 placeholder={`delete ${deleteConfirmFamily.name}`}
@@ -1430,7 +1439,7 @@ function SettingsPage() {
                 autoComplete="off"
               />
             </div>
-            <div className="modal-footer">
+            <div className={modalStyles.footer}>
               <Button
                 variant="secondary"
                 onClick={() => {
@@ -1461,7 +1470,7 @@ function SettingsPage() {
 
       {deleteConfirmChild && (
         <div
-          className="modal-overlay"
+          className={modalStyles.overlay}
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-child-modal-title"
@@ -1471,16 +1480,16 @@ function SettingsPage() {
           }}
         >
           <div
-            className="modal-content delete-family-modal"
+            className={`${modalStyles.content} ${s.deleteFamilyContent}`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="modal-header">
+            <div className={modalStyles.header}>
               <h2 id="delete-child-modal-title">
                 ⚠️ Delete {deleteConfirmChild.name}
               </h2>
               <button
                 type="button"
-                className="modal-close"
+                className={modalStyles.close}
                 aria-label="Close"
                 onClick={() => {
                   setDeleteConfirmChild(null);
@@ -1490,16 +1499,16 @@ function SettingsPage() {
                 ×
               </button>
             </div>
-            <div className="modal-body">
-              <p className="delete-family-modal-alert">
+            <div className={modalStyles.body}>
+              <p className={s.deleteFamilyAlert}>
                 🚨 <strong>This action cannot be undone.</strong> All associated visits and data will be permanently deleted.
               </p>
-              <p className="delete-family-modal-instruction">
+              <p className={s.deleteFamilyInstruction}>
                 Type <strong>delete {deleteConfirmChild.name}</strong> below to confirm.
               </p>
               <input
                 type="text"
-                className="form-input delete-family-modal-input"
+                className={`form-input ${s.deleteFamilyInput}`}
                 value={confirmDeleteChildInput}
                 onChange={(e) => setConfirmDeleteChildInput(e.target.value)}
                 placeholder={`delete ${deleteConfirmChild.name}`}
@@ -1507,7 +1516,7 @@ function SettingsPage() {
                 autoComplete="off"
               />
             </div>
-            <div className="modal-footer">
+            <div className={modalStyles.footer}>
               <Button
                 variant="secondary"
                 onClick={() => {
@@ -1534,7 +1543,7 @@ function SettingsPage() {
 
       {showAddFamilyModal && (
         <div
-          className="modal-overlay"
+          className={modalStyles.overlay}
           role="dialog"
           aria-modal="true"
           aria-labelledby="add-family-modal-title"
@@ -1547,15 +1556,15 @@ function SettingsPage() {
           }}
         >
           <div
-            className="modal-content delete-family-modal"
+            className={`${modalStyles.content} ${s.deleteFamilyContent}`}
             data-onboarding="create-family-modal"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="modal-header">
+            <div className={modalStyles.header}>
               <h2 id="add-family-modal-title">Create family</h2>
               <button
                 type="button"
-                className="modal-close"
+                className={modalStyles.close}
                 aria-label="Close"
                 disabled={loading.familyCreate}
                 onClick={() => {
@@ -1567,36 +1576,29 @@ function SettingsPage() {
                 ×
               </button>
             </div>
-            <div className="modal-body">
-              <div className="form-field">
-                <label htmlFor="new-family-name" className="form-label">
-                  Family name
-                </label>
-                <input
-                  id="new-family-name"
-                  type="text"
-                  className={`form-input ${newFamilyNameError ? 'error' : ''}`}
-                  value={newFamilyName}
-                  onChange={(e) => {
-                    setNewFamilyName(e.target.value);
-                    setNewFamilyNameError(null);
-                  }}
-                  placeholder="e.g. Smith Family"
-                  disabled={loading.familyCreate}
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddFamily(newFamilyName);
-                    }
-                  }}
-                />
-                {newFamilyNameError && (
-                  <span className="form-error">{newFamilyNameError}</span>
-                )}
-              </div>
+            <div className={modalStyles.body}>
+              <FormField
+                label="Family name"
+                type="text"
+                id="new-family-name"
+                value={newFamilyName}
+                onChange={(e) => {
+                  setNewFamilyName(e.target.value);
+                  setNewFamilyNameError(null);
+                }}
+                placeholder="e.g. Smith Family"
+                disabled={loading.familyCreate}
+                error={newFamilyNameError || undefined}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddFamily(newFamilyName);
+                  }
+                }}
+              />
             </div>
-            <div className="modal-footer">
+            <div className={modalStyles.footer}>
               <Button
                 variant="secondary"
                 disabled={loading.familyCreate}

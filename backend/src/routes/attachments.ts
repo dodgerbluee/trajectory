@@ -13,7 +13,7 @@ import { query } from '../db/connection.js';
 import type { MeasurementAttachmentRow, VisitAttachmentRow, ChildAttachmentRow } from '../types/database.js';
 import { createResponse } from '../types/api.js';
 import { recordAuditEvent } from '../lib/audit.js';
-import { authenticate, type AuthRequest } from '../middleware/auth.js';
+import { authenticate, authenticateHeaderOrQuery, type AuthRequest } from '../middleware/auth.js';
 import { canAccessChild, canEditChild } from '../lib/family-access.js';
 import { ForbiddenError } from '../middleware/error-handler.js';
 
@@ -25,7 +25,7 @@ declare module 'express-serve-static-core' {
 }
 
 const router = Router();
-router.use(authenticate);
+// Note: Authentication is applied per-route to allow authenticateHeaderOrQuery for GET /attachments/:id
 
 /** Resolve attachment id (any table) to child_id for access check. */
 async function getChildIdForAttachment(attachmentId: number): Promise<number | null> {
@@ -186,6 +186,7 @@ const upload = multer({
 
 router.post(
   '/measurements/:measurementId/attachments',
+  authenticate,
   upload.single('file'),
   async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -388,6 +389,7 @@ router.post(
 
 router.get(
   '/measurements/:measurementId/attachments',
+  authenticate,
   async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const measurementId = parseInt(req.params.measurementId);
@@ -445,6 +447,7 @@ router.get(
 
 router.get(
   '/attachments/:id',
+  authenticateHeaderOrQuery,
   async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const id = parseInt(req.params.id);
@@ -552,6 +555,7 @@ router.get(
 
 router.delete(
   '/attachments/:id',
+  authenticate,
   async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const id = parseInt(req.params.id);
@@ -657,6 +661,7 @@ router.delete(
 
 router.post(
   '/visits/:visitId/attachments',
+  authenticate,
   upload.single('file'),
   async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -873,6 +878,7 @@ router.post(
 
 router.get(
   '/visits/:visitId/attachments',
+  authenticate,
   async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const visitId = parseInt(req.params.visitId);
@@ -929,7 +935,7 @@ router.get(
 // Update attachment filename (works for both measurement and visit attachments)
 // ============================================================================
 
-router.put('/attachments/:id', async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+router.put('/attachments/:id', authenticate, async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const attachmentId = parseInt(req.params.id);
     const { original_filename } = req.body;
@@ -1020,6 +1026,7 @@ router.put('/attachments/:id', async (req: AuthRequest, res: Response, next: Nex
 
 router.post(
   '/children/:childId/attachments',
+  authenticate,
   upload.single('file'),
   async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -1212,6 +1219,7 @@ router.post(
 // Get all attachments for a child
 router.get(
   '/children/:childId/attachments',
+  authenticate,
   async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const childId = parseInt(req.params.childId);

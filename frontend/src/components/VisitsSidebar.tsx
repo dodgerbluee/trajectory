@@ -5,6 +5,7 @@ import ChildSelector from './ChildSelector';
 import Button from './Button';
 import { useFamilyPermissions } from '../contexts/FamilyPermissionsContext';
 import type { Child } from '../types/api';
+import layout from '../styles/VisitsLayout.module.css';
 
 interface Stat {
     label: string;
@@ -32,25 +33,25 @@ export default function VisitsSidebar({ stats, childrenList, selectedChildId, on
     const fromPath = isHome ? '/' : `${location.pathname}${location.search}`;
     const fromTab = isHome ? 'visits' : undefined;
     return (
-        <aside className="visits-sidebar">
-            <div className="visits-sidebar-inner">
+        <aside className={layout.sidebar}>
+            <div className={layout.sidebarInner}>
                 <header>
-                    <div className="sidebar-brand">Filters</div>
+                    <div className={layout.sidebarBrand}>Filters</div>
                 </header>
 
-                <div className="sidebar-divider" />
+                <div className={layout.sidebarDivider} />
 
-                <nav className="sidebar-stats">
+                <nav className={layout.sidebarStats}>
                     <VisitStats stats={stats as any} vertical />
                 </nav>
 
                 {!hideChildFilter && (
-                    <div className="sidebar-section">
-                        <h4 className="sidebar-section-title">Child Filter</h4>
+                    <div className={layout.childSidebarSection}>
+                        <h4 className={layout.sidebarSectionTitle}>Child Filter</h4>
                         <ChildSelector childrenList={childrenList} selectedChildId={selectedChildId} onSelect={onSelectChild} />
 
                         {canEdit && (
-                        <div className="sidebar-actions" style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <div className={layout.sidebarAction} style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
                             <AddVisitButton
                                 fromPath={fromPath}
                                 fromTab={fromTab}
@@ -63,7 +64,7 @@ export default function VisitsSidebar({ stats, childrenList, selectedChildId, on
                 )}
 
                 {hideChildFilter && canEdit && (
-                    <div className="sidebar-actions" style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div className={layout.sidebarAction} style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
                         <AddVisitButton
                             fromPath={fromPath}
                             fromTab={fromTab}
@@ -93,8 +94,8 @@ export default function VisitsSidebar({ stats, childrenList, selectedChildId, on
                     };
 
                     return (
-                        <Button type="button" onClick={handle} className="sidebar-add-visit-btn" size="lg" variant="secondary">
-                            <HiPlus className="sidebar-add-visit-btn-icon" aria-hidden />
+                        <Button type="button" onClick={handle} className={layout.sidebarAddVisitBtn} size="lg" variant="secondary">
+                            <HiPlus className={layout.sidebarAddVisitBtnIcon} aria-hidden />
                             <span>Add Visit</span>
                         </Button>
                     );

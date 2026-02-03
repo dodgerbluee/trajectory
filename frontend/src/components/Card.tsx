@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import styles from './Card.module.css';
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
@@ -9,14 +10,14 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 
 function Card({ children, title, icon, className = '', ...rest }: CardProps) {
   return (
-    <div {...rest} className={`card ${className}`}>
+    <div {...rest} className={[styles.root, className].filter(Boolean).join(' ')} data-card-root>
       {title && (
-        <h2 className="card-title">
-          {icon && <span className="card-title-icon">{icon}</span>}
+        <h2 className={styles.title} data-card-title>
+          {icon && <span className={styles.titleIcon}>{icon}</span>}
           <span>{title}</span>
         </h2>
       )}
-      <div className="card-content">
+      <div className={styles.content} data-card-content>
         {children}
       </div>
     </div>
