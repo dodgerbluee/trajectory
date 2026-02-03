@@ -55,14 +55,14 @@ function FamilyOverviewCard({
   };
 
   const content = (
-    <div className="family-settings-overview">
-        <div className="family-settings-overview-row">
-          <span className="family-settings-overview-label">Family</span>
+    <div className={styles.overview}>
+        <div className={styles.row}>
+          <span className={styles.label}>Family</span>
           {editingName ? (
-            <div className="family-settings-overview-edit">
+            <div className={styles.edit}>
               <input
                 type="text"
-                className="form-input family-settings-overview-edit-input"
+                className={`form-input ${styles.editInput}`}
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
                 onKeyDown={(e) => {
@@ -80,19 +80,19 @@ function FamilyOverviewCard({
               </Button>
             </div>
           ) : (
-            <span className="family-settings-overview-value">{familyName}</span>
+            <span className={styles.value}>{familyName}</span>
           )}
         </div>
-        <div className="family-settings-overview-row">
-          <span className="family-settings-overview-label">Owner</span>
-          <span className="family-settings-overview-value">{owner?.username ?? '—'}</span>
+        <div className={styles.row}>
+          <span className={styles.label}>Owner</span>
+          <span className={styles.value}>{owner?.username ?? '—'}</span>
         </div>
-        <div className="family-settings-overview-row">
-          <span className="family-settings-overview-label">Members</span>
-          <span className="family-settings-overview-value">{memberCount}</span>
+        <div className={styles.row}>
+          <span className={styles.label}>Members</span>
+          <span className={styles.value}>{memberCount}</span>
         </div>
         {!editingName && (isOwner ? (onRename || onRequestDelete) : onLeave) && (
-          <div className="family-settings-overview-actions">
+          <div className={styles.actions}>
             {isOwner && onRename && (
               <Button variant="secondary" size="sm" onClick={startEdit}>
                 Rename

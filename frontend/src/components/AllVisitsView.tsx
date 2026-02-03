@@ -3,10 +3,8 @@ import { visitsApi, childrenApi, ApiClientError } from '../lib/api-client';
 import type { Visit, Child, VisitType } from '../types/api';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
-import TimelineItem from './TimelineItem';
-import Card from './Card';
+import VisitsTimeline from './VisitsTimeline';
 import VisitsSidebar from './VisitsSidebar';
-import tl from './TimelineList.module.css';
 import visitsLayout from '../styles/VisitsLayout.module.css';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { DentalToothIcon } from '@hugeicons/core-free-icons';
@@ -82,22 +80,6 @@ function AllVisitsView() {
   // Track which visits have attachments (visit ID set)
   const [visitsWithAttachments, setVisitsWithAttachments] = useState<Set<number>>(new Set());
 
-  // Create a map for quick child lookup
-  const childMap = useMemo(() => {
-    const map = new Map<number, Child>();
-    children.forEach(child => map.set(child.id, child));
-    return map;
-  }, [children]);
-
-  // Sort visits by visit_date (most recent first)
-  const sortedVisits = useMemo(() => {
-    return [...visits].sort((a, b) => {
-      const dateA = new Date(a.visit_date).getTime();
-      const dateB = new Date(b.visit_date).getTime();
-      return dateB - dateA; // Descending = most recent first
-    });
-  }, [visits]);
-
   // Compute stable stats from the unfiltered set (allVisits) so counts don't collapse
   // when `filterVisitType` is applied.
   const statsSource = useMemo(() => allVisits, [allVisits]);
@@ -127,32 +109,12 @@ function AllVisitsView() {
       />
 
       <main className={visitsLayout.main}>
-        {/* Visits Timeline */}
-        {sortedVisits.length === 0 ? (
-          <Card>
-            <p className={tl.empty}>
-              No visits recorded yet. Click "Add Visit" to get started.
-            </p>
-          </Card>
-        ) : (
-          <Card>
-            <div className={tl.list}>
-              {sortedVisits.map((visit) => {
-                const child = childMap.get(visit.child_id);
-                return (
-                  <TimelineItem 
-                    key={visit.id}
-                    type="visit" 
-                    data={visit}
-                    childName={child?.name || `Child #${visit.child_id}`}
-                    childId={visit.child_id}
-                    hasAttachments={visitsWithAttachments.has(visit.id)}
-                  />
-                );
-              })}
-            </div>
-          </Card>
-        )}
+        <VisitsTimeline
+          visits={visits}
+          children={children}
+          visitsWithAttachments={visitsWithAttachments}
+          showChildName={true}
+        />
       </main>
     </div>
   );

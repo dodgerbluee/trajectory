@@ -38,7 +38,7 @@ function SingleMetricGrowthChart({
 
   if (filteredData.length === 0) {
     return (
-      <div className="chart-empty">
+      <div className={growthStyles.chartEmpty}>
         <p>No {metric} data available.</p>
         <p className={growthStyles.chartEmptySubtitle}>Add wellness visits with {metric} measurements to see growth trends.</p>
       </div>
@@ -157,7 +157,7 @@ function SingleMetricGrowthChart({
   
   if (dataWithValues.length === 0) {
     return (
-      <div className="chart-empty">
+      <div className={growthStyles.chartEmpty}>
         <p>No {metric} {mode} data available.</p>
         <p className={growthStyles.chartEmptySubtitle}>Add wellness visits with {metric} {mode === 'percentile' ? 'percentile' : ''} measurements to see growth trends.</p>
       </div>

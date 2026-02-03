@@ -1,4 +1,5 @@
 import styles from './SeveritySelector.module.css';
+import formFieldStyles from './FormField.module.css';
 
 /**
  * Severity selector with emoji faces (1-10 scale)
@@ -26,7 +27,7 @@ const SEVERITY_OPTIONS = [
 export default function SeveritySelector({ value, onChange, disabled }: SeveritySelectorProps) {
   return (
     <div className={styles.selector}>
-      <label className="form-label">
+      <label className={formFieldStyles.label}>
         Severity (1-10)
       </label>
       <div className={styles.options}>

@@ -1,5 +1,17 @@
 /* Child detail page – overview section, detail rows, last/next visits strip. */
 
+.childDetailBody {
+  padding: var(--spacing-lg);
+}
+
+.childDetailSection {
+  margin-bottom: var(--spacing-xl);
+}
+
+.childDetailSection:last-child {
+  margin-bottom: 0;
+}
+
 .detailRow {
   display: flex;
   gap: var(--spacing-md);

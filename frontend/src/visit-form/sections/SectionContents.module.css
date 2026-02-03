@@ -132,6 +132,54 @@
   gap: var(--spacing-lg);
 }
 
+.formLabel {
+  font-size: var(--font-size-sm-tight);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+}
+
+.formFieldHint {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-top: var(--spacing-xs);
+  line-height: var(--line-height-normal);
+}
+
+.formFieldHintItalic {
+  font-style: italic;
+}
+
+.dentalUi {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.dentalFormFields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.dentalCheckboxes {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--spacing-md);
+}
+
+.dentalNumbers {
+  display: flex;
+  gap: 16px;
+}
+
 @media (max-width: 768px) {
   .primary {
     grid-template-columns: 1fr;

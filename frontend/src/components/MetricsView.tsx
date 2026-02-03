@@ -185,7 +185,7 @@ function MetricsView({
               <h2 className={styles.sectionTitle}>Illness Heatmap</h2>
               <div className={styles.yearControls}>
                 <Button
-                  variant="secondary"
+                  variant="tertiary"
                   onClick={() => handleYearChange(-1)}
                   disabled={selectedYear <= 2020}
                   aria-label="Previous year"
@@ -194,7 +194,7 @@ function MetricsView({
                 </Button>
                 <div className={styles.yearLabel}>{selectedYear}</div>
                 <Button
-                  variant="secondary"
+                  variant="tertiary"
                   onClick={() => handleYearChange(1)}
                   disabled={selectedYear >= new Date().getFullYear()}
                   aria-label="Next year"
@@ -212,6 +212,7 @@ function MetricsView({
               data={heatmapData} 
               onDayClick={handleDayClick}
               isSingleChild={filterChildId !== undefined}
+              totalChildren={filterChildId ? undefined : children.length}
             />
           </Card>
 

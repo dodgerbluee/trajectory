@@ -36,23 +36,29 @@
 
 .topRow {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: calc(var(--spacing-md) * 2);
 }
 
-.topRow :global(.form-field) {
+.nameAndDetails {
   flex: 1;
-  margin-bottom: var(--size-touch-min);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
 }
 
-.topRow :global(.form-input) {
-  min-height: var(--size-touch-min);
+.nameAndDetails :global(.form-field) {
+  margin-bottom: 0;
+}
+
+.nameAndDetails .row {
+  margin-bottom: 0;
 }
 
 .avatarWrap {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   flex-shrink: 0;
   margin-bottom: 0;
   margin-right: 0;
@@ -62,6 +68,17 @@
 .avatarButton {
   position: relative;
   display: block;
+  border: none;
+  background: none;
+  padding: 0;
+  outline: none;
+  cursor: pointer;
+}
+
+.avatarButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 50%;
 }
 
 .avatarImg {
@@ -71,7 +88,6 @@
   object-fit: cover;
   box-shadow: var(--elevation-2);
   display: block;
-  border: var(--border-width-thick) solid var(--color-border);
 }
 
 .avatarOverlay {
@@ -102,6 +118,8 @@
   margin: var(--spacing-xs) 0 0;
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
+  text-align: center;
+  width: 100%;
 }
 
 .row {
@@ -123,7 +141,7 @@
 .genderField {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-sm-plus);
   margin-bottom: 0;
 }
 
@@ -173,7 +191,7 @@
   font-size: 1rem;
   font-weight: 600;
   color: var(--color-text-primary);
-  margin: 0 0 calc(var(--spacing-xs) * 1.5) 0;
+  margin-bottom: var(--spacing-md);
   padding-bottom: var(--spacing-xs);
   border-bottom: 2px solid var(--color-primary);
   display: inline-block;
@@ -183,15 +201,36 @@
 .birthRow {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: var(--spacing-lg);
+  gap: 10rem;
   align-items: start;
   margin-bottom: var(--spacing-md);
+}
+
+.birthRow :global(.form-field) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  min-height: calc(1.5em + var(--spacing-xs) + var(--size-touch-min));
 }
 
 .numberWrap {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
+  min-height: calc(1.5em + var(--spacing-xs) + var(--size-touch-min));
+  justify-content: flex-start;
+}
+
+.numberWrap :global(.form-label) {
+  min-height: 1.5em;
+  display: block;
+}
+
+.numberWrap .lbOz,
+.numberWrap .heightIn {
+  min-height: var(--size-touch-min);
+  display: flex;
+  align-items: center;
 }
 
 .numberWrap :global(.form-label) {
@@ -211,7 +250,6 @@
 .heightIn :global(.form-input) {
   width: 4.5rem;
   min-width: 4.5rem;
-  min-height: 2.5rem;
   text-align: center;
 }
 
@@ -260,6 +298,10 @@
 
 .actions button {
   min-height: 2.5rem;
+}
+
+.actions button[type="submit"] {
+  width: 8rem;
 }
 
 .avatarModalOverlay {

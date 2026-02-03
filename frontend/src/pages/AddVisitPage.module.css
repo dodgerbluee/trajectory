@@ -1,0 +1,7 @@
+/* Add visit page – actions */
+
+.visitDetailActions {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}

@@ -16,6 +16,7 @@ import { VisitFormSidebar } from '../visit-form/VisitFormSidebar';
 import layoutStyles from '../styles/visit-detail-layout.module.css';
 import pageLayout from '../styles/page-layout.module.css';
 import formLayout from '../styles/VisitFormLayout.module.css';
+import styles from './EditVisitPage.module.css';
 
 
 
@@ -374,7 +375,7 @@ function EditVisitPage() {
               >
                 ← Back to {child.name}
               </Link>
-              <div className="visit-detail-actions">
+              <div className={styles.visitDetailActions}>
                 <Button type="submit" disabled={submitting} size="sm">
                   {submitting ? 'Saving...' : 'Save'}
                 </Button>

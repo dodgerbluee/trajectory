@@ -162,7 +162,7 @@ function RefractionNumberInput({
   const id = useId();
   return (
     <div className={mui.field}>
-      <label htmlFor={id} className="visually-hidden">
+      <label htmlFor={id} className={mui.visuallyHidden}>
         {ariaLabel}
       </label>
       <div className={mui.inputWithSuffix}>

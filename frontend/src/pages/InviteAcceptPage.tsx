@@ -6,6 +6,7 @@ import Button from '../components/Button';
 import ErrorMessage from '../components/ErrorMessage';
 import CreateUserModal from '../components/CreateUserModal';
 import { invitesApi, ApiClientError } from '../lib/api-client';
+import styles from './InviteAcceptPage.module.css';
 
 function InviteAcceptPage() {
   const [searchParams] = useSearchParams();
@@ -80,10 +81,10 @@ function InviteAcceptPage() {
 
   if (authLoading) {
     return (
-      <div className="login-page">
-        <div className="login-container">
-          <Card className="login-card">
-            <p className="login-subtitle">Loading…</p>
+      <div className={styles.root}>
+        <div className={styles.container}>
+          <Card className={styles.card}>
+            <p className={styles.subtitle}>Loading…</p>
           </Card>
         </div>
       </div>
@@ -93,28 +94,28 @@ function InviteAcceptPage() {
   const hasToken = token.trim().length > 0;
 
   return (
-    <div className="login-page">
-      <div className="login-container">
-        <Card className="login-card">
-          <div className="login-header">
+    <div className={styles.root}>
+      <div className={styles.container}>
+        <Card className={styles.card}>
+          <div className={styles.header}>
             <img
               src="/logo/trajectory.png"
               alt="Trajectory Logo"
-              className="login-logo"
+              className={styles.logo}
             />
-            <h1 className="login-title">Accept family invite</h1>
+            <h1 className={styles.title}>Accept family invite</h1>
             {hasToken ? (
               isAuthenticated ? (
-                <p className="login-subtitle">
+                <p className={styles.subtitle}>
                   You're signed in. Click below to join the family.
                 </p>
               ) : (
-                <p className="login-subtitle">
+                <p className={styles.subtitle}>
                   Create an account to join this family and get access.
                 </p>
               )
             ) : (
-              <p className="login-subtitle">
+              <p className={styles.subtitle}>
                 Paste the invite link or token you received to join the family.
               </p>
             )}
@@ -125,13 +126,13 @@ function InviteAcceptPage() {
           )}
 
           {hasToken && isAuthenticated && (
-            <form onSubmit={handleJoinFamily} className="login-form" noValidate>
+            <form onSubmit={handleJoinFamily} className={styles.form} noValidate>
               <Button
                 type="submit"
                 variant="primary"
                 fullWidth
                 disabled={loading}
-                className="login-button"
+                className={styles.button}
               >
                 {loading ? 'Joining…' : 'Join family'}
               </Button>
@@ -140,12 +141,12 @@ function InviteAcceptPage() {
 
           {hasToken && !isAuthenticated && (
             <>
-              <div className="login-form">
+              <div className={styles.form}>
                 <Button
                   type="button"
                   variant="primary"
                   fullWidth
-                  className="login-button"
+                  className={styles.button}
                   onClick={() => setCreateUserOpen(true)}
                 >
                   Create account to join
@@ -155,7 +156,7 @@ function InviteAcceptPage() {
                   <Link
                     to="/login"
                     state={{ from: `/invite?token=${encodeURIComponent(token.trim())}` }}
-                    className="button-as-link"
+                    className={styles.buttonAsLink}
                   >
                     Sign in
                   </Link>
@@ -171,16 +172,16 @@ function InviteAcceptPage() {
           )}
 
           {!hasToken && (
-            <form onSubmit={handleJoinFamily} className="login-form" noValidate>
-              <div className="form-field">
-                <label htmlFor="invite-token" className="form-label">
+            <form onSubmit={handleJoinFamily} className={styles.form} noValidate>
+              <div className={styles.formField}>
+                <label htmlFor="invite-token" className={styles.formLabel}>
                   Invite link or token
-                  <span className="required-indicator">*</span>
+                  <span className={styles.requiredIndicator}>*</span>
                 </label>
                 <input
                   id="invite-token"
                   type="text"
-                  className="form-input"
+                  className={styles.formInput}
                   value={token}
                   onChange={(e) => setToken(e.target.value)}
                   placeholder="Paste the invite link or token"
@@ -193,7 +194,7 @@ function InviteAcceptPage() {
                 variant="primary"
                 fullWidth
                 disabled={loading || !token.trim()}
-                className="login-button"
+                className={styles.button}
               >
                 Continue
               </Button>

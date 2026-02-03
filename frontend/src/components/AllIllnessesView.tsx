@@ -3,10 +3,8 @@ import { illnessesApi, childrenApi, ApiClientError } from '../lib/api-client';
 import type { Illness, Child, IllnessType } from '../types/api';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
-import TimelineItem from './TimelineItem';
-import Card from './Card';
+import IllnessesTimeline from './IllnessesTimeline';
 import IllnessesSidebar from './IllnessesSidebar';
-import tl from './TimelineList.module.css';
 import visitsLayout from '../styles/VisitsLayout.module.css';
 import { LuActivity } from 'react-icons/lu';
 
@@ -59,22 +57,6 @@ function AllIllnessesView() {
     }
   };
 
-  // Create a map for quick child lookup
-  const childMap = useMemo(() => {
-    const map = new Map<number, Child>();
-    children.forEach(child => map.set(child.id, child));
-    return map;
-  }, [children]);
-
-  // Sort illnesses by start_date (most recent first)
-  const sortedIllnesses = useMemo(() => {
-    return [...illnesses].sort((a, b) => {
-      const dateA = new Date(a.start_date).getTime();
-      const dateB = new Date(b.start_date).getTime();
-      return dateB - dateA; // Descending = most recent first
-    });
-  }, [illnesses]);
-
   // stats source (unfiltered) so counts remain stable when filtering
   const statsSource = useMemo(() => allIllnesses, [allIllnesses]);
 
@@ -100,31 +82,11 @@ function AllIllnessesView() {
       />
 
       <main className={visitsLayout.main}>
-        {/* Illnesses Timeline */}
-        {sortedIllnesses.length === 0 ? (
-          <Card>
-            <p className={tl.empty}>
-              No illnesses recorded yet. Click "Add Illness" to get started.
-            </p>
-          </Card>
-        ) : (
-          <Card>
-            <div className={tl.list}>
-              {sortedIllnesses.map((illness) => {
-                const child = childMap.get(illness.child_id);
-                return (
-                  <TimelineItem 
-                    key={illness.id}
-                    type="illness" 
-                    data={illness}
-                    childName={child?.name || `Child #${illness.child_id}`}
-                    childId={illness.child_id}
-                  />
-                );
-              })}
-            </div>
-          </Card>
-        )}
+        <IllnessesTimeline
+          illnesses={illnesses}
+          children={children}
+          showChildName={true}
+        />
       </main>
     </div>
   );

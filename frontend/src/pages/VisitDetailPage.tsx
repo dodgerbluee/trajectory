@@ -230,7 +230,7 @@ function VisitDetailPage() {
             </h2>
             <p className={styles.headerDate}>
               {formatDate(visit.visit_date)}
-              {visit.visit_time && <span className="visit-header-time"> at {formatTime(visit.visit_time)}</span>}
+              {visit.visit_time && <span className={styles.visitHeaderTime}> at {formatTime(visit.visit_time)}</span>}
             </p>
           </div>
 

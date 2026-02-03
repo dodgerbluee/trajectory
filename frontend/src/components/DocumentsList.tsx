@@ -107,9 +107,9 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
   };
 
   const getFileIcon = (fileType: string) => {
-    if (fileType.startsWith('image/')) return <LuImage className="document-file-icon" />;
-    if (fileType === 'application/pdf') return <LuFileText className="document-file-icon" />;
-    return <LuFileText className="document-file-icon" />;
+    if (fileType.startsWith('image/')) return <LuImage className={d.documentFileIcon} />;
+    if (fileType === 'application/pdf') return <LuFileText className={d.documentFileIcon} />;
+    return <LuFileText className={d.documentFileIcon} />;
   };
 
   const handleClick = (attachmentId: number, docType: 'visit' | 'child') => {

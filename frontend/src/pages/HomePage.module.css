@@ -318,3 +318,13 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.successBanner {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-success-bg, #d4edda);
+  color: var(--color-success-text, #155724);
+  border: 1px solid var(--color-success-border, #c3e6cb);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}

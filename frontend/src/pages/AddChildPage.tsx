@@ -7,13 +7,13 @@ import { validateChildForm, getTodayDate } from '../lib/validation';
 import type { Gender } from '../types/api';
 import Card from '../components/Card';
 import FormField from '../components/FormField';
+import formFieldStyles from '../components/FormField.module.css';
 import Button from '../components/Button';
 import Notification from '../components/Notification';
 import ImageCropUpload from '../components/ImageCropUpload';
 import ChildAvatar from '../components/ChildAvatar';
 import modalStyles from '../components/Modal.module.css';
 import styles from './AddChildPage.module.css';
-import formLayout from '../styles/FormLayout.module.css';
 
 function AddChildPage() {
   const navigate = useNavigate();
@@ -150,7 +150,7 @@ function AddChildPage() {
           )}
 
           <form onSubmit={handleSubmit} className={styles.form}>
-            {/* Top row: Avatar left, Name right */}
+            {/* Top section: Avatar left, Name/DOB/Gender right */}
             <div className={styles.topRow}>
               <div className={styles.avatarWrap}>
                 <button
@@ -180,53 +180,53 @@ function AddChildPage() {
                 </button>
                 <p className={styles.avatarHint}>Tap to change photo</p>
               </div>
-              <FormField
-                label="Name"
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                error={errors.name}
-                required
-                placeholder="Child's name"
-                disabled={submitting}
-              />
-            </div>
-
-            {/* Second row: DOB and Gender each 1/2 */}
-            <div className={`${styles.row} ${styles.rowHalf}`}>
-              <FormField
-                label="Date of Birth"
-                type="date"
-                value={formData.date_of_birth}
-                onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                error={errors.date_of_birth}
-                required
-                max={getTodayDate()}
-                disabled={submitting}
-              />
-              <div className={`form-field ${styles.genderField}`}>
-                <label className="form-label">
-                  Gender <span className={formLayout.required}>*</span>
-                </label>
-                <div className={styles.genderToggle} role="group" aria-label="Gender">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, gender: 'male' })}
-                    className={`${styles.genderOption} ${formData.gender === 'male' ? styles.selected : ''}`}
+              <div className={styles.nameAndDetails}>
+                <FormField
+                  label="Name"
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  error={errors.name}
+                  required
+                  placeholder="Child's name"
+                  disabled={submitting}
+                />
+                <div className={`${styles.row} ${styles.rowHalf}`}>
+                  <FormField
+                    label="Date of Birth"
+                    type="date"
+                    value={formData.date_of_birth}
+                    onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                    error={errors.date_of_birth}
+                    required
+                    max={getTodayDate()}
                     disabled={submitting}
-                  >
-                    <FaMars className={styles.genderOptionIcon} aria-hidden />
-                    <span>Male</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, gender: 'female' })}
-                    className={`${styles.genderOption} ${formData.gender === 'female' ? styles.selected : ''}`}
-                    disabled={submitting}
-                  >
-                    <FaVenus className={styles.genderOptionIcon} aria-hidden />
-                    <span>Female</span>
-                  </button>
+                  />
+                  <div className={`${formFieldStyles.root} ${styles.genderField}`}>
+                    <label className={formFieldStyles.label}>
+                      Gender <span className={formFieldStyles.requiredIndicator}>*</span>
+                    </label>
+                    <div className={styles.genderToggle} role="group" aria-label="Gender">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, gender: 'male' })}
+                        className={`${styles.genderOption} ${formData.gender === 'male' ? styles.selected : ''}`}
+                        disabled={submitting}
+                      >
+                        <FaMars className={styles.genderOptionIcon} aria-hidden />
+                        <span>Male</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, gender: 'female' })}
+                        className={`${styles.genderOption} ${formData.gender === 'female' ? styles.selected : ''}`}
+                        disabled={submitting}
+                      >
+                        <FaVenus className={styles.genderOptionIcon} aria-hidden />
+                        <span>Female</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -243,7 +243,7 @@ function AddChildPage() {
                 disabled={submitting}
               />
               <div className={styles.numberWrap}>
-                <label className="form-label">Birth Weight</label>
+                <label className={formFieldStyles.label}>Birth Weight</label>
                 <div className={styles.lbOz}>
                   <input
                     type="number"
@@ -271,7 +271,7 @@ function AddChildPage() {
                 </div>
               </div>
               <div className={styles.numberWrap}>
-                <label className="form-label">Birth Height</label>
+                <label className={formFieldStyles.label}>Birth Height</label>
                 <div className={styles.heightIn}>
                   <input
                     type="number"

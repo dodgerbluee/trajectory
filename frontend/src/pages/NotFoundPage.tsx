@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import Card from '../components/Card';
+import Button from '../components/Button';
 import pageLayout from '../styles/page-layout.module.css';
 
 function NotFoundPage() {
@@ -9,7 +10,7 @@ function NotFoundPage() {
         <h1>404 - Page Not Found</h1>
         <p>The page you're looking for doesn't exist.</p>
         <Link to="/">
-          <button className="btn btn-primary">Go Home</button>
+          <Button variant="primary">Go Home</Button>
         </Link>
       </Card>
     </div>

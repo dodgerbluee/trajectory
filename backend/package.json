@@ -17,7 +17,9 @@
     "db:start": "docker-compose up -d database",
     "db:stop": "docker-compose stop database",
     "db:logs": "docker-compose logs -f database",
-    "db:reset": "docker-compose down -v && docker-compose up -d database"
+    "db:reset": "docker-compose down -v && docker-compose up -d database",
+    "db:seed": "tsx src/scripts/seed-mock-data.ts",
+    "db:seed:clear": "tsx src/scripts/seed-mock-data.ts --clear"
   },
   "dependencies": {
     "archiver": "^7.0.1",

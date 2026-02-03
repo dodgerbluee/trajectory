@@ -810,22 +810,18 @@ function SettingsPage() {
                   </h3>
                   <div className={s.familyManagementSectionContent}>
                     <div className={s.familySettingsInviteForm}>
-                    <div className="form-field" style={{ marginBottom: 0 }}>
-                      <label htmlFor={`invite-role-${family.id}`} className="form-label">
-                        Role
-                      </label>
-                      <select
-                        id={`invite-role-${family.id}`}
-                        className="form-input"
-                        value={createInviteRole}
-                        onChange={(e) => setCreateInviteRole(e.target.value as 'parent' | 'read_only')}
-                        style={{ width: 'auto', minWidth: 160 }}
-                        aria-label="Invite role"
-                      >
-                        <option value="parent">Parent (can edit)</option>
-                        <option value="read_only">View only</option>
-                      </select>
-                    </div>
+                    <FormField
+                      label="Role"
+                      type="select"
+                      id={`invite-role-${family.id}`}
+                      value={createInviteRole}
+                      onChange={(e) => setCreateInviteRole(e.target.value as 'parent' | 'read_only')}
+                      options={[
+                        { value: 'parent', label: 'Parent (can edit)' },
+                        { value: 'read_only', label: 'View only' },
+                      ]}
+                      aria-label="Invite role"
+                    />
                     <button
                       type="button"
                       className={mui.cardAdd}
@@ -1103,16 +1099,16 @@ function SettingsPage() {
                   <div className={formFieldStyles.hint}>Must be at least 2 characters long</div>
                 )}
 
-                <div className="form-field">
-                  <label htmlFor="username-password" className="form-label">
+                <div className={s.passwordField}>
+                  <label htmlFor="username-password" className={s.passwordLabel}>
                     Current Password
-                    <span className="required-indicator">*</span>
+                    <span className={s.requiredIndicator}>*</span>
                   </label>
-                  <div className="password-input-wrapper">
+                  <div className={s.passwordInputWrapper}>
                     <input
                       id="username-password"
                       type={showPasswords.usernamePassword ? 'text' : 'password'}
-                      className={`form-input ${errors.usernamePassword ? 'error' : ''}`}
+                      className={`${s.passwordInput} ${errors.usernamePassword ? 'error' : ''}`}
                       value={usernamePassword}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsernamePassword(e.target.value)}
                       required
@@ -1121,7 +1117,7 @@ function SettingsPage() {
                     />
                     <button
                       type="button"
-                      className="password-toggle"
+                      className={s.passwordToggle}
                       onClick={() => setShowPasswords({ ...showPasswords, usernamePassword: !showPasswords.usernamePassword })}
                       aria-label={showPasswords.usernamePassword ? 'Hide password' : 'Show password'}
                       tabIndex={-1}
@@ -1130,7 +1126,7 @@ function SettingsPage() {
                     </button>
                   </div>
                   {errors.usernamePassword && (
-                    <span className="form-error">{errors.usernamePassword}</span>
+                    <span className={s.passwordError}>{errors.usernamePassword}</span>
                   )}
                   {!errors.usernamePassword && (
                     <div className={formFieldStyles.hint}>Enter your current password to confirm</div>
@@ -1173,16 +1169,16 @@ function SettingsPage() {
           {passwordExpanded && (
             <div className={s.expandableContent}>
               <form onSubmit={handleUpdatePassword}>
-                <div className="form-field">
-                  <label htmlFor="current-password" className="form-label">
+                <div className={s.passwordField}>
+                  <label htmlFor="current-password" className={s.passwordLabel}>
                     Current Password
-                    <span className="required-indicator">*</span>
+                    <span className={s.requiredIndicator}>*</span>
                   </label>
-                  <div className="password-input-wrapper">
+                  <div className={s.passwordInputWrapper}>
                     <input
                       id="current-password"
                       type={showPasswords.currentPassword ? 'text' : 'password'}
-                      className={`form-input ${errors.currentPassword ? 'error' : ''}`}
+                      className={`${s.passwordInput} ${errors.currentPassword ? 'error' : ''}`}
                       value={currentPassword}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCurrentPassword(e.target.value)}
                       required
@@ -1191,7 +1187,7 @@ function SettingsPage() {
                     />
                     <button
                       type="button"
-                      className="password-toggle"
+                      className={s.passwordToggle}
                       onClick={() => setShowPasswords({ ...showPasswords, currentPassword: !showPasswords.currentPassword })}
                       aria-label={showPasswords.currentPassword ? 'Hide password' : 'Show password'}
                       tabIndex={-1}
@@ -1200,20 +1196,20 @@ function SettingsPage() {
                     </button>
                   </div>
                   {errors.currentPassword && (
-                    <span className="form-error">{errors.currentPassword}</span>
+                    <span className={s.passwordError}>{errors.currentPassword}</span>
                   )}
                 </div>
 
-                <div className="form-field">
-                  <label htmlFor="new-password" className="form-label">
+                <div className={s.passwordField}>
+                  <label htmlFor="new-password" className={s.passwordLabel}>
                     New Password
-                    <span className="required-indicator">*</span>
+                    <span className={s.requiredIndicator}>*</span>
                   </label>
-                  <div className="password-input-wrapper">
+                  <div className={s.passwordInputWrapper}>
                     <input
                       id="new-password"
                       type={showPasswords.newPassword ? 'text' : 'password'}
-                      className={`form-input ${errors.newPassword ? 'error' : ''}`}
+                      className={`${s.passwordInput} ${errors.newPassword ? 'error' : ''}`}
                       value={newPassword}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPassword(e.target.value)}
                       required
@@ -1222,7 +1218,7 @@ function SettingsPage() {
                     />
                     <button
                       type="button"
-                      className="password-toggle"
+                      className={s.passwordToggle}
                       onClick={() => setShowPasswords({ ...showPasswords, newPassword: !showPasswords.newPassword })}
                       aria-label={showPasswords.newPassword ? 'Hide password' : 'Show password'}
                       tabIndex={-1}
@@ -1231,23 +1227,23 @@ function SettingsPage() {
                     </button>
                   </div>
                   {errors.newPassword && (
-                    <span className="form-error">{errors.newPassword}</span>
+                    <span className={s.passwordError}>{errors.newPassword}</span>
                   )}
                   {!errors.newPassword && (
                     <div className={formFieldStyles.hint}>Must be at least 8 characters with uppercase, lowercase, number, and special character</div>
                   )}
                 </div>
 
-                <div className="form-field">
-                  <label htmlFor="confirm-password" className="form-label">
+                <div className={s.passwordField}>
+                  <label htmlFor="confirm-password" className={s.passwordLabel}>
                     Confirm New Password
-                    <span className="required-indicator">*</span>
+                    <span className={s.requiredIndicator}>*</span>
                   </label>
-                  <div className="password-input-wrapper">
+                  <div className={s.passwordInputWrapper}>
                     <input
                       id="confirm-password"
                       type={showPasswords.confirmPassword ? 'text' : 'password'}
-                      className={`form-input ${errors.confirmPassword ? 'error' : ''}`}
+                      className={`${s.passwordInput} ${errors.confirmPassword ? 'error' : ''}`}
                       value={confirmPassword}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
                       required
@@ -1256,7 +1252,7 @@ function SettingsPage() {
                     />
                     <button
                       type="button"
-                      className="password-toggle"
+                      className={s.passwordToggle}
                       onClick={() => setShowPasswords({ ...showPasswords, confirmPassword: !showPasswords.confirmPassword })}
                       aria-label={showPasswords.confirmPassword ? 'Hide password' : 'Show password'}
                       tabIndex={-1}
@@ -1265,7 +1261,7 @@ function SettingsPage() {
                     </button>
                   </div>
                   {errors.confirmPassword && (
-                    <span className="form-error">{errors.confirmPassword}</span>
+                    <span className={s.passwordError}>{errors.confirmPassword}</span>
                   )}
                 </div>
 
@@ -1581,33 +1577,26 @@ function SettingsPage() {
               </button>
             </div>
             <div className={modalStyles.body}>
-              <div className="form-field">
-                <label htmlFor="new-family-name" className="form-label">
-                  Family name
-                </label>
-                <input
-                  id="new-family-name"
-                  type="text"
-                  className={`form-input ${newFamilyNameError ? 'error' : ''}`}
-                  value={newFamilyName}
-                  onChange={(e) => {
-                    setNewFamilyName(e.target.value);
-                    setNewFamilyNameError(null);
-                  }}
-                  placeholder="e.g. Smith Family"
-                  disabled={loading.familyCreate}
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddFamily(newFamilyName);
-                    }
-                  }}
-                />
-                {newFamilyNameError && (
-                  <span className="form-error">{newFamilyNameError}</span>
-                )}
-              </div>
+              <FormField
+                label="Family name"
+                type="text"
+                id="new-family-name"
+                value={newFamilyName}
+                onChange={(e) => {
+                  setNewFamilyName(e.target.value);
+                  setNewFamilyNameError(null);
+                }}
+                placeholder="e.g. Smith Family"
+                disabled={loading.familyCreate}
+                error={newFamilyNameError || undefined}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddFamily(newFamilyName);
+                  }
+                }}
+              />
             </div>
             <div className={modalStyles.footer}>
               <Button

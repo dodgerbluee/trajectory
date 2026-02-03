@@ -50,7 +50,7 @@ export default function IllnessesSidebar({ stats, childrenList, selectedChildId,
         </nav>
 
         {!hideChildFilter && (
-          <div className={layout.sidebarSection}>
+          <div className={layout.childSidebarSection}>
             <h4 className={layout.sidebarSectionTitle}>Child Filter</h4>
             <ChildSelector childrenList={childrenList} selectedChildId={selectedChildId} onSelect={onSelectChild} />
 

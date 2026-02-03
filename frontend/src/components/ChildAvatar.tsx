@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { childrenApi } from '../lib/api-client';
 
 interface ChildAvatarProps {
@@ -14,19 +14,13 @@ interface ChildAvatarProps {
  * Default = public URL; custom = URL with token in query. Stays correct when navigating.
  */
 function ChildAvatar({ avatar, gender, alt = 'Avatar', className, style }: ChildAvatarProps) {
-  const [src, setSrc] = useState<string>('');
-
-  useEffect(() => {
-    if (!avatar) {
-      setSrc(childrenApi.getDefaultAvatarUrl(gender));
-    } else {
-      setSrc(childrenApi.getAvatarUrl(avatar));
+  // Compute URL directly from props - no state management that can get out of sync
+  const src = useMemo(() => {
+    if (avatar) {
+      return childrenApi.getAvatarUrl(avatar);
     }
+    return childrenApi.getDefaultAvatarUrl(gender);
   }, [avatar, gender]);
-
-  const handleError = () => {
-    setSrc(childrenApi.getDefaultAvatarUrl(gender));
-  };
 
   return (
     <img
@@ -34,7 +28,7 @@ function ChildAvatar({ avatar, gender, alt = 'Avatar', className, style }: Child
       alt={alt}
       className={className}
       style={style}
-      onError={handleError}
+      key={avatar || `default-${gender}`}
     />
   );
 }

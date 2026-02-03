@@ -11,6 +11,7 @@ interface HeatmapProps {
   data: HeatmapData;
   onDayClick?: (date: string) => void;
   isSingleChild?: boolean; // If true, don't show numbers and use severity for color
+  totalChildren?: number; // Total number of children (for max calculation when viewing all children)
 }
 
 interface DayCell {
@@ -70,7 +71,11 @@ function getColorIntensity(count: number, maxCount: number): string {
   }
 }
 
-function Heatmap({ data, onDayClick, isSingleChild = false }: HeatmapProps) {
+function Heatmap({ data, onDayClick, isSingleChild = false, totalChildren }: HeatmapProps) {
+  // Calculate the max value for color scaling
+  // For single child: max is always 10 (severity scale)
+  // For all children: max is total number of children (or fallback to maxCount if totalChildren not provided)
+  const maxForColor = isSingleChild ? 10 : ((totalChildren ?? data.maxCount) || 1);
   // Create a map of date -> day data for quick lookup
   const dayMap = useMemo(() => {
     const map = new Map<string, HeatmapDay>();
@@ -202,9 +207,7 @@ function Heatmap({ data, onDayClick, isSingleChild = false }: HeatmapProps) {
                   );
                 }
                 
-                // For single child: severity is 1-10, so use 10 as max for color calculation
-                // For all children: use the actual maxCount from data
-                const maxForColor = isSingleChild ? 10 : data.maxCount;
+                // Use the calculated maxForColor for consistent color scaling
                 const color = getColorIntensity(day.count, maxForColor);
                 const tooltipText = isSingleChild
                   ? `${day.date}: Severity ${Math.round(day.count)}/10`
@@ -225,13 +228,15 @@ function Heatmap({ data, onDayClick, isSingleChild = false }: HeatmapProps) {
         </div>
       </div>
       
-      {/* Legend */}
+      {/* Legend - Always show with percentage-based colors (0%, 25%, 50%, 75%, 100%) */}
       <div className={styles.legend}>
         <span className={styles.legendLabel}>Less</span>
         <div className={styles.legendColors}>
           {[0, 1, 2, 3, 4].map((level) => {
-            const mockCount = Math.round((level / 4) * data.maxCount);
-            const color = getColorIntensity(mockCount, data.maxCount);
+            // Calculate percentage: 0% (level 0), 25% (level 1), 50% (level 2), 75% (level 3), 100% (level 4)
+            const percentage = level / 4;
+            const mockCount = percentage * maxForColor;
+            const color = getColorIntensity(mockCount, maxForColor);
             return (
               <div
                 key={level}

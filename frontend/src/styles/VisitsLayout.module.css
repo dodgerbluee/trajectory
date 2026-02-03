@@ -52,7 +52,7 @@
   gap: var(--spacing-sm);
 }
 
-.sidebarSection {
+.childSidebarSection {
   margin-top: var(--spacing-lg);
 }
 

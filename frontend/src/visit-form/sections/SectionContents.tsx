@@ -110,7 +110,7 @@ export function VisitInformationSection({ context }: SectionContentPropsWithCont
             />
           )}
           <div className={sectionStyles.tagsField}>
-            <label className="form-label">Tags</label>
+            <label className={sectionStyles.formLabel}>Tags</label>
             <TagInput
               tags={formData.tags || []}
               onChange={(tags) => setForm((prev: any) => ({ ...prev, tags }))}
@@ -256,14 +256,14 @@ export function IllnessSection({ context }: SectionContentPropsWithContext) {
         minEndDate={formData.illness_start_date || formData.visit_date || undefined}
       />
       {selectedIllnesses.length > 0 && (
-        <div className="form-field illness-create-entry-field">
+        <div className={`${sectionStyles.formField} illness-create-entry-field`}>
           <Checkbox
             label="Create illness entry (auto-track this illness)"
             checked={(formData as any).create_illness || false}
             onChange={(checked) => setForm((prev: any) => ({ ...prev, create_illness: checked }))}
             disabled={submitting}
           />
-          <p className="form-field-hint form-field-hint-italic">
+          <p className={`${sectionStyles.formFieldHint} ${sectionStyles.formFieldHintItalic}`}>
             This will create a separate illness record that can be tracked independently from the visit.
           </p>
         </div>
@@ -367,8 +367,8 @@ export function DentalSection({ context }: SectionContentPropsWithContext) {
   ];
   
   return (
-    <div className="dental-ui">
-      <div className="dental-form-fields">
+    <div className={sectionStyles.dentalUi}>
+      <div className={sectionStyles.dentalFormFields}>
         <FormField
           label="Dental Visit Type"
           type="select"
@@ -389,7 +389,7 @@ export function DentalSection({ context }: SectionContentPropsWithContext) {
           />
         )}
         
-        <div className="dental-checkboxes" style={{ display: 'flex', gap: 'var(--spacing-md)', flexWrap: 'wrap', marginBottom: 'var(--spacing-md)' }}>
+        <div className={sectionStyles.dentalCheckboxes}>
           <Checkbox
             label="X-Rays Taken"
             checked={fd.xrays_taken || false}
@@ -410,7 +410,7 @@ export function DentalSection({ context }: SectionContentPropsWithContext) {
           />
         </div>
         
-        <div className="dental-numbers" style={{ display: 'flex', gap: '16px' }}>
+        <div className={sectionStyles.dentalNumbers}>
           <div style={{ flex: 1 }}>
             <FormField
               label="Cavities Found"

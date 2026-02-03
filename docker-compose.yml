@@ -3,13 +3,15 @@ services:
     image: postgres:16-alpine
     container_name: trajectory-db
     volumes:
-      - ../trajectory-data/postgres_data:/var/lib/postgresql/data
-      # Optional: run "docker compose exec database psql -U trajectory_user -d trajectory -f /scripts/make-dodgerbluee-admin.sql" to make dodgerbluee an instance admin
+      # Local DB data (instead of named volume)
+      - ../trajectory-data/data:/var/lib/postgresql/data
+      # Optional admin script (unchanged)
       - ./database/make-dodgerbluee-admin.sql:/scripts/make-dodgerbluee-admin.sql
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-trajectory}
-      POSTGRES_USER: ${POSTGRES_USER:-trajectory}
+      POSTGRES_USER: ${POSTGRES_USER:-trajectory_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-development_password}
+      TZ: ${TZ:-UTC}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-trajectory_user} -d ${POSTGRES_DB:-trajectory}"]
       interval: 5s
@@ -21,10 +23,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ""
+        VITE_BASE_PATH: ""
     container_name: trajectory-app
     ports:
       - "3000:3001"
     volumes:
+      # Local app data (instead of named volumes)
       - ../trajectory-data/uploads_data:/app/uploads
       - ../trajectory-data/avatars_data:/app/avatars
     environment:
@@ -40,7 +46,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health', r => process.exit(r.statusCode === 200 ? 0 : 1))"]
       interval: 10s
       timeout: 5s
       retries: 3

@@ -89,7 +89,7 @@ export function VisitFormSidebar({ activeSections, onAddSection, isFutureVisit, 
           <div className={layout.sidebarBrand}>Add to visit</div>
         </header>
         <div className={`${layout.sidebarDivider} ${f?.formSidebarDivider ?? ''}`.trim()} />
-        <div className={`${layout.sidebarSection} ${f?.formSidebarSection ?? ''}`.trim()}>
+        <div className={`${f?.formSidebarSection ?? ''}`.trim()}>
           <h4 className={`${layout.sidebarSectionTitle} ${f?.formSidebarSectionTitle ?? ''}`.trim()}>Add section</h4>
           <div className={`${layout.sidebarAction} ${f?.formSidebarAction ?? ''}`.trim()} style={{ marginTop: 12 }}>
             {showUseFullFormButton && onUseFullForm ? (

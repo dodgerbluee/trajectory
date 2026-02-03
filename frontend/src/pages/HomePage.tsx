@@ -376,7 +376,7 @@ function HomePage() {
       {successMessage && (
         <div
           role="alert"
-          className="success-banner"
+          className={styles.successBanner}
           style={{
             marginBottom: '1rem',
             padding: '0.75rem 1rem',

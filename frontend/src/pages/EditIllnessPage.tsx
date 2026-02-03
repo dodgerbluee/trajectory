@@ -13,6 +13,7 @@ import { SectionWrapper } from '../visit-form/SectionWrapper';
 import layoutStyles from '../styles/visit-detail-layout.module.css';
 import pageLayout from '../styles/page-layout.module.css';
 import tl from '../components/TimelineList.module.css';
+import styles from './EditIllnessPage.module.css';
 
 function EditIllnessPage() {
   const { id } = useParams<{ id: string }>();
@@ -168,9 +169,9 @@ function EditIllnessPage() {
             <h2 className={layoutStyles.headerTitle}>Edit Illness{child ? ` — ${child.name}` : ''}</h2>
 
             <SectionWrapper sectionId="illness" label="Illness" removable={false} isLast>
-                <div className="form-field">
-                  <label className="form-label">Child</label>
-                  <div className="form-readonly">{child?.name ?? `Child #${illness.child_id}`}</div>
+                <div className={styles.formField}>
+                  <label className={styles.formLabel}>Child</label>
+                  <div className={styles.formReadonly}>{child?.name ?? `Child #${illness.child_id}`}</div>
                 </div>
 
                 <IllnessEntryFormFields

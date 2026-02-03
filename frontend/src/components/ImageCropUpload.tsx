@@ -164,14 +164,14 @@ function ImageCropUpload({ onImageCropped, currentImageUrl, disabled }: ImageCro
           </p>
         </div>
       ) : (
-        <div className="cropper-modal">
-          <div className="cropper-container">
-            <div className="cropper-header">
+        <div className={cropStyles.cropperModal}>
+          <div className={cropStyles.cropperContainer}>
+            <div className={cropStyles.cropperHeader}>
               <h3>Adjust Your Avatar</h3>
               <p>Move and zoom to select the area you want</p>
             </div>
-            
-            <div className="cropper-area">
+
+            <div className={cropStyles.cropperArea}>
               {imageSrc && (
                 <Cropper
                   image={imageSrc}

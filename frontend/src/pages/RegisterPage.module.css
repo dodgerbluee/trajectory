@@ -1,0 +1,195 @@
+/* Register page – layout, card, form, password field, footer. Reuses LoginPage styles. */
+
+.root {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  background: var(--color-background);
+}
+
+.container {
+  width: 100%;
+  max-width: 25rem;
+}
+
+.card {
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-2xl);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.logo {
+  width: 3.5rem;
+  height: 3.5rem;
+  margin: 0 auto var(--spacing-md);
+  display: block;
+  object-fit: contain;
+}
+
+.title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-xs);
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.passwordField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-bottom: 0;
+}
+
+.passwordLabel {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.requiredIndicator {
+  color: var(--color-danger);
+  margin-left: var(--spacing-xs);
+}
+
+.passwordInputWrapper {
+  position: relative;
+  display: block;
+}
+
+.passwordInput {
+  padding: var(--spacing-sm) var(--spacing-md);
+  padding-right: 44px;
+  font-size: var(--font-size-base);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  transition: border-color var(--transition-base);
+  background-color: var(--entry-background-color);
+  color: var(--color-text-primary);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.passwordInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.passwordInput:global(.error),
+.passwordInput.error {
+  border-color: var(--color-danger);
+}
+
+.passwordToggle {
+  position: absolute;
+  top: 50%;
+  right: var(--spacing-sm);
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  transition: color var(--transition-base), background var(--transition-base);
+  z-index: 1;
+}
+
+.passwordToggle:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+}
+
+.passwordToggle:focus {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.passwordError {
+  display: block;
+  margin-top: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--color-danger);
+}
+
+.button {
+  margin-top: var(--spacing-sm);
+}
+
+.footer {
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-xl);
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+}
+
+.footer p {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.registerLink {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+  transition: color var(--transition-base);
+}
+
+.registerLink:hover {
+  color: var(--color-primary-hover, var(--color-primary));
+  text-decoration: underline;
+}
+
+/* Dark mode */
+[data-theme="dark"] .root {
+  background: var(--color-background);
+}
+
+[data-theme="dark"] .card {
+  background: var(--color-background-card);
+  border-color: var(--color-border);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .root {
+    padding: var(--spacing-md);
+  }
+
+  .card {
+    padding: var(--spacing-xl);
+  }
+
+  .title {
+    font-size: 1.375rem;
+  }
+}

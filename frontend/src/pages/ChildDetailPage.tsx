@@ -16,8 +16,8 @@ import cd from './ChildDetailPage.module.css';
 import pageLayout from '../styles/page-layout.module.css';
 import visitsLayout from '../styles/VisitsLayout.module.css';
 import vi from '../styles/VisitIcons.module.css';
-import tl from '../components/TimelineList.module.css';
-import TimelineItem from '../components/TimelineItem';
+import VisitsTimeline from '../components/VisitsTimeline';
+import IllnessesTimeline from '../components/IllnessesTimeline';
 import Tabs from '../components/Tabs';
 import DocumentsList from '../components/DocumentsList';
 import DocumentsSidebar, { type DocumentTypeFilter } from '../components/DocumentsSidebar';
@@ -422,9 +422,9 @@ function ChildDetailPage() {
 
       {/* Unified Overview and Tabs Section */}
       <Card>
-        <div className="child-detail-body">
+        <div className={cd.childDetailBody}>
           {/* Overview Section - without header title */}
-          <div className="child-detail-section">
+          <div className={cd.childDetailSection}>
             <Link to="/" className={`${pageLayout.breadcrumb} ${pageLayout.childDetailSectionBreadcrumb}`}>← Back to Children</Link>
             <div className={cd.overviewHeader}>
               <div className={cd.overviewMain}>
@@ -547,7 +547,7 @@ function ChildDetailPage() {
           </div>
 
           {/* Tabs Section */}
-          <div className="child-detail-section">
+          <div className={cd.childDetailSection}>
             {(() => {
               const tabsArray: any[] = [];
 
@@ -616,27 +616,11 @@ function ChildDetailPage() {
                     />
 
                     <main className={visitsLayout.main}>
-                      {visitItems.length === 0 ? (
-                        <Card>
-                          <p className={tl.empty}>
-                            No visits recorded yet. Click "Add Visit" to get started.
-                          </p>
-                        </Card>
-                      ) : (
-                        <Card>
-                          <div className={tl.list}>
-                            {visitItems.map((item) => (
-                              <TimelineItem
-                                key={item.id}
-                                type="visit"
-                                data={item.data}
-                                hasAttachments={visitsWithAttachments.has(item.data.id)}
-                                childName={undefined} // Child detail page: don't show child badge here
-                              />
-                            ))}
-                          </div>
-                        </Card>
-                      )}
+                      <VisitsTimeline
+                        visits={visitItems.map(item => item.data)}
+                        visitsWithAttachments={visitsWithAttachments}
+                        showChildName={false}
+                      />
                     </main>
                   </div>
                 ),
@@ -681,25 +665,10 @@ function ChildDetailPage() {
                       addIllnessChildId={child?.id}
                     />
                     <main className={visitsLayout.main}>
-                      {illnessItems.length === 0 ? (
-                        <Card>
-                          <p className={tl.empty}>
-                            No illnesses recorded yet. Click "Add Illness" to get started.
-                          </p>
-                        </Card>
-                      ) : (
-                        <Card>
-                          <div className={tl.list}>
-                            {illnessItems.map((item) => (
-                              <TimelineItem
-                                key={item.id}
-                                type="illness"
-                                data={item.data}
-                              />
-                            ))}
-                          </div>
-                        </Card>
-                      )}
+                      <IllnessesTimeline
+                        illnesses={illnessItems.map(item => item.data)}
+                        showChildName={false}
+                      />
                     </main>
                   </div>
                 ),

@@ -190,14 +190,14 @@ export default function WelcomePage() {
                   <p className={loadingStyles.welcomeLoading}>Loading…</p>
                 ) : (
                   <>
-                    <div className="form-field">
-                      <label htmlFor="welcome-family-name" className="form-label">
+                    <div className={w.formField}>
+                      <label htmlFor="welcome-family-name" className={w.formLabel}>
                         Family name
                       </label>
                       <input
                         id="welcome-family-name"
                         type="text"
-                        className="form-input"
+                        className={w.formInput}
                         value={familyName}
                         onChange={(e) => setFamilyName(e.target.value)}
                         placeholder="e.g. Smith Family"

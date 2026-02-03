@@ -78,7 +78,7 @@ export default function TrendsSidebar({
         </div>
 
         {showChildFilter && (
-          <div className={layout.sidebarSection}>
+          <div className={layout.childSidebarSection}>
             <h4 className={layout.sidebarSectionTitle}>Child Filter</h4>
             <ChildSelector childrenList={childrenList} selectedChildId={selectedChildId} onSelect={onSelectChild} />
           </div>
