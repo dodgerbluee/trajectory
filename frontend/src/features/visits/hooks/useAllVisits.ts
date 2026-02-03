@@ -1,38 +1,41 @@
-import { useCallback, useEffect, useState } from 'react';
-import { visitsApi, childrenApi, ApiClientError } from '@lib/api-client';
-import type { Visit, Child, VisitType } from '@shared/types/api';
+import { useEffect, useState, useMemo } from 'react';
+import { visitsApi } from '@lib/api-client';
+import type { VisitType } from '@shared/types/api';
+import { useVisitsData } from './useVisitsData';
+import { useChildrenData } from '@features/children/hooks';
 
 export function useAllVisits() {
-  const [allVisits, setAllVisits] = useState<Visit[]>([]);
-  const [visits, setVisits] = useState<Visit[]>([]);
-  const [children, setChildren] = useState<Child[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { allVisits, loading: loadingVisits, error: errorVisits, reload: reloadVisits } = useVisitsData();
+  const { children, loading: loadingChildren, error: errorChildren, reload: reloadChildren } = useChildrenData();
+  
   const [filterChildId, setFilterChildId] = useState<number | undefined>(undefined);
   const [filterVisitType, setFilterVisitType] = useState<VisitType | undefined>(undefined);
   const [visitsWithAttachments, setVisitsWithAttachments] = useState<Set<number>>(new Set());
+  const [loadingAttachments, setLoadingAttachments] = useState(false);
 
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  const filteredVisits = useMemo(() => {
+    let result = allVisits;
+    if (filterChildId) {
+      result = result.filter(v => v.child_id === filterChildId);
+    }
+    if (filterVisitType) {
+      result = result.filter(v => v.visit_type === filterVisitType);
+    }
+    return result;
+  }, [allVisits, filterChildId, filterVisitType]);
 
-      const [visitsResponse, childrenResponse] = await Promise.all([
-        visitsApi.getAll({
-          child_id: filterChildId,
-          limit: 500,
-        }),
-        childrenApi.getAll(),
-      ]);
+  // Load attachment information for displayed visits
+  useEffect(() => {
+    const checkAttachments = async () => {
+      if (filteredVisits.length === 0) {
+        setVisitsWithAttachments(new Set());
+        return;
+      }
 
-      setAllVisits(visitsResponse.data);
-      const displayed = filterVisitType ? visitsResponse.data.filter(v => v.visit_type === filterVisitType) : visitsResponse.data;
-      setVisits(displayed);
-      setChildren(childrenResponse.data);
-
+      setLoadingAttachments(true);
       try {
         const checks = await Promise.all(
-          displayed.map(async (visit) => {
+          filteredVisits.map(async (visit) => {
             try {
               const resp = await visitsApi.getAttachments(visit.id);
               return (resp.data && resp.data.length > 0) ? visit.id : null;
@@ -46,34 +49,28 @@ export function useAllVisits() {
         checks.forEach(id => { if (id !== null) ids.add(id as number); });
         setVisitsWithAttachments(ids);
       } catch (err) {
-        // ignore
+        // ignore attachment loading errors
+      } finally {
+        setLoadingAttachments(false);
       }
-    } catch (err) {
-      if (err instanceof ApiClientError) {
-        setError(err.message);
-      } else {
-        setError('Failed to load visits');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [filterChildId, filterVisitType]);
+    };
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+    checkAttachments();
+  }, [filteredVisits]);
 
   return {
     allVisits,
-    visits,
+    visits: filteredVisits,
     children,
-    loading,
-    error,
+    loading: loadingVisits || loadingChildren || loadingAttachments,
+    error: errorVisits || errorChildren,
     filterChildId,
     filterVisitType,
     setFilterChildId,
     setFilterVisitType,
     visitsWithAttachments,
-    reload: loadData,
+    reload: async () => {
+      await Promise.all([reloadVisits(), reloadChildren()]);
+    },
   };
 }

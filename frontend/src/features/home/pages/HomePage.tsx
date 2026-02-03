@@ -11,8 +11,9 @@ import MetricsView from '@shared/components/MetricsView';
 import TrendsSidebar from '@shared/components/TrendsSidebar';
 import VisitTypeModal from '@shared/components/VisitTypeModal';
 import { FamilyTabView } from '../components';
-import { useFamilies, useUpcomingVisits } from '../hooks';
-import { useChildren } from '@features/children';
+import { useFamiliesData } from '../hooks/useFamiliesData';
+import { useUpcomingVisitsData } from '../hooks/useUpcomingVisitsData';
+import { useChildrenData } from '@features/children/hooks';
 import styles from './HomePage.module.css';
 import pageLayout from '@shared/styles/page-layout.module.css';
 import visitsLayout from '@shared/styles/VisitsLayout.module.css';
@@ -31,22 +32,17 @@ function HomePage() {
   const [metricsYear, setMetricsYear] = useState<number>(new Date().getFullYear());
   const [metricsFilterChildId, setMetricsFilterChildId] = useState<number | undefined>(undefined);
 
-  // Use the extracted hooks for families, children, and upcoming visits
-  const { families, loading: loadingFamilies, error: errorFamilies, loadFamilies } = useFamilies();
-  const { children, loading: loadingChildren, error: errorChildren, loadChildren } = useChildren();
-  const { upcomingVisits, loading: loadingUpcoming, loadUpcomingVisits } = useUpcomingVisits();
+  // Use the new data-loading hooks (data fetching separated from rendering)
+  const { children, loading: loadingChildren, error: errorChildren, reload: reloadChildren } = useChildrenData();
+  const { families, loading: loadingFamilies, error: errorFamilies, reload: reloadFamilies } = useFamiliesData();
+  const { upcomingVisits, loading: loadingUpcoming, reload: reloadUpcoming } = useUpcomingVisitsData();
 
   const loading = loadingFamilies || loadingChildren;
   const error = errorFamilies || errorChildren;
 
-  useEffect(() => {
-    if (activeTab === 'family' || activeTab === 'trends') {
-      loadChildren();
-      loadFamilies();
-      loadUpcomingVisits();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
+  const handleRetry = async () => {
+    await Promise.all([reloadChildren(), reloadFamilies(), reloadUpcoming()]);
+  };
 
   useEffect(() => {
     if (stateTab) {
@@ -71,7 +67,7 @@ function HomePage() {
   const familyContent = (
     <div className={styles.familyTab}>
       {loading && <LoadingSpinner message="Loading family..." />}
-      {error && <ErrorMessage message={error} onRetry={loadChildren} />}
+      {error && <ErrorMessage message={error} onRetry={handleRetry} />}
       {!loading && !error && (
         <FamilyTabView
           children={children}
@@ -80,7 +76,7 @@ function HomePage() {
           loading={loadingFamilies || loadingChildren}
           error={errorFamilies || errorChildren}
           loadingUpcoming={loadingUpcoming}
-          onRetry={loadChildren}
+          onRetry={handleRetry}
         />
       )}
     </div>
