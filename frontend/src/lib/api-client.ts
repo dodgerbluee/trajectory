@@ -333,12 +333,51 @@ export const childrenApi = {
     formData.append('file', file);
     formData.append('document_type', documentType);
 
+    const accessToken = getAccessToken();
+    const headers: Record<string, string> = {};
+    
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/children/${childId}/attachments`, {
       method: 'POST',
+      headers,
       body: formData,
     });
 
     if (!response.ok) {
+      // Handle 401 with token refresh
+      if (response.status === 401 && accessToken) {
+        const newToken = await tryRefreshToken();
+        if (newToken) {
+          // Retry with new token
+          const retryHeaders: Record<string, string> = {
+            'Authorization': `Bearer ${newToken}`,
+          };
+          const retryResponse = await fetch(`${API_BASE_URL}/api/children/${childId}/attachments`, {
+            method: 'POST',
+            headers: retryHeaders,
+            body: formData,
+          });
+          
+          if (!retryResponse.ok) {
+            const error = await retryResponse.json();
+            throw new ApiClientError(
+              error.error?.message || 'Failed to upload attachment',
+              retryResponse.status,
+              error.error?.type || 'UploadError'
+            );
+          }
+          
+          return retryResponse.json();
+        } else {
+          clearAuthStorage();
+          redirectToLogin();
+          throw new ApiClientError('Authentication failed', 401, 'UnauthorizedError');
+        }
+      }
+      
       const error = await response.json();
       throw new ApiClientError(
         error.error?.message || 'Failed to upload attachment',
@@ -358,10 +397,12 @@ export const childrenApi = {
   },
 
   /**
-   * Get download URL for a child attachment
+   * Get download URL for a child attachment (with token in query for img src/download).
    */
   getAttachmentDownloadUrl(attachmentId: number): string {
-    return `${API_BASE_URL}/api/attachments/${attachmentId}`;
+    const base = `${API_BASE_URL}/api/attachments/${attachmentId}`;
+    const token = getAccessToken();
+    return token ? `${base}?token=${encodeURIComponent(token)}` : base;
   },
 
   /**
@@ -524,13 +565,49 @@ export const visitsApi = {
     const formData = new FormData();
     formData.append('file', file);
 
+    const accessToken = getAccessToken();
+    const headers: Record<string, string> = {};
+    
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
     // Manually handle FormData upload
     const response = await fetch(`${API_BASE_URL}/api/visits/${visitId}/attachments`, {
       method: 'POST',
+      headers,
       body: formData,
     });
 
     if (!response.ok) {
+      // Handle 401 with token refresh
+      if (response.status === 401 && accessToken) {
+        const newToken = await tryRefreshToken();
+        if (newToken) {
+          // Retry with new token
+          const retryHeaders: Record<string, string> = {
+            'Authorization': `Bearer ${newToken}`,
+          };
+          const retryResponse = await fetch(`${API_BASE_URL}/api/visits/${visitId}/attachments`, {
+            method: 'POST',
+            headers: retryHeaders,
+            body: formData,
+          });
+          
+          if (!retryResponse.ok) {
+            const error = await retryResponse.json();
+            throw new ApiClientError(error.error?.message || 'Upload failed', retryResponse.status, 'UploadError');
+          }
+          
+          const result = await retryResponse.json();
+          return result as ApiResponse<VisitAttachment>;
+        } else {
+          clearAuthStorage();
+          redirectToLogin();
+          throw new ApiClientError('Authentication failed', 401, 'UnauthorizedError');
+        }
+      }
+      
       const error = await response.json();
       throw new ApiClientError(error.error?.message || 'Upload failed', response.status, 'UploadError');
     }
@@ -540,10 +617,12 @@ export const visitsApi = {
   },
 
   /**
-   * Get attachment download URL
+   * Get attachment download URL (with token in query for img src/download).
    */
   getAttachmentDownloadUrl(attachmentId: number): string {
-    return `${API_BASE_URL}/api/attachments/${attachmentId}`;
+    const base = `${API_BASE_URL}/api/attachments/${attachmentId}`;
+    const token = getAccessToken();
+    return token ? `${base}?token=${encodeURIComponent(token)}` : base;
   },
 
   /**

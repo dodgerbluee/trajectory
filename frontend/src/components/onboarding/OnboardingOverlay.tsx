@@ -537,7 +537,7 @@ export default function OnboardingOverlay() {
                 <LuTrendingUp className={styles.tooltipIcon} aria-hidden /> Metrics
               </h3>
               <p className={styles.tooltipCopy}>
-                View <strong>Illness Overview</strong> and <strong>Growth</strong> (height, weight) over time. Switch between tabs to explore.
+                View <strong>Illness</strong> and <strong>Growth</strong> (height, weight) trends over time as you enter your child's data! Add some data and switch between tabs to explore!
               </p>
               <p className={`${styles.tooltipCopy} ${styles.tooltipCta}`}>
                 You've seen the basics. Click <strong>Done</strong> below to finish the tour.

@@ -294,37 +294,6 @@ function HomePage() {
     </div>
   );
 
-  // Check if any children have growth data for the Trends tab
-  const [childrenGrowthData, setChildrenGrowthData] = useState<Record<number, boolean>>({});
-  
-  useEffect(() => {
-    // Load growth data for all children to determine if Growth tab should be shown
-    const loadGrowthDataForChildren = async () => {
-      const growthChecks = await Promise.all(
-        children.map(async (child) => {
-          try {
-            const response = await visitsApi.getGrowthData({ child_id: child.id });
-            const hasGrowth = response.data && response.data.length > 0;
-            return { childId: child.id, hasGrowth };
-          } catch (error) {
-            console.error(`Failed to load growth data for child ${child.id}:`, error);
-            return { childId: child.id, hasGrowth: false };
-          }
-        })
-      );
-      
-      const growthDataMap: Record<number, boolean> = {};
-      growthChecks.forEach(check => {
-        growthDataMap[check.childId] = check.hasGrowth;
-      });
-      
-      setChildrenGrowthData(growthDataMap);
-    };
-    
-    if (children.length > 0) {
-      loadGrowthDataForChildren();
-    }
-  }, [children]);
 
   const tabs = [
     {
@@ -353,7 +322,8 @@ function HomePage() {
             childrenList={children}
             selectedChildId={metricsFilterChildId}
             onSelectChild={(id) => setMetricsFilterChildId(id)}
-            showGrowthTab={Object.values(childrenGrowthData).some(hasGrowth => hasGrowth)}
+            showIllnessTab={true}
+            showGrowthTab={true}
           />
 
           <main className={visitsLayout.main}>

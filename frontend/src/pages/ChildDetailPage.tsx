@@ -187,21 +187,12 @@ function ChildDetailPage() {
     [visits]
   );
   const hasIllnessData = useMemo(() => illnesses.length > 0, [illnesses]);
-  const hasAnyMetrics = hasGrowthData || hasIllnessData;
-
-  // If Metrics tab is not shown (no metrics for this child), switch away from it
-  useEffect(() => {
-    if (!hasAnyMetrics && activeTab === 'metrics') {
-      setActiveTab('visits');
-    }
-  }, [hasAnyMetrics, activeTab]);
 
   // When only one metrics sub-tab is available, select it
   useEffect(() => {
-    if (!hasAnyMetrics) return;
     if (!hasGrowthData) setMetricsActiveTab('illness');
     else if (!hasIllnessData) setMetricsActiveTab('growth');
-  }, [hasAnyMetrics, hasGrowthData, hasIllnessData]);
+  }, [hasGrowthData, hasIllnessData]);
 
   const loadDocuments = useCallback(async () => {
     if (!id) return;
@@ -704,37 +695,35 @@ function ChildDetailPage() {
                 });
               }
 
-              // Only include the Metrics tab when the child has any metrics (growth or illness data)
-              if (hasAnyMetrics) {
-                tabsArray.push({
-                  id: 'metrics',
-                  label: 'Metrics',
-                  content: (
-                    <div className={visitsLayout.pageLayout}>
-                      <TrendsSidebar
+              // Always include the Metrics tab (even if no data yet)
+              tabsArray.push({
+                id: 'metrics',
+                label: 'Trends',
+                content: (
+                  <div className={visitsLayout.pageLayout}>
+                    <TrendsSidebar
+                      activeTab={metricsActiveTab}
+                      onChangeTab={(t) => setMetricsActiveTab(t)}
+                      childrenList={child ? [child] : []}
+                      selectedChildId={child?.id}
+                      onSelectChild={() => { }}
+                      showChildFilter={false}
+                      showIllnessTab={true}
+                      showGrowthTab={true}
+                    />
+                    <main className={visitsLayout.main}>
+                      <MetricsView
                         activeTab={metricsActiveTab}
-                        onChangeTab={(t) => setMetricsActiveTab(t)}
-                        childrenList={child ? [child] : []}
-                        selectedChildId={child?.id}
-                        onSelectChild={() => { }}
-                        showChildFilter={false}
-                        showIllnessTab={hasIllnessData}
-                        showGrowthTab={hasGrowthData}
+                        onActiveTabChange={(t) => setMetricsActiveTab(t)}
+                        selectedYear={metricsYear}
+                        onSelectedYearChange={(y) => setMetricsYear(y)}
+                        filterChildId={child?.id}
+                        onFilterChildChange={() => { }}
                       />
-                      <main className={visitsLayout.main}>
-                        <MetricsView
-                          activeTab={metricsActiveTab}
-                          onActiveTabChange={(t) => setMetricsActiveTab(t)}
-                          selectedYear={metricsYear}
-                          onSelectedYearChange={(y) => setMetricsYear(y)}
-                          filterChildId={child?.id}
-                          onFilterChildChange={() => { }}
-                        />
-                      </main>
-                    </div>
-                  ),
-                });
-              }
+                    </main>
+                  </div>
+                ),
+              });
 
               const handleTabChange = (tabId: string) => {
                 const typedTabId = tabId as 'visits' | 'illnesses' | 'metrics' | 'documents' | 'vaccines';
