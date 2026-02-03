@@ -5,10 +5,10 @@
  * match "Add BMI" style.
  */
 
-import { getAddableSectionIds, getSectionById } from './sectionRegistry';
-import layout from '../shared/styles/VisitsLayout.module.css';
+import { getAddableSectionIds, getSectionById } from '@features/visits/visit-form/sectionRegistry';
+import layout from '@shared/styles/VisitsLayout.module.css';
 import sidebarStyles from './VisitFormSidebar.module.css';
-import mui from '../shared/styles/MeasurementsUI.module.css';
+import mui from '@shared/styles/MeasurementsUI.module.css';
 
 export interface VisitFormSidebarProps {
   /** Currently active section IDs; buttons hidden for sections already added. */

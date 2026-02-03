@@ -4,7 +4,7 @@ import { LuEye, LuEyeOff } from 'react-icons/lu';
 import FormField from '@shared/components/FormField';
 import Button from '@shared/components/Button';
 import Card from '@shared/components/Card';
-import CreateUserModal from '@shared/components/CreateUserModal';
+import CreateUserModal from './CreateUserModal';
 import { ApiClientError } from '@lib/api-client';
 import { useAuth as useAuthContext } from '../../../contexts/AuthContext';
 import styles from './LoginPage.module.css';

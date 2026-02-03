@@ -1,21 +1,19 @@
 import { useState, FormEvent, useEffect, useMemo, useRef, type Dispatch, type SetStateAction } from 'react';
 import { Link, useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { visitsApi, childrenApi, ApiClientError } from '../lib/api-client';
-import type { Child, CreateVisitInput, VisitType, IllnessType } from '../types/api';
-import { getTodayDate } from '../lib/validation';
-import { isFutureDate } from '../lib/date-utils';
-import Card from '../shared/components/Card';
-import Button from '../shared/components/Button';
-import Notification from '../shared/components/Notification';
-import LoadingSpinner from '../shared/components/LoadingSpinner';
-import VisitTypeModal from '../shared/components/VisitTypeModal';
-import { getDefaultSectionsForVisitType } from '../visit-form/visitTypeDefaults';
-import { getSectionById } from '../visit-form/sectionRegistry';
-import { SectionWrapper } from '../visit-form/SectionWrapper';
-import { VisitFormSidebar } from '../visit-form/VisitFormSidebar';
-import layoutStyles from '../shared/styles/visit-detail-layout.module.css';
-import pageLayout from '../shared/styles/page-layout.module.css';
-import formLayout from '../shared/styles/VisitFormLayout.module.css';
+import { visitsApi, childrenApi, ApiClientError } from '@lib/api-client';
+import type { Child, CreateVisitInput, VisitType, IllnessType } from '@shared/types/api';
+import { getTodayDate } from '@lib/validation';
+import { isFutureDate } from '@lib/date-utils';
+import Card from '@shared/components/Card';
+import Button from '@shared/components/Button';
+import Notification from '@shared/components/Notification';
+import LoadingSpinner from '@shared/components/LoadingSpinner';
+import { VisitTypeModal } from '@features/visits';
+import { getDefaultSectionsForVisitType, getSectionById, SectionWrapper } from '@features/visits';
+import { VisitFormSidebar } from '@features/visits';
+import layoutStyles from '@shared/styles/visit-detail-layout.module.css';
+import pageLayout from '@shared/styles/page-layout.module.css';
+import formLayout from '@shared/styles/VisitFormLayout.module.css';
 import styles from './AddVisitPage.module.css';
 
 
@@ -442,7 +440,7 @@ function AddVisitPage() {
             </div>
             <div className={`${formLayout.bodyCell} ${layoutStyles.detailBody}`}>
               {(() => {
-                type SectionId = import('../visit-form/sectionRegistry').SectionId;
+                type SectionId = import('@features/visits/visit-form/sectionRegistry').SectionId;
                 const sectionsToRender: { sectionId: SectionId; entry: NonNullable<ReturnType<typeof getSectionById>> }[] = [];
                 for (const id of activeSections) {
                   const entry = getSectionById(id as SectionId);

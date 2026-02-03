@@ -1,8 +1,8 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { childrenApi, ApiClientError } from '../lib/api-client';
-import { validateChildForm, formatDateForInput, getTodayDate } from '../lib/validation';
-import type { Child, Gender } from '../types/api';
+import { childrenApi, ApiClientError } from '@lib/api-client';
+import { validateChildForm, formatDateForInput, getTodayDate } from '@lib/validation';
+import type { Child, Gender } from '@shared/types/api';
 import Card from '../shared/components/Card';
 import FormField from '../shared/components/FormField';
 import Button from '../shared/components/Button';

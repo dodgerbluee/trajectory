@@ -1,4 +1,9 @@
 export { default as AllIllnessesView } from './components/AllIllnessesView';
+export { default as IllnessCard } from './components/IllnessCard';
+export { default as IllnessEntryFormFields, type IllnessEntryFormValue } from './components/IllnessEntryFormFields';
+export { default as IllnessNotification } from './components/IllnessNotification';
+export { default as IllnessesInput } from './components/IllnessesInput';
+export { default as IllnessesSidebar } from './components/IllnessesSidebar';
 export { default as IllnessesTimeline } from './components/IllnessesTimeline';
 export { default as AllIllnessesPage } from './pages/AllIllnessesPage';
 export { default as AddIllnessPage } from './pages/AddIllnessPage';

@@ -8,7 +8,7 @@ import Card from '@shared/components/Card';
 import Button from '@shared/components/Button';
 import Notification from '@shared/components/Notification';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
-import VisitTypeModal from '@shared/components/VisitTypeModal';
+import { VisitTypeModal } from '@features/visits';
 import { useFormState } from '@shared/hooks';
 import { VISIT_TYPE_DEFAULTS, getSectionById, SectionWrapper, VisitFormSidebar } from '@visit-form';
 import layoutStyles from '@shared/styles/visit-detail-layout.module.css';

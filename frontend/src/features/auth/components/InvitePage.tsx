@@ -4,7 +4,7 @@ import { useAuth as useAuthContext } from '../../../contexts/AuthContext';
 import Card from '@shared/components/Card';
 import Button from '@shared/components/Button';
 import ErrorMessage from '@shared/components/ErrorMessage';
-import CreateUserModal from '@shared/components/CreateUserModal';
+import CreateUserModal from './CreateUserModal';
 import { invitesApi, ApiClientError } from '@lib/api-client';
 import styles from './InvitePage.module.css';
 

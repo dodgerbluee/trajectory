@@ -1,18 +1,18 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { FaMars, FaVenus } from 'react-icons/fa';
-import { childrenApi, ApiClientError } from '../lib/api-client';
-import { useOnboarding } from '../contexts/OnboardingContext';
-import { validateChildForm, getTodayDate } from '../lib/validation';
-import type { Gender } from '../types/api';
-import Card from '../shared/components/Card';
-import FormField from '../shared/components/FormField';
-import formFieldStyles from '../shared/components/FormField.module.css';
-import Button from '../shared/components/Button';
-import Notification from '../shared/components/Notification';
-import ImageCropUpload from '../shared/components/ImageCropUpload';
-import { ChildAvatar } from '../features/children';
-import modalStyles from '../shared/components/Modal.module.css';
+import { childrenApi, ApiClientError } from '@lib/api-client';
+import { useOnboarding } from '@/contexts/OnboardingContext';
+import { validateChildForm, getTodayDate } from '@lib/validation';
+import type { Gender } from '@shared/types/api';
+import Card from '@shared/components/Card';
+import FormField from '@shared/components/FormField';
+import formFieldStyles from '@shared/components/FormField.module.css';
+import Button from '@shared/components/Button';
+import Notification from '@shared/components/Notification';
+import ImageCropUpload from '@shared/components/ImageCropUpload';
+import { ChildAvatar } from '@features/children';
+import modalStyles from '@shared/components/Modal.module.css';
 import styles from './AddChildPage.module.css';
 
 function AddChildPage() {

@@ -1,8 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import Layout from './shared/components/Layout';
+import { Layout } from './features/layout';
 import ErrorBoundary from './shared/components/ErrorBoundary';
-import { ProtectedRoute } from './shared/components/ProtectedRoute';
-import { AdminRoute } from './shared/components/AdminRoute';
+import { ProtectedRoute, AdminRoute } from './features/auth';
 import { HomeTabRequestProvider } from './contexts/HomeTabRequestContext';
 import { FamilyPermissionsProvider } from './contexts/FamilyPermissionsContext';
 import { OnboardingProvider } from './contexts/OnboardingContext';

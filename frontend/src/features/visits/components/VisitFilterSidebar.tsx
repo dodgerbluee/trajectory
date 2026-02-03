@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { HiPlus } from 'react-icons/hi';
-import VisitStats from '@shared/components/VisitStats';
-import ChildSelector from '@shared/components/ChildSelector';
+import { VisitStats } from '@features/visits';
+import { ChildSelector } from '@features/children';
 import Button from '@shared/components/Button';
 import { useFamilyPermissions } from '../../../contexts/FamilyPermissionsContext';
 import type { Child } from '@shared/types/api';

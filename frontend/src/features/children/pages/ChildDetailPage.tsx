@@ -9,7 +9,7 @@ import ErrorMessage from '@shared/components/ErrorMessage';
 import Card from '@shared/components/Card';
 import Button from '@shared/components/Button';
 import Notification from '@shared/components/Notification';
-import VisitTypeModal from '@shared/components/VisitTypeModal';
+import { VisitTypeModal } from '@features/visits';
 import modalStyles from '@shared/components/Modal.module.css';
 import cd from './ChildDetailPage.module.css';
 import pageLayout from '@shared/styles/page-layout.module.css';
@@ -19,13 +19,11 @@ import { VisitFilterSidebar, VisitsTimeline } from '@features/visits';
 import { ChildAvatar } from '@features/children/components';
 import { IllnessesTimeline } from '@features/illnesses';
 import Tabs from '@shared/components/Tabs';
-import DocumentsList from '@shared/components/DocumentsList';
-import DocumentsSidebar, { type DocumentTypeFilter } from '@shared/components/DocumentsSidebar';
+import { DocumentsList } from '@features/documents';
+import DocumentsSidebar, { type DocumentTypeFilter } from '@features/documents/components/DocumentsSidebar';
 import ImageCropUpload from '@shared/components/ImageCropUpload';
-import VaccineHistory from '@shared/components/VaccineHistory';
-import IllnessesSidebar from '@shared/components/IllnessesSidebar';
-import TrendsSidebar from '@shared/components/TrendsSidebar';
-import MetricsView from '@shared/components/MetricsView';
+import { VaccineHistory, TrendsSidebar, MetricsView } from '@features/medical';
+import { IllnessesSidebar } from '@features/illnesses';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
 import { LuPill } from 'react-icons/lu';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -54,6 +52,10 @@ function ChildDetailPage() {
   const [showVisitTypeModal, setShowVisitTypeModal] = useState(false);
   const [visitTypeFilter, setVisitTypeFilter] = useState<'all' | 'wellness' | 'sick' | 'injury' | 'vision' | 'dental'>('all');
   const [filterIllnessStatus, setFilterIllnessStatus] = useState<'ongoing' | 'ended' | undefined>(undefined);
+  const [visitsCurrentPage, setVisitsCurrentPage] = useState(0);
+  const [visitsItemsPerPage, setVisitsItemsPerPage] = useState(20);
+  const [illnessesCurrentPage, setIllnessesCurrentPage] = useState(0);
+  const [illnessesItemsPerPage, setIllnessesItemsPerPage] = useState(20);
   const [metricsActiveTab, setMetricsActiveTab] = useState<'illness' | 'growth'>('illness');
   const [metricsYear, setMetricsYear] = useState<number>(new Date().getFullYear());
   const [activeTab, setActiveTab] = useState<'visits' | 'illnesses' | 'metrics' | 'documents' | 'vaccines'>('visits');
@@ -377,6 +379,24 @@ function ChildDetailPage() {
     return items;
   }, [illnesses, filterIllnessStatus]);
 
+  useEffect(() => {
+    setVisitsCurrentPage(0);
+  }, [visitTypeFilter, visits]);
+
+  useEffect(() => {
+    setIllnessesCurrentPage(0);
+  }, [filterIllnessStatus, illnesses]);
+
+  const visibleVisitItems = useMemo(() => {
+    const startIdx = visitsCurrentPage * visitsItemsPerPage;
+    return visitItems.slice(startIdx, startIdx + visitsItemsPerPage);
+  }, [visitItems, visitsCurrentPage, visitsItemsPerPage]);
+
+  const visibleIllnessItems = useMemo(() => {
+    const startIdx = illnessesCurrentPage * illnessesItemsPerPage;
+    return illnessItems.slice(startIdx, startIdx + illnessesItemsPerPage);
+  }, [illnessItems, illnessesCurrentPage, illnessesItemsPerPage]);
+
   const filteredDocuments = useMemo(() => {
     if (documentTypeFilter === 'visit') return documents.filter((d) => d.type === 'visit');
     if (documentTypeFilter === 'vaccine') return documents.filter((d) => d.type === 'child');
@@ -607,9 +627,14 @@ function ChildDetailPage() {
 
                     <main className={visitsLayout.main}>
                       <VisitsTimeline
-                        visits={visitItems.map(item => item.data)}
+                        visits={visibleVisitItems.map(item => item.data)}
                         visitsWithAttachments={visitsWithAttachments}
                         showChildName={false}
+                        currentPage={visitsCurrentPage}
+                        itemsPerPage={visitsItemsPerPage}
+                        totalItems={visitItems.length}
+                        onPageChange={setVisitsCurrentPage}
+                        onItemsPerPageChange={setVisitsItemsPerPage}
                       />
                     </main>
                   </div>
@@ -656,8 +681,13 @@ function ChildDetailPage() {
                     />
                     <main className={visitsLayout.main}>
                       <IllnessesTimeline
-                        illnesses={illnessItems.map(item => item.data)}
+                        illnesses={visibleIllnessItems.map(item => item.data)}
                         showChildName={false}
+                        currentPage={illnessesCurrentPage}
+                        itemsPerPage={illnessesItemsPerPage}
+                        totalItems={illnessItems.length}
+                        onPageChange={setIllnessesCurrentPage}
+                        onItemsPerPageChange={setIllnessesItemsPerPage}
                       />
                     </main>
                   </div>

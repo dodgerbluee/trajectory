@@ -1,6 +1,6 @@
-import type { Visit, Illness } from '../types/api';
-import VisitCard from './VisitCard';
-import IllnessCard from './IllnessCard';
+import type { Visit, Illness } from '@shared/types/api';
+import { VisitCard } from '@features/visits';
+import { IllnessCard } from '@features/illnesses';
 
 interface TimelineItemProps {
   type: 'visit' | 'illness';

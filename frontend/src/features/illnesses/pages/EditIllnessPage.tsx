@@ -8,7 +8,7 @@ import FormField from '@shared/components/FormField';
 import Button from '@shared/components/Button';
 import Notification from '@shared/components/Notification';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
-import IllnessEntryFormFields from '@shared/components/IllnessEntryFormFields';
+import { IllnessEntryFormFields } from '@features/illnesses';
 import { SectionWrapper } from '@visit-form';
 import layoutStyles from '@shared/styles/visit-detail-layout.module.css';
 import pageLayout from '@shared/styles/page-layout.module.css';
@@ -126,7 +126,7 @@ function EditIllnessPage() {
     end_date: formData.end_date !== undefined ? formData.end_date : illness.end_date,
   };
 
-  const handleIllnessEntryChange = (next: import('../../../shared/components/IllnessEntryFormFields').IllnessEntryFormValue) => {
+  const handleIllnessEntryChange = (next: import('../components/IllnessEntryFormFields').IllnessEntryFormValue) => {
     setFormData(prev => ({
       ...prev,
       symptoms: next.symptoms,

@@ -1,15 +1,15 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { illnessesApi, childrenApi, visitsApi, ApiClientError } from '../lib/api-client';
-import type { Child, UpdateIllnessInput, IllnessType, Illness } from '../types/api';
-import { getTodayDate } from '../lib/validation';
-import Card from '../shared/components/Card';
-import FormField from '../shared/components/FormField';
-import Button from '../shared/components/Button';
-import Notification from '../shared/components/Notification';
-import LoadingSpinner from '../shared/components/LoadingSpinner';
-import IllnessEntryFormFields from '../shared/components/IllnessEntryFormFields';
-import { SectionWrapper } from '../visit-form/SectionWrapper';
+import { illnessesApi, childrenApi, visitsApi, ApiClientError } from '@lib/api-client';
+import type { Child, UpdateIllnessInput, IllnessType, Illness } from '@shared/types/api';
+import { getTodayDate } from '@lib/validation';
+import Card from '@shared/components/Card';
+import FormField from '@shared/components/FormField';
+import Button from '@shared/components/Button';
+import Notification from '@shared/components/Notification';
+import LoadingSpinner from '@shared/components/LoadingSpinner';
+import { IllnessEntryFormFields } from '@features/illnesses';
+import { SectionWrapper } from '@features/visits';
 import layoutStyles from '../shared/styles/visit-detail-layout.module.css';
 import pageLayout from '../shared/styles/page-layout.module.css';
 import tl from '../shared/components/TimelineList.module.css';
@@ -126,7 +126,7 @@ function EditIllnessPage() {
     end_date: formData.end_date !== undefined ? formData.end_date : illness.end_date,
   };
 
-  const handleIllnessEntryChange = (next: import('../shared/components/IllnessEntryFormFields').IllnessEntryFormValue) => {
+  const handleIllnessEntryChange = (next: import('@features/illnesses').IllnessEntryFormValue) => {
     setFormData(prev => ({
       ...prev,
       symptoms: next.symptoms,

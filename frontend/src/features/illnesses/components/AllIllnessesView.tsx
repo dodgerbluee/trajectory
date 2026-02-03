@@ -4,7 +4,7 @@ import LoadingSpinner from '@shared/components/LoadingSpinner';
 import ErrorMessage from '@shared/components/ErrorMessage';
 import visitsLayout from '@shared/styles/VisitsLayout.module.css';
 import { IllnessesTimeline } from '.';
-import IllnessesSidebar from '@shared/components/IllnessesSidebar';
+import { IllnessesSidebar } from '@features/illnesses';
 import { useIllnesses } from '../hooks';
 function AllIllnessesView() {
   const {
@@ -19,6 +19,11 @@ function AllIllnessesView() {
     setFilterChildId,
     setFilterIllnessType,
     setFilterIllnessStatus,
+    currentPage,
+    itemsPerPage,
+    setCurrentPage,
+    setItemsPerPage,
+    totalFilteredIllnesses,
     reload,
   } = useIllnesses();
 
@@ -50,6 +55,11 @@ function AllIllnessesView() {
           illnesses={illnesses}
           children={children}
           showChildName={true}
+          currentPage={currentPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={totalFilteredIllnesses}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
         />
       </main>
     </div>

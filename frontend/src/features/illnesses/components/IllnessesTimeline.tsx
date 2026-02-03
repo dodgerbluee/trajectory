@@ -3,12 +3,18 @@ import type { Illness, Child } from '@shared/types/api';
 import TimelineItem from '@shared/components/TimelineItem';
 import Card from '@shared/components/Card';
 import tl from '@shared/components/TimelineList.module.css';
+import PaginationControls from '@shared/components/PaginationControls';
 
 interface IllnessesTimelineProps {
   illnesses: Illness[];
   children?: Child[];
   showChildName?: boolean;
   emptyMessage?: string;
+  currentPage?: number;
+  itemsPerPage?: number;
+  totalItems?: number;
+  onPageChange?: (page: number) => void;
+  onItemsPerPageChange?: (items: number) => void;
 }
 
 /**
@@ -20,6 +26,11 @@ export default function IllnessesTimeline({
   children = [],
   showChildName = true,
   emptyMessage = 'No illnesses recorded yet. Click "Add Illness" to get started.',
+  currentPage = 0,
+  itemsPerPage = 20,
+  totalItems = 0,
+  onPageChange,
+  onItemsPerPageChange,
 }: IllnessesTimelineProps) {
   const childMap = useMemo(() => {
     const map = new Map<number, Child>();
@@ -44,21 +55,32 @@ export default function IllnessesTimeline({
   }
 
   return (
-    <Card>
-      <div className={tl.list}>
-        {sortedIllnesses.map((illness) => {
-          const child = childMap.get(illness.child_id);
-          return (
-            <TimelineItem
-              key={illness.id}
-              type="illness"
-              data={illness}
-              childName={showChildName ? (child?.name || `Child #${illness.child_id}`) : undefined}
-              childId={showChildName ? illness.child_id : undefined}
-            />
-          );
-        })}
-      </div>
-    </Card>
+    <>
+      <Card>
+        <div className={tl.list}>
+          {sortedIllnesses.map((illness) => {
+            const child = childMap.get(illness.child_id);
+            return (
+              <TimelineItem
+                key={illness.id}
+                type="illness"
+                data={illness}
+                childName={showChildName ? (child?.name || `Child #${illness.child_id}`) : undefined}
+                childId={showChildName ? illness.child_id : undefined}
+              />
+            );
+          })}
+        </div>
+      </Card>
+      {totalItems > 0 && onPageChange && onItemsPerPageChange && (
+        <PaginationControls
+          currentPage={currentPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={totalItems}
+          onPageChange={onPageChange}
+          onItemsPerPageChange={onItemsPerPageChange}
+        />
+      )}
+    </>
   );
 }

@@ -1,8 +1,17 @@
 export { default as AllVisitsView } from './components/AllVisitsView';
 export { default as VisitFilterSidebar } from './components/VisitFilterSidebar';
+export { default as VisitAttachmentsList } from './components/VisitAttachmentsList';
+export { default as VisitCard } from './components/VisitCard';
+export { default as VisitStats } from './components/VisitStats';
+export { default as VisitTypeModal } from './components/VisitTypeModal';
 export { default as VisitsTimeline } from './components/VisitsTimeline';
+export { default as VisitsTimelineView } from './components/VisitsTimelineView';
 export { default as AllVisitsPage } from './pages/AllVisitsPage';
 export { default as AddVisitPage } from './pages/AddVisitPage';
 export { default as EditVisitPage } from './pages/EditVisitPage';
 export { default as VisitDetailPage } from './pages/VisitDetailPage';
+export { SectionWrapper } from './visit-form/SectionWrapper';
+export { getDefaultSectionsForVisitType } from './visit-form/visitTypeDefaults';
+export { getSectionById, getAddableSectionIds } from './visit-form/sectionRegistry';
+export { VisitFormSidebar } from './visit-form/VisitFormSidebar';
 export { useAllVisits } from './hooks/useAllVisits';
