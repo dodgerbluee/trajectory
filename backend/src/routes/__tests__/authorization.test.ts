@@ -17,6 +17,7 @@ jest.mock('../../middleware/auth.js', () => {
   };
   return {
     authenticate: testAuth,
+    authenticateHeaderOrQuery: testAuth,
     optionalAuthenticate: (_req: unknown, _res: unknown, next: () => void) => next(),
     requireInstanceAdmin: (_req: unknown, _res: unknown, next: () => void) => next(),
   };
