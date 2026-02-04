@@ -36,25 +36,6 @@ This includes:
 
 ---
 
-## Project Layout
-
-| Path | Description |
-|------|-------------|
-| `frontend/` | React + Vite UI |
-| `backend/` | Express API (Node.js, TypeScript) |
-| `database/` | PostgreSQL init script |
-| `backend/migrations/` | Schema and migrations |
-
-Scripts from repo root: `npm run install:all`, `npm run build`, `npm run lint`. See `backend/` and `frontend/` READMEs for development info.
-
----
-
-## Development
-
-**Development (run from source):** Use `docker-compose up` for backend + DB, or run backend and frontend separately; see [backend/README.md](./backend/README.md) and [frontend](./frontend).
-
----
-
 ## Repository Analytics
 
 ![Repobeats analytics](https://repobeats.axiom.co/api/embed/39986e2891a5d4afb63ddbb16135a45180d964a6.svg "Repobeats analytics image")
