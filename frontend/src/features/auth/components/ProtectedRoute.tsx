@@ -1,10 +1,10 @@
 import { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
 
 interface ProtectedRouteProps {
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
@@ -21,5 +21,5 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   /* Onboarding is handled by OnboardingProvider + OnboardingOverlay on Home.
    * We no longer redirect to /welcome; the guided flow runs on the actual app pages. */
 
-  return <>{children}</>;
+  return children ? <>{children}</> : <Outlet />;
 }

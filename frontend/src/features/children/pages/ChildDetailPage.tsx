@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
-import { LuActivity, LuHeart, LuThermometer } from 'react-icons/lu';
+import { LuEye, LuHeart, LuThermometer } from 'react-icons/lu';
 import { childrenApi, visitsApi, illnessesApi, ApiClientError } from '@lib/api-client';
 import type { Child, Visit, VisitType, Illness, VisitAttachment, ChildAttachment } from '@shared/types/api';
 import { calculateAge, formatAge, formatDate, isFutureVisit } from '@lib/date-utils';
@@ -13,24 +13,18 @@ import { VisitTypeModal } from '@features/visits';
 import modalStyles from '@shared/components/Modal.module.css';
 import cd from './ChildDetailPage.module.css';
 import pageLayout from '@shared/styles/page-layout.module.css';
-import visitsLayout from '@shared/styles/VisitsLayout.module.css';
 import vi from '@shared/styles/VisitIcons.module.css';
-import { VisitFilterSidebar, VisitsTimeline } from '@features/visits';
 import { ChildAvatar } from '@features/children/components';
-import { IllnessesTimeline } from '@features/illnesses';
 import Tabs from '@shared/components/Tabs';
-import { DocumentsList } from '@features/documents';
-import DocumentsSidebar, { type DocumentTypeFilter } from '@features/documents/components/DocumentsSidebar';
+import { type DocumentTypeFilter } from '@features/documents/components/DocumentsSidebar';
 import ImageCropUpload, { type ImageCropUploadHandle } from '@shared/components/ImageCropUpload';
-import { VaccineHistory, TrendsSidebar, MetricsView } from '@features/medical';
-import { IllnessesSidebar } from '@features/illnesses';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
 import { LuPill } from 'react-icons/lu';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { DentalToothIcon } from '@hugeicons/core-free-icons';
-import { LuEye } from 'react-icons/lu';
 import { useFamilyPermissions } from '@/contexts/FamilyPermissionsContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { DocumentsTab, IllnessesTab, TrendsTab, VaccinesTab, VisitsTab } from './tabs';
 // replaced local mask icon with Lucide thermometer for illness
 
 function ChildDetailPage() {
@@ -566,79 +560,19 @@ function ChildDetailPage() {
                 id: 'visits',
                 label: 'Visits',
                 content: (
-                  <div className={visitsLayout.pageLayout}>
-                    <VisitFilterSidebar
-                      stats={[
-                        {
-                          label: 'Total Visits',
-                          value: visits.length,
-                          icon: LuActivity,
-                          color: 'gray',
-                          onClick: () => setVisitTypeFilter('all'),
-                          active: visitTypeFilter === 'all',
-                        },
-                        {
-                          label: 'Wellness',
-                          value: visits.filter((v) => v.visit_type === 'wellness').length,
-                          icon: LuHeart,
-                          color: 'emerald',
-                          onClick: () => setVisitTypeFilter('wellness'),
-                          active: visitTypeFilter === 'wellness',
-                        },
-                        {
-                          label: 'Sick',
-                          value: visits.filter((v) => v.visit_type === 'sick').length,
-                          icon: LuPill,
-                          color: 'red',
-                          onClick: () => setVisitTypeFilter('sick'),
-                          active: visitTypeFilter === 'sick',
-                        },
-                        {
-                          label: 'Injury',
-                          value: visits.filter((v) => v.visit_type === 'injury').length,
-                          icon: MdOutlinePersonalInjury,
-                          color: 'blue',
-                          onClick: () => setVisitTypeFilter('injury'),
-                          active: visitTypeFilter === 'injury',
-                        },
-                        {
-                          label: 'Dental',
-                          value: visits.filter((v) => v.visit_type === 'dental').length,
-                          icon: (props: { className?: string }) => <HugeiconsIcon icon={DentalToothIcon} {...props} size={24} color="currentColor" />,
-                          color: 'teal',
-                          onClick: () => setVisitTypeFilter('dental'),
-                          active: visitTypeFilter === 'dental',
-                        },
-                        {
-                          label: 'Vision',
-                          value: visits.filter((v) => v.visit_type === 'vision').length,
-                          icon: LuEye,
-                          color: 'purple',
-                          onClick: () => setVisitTypeFilter('vision'),
-                          active: visitTypeFilter === 'vision',
-                        },
-                      ]}
-                      // Child detail page already implies the child; hide selector.
-                      childrenList={[]}
-                      selectedChildId={undefined}
-                      onSelectChild={() => { }}
-                      hideChildFilter
-                      onAddVisitClick={() => setShowVisitTypeModal(true)}
-                    />
-
-                    <main className={visitsLayout.main}>
-                      <VisitsTimeline
-                        visits={visibleVisitItems.map(item => item.data)}
-                        visitsWithAttachments={visitsWithAttachments}
-                        showChildName={false}
-                        currentPage={visitsCurrentPage}
-                        itemsPerPage={visitsItemsPerPage}
-                        totalItems={visitItems.length}
-                        onPageChange={setVisitsCurrentPage}
-                        onItemsPerPageChange={setVisitsItemsPerPage}
-                      />
-                    </main>
-                  </div>
+                  <VisitsTab
+                    visits={visits}
+                    visibleVisits={visibleVisitItems.map((item) => item.data)}
+                    visitsWithAttachments={visitsWithAttachments}
+                    visitTypeFilter={visitTypeFilter}
+                    onChangeVisitTypeFilter={setVisitTypeFilter}
+                    onAddVisitClick={() => setShowVisitTypeModal(true)}
+                    currentPage={visitsCurrentPage}
+                    itemsPerPage={visitsItemsPerPage}
+                    totalItems={visitItems.length}
+                    onPageChange={setVisitsCurrentPage}
+                    onItemsPerPageChange={setVisitsItemsPerPage}
+                  />
                 ),
               });
 
@@ -646,73 +580,35 @@ function ChildDetailPage() {
                 id: 'illnesses',
                 label: 'Illness',
                 content: (
-                  <div className={visitsLayout.pageLayout}>
-                    <IllnessesSidebar
-                      stats={[
-                        {
-                          label: 'Total Illnesses',
-                          value: illnesses.length,
-                          icon: LuActivity,
-                          color: 'blue',
-                          onClick: () => setFilterIllnessStatus(undefined),
-                          active: !filterIllnessStatus,
-                        },
-                        {
-                          label: 'Ongoing',
-                          value: illnesses.filter((i) => !i.end_date).length,
-                          icon: LuActivity,
-                          color: 'red',
-                          onClick: () => setFilterIllnessStatus('ongoing'),
-                          active: filterIllnessStatus === 'ongoing',
-                        },
-                        {
-                          label: 'Ended',
-                          value: illnesses.filter((i) => !!i.end_date).length,
-                          icon: LuActivity,
-                          color: 'emerald',
-                          onClick: () => setFilterIllnessStatus('ended'),
-                          active: filterIllnessStatus === 'ended',
-                        },
-                      ]}
-                      childrenList={[]}
-                      selectedChildId={undefined}
-                      onSelectChild={() => { }}
-                      hideChildFilter
-                      addIllnessChildId={child?.id}
-                    />
-                    <main className={visitsLayout.main}>
-                      <IllnessesTimeline
-                        illnesses={visibleIllnessItems.map(item => item.data)}
-                        showChildName={false}
-                        currentPage={illnessesCurrentPage}
-                        itemsPerPage={illnessesItemsPerPage}
-                        totalItems={illnessItems.length}
-                        onPageChange={setIllnessesCurrentPage}
-                        onItemsPerPageChange={setIllnessesItemsPerPage}
-                      />
-                    </main>
-                  </div>
+                  <IllnessesTab
+                    childId={child.id}
+                    illnesses={illnesses}
+                    visibleIllnesses={visibleIllnessItems.map((item) => item.data)}
+                    filterIllnessStatus={filterIllnessStatus}
+                    onChangeFilterIllnessStatus={setFilterIllnessStatus}
+                    currentPage={illnessesCurrentPage}
+                    itemsPerPage={illnessesItemsPerPage}
+                    totalItems={illnessItems.length}
+                    onPageChange={setIllnessesCurrentPage}
+                    onItemsPerPageChange={setIllnessesItemsPerPage}
+                  />
                 ),
               });
 
               tabsArray.push({
                 id: 'documents',
                 label: 'Documents',
-                content: loadingDocuments ? (
-                  <LoadingSpinner message="Loading documents..." />
-                ) : (
-                  <div className={visitsLayout.pageLayout}>
-                    <DocumentsSidebar
-                      total={documents.length}
-                      visitCount={visitDocsCount}
-                      vaccineCount={vaccineDocsCount}
-                      filter={documentTypeFilter}
-                      onFilterChange={setDocumentTypeFilter}
-                    />
-                    <main className={visitsLayout.main}>
-                      <DocumentsList documents={filteredDocuments} onUpdate={loadDocuments} showHeader={false} />
-                    </main>
-                  </div>
+                content: (
+                  <DocumentsTab
+                    loading={loadingDocuments}
+                    documents={documents}
+                    visitDocsCount={visitDocsCount}
+                    vaccineDocsCount={vaccineDocsCount}
+                    documentTypeFilter={documentTypeFilter}
+                    onChangeDocumentTypeFilter={setDocumentTypeFilter}
+                    filteredDocuments={filteredDocuments}
+                    onUpdate={loadDocuments}
+                  />
                 ),
               });
 
@@ -721,7 +617,13 @@ function ChildDetailPage() {
                 tabsArray.push({
                   id: 'vaccines',
                   label: 'Vaccines',
-                  content: <VaccineHistory visits={visitsWithVaccines} childId={parseInt(id!)} onUploadSuccess={loadDocuments} />,
+                  content: (
+                    <VaccinesTab
+                      visitsWithVaccines={visitsWithVaccines}
+                      childId={parseInt(id!)}
+                      onUploadSuccess={loadDocuments}
+                    />
+                  ),
                 });
               }
 
@@ -730,28 +632,13 @@ function ChildDetailPage() {
                 id: 'metrics',
                 label: 'Trends',
                 content: (
-                  <div className={visitsLayout.pageLayout}>
-                    <TrendsSidebar
-                      activeTab={metricsActiveTab}
-                      onChangeTab={(t) => setMetricsActiveTab(t)}
-                      childrenList={child ? [child] : []}
-                      selectedChildId={child?.id}
-                      onSelectChild={() => { }}
-                      showChildFilter={false}
-                      showIllnessTab={true}
-                      showGrowthTab={true}
-                    />
-                    <main className={visitsLayout.main}>
-                      <MetricsView
-                        activeTab={metricsActiveTab}
-                        onActiveTabChange={(t) => setMetricsActiveTab(t)}
-                        selectedYear={metricsYear}
-                        onSelectedYearChange={(y) => setMetricsYear(y)}
-                        filterChildId={child?.id}
-                        onFilterChildChange={() => { }}
-                      />
-                    </main>
-                  </div>
+                  <TrendsTab
+                    child={child}
+                    metricsActiveTab={metricsActiveTab}
+                    onChangeMetricsActiveTab={setMetricsActiveTab}
+                    metricsYear={metricsYear}
+                    onChangeMetricsYear={setMetricsYear}
+                  />
                 ),
               });
 

@@ -15,8 +15,14 @@ import fileUploadStyles from '@shared/components/FileUpload.module.css';
 import loadingStyles from '@shared/components/LoadingSpinner.module.css';
 import { VisitAttachmentsList } from '@features/visits';
 import Checkbox from '@shared/components/Checkbox';
-import type { SectionId } from '@features/visits/visit-form/sectionRegistry';
-import type { VisitFormContext } from '@features/visits/visit-form/visitFormContext';
+/**
+ * Deprecated duplicate of `features/visits/visit-form/sections/*`.
+ * Kept only to avoid breaking stale imports; do not use.
+ */
+
+export {};
+
+throw new Error('Deprecated: use sections from features/visits/visit-form instead of src/visit-form.');
 import type { CreateVisitInput, UpdateVisitInput } from '@shared/types/api';
 import { isFutureDate } from '@lib/date-utils';
 import sectionStyles from './SectionContents.module.css';
