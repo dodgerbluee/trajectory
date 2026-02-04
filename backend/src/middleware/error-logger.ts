@@ -4,7 +4,7 @@
  */
 
 import type { Request } from 'express';
-import { getRuntimeLogLevel } from '../lib/admin-config.js';
+import { getRuntimeLogLevel } from '../features/admin/service/admin-config.js';
 
 /**
  * Log levels (priority: error < warn < info < debug)

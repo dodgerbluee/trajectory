@@ -12,9 +12,9 @@ import { randomUUID } from 'crypto';
 import { query } from '../db/connection.js';
 import type { MeasurementAttachmentRow, VisitAttachmentRow, ChildAttachmentRow } from '../types/database.js';
 import { createResponse } from '../types/api.js';
-import { recordAuditEvent } from '../lib/audit.js';
+import { recordAuditEvent } from '../features/shared/service/audit.js';
 import { authenticate, authenticateHeaderOrQuery, type AuthRequest } from '../middleware/auth.js';
-import { canAccessChild, canEditChild } from '../lib/family-access.js';
+import { canAccessChild, canEditChild } from '../features/families/service/family-access.js';
 import { ForbiddenError } from '../middleware/error-handler.js';
 
 // Extend Express Request type to include file (module augmentation; avoids namespaces)
@@ -1011,14 +1011,6 @@ router.put('/attachments/:id', authenticate, async (req: AuthRequest, res: Respo
     next(err);
   }
 });
-
-// ============================================================================
-// Download/view visit attachment (reuse same endpoint, check both tables)
-// ============================================================================
-
-// Update the existing /attachments/:id endpoint to check both tables
-// We'll keep it as-is but it will work for both measurement and visit attachments
-// since they share the same ID space (both are SERIAL PRIMARY KEY)
 
 // ============================================================================
 // Child Attachments - Upload vaccine report or other child-level documents

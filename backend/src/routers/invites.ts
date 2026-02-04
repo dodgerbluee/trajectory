@@ -6,7 +6,7 @@
 import { Router, Response, NextFunction } from 'express';
 import { query } from '../db/connection.js';
 import { authenticate, type AuthRequest } from '../middleware/auth.js';
-import { hashToken } from '../lib/auth.js';
+import { hashToken } from '../features/auth/service/auth.js';
 import { BadRequestError, ConflictError } from '../middleware/error-handler.js';
 import { createResponse } from '../types/api.js';
 
@@ -92,3 +92,5 @@ invitesRouter.post(
     }
   }
 );
+
+export default invitesRouter;

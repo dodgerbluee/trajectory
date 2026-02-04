@@ -2,10 +2,10 @@
  * Audit event persistence: write field-level change records to audit_events.
  */
 
-import { query } from '../db/connection.js';
+import { query } from '../../../db/connection.js';
 import type { AuditChanges } from './field-diff.js';
 import { auditChangesSummary } from './field-diff.js';
-import { canAccessChild } from './family-access.js';
+import { canAccessChild } from '../../families/service/family-access.js';
 
 export type AuditEntityType = 'visit' | 'illness';
 

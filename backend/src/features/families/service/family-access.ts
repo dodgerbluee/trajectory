@@ -3,7 +3,7 @@
  * For now: one family per user. Later: multiple users can be members of the same family.
  */
 
-import { query } from '../db/connection.js';
+import { query } from '../../../db/connection.js';
 
 /**
  * Return family IDs the user is a member of (for filtering children).

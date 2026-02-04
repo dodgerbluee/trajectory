@@ -4,8 +4,8 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate, requireInstanceAdmin, type AuthRequest } from '../middleware/auth.js';
-import { getAdminConfig, updateAdminConfig, type LogLevelValue } from '../lib/admin-config.js';
-import { setInstanceSetting } from '../lib/instance-settings.js';
+import { getAdminConfig, updateAdminConfig, type LogLevelValue } from '../features/admin/service/admin-config.js';
+import { setInstanceSetting } from '../features/shared/service/instance-settings.js';
 import { getLogBuffer, LogLevel } from '../middleware/error-logger.js';
 import { createResponse } from '../types/api.js';
 import { BadRequestError } from '../middleware/error-handler.js';

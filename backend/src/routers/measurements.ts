@@ -8,7 +8,7 @@ import { query } from '../db/connection.js';
 import type { MeasurementRow, CreateMeasurementInput } from '../types/database.js';
 import { NotFoundError, ForbiddenError } from '../middleware/error-handler.js';
 import type { AuthRequest } from '../middleware/auth.js';
-import { canEditChild } from '../lib/family-access.js';
+import { canEditChild } from '../features/families/service/family-access.js';
 import {
   validateDate,
   validateOptionalString,

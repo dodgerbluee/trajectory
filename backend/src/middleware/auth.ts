@@ -4,9 +4,9 @@
  */
 
 import type { Request, Response, NextFunction } from 'express';
-import { verifyToken } from '../lib/auth.js';
+import { verifyToken } from '../features/auth/service/auth.js';
 import { UnauthorizedError, ForbiddenError } from './error-handler.js';
-import { getIsInstanceAdmin } from '../lib/instance-admin.js';
+import { getIsInstanceAdmin } from '../features/admin/service/instance-admin.js';
 
 export interface AuthRequest extends Request {
   userId?: number;

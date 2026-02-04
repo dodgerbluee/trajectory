@@ -18,7 +18,7 @@ import {
 import { parsePaginationParams } from '../middleware/query-parser.js';
 import { createResponse, createPaginatedResponse } from '../types/api.js';
 import { authenticate, type AuthRequest } from '../middleware/auth.js';
-import { getFamilyIdsForUser, getOrCreateDefaultFamilyForUser, canAccessChild, canEditFamily, canEditChild } from '../lib/family-access.js';
+import { getFamilyIdsForUser, getOrCreateDefaultFamilyForUser, canAccessChild, canEditFamily, canEditChild } from '../features/families/service/family-access.js';
 import { measurementsRouter } from './measurements.js';
 import { medicalEventsRouter } from './medical-events.js';
 

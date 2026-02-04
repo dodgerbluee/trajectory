@@ -25,35 +25,22 @@
 }
 
 .cropperModal {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
+  /* Don't create a modal overlay - this component is already inside a modal */
+  width: 100%;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1;
-  padding: var(--spacing-lg);
-  border-radius: var(--radius-lg);
+  flex-direction: column;
 }
 
 .cropperContainer {
-  background: var(--color-background-card);
-  border-radius: var(--radius-lg);
+  background: transparent;
   width: 100%;
-  min-width: 500px;
-  max-width: 600px;
-  max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  gap: var(--spacing-md);
 }
 
 .cropperHeader {
-  padding: var(--spacing-lg);
-  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--spacing-md);
   text-align: center;
 }
 
@@ -74,11 +61,12 @@
   width: 100%;
   height: 400px;
   background: #000;
+  border-radius: var(--radius-md);
+  overflow: hidden;
 }
 
 .cropperControls {
-  padding: var(--spacing-lg);
-  border-top: 1px solid var(--color-border);
+  padding-top: var(--spacing-md);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
@@ -145,16 +133,6 @@
 }
 
 @media (max-width: 768px) {
-  .cropperModal {
-    padding: 0;
-  }
-
-  .cropperContainer {
-    max-width: 100%;
-    max-height: 100vh;
-    border-radius: 0;
-  }
-
   .cropperArea {
     height: 300px;
   }

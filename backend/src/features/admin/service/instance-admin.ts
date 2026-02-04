@@ -2,7 +2,7 @@
  * Instance admin: users with is_instance_admin can manage other users and instance settings.
  */
 
-import { query } from '../db/connection.js';
+import { query } from '../../../db/connection.js';
 
 /**
  * Returns true if the user has instance admin privilege.

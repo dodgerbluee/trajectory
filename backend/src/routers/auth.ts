@@ -16,7 +16,7 @@ import {
   hashToken,
   validatePasswordStrength,
   validateEmail,
-} from '../lib/auth.js';
+} from '../features/auth/service/auth.js';
 import {
   ValidationError,
   NotFoundError,
@@ -34,7 +34,7 @@ import {
   validateRegistrationCode,
   clearRegistrationCode,
   isRegistrationCodeActive,
-} from '../lib/registration-code.js';
+} from '../features/auth/service/registration-code.js';
 
 export const authRouter = express.Router();
 

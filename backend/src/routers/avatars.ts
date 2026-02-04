@@ -11,9 +11,9 @@ import { randomUUID } from 'crypto';
 import { query } from '../db/connection.js';
 import { createResponse } from '../types/api.js';
 import { authenticate, type AuthRequest } from '../middleware/auth.js';
-import { canAccessChild, canEditChild } from '../lib/family-access.js';
+import { canAccessChild, canEditChild } from '../features/families/service/family-access.js';
 import { ForbiddenError } from '../middleware/error-handler.js';
-import { verifyToken } from '../lib/auth.js';
+import { verifyToken } from '../features/auth/service/auth.js';
 
 const router = Router();
 

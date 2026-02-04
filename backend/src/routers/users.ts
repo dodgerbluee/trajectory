@@ -7,7 +7,7 @@
 import { Router, Response, NextFunction } from 'express';
 import { query } from '../db/connection.js';
 import { authenticate, requireInstanceAdmin, type AuthRequest } from '../middleware/auth.js';
-import { hashPassword, validatePasswordStrength } from '../lib/auth.js';
+import { hashPassword, validatePasswordStrength } from '../features/auth/service/auth.js';
 import { NotFoundError, BadRequestError } from '../middleware/error-handler.js';
 import { validatePositiveInteger } from '../middleware/validation.js';
 import { createResponse } from '../types/api.js';

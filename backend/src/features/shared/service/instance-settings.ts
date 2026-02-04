@@ -3,7 +3,7 @@
  * Used for admin config that should persist across restarts (e.g. log_level).
  */
 
-import { query } from '../db/connection.js';
+import { query } from '../../../db/connection.js';
 
 let ensured = false;
 

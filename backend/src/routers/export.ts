@@ -9,7 +9,7 @@ import path from 'path';
 
 import { query } from '../db/connection.js';
 import { authenticate, type AuthRequest } from '../middleware/auth.js';
-import { getAccessibleChildIds, canExportData } from '../lib/family-access.js';
+import { getAccessibleChildIds, canExportData } from '../features/families/service/family-access.js';
 import { ForbiddenError } from '../middleware/error-handler.js';
 
 const router = Router();

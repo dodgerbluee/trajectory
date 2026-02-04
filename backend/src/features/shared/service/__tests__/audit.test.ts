@@ -7,7 +7,7 @@ import { recordAuditEvent, canViewAuditHistory } from '../audit.js';
 import type { AuditChanges } from '../field-diff.js';
 
 // Mock the query function
-jest.mock('../../db/connection.js', () => ({
+jest.mock('../../../../db/connection.js', () => ({
   query: jest.fn(),
 }));
 

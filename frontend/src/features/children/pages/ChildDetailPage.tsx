@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { LuActivity, LuHeart, LuThermometer } from 'react-icons/lu';
 import { childrenApi, visitsApi, illnessesApi, ApiClientError } from '@lib/api-client';
@@ -21,7 +21,7 @@ import { IllnessesTimeline } from '@features/illnesses';
 import Tabs from '@shared/components/Tabs';
 import { DocumentsList } from '@features/documents';
 import DocumentsSidebar, { type DocumentTypeFilter } from '@features/documents/components/DocumentsSidebar';
-import ImageCropUpload from '@shared/components/ImageCropUpload';
+import ImageCropUpload, { type ImageCropUploadHandle } from '@shared/components/ImageCropUpload';
 import { VaccineHistory, TrendsSidebar, MetricsView } from '@features/medical';
 import { IllnessesSidebar } from '@features/illnesses';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
@@ -65,6 +65,7 @@ function ChildDetailPage() {
   const [showAvatarEditor, setShowAvatarEditor] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const imageCropUploadRef = useRef<ImageCropUploadHandle>(null);
   const { canEdit } = useFamilyPermissions();
   const onboarding = useOnboarding();
   const [notification, setNotification] = useState<{
@@ -807,9 +808,11 @@ function ChildDetailPage() {
             </div>
             <div className={modalStyles.body}>
               <ImageCropUpload
+                ref={imageCropUploadRef}
                 onImageCropped={handleImageCropped}
                 currentImageUrl={child.avatar ? childrenApi.getAvatarUrl(child.avatar) : childrenApi.getDefaultAvatarUrl(child.gender)}
                 disabled={uploadingAvatar}
+                isInModal={true}
               />
               {avatarFile && (
                 <div style={{ marginTop: 'var(--spacing-md)', textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
@@ -820,19 +823,30 @@ function ChildDetailPage() {
             <div className={modalStyles.footer}>
               <Button
                 variant="secondary"
-                onClick={() => {
-                  setShowAvatarEditor(false);
-                  setAvatarFile(null);
+                onClick={async () => {
+                  // If cropper is showing, cancel it; otherwise close modal
+                  imageCropUploadRef.current?.cancel();
+                  if (!avatarFile) {
+                    setShowAvatarEditor(false);
+                  }
                 }}
                 disabled={uploadingAvatar}
               >
                 Cancel
               </Button>
               <Button
-                onClick={handleAvatarSave}
-                disabled={!avatarFile || uploadingAvatar}
+                onClick={async () => {
+                  // If no file cropped yet, save the crop first
+                  if (!avatarFile) {
+                    await imageCropUploadRef.current?.saveCrop();
+                  } else {
+                    // Upload the already-cropped avatar
+                    await handleAvatarSave();
+                  }
+                }}
+                disabled={uploadingAvatar}
               >
-                {uploadingAvatar ? 'Uploading...' : 'Save Avatar'}
+                {uploadingAvatar ? 'Uploading...' : avatarFile ? 'Save Avatar' : 'Crop & Continue'}
               </Button>
             </div>
           </div>

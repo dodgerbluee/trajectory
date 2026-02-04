@@ -1,16 +1,23 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import Cropper, { Area } from 'react-easy-crop';
 import Button from './Button';
 import fileUploadStyles from './FileUpload.module.css';
 import cropStyles from './ImageCropUpload.module.css';
 
+export interface ImageCropUploadHandle {
+  saveCrop: () => Promise<void>;
+  cancel: () => void;
+}
+
 interface ImageCropUploadProps {
   onImageCropped: (croppedImage: File) => void;
   currentImageUrl?: string | null;
   disabled?: boolean;
+  isInModal?: boolean;
 }
 
-function ImageCropUpload({ onImageCropped, currentImageUrl, disabled }: ImageCropUploadProps) {
+const ImageCropUpload = forwardRef<ImageCropUploadHandle, ImageCropUploadProps>(
+  ({ onImageCropped, currentImageUrl, disabled, isInModal }, ref) => {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -25,6 +32,12 @@ function ImageCropUpload({ onImageCropped, currentImageUrl, disabled }: ImageCro
       if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
     };
   }, [pendingPreviewUrl]);
+
+  // Expose crop and cancel methods to parent via ref
+  useImperativeHandle(ref, () => ({
+    saveCrop: handleSaveCrop,
+    cancel: handleCancel
+  }));
 
   const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -202,14 +215,16 @@ function ImageCropUpload({ onImageCropped, currentImageUrl, disabled }: ImageCro
                 />
               </div>
               
-              <div className={cropStyles.cropperActions}>
-                <Button type="button" onClick={handleCancel} variant="secondary">
-                  Cancel
-                </Button>
-                <Button type="button" onClick={handleSaveCrop}>
-                  Save Avatar
-                </Button>
-              </div>
+              {!isInModal && (
+                <div className={cropStyles.cropperActions}>
+                  <Button type="button" onClick={handleCancel} variant="secondary">
+                    Cancel
+                  </Button>
+                  <Button type="button" onClick={handleSaveCrop}>
+                    Save Avatar
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -217,6 +232,9 @@ function ImageCropUpload({ onImageCropped, currentImageUrl, disabled }: ImageCro
     </div>
   );
 }
+);
+
+ImageCropUpload.displayName = 'ImageCropUpload';
 
 // Helper function to create an image element from a URL
 function createImage(url: string): Promise<HTMLImageElement> {

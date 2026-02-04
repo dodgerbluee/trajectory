@@ -5,15 +5,15 @@
 import { Router, Response, NextFunction } from 'express';
 import { query } from '../db/connection.js';
 import { createResponse, createPaginatedResponse, parsePaginationParams, type AuditHistoryEvent } from '../types/api.js';
-import { canViewAuditHistory } from '../lib/audit.js';
+import { canViewAuditHistory } from '../features/shared/service/audit.js';
 import { UnauthorizedError, ConflictError } from '../middleware/error-handler.js';
 import { BadRequestError, NotFoundError, ForbiddenError } from '../middleware/error-handler.js';
 import { authenticate, type AuthRequest } from '../middleware/auth.js';
 import type { VisitRow, CreateVisitInput, VisitType, IllnessType } from '../types/database.js';
 import { visitRowToVisit as convertVisitRow } from '../types/database.js';
-import { buildFieldDiff, auditChangesSummary } from '../lib/field-diff.js';
-import { recordAuditEvent } from '../lib/audit.js';
-import { getAccessibleChildIds, canAccessChild, canEditChild } from '../lib/family-access.js';
+import { buildFieldDiff, auditChangesSummary } from '../features/shared/service/field-diff.js';
+import { recordAuditEvent } from '../features/shared/service/audit.js';
+import { getAccessibleChildIds, canAccessChild, canEditChild } from '../features/families/service/family-access.js';
 
 const router = Router();
 router.use(authenticate);
