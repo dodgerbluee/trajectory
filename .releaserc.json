@@ -1,0 +1,21 @@
+{
+  "branches": [
+    "main"
+  ],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    ["@semantic-release/changelog", {
+      "changelogFile": "docs/VERSIONING.md"
+    }],
+    ["@semantic-release/npm", {
+      "npmPublish": false,
+      "pkgRoot": "."
+    }],
+    "@semantic-release/github",
+    "@semantic-release/git"
+  ],
+  "tagFormat": "v${version}",
+  "preset": "conventionalcommits",
+  "extends": "@semantic-release/gitmoji"
+}

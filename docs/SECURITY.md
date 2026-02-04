@@ -1,5 +1,48 @@
 # Security policy
 
+## Authentication & CSRF Risk
+
+Trajectory uses header-based JWT authentication and does not rely on cookies for authentication. As a result, traditional CSRF attacks do not apply. If cookie-based authentication is added in the future, CSRF protection will be required.
+
+## HTTPS Deployment Expectation
+
+Trajectory assumes it is deployed behind an HTTPS-terminating reverse proxy (e.g., nginx, Caddy, cloud load balancer). All traffic to the application should be encrypted in transit.
+
+## Encryption at Rest & Storage Expectations
+
+Trajectory does **not** encrypt data at rest by default. Operators and users handling sensitive data **must** enable disk or volume encryption on the host system. Recommended approaches include:
+
+- Full disk encryption (e.g., LUKS)
+- ZFS native encryption
+- Encrypted VM disks (cloud or hypervisor)
+- Encrypted Docker volumes
+
+Backups should be encrypted using tools such as **restic** or **borg**. See deployment documentation for backup/restore details.
+
+### Security Practices
+
+- **Passwords:** Argon2 or bcrypt for password hashing
+- **HTTPS only:** All traffic must be served over HTTPS
+- **Secure cookie flags:** All cookies must be set with Secure, HttpOnly, and SameSite attributes
+- **CSRF protection:** All forms and API endpoints must implement CSRF protection
+- **Auth boundaries:** Proper authorization boundaries between children, families, and accounts
+- **Encrypted backends (optional):** Support for encrypted storage backends (ZFS, encrypted Docker volumes, encrypted backups)
+
+#### Example: Encrypted Backends
+
+- ZFS encryption for database and uploads volumes
+- Encrypted Docker volumes for all persistent data
+- Encrypted backups using restic, borg, or similar
+
+#### Operator Guidance
+
+Operators are responsible for ensuring that:
+
+- Host disks/volumes are encrypted if handling sensitive data
+- Backups are encrypted and stored securely
+- HTTPS is enforced at all entry points
+- Application is deployed with secure cookie and CSRF settings
+
 ## Reporting a vulnerability
 
 **Do not open a public GitHub issue for security vulnerabilities.**
