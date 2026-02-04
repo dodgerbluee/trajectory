@@ -9,6 +9,7 @@ import { AllIllnessesView } from '@features/illnesses';
 import { AllVisitsView } from '@features/visits';
 import { MetricsView, TrendsSidebar } from '@features/medical';
 import { VisitTypeModal } from '@features/visits';
+import type { VisitType } from '@shared/types/api';
 import { FamilyTabView } from '../components';
 import { useFamiliesData } from '../hooks/useFamiliesData';
 import { useUpcomingVisitsData } from '../hooks/useUpcomingVisitsData';
@@ -165,16 +166,16 @@ function HomePage() {
       </Card>
       {/* Visit type modal triggered via navigation state (no URL query) on the Home page */}
       <VisitTypeModal
-        isOpen={!!((location.state as any)?.openAddVisit)}
-        onSelect={(visitType: any) => {
-          const stateFrom = (location.state as any)?.from;
-          const stateFromTab = (location.state as any)?.fromTab;
+        isOpen={!!((location.state as { openAddVisit?: boolean })?.openAddVisit)}
+        onSelect={(visitType: VisitType) => {
+          const stateFrom = (location.state as { from?: string })?.from;
+          const stateFromTab = (location.state as { fromTab?: string })?.fromTab;
           const from = stateFrom ?? (location.pathname === '/' ? '/' : `${location.pathname}${location.search}`);
           const fromTab = stateFromTab ?? (location.pathname === '/' ? 'visits' : undefined);
           navigate(`/visits/new?type=${visitType}`, { state: { from, fromTab } });
         }}
         onClose={() => {
-          const currentState = { ...(location.state as any) };
+          const currentState = { ...(location.state as Record<string, unknown>) };
           delete currentState.openAddVisit;
           navigate(location.pathname + (location.search || ''), { state: currentState, replace: true });
         }}

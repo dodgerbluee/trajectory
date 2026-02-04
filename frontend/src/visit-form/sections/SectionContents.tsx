@@ -17,6 +17,7 @@ import { VisitAttachmentsList } from '@features/visits';
 import Checkbox from '@shared/components/Checkbox';
 import type { SectionId } from '@features/visits/visit-form/sectionRegistry';
 import type { VisitFormContext } from '@features/visits/visit-form/visitFormContext';
+import type { CreateVisitInput, UpdateVisitInput } from '@shared/types/api';
 import { isFutureDate } from '@lib/date-utils';
 import sectionStyles from './SectionContents.module.css';
 import mui from '@shared/styles/MeasurementsUI.module.css';
@@ -27,8 +28,8 @@ export interface SectionContentPropsWithContext {
 }
 
 export function VisitInformationSection({ context }: SectionContentPropsWithContext) {
-  const { formData, setFormData, submitting, showTitle, recentLocations, recentDoctors, getTodayDate, children, selectedChildId, setSelectedChildId } = context;
-  const setForm = setFormData as React.Dispatch<React.SetStateAction<any>>;
+  const { formData, setFormData: _setFormData, submitting, showTitle, recentLocations, recentDoctors, getTodayDate, children, selectedChildId, setSelectedChildId } = context;
+  const setFormData = _setFormData as React.Dispatch<React.SetStateAction<CreateVisitInput & UpdateVisitInput>>;
   // Add mode: no date restriction (user can pick any date; form expands to full or limited based on date).
   // Edit mode: allow future if form's date is already future, else max today.
   const formDateIsFuture = !!(formData.visit_date && isFutureDate(formData.visit_date));
@@ -52,7 +53,7 @@ export function VisitInformationSection({ context }: SectionContentPropsWithCont
           label="Visit Date"
           type="date"
           value={formData.visit_date ?? ''}
-          onChange={(e) => setForm((prev: any) => ({ ...prev, visit_date: e.target.value }))}
+          onChange={(e) => setFormData((prev) => ({ ...prev, visit_date: e.target.value }))}
           required
           disabled={submitting}
           {...futureDateConstraint}
@@ -61,14 +62,14 @@ export function VisitInformationSection({ context }: SectionContentPropsWithCont
           label="Time (optional)"
           type="time"
           value={formData.visit_time ?? ''}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((prev: any) => ({ ...prev, visit_time: e.target.value || null }))}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData((prev) => ({ ...prev, visit_time: e.target.value || null }))}
           disabled={submitting}
         />
         <FormField
           label="Location"
           type="text"
           value={formData.location || ''}
-          onChange={(e) => setForm((prev: any) => ({ ...prev, location: e.target.value || null }))}
+          onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value || null }))}
           disabled={submitting}
           placeholder="e.g., Dr. Smith Pediatrics"
           list="locations"
@@ -77,9 +78,9 @@ export function VisitInformationSection({ context }: SectionContentPropsWithCont
           label="Doctor"
           type="text"
           value={formData.doctor_name || ''}
-          onChange={(e) => setForm((prev: any) => ({ ...prev, doctor_name: e.target.value || null }))}
+          onChange={(e) => setFormData((prev) => ({ ...prev, doctor_name: e.target.value || null }))}
           disabled={submitting}
-          placeholder="e.g., Dr. Sarah Johnson"
+          placeholder="e.g., Dr. Jones"
           list="doctors"
         />
       </div>
@@ -100,7 +101,7 @@ export function VisitInformationSection({ context }: SectionContentPropsWithCont
               label="Title"
               type="text"
               value={formData.title || ''}
-              onChange={(e) => setForm((prev: any) => ({ ...prev, title: e.target.value || null }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value || null }))}
               disabled={submitting}
               placeholder="e.g., 1 Year Appointment"
             />
@@ -109,7 +110,7 @@ export function VisitInformationSection({ context }: SectionContentPropsWithCont
             <label className={sectionStyles.formLabel}>Tags</label>
             <TagInput
               tags={formData.tags || []}
-              onChange={(tags) => setForm((prev: any) => ({ ...prev, tags }))}
+              onChange={(tags) => setFormData((prev) => ({ ...prev, tags }))}
               disabled={submitting}
               placeholder="e.g., follow-up, urgent, routine"
             />
@@ -121,13 +122,13 @@ export function VisitInformationSection({ context }: SectionContentPropsWithCont
 }
 
 export function NotesSection({ context }: SectionContentPropsWithContext) {
-  const { formData, setFormData, submitting } = context;
-  const setForm = setFormData as React.Dispatch<React.SetStateAction<any>>;
+  const { formData, setFormData: _setFormData, submitting } = context;
+  const setFormData = _setFormData as React.Dispatch<React.SetStateAction<CreateVisitInput & UpdateVisitInput>>;
   return (
     <FormField
       type="textarea"
       value={formData.notes || ''}
-      onChange={(e) => setForm((prev: any) => ({ ...prev, notes: e.target.value || null }))}
+      onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value || null }))}
       disabled={submitting}
       placeholder="Any additional notes about this visit..."
       rows={4}
@@ -200,50 +201,49 @@ export function AttachmentsSection({ context }: SectionContentPropsWithContext) 
 }
 
 export function MeasurementsSection({ context }: SectionContentPropsWithContext) {
-  const { formData, setFormData, submitting } = context;
-  const setForm = setFormData as React.Dispatch<React.SetStateAction<any>>;
-  const fd = formData as any;
+  const { formData, setFormData: _setFormData, submitting } = context;
+  const setFormData = _setFormData as React.Dispatch<React.SetStateAction<CreateVisitInput & UpdateVisitInput>>;
   return (
     <MeasurementsInput
-      weightValue={fd.weight_value ?? null}
-      weightOunces={fd.weight_ounces ?? null}
-      weightPercentile={fd.weight_percentile ?? null}
-      heightValue={fd.height_value ?? null}
-      heightPercentile={fd.height_percentile ?? null}
-      headCircumferenceValue={fd.head_circumference_value ?? null}
-      headCircumferencePercentile={fd.head_circumference_percentile ?? null}
-      bmiValue={fd.bmi_value ?? null}
-      bmiPercentile={fd.bmi_percentile ?? null}
-      bloodPressure={fd.blood_pressure ?? null}
-      heartRate={fd.heart_rate ?? null}
-      onWeightChange={(v) => setForm((prev: any) => ({ ...prev, weight_value: v }))}
-      onWeightOuncesChange={(v) => setForm((prev: any) => ({ ...prev, weight_ounces: v }))}
-      onWeightPercentileChange={(v) => setForm((prev: any) => ({ ...prev, weight_percentile: v }))}
-      onHeightChange={(v) => setForm((prev: any) => ({ ...prev, height_value: v }))}
-      onHeightPercentileChange={(v) => setForm((prev: any) => ({ ...prev, height_percentile: v }))}
-      onHeadCircumferenceChange={(v) => setForm((prev: any) => ({ ...prev, head_circumference_value: v }))}
-      onHeadCircumferencePercentileChange={(v) => setForm((prev: any) => ({ ...prev, head_circumference_percentile: v }))}
-      onBmiChange={(v) => setForm((prev: any) => ({ ...prev, bmi_value: v }))}
-      onBmiPercentileChange={(v) => setForm((prev: any) => ({ ...prev, bmi_percentile: v }))}
-      onBloodPressureChange={(v) => setForm((prev: any) => ({ ...prev, blood_pressure: v }))}
-      onHeartRateChange={(v) => setForm((prev: any) => ({ ...prev, heart_rate: v }))}
+      weightValue={formData.weight_value ?? null}
+      weightOunces={formData.weight_ounces ?? null}
+      weightPercentile={formData.weight_percentile ?? null}
+      heightValue={formData.height_value ?? null}
+      heightPercentile={formData.height_percentile ?? null}
+      headCircumferenceValue={formData.head_circumference_value ?? null}
+      headCircumferencePercentile={formData.head_circumference_percentile ?? null}
+      bmiValue={formData.bmi_value ?? null}
+      bmiPercentile={formData.bmi_percentile ?? null}
+      bloodPressure={formData.blood_pressure ?? null}
+      heartRate={formData.heart_rate ?? null}
+      onWeightChange={(v) => setFormData((prev) => ({ ...prev, weight_value: v }))}
+      onWeightOuncesChange={(v) => setFormData((prev) => ({ ...prev, weight_ounces: v }))}
+      onWeightPercentileChange={(v) => setFormData((prev) => ({ ...prev, weight_percentile: v }))}
+      onHeightChange={(v) => setFormData((prev) => ({ ...prev, height_value: v }))}
+      onHeightPercentileChange={(v) => setFormData((prev) => ({ ...prev, height_percentile: v }))}
+      onHeadCircumferenceChange={(v) => setFormData((prev) => ({ ...prev, head_circumference_value: v }))}
+      onHeadCircumferencePercentileChange={(v) => setFormData((prev) => ({ ...prev, head_circumference_percentile: v }))}
+      onBmiChange={(v) => setFormData((prev) => ({ ...prev, bmi_value: v }))}
+      onBmiPercentileChange={(v) => setFormData((prev) => ({ ...prev, bmi_percentile: v }))}
+      onBloodPressureChange={(v) => setFormData((prev) => ({ ...prev, blood_pressure: v }))}
+      onHeartRateChange={(v) => setFormData((prev) => ({ ...prev, heart_rate: v }))}
       disabled={submitting}
     />
   );
 }
 
 export function IllnessSection({ context }: SectionContentPropsWithContext) {
-  const { formData, setFormData, selectedIllnesses, setSelectedIllnesses, submitting } = context;
-  const setForm = setFormData as React.Dispatch<React.SetStateAction<any>>;
+  const { formData, setFormData: _setFormData, selectedIllnesses, setSelectedIllnesses, submitting } = context;
+  const setFormData = _setFormData as React.Dispatch<React.SetStateAction<CreateVisitInput & UpdateVisitInput>>;
   const value = {
     ...formData,
-    illness_severity: (formData as any).illness_severity ?? null,
+    illness_severity: 'illness_severity' in formData ? formData.illness_severity : null,
   };
   return (
     <>
       <IllnessEntryFormFields
         value={value}
-        onChange={(next) => setForm((prev: any) => ({ ...prev, ...next }))}
+        onChange={(next) => setFormData((prev) => ({ ...prev, ...next }))}
         selectedIllnesses={selectedIllnesses}
         onSelectedIllnessesChange={setSelectedIllnesses}
         disabled={submitting}
@@ -255,8 +255,8 @@ export function IllnessSection({ context }: SectionContentPropsWithContext) {
         <div className={`${sectionStyles.formField} illness-create-entry-field`}>
           <Checkbox
             label="Create illness entry (auto-track this illness)"
-            checked={(formData as any).create_illness || false}
-            onChange={(checked) => setForm((prev: any) => ({ ...prev, create_illness: checked }))}
+            checked={('create_illness' in formData && formData.create_illness) || false}
+            onChange={(checked) => setFormData((prev) => ({ ...prev, create_illness: checked }))}
             disabled={submitting}
           />
           <p className={`${sectionStyles.formFieldHint} ${sectionStyles.formFieldHintItalic}`}>
@@ -269,8 +269,8 @@ export function IllnessSection({ context }: SectionContentPropsWithContext) {
 }
 
 export function InjurySection({ context }: SectionContentPropsWithContext) {
-  const { formData, setFormData, submitting } = context;
-  const setForm = setFormData as React.Dispatch<React.SetStateAction<any>>;
+  const { formData, setFormData: _setFormData, submitting } = context;
+  const setFormData = _setFormData as React.Dispatch<React.SetStateAction<CreateVisitInput & UpdateVisitInput>>;
   return (
     <>
       <div className={sectionStyles.formRow}>
@@ -278,7 +278,7 @@ export function InjurySection({ context }: SectionContentPropsWithContext) {
           label="Injury Type"
           type="text"
           value={formData.injury_type || ''}
-          onChange={(e) => setForm((prev: any) => ({ ...prev, injury_type: e.target.value || null }))}
+          onChange={(e) => setFormData((prev) => ({ ...prev, injury_type: e.target.value || null }))}
           required
           disabled={submitting}
           placeholder="e.g., sprain, laceration, fracture, bruise, burn"
@@ -287,7 +287,7 @@ export function InjurySection({ context }: SectionContentPropsWithContext) {
           label="Injury Location"
           type="text"
           value={formData.injury_location || ''}
-          onChange={(e) => setForm((prev: any) => ({ ...prev, injury_location: e.target.value || null }))}
+          onChange={(e) => setFormData((prev) => ({ ...prev, injury_location: e.target.value || null }))}
           disabled={submitting}
           placeholder="e.g., left ankle, forehead, right arm"
         />
@@ -296,7 +296,7 @@ export function InjurySection({ context }: SectionContentPropsWithContext) {
         label="Treatment"
         type="textarea"
         value={formData.treatment || ''}
-        onChange={(e) => setForm((prev: any) => ({ ...prev, treatment: e.target.value || null }))}
+        onChange={(e) => setFormData((prev) => ({ ...prev, treatment: e.target.value || null }))}
         disabled={submitting}
         placeholder="e.g., stitches, splint, ice and rest, bandage"
         rows={3}
@@ -306,29 +306,28 @@ export function InjurySection({ context }: SectionContentPropsWithContext) {
 }
 
 export function VisionSection({ context }: SectionContentPropsWithContext) {
-  const { formData, setFormData, submitting } = context;
-  const setForm = setFormData as React.Dispatch<React.SetStateAction<any>>;
-  const fd = formData as any;
+  const { formData, setFormData: _setFormData, submitting } = context;
+  const setFormData = _setFormData as React.Dispatch<React.SetStateAction<CreateVisitInput & UpdateVisitInput>>;
   return (
     <div className={`${mui.root} ${mui.visionUi}`}>
       <div className={`${mui.cards} ${mui.visionRefractionCards}`}>
         <VisionRefractionCard
-          value={fd.vision_refraction}
-          onChange={(v: VisionRefraction) => setForm((prev: any) => ({ ...prev, vision_refraction: v }))}
+          value={'vision_refraction' in formData ? formData.vision_refraction : undefined}
+          onChange={(v: VisionRefraction) => setFormData((prev) => ({ ...prev, vision_refraction: v }))}
           readOnly={submitting}
         />
       </div>
       <div className={mui.visionCheckboxes}>
         <Checkbox
           label="Ordered Glasses"
-          checked={fd.ordered_glasses || false}
-          onChange={(checked) => setForm((prev: any) => ({ ...prev, ordered_glasses: checked }))}
+          checked={('ordered_glasses' in formData && formData.ordered_glasses) || false}
+          onChange={(checked) => setFormData((prev) => ({ ...prev, ordered_glasses: checked }))}
           disabled={submitting}
         />
         <Checkbox
           label="Ordered Contacts"
-          checked={fd.ordered_contacts || false}
-          onChange={(checked) => setForm((prev: any) => ({ ...prev, ordered_contacts: checked }))}
+          checked={('ordered_contacts' in formData && formData.ordered_contacts) || false}
+          onChange={(checked) => setFormData((prev) => ({ ...prev, ordered_contacts: checked }))}
           disabled={submitting}
         />
       </div>
@@ -337,9 +336,8 @@ export function VisionSection({ context }: SectionContentPropsWithContext) {
 }
 
 export function DentalSection({ context }: SectionContentPropsWithContext) {
-  const { formData, setFormData, submitting } = context;
-  const setForm = setFormData as React.Dispatch<React.SetStateAction<any>>;
-  const fd = formData as any;
+  const { formData, setFormData: _setFormData, submitting } = context;
+  const setFormData = _setFormData as React.Dispatch<React.SetStateAction<CreateVisitInput & UpdateVisitInput>>;
   
   const procedureTypes = [
     { value: '', label: 'Select dental visit type...' },
@@ -362,24 +360,27 @@ export function DentalSection({ context }: SectionContentPropsWithContext) {
     { value: 'polish', label: 'Polish' },
   ];
   
+  const dentalProcedureType = 'dental_procedure_type' in formData ? formData.dental_procedure_type : null;
+  const cleaningType = 'cleaning_type' in formData ? formData.cleaning_type : null;
+  
   return (
     <div className={sectionStyles.dentalUi}>
       <div className={sectionStyles.dentalFormFields}>
         <FormField
           label="Dental Visit Type"
           type="select"
-          value={fd.dental_procedure_type || ''}
-          onChange={(e) => setForm((prev: any) => ({ ...prev, dental_procedure_type: e.target.value || null }))}
+          value={dentalProcedureType || ''}
+          onChange={(e) => setFormData((prev) => ({ ...prev, dental_procedure_type: e.target.value || null }))}
           options={procedureTypes}
           disabled={submitting}
         />
         
-        {fd.dental_procedure_type === 'cleaning' && (
+        {dentalProcedureType === 'cleaning' && (
           <FormField
             label="Cleaning Type"
             type="select"
-            value={fd.cleaning_type || ''}
-            onChange={(e) => setForm((prev: any) => ({ ...prev, cleaning_type: e.target.value || null }))}
+            value={cleaningType || ''}
+            onChange={(e) => setFormData((prev) => ({ ...prev, cleaning_type: e.target.value || null }))}
             options={cleaningTypes}
             disabled={submitting}
           />
@@ -388,20 +389,20 @@ export function DentalSection({ context }: SectionContentPropsWithContext) {
         <div className={sectionStyles.dentalCheckboxes}>
           <Checkbox
             label="X-Rays Taken"
-            checked={fd.xrays_taken || false}
-            onChange={(checked) => setForm((prev: any) => ({ ...prev, xrays_taken: checked }))}
+            checked={('xrays_taken' in formData && formData.xrays_taken) || false}
+            onChange={(checked) => setFormData((prev) => ({ ...prev, xrays_taken: checked }))}
             disabled={submitting}
           />
           <Checkbox
             label="Fluoride Treatment"
-            checked={fd.fluoride_treatment || false}
-            onChange={(checked) => setForm((prev: any) => ({ ...prev, fluoride_treatment: checked }))}
+            checked={('fluoride_treatment' in formData && formData.fluoride_treatment) || false}
+            onChange={(checked) => setFormData((prev) => ({ ...prev, fluoride_treatment: checked }))}
             disabled={submitting}
           />
           <Checkbox
             label="Sealants Applied"
-            checked={fd.sealants_applied || false}
-            onChange={(checked) => setForm((prev: any) => ({ ...prev, sealants_applied: checked }))}
+            checked={('sealants_applied' in formData && formData.sealants_applied) || false}
+            onChange={(checked) => setFormData((prev) => ({ ...prev, sealants_applied: checked }))}
             disabled={submitting}
           />
         </div>
@@ -411,11 +412,11 @@ export function DentalSection({ context }: SectionContentPropsWithContext) {
             <FormField
               label="Cavities Found"
               type="number"
-              value={fd.cavities_found ?? ''}
+              value={('cavities_found' in formData && formData.cavities_found !== null) ? formData.cavities_found : ''}
               onChange={(e) => {
               const v = e.target.value;
               const n = v === '' ? null : (() => { const num = parseInt(v, 10); return Number.isNaN(num) ? null : num; })();
-              setForm((prev: any) => ({ ...prev, cavities_found: n }));
+              setFormData((prev) => ({ ...prev, cavities_found: n }));
             }}
               min="0"
               disabled={submitting}
@@ -425,14 +426,14 @@ export function DentalSection({ context }: SectionContentPropsWithContext) {
             <FormField
               label="Cavities Filled"
               type="number"
-              value={fd.cavities_filled ?? ''}
+              value={('cavities_filled' in formData && formData.cavities_filled !== null) ? formData.cavities_filled : ''}
               onChange={(e) => {
               const v = e.target.value;
               const n = v === '' ? null : (() => { const num = parseInt(v, 10); return Number.isNaN(num) ? null : num; })();
-              setForm((prev: any) => ({ ...prev, cavities_filled: n }));
+              setFormData((prev) => ({ ...prev, cavities_filled: n }));
             }}
               min="0"
-              max={fd.cavities_found ?? undefined}
+              max={('cavities_found' in formData && formData.cavities_found !== null) ? formData.cavities_found : undefined}
               disabled={submitting}
             />
           </div>
@@ -443,24 +444,24 @@ export function DentalSection({ context }: SectionContentPropsWithContext) {
 }
 
 export function VaccinesSection({ context }: SectionContentPropsWithContext) {
-  const { formData, setFormData, submitting } = context;
-  const setForm = setFormData as React.Dispatch<React.SetStateAction<any>>;
+  const { formData, setFormData: _setFormData, submitting } = context;
+  const setFormData = _setFormData as React.Dispatch<React.SetStateAction<CreateVisitInput & UpdateVisitInput>>;
   return (
     <VaccineInput
       value={formData.vaccines_administered || []}
-      onChange={(vaccines) => setForm((prev: any) => ({ ...prev, vaccines_administered: vaccines }))}
+      onChange={(vaccines) => setFormData((prev) => ({ ...prev, vaccines_administered: vaccines }))}
       disabled={submitting}
     />
   );
 }
 
 export function PrescriptionsSection({ context }: SectionContentPropsWithContext) {
-  const { formData, setFormData, submitting } = context;
-  const setForm = setFormData as React.Dispatch<React.SetStateAction<any>>;
+  const { formData, setFormData: _setFormData, submitting } = context;
+  const setFormData = _setFormData as React.Dispatch<React.SetStateAction<CreateVisitInput & UpdateVisitInput>>;
   return (
     <PrescriptionInput
       value={formData.prescriptions || []}
-      onChange={(prescriptions) => setForm((prev: any) => ({ ...prev, prescriptions }))}
+      onChange={(prescriptions) => setFormData((prev) => ({ ...prev, prescriptions }))}
       disabled={submitting}
     />
   );

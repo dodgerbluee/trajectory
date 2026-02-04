@@ -6,8 +6,7 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { validateChildForm, getTodayDate } from '@lib/validation';
 import type { Gender } from '@shared/types/api';
 import Card from '@shared/components/Card';
-import FormField from '@shared/components/FormField';
-import formFieldStyles from '@shared/components/FormField.module.css';
+import FormField, { FormFieldGroup } from '@shared/components/FormField';
 import Button from '@shared/components/Button';
 import Notification from '@shared/components/Notification';
 import ImageCropUpload from '@shared/components/ImageCropUpload';
@@ -202,10 +201,7 @@ function AddChildPage() {
                     max={getTodayDate()}
                     disabled={submitting}
                   />
-                  <div className={`${formFieldStyles.root} ${styles.genderField}`}>
-                    <label className={formFieldStyles.label}>
-                      Gender <span className={formFieldStyles.requiredIndicator}>*</span>
-                    </label>
+                  <FormFieldGroup label="Gender" required className={styles.genderField}>
                     <div className={styles.genderToggle} role="group" aria-label="Gender">
                       <button
                         type="button"
@@ -226,7 +222,7 @@ function AddChildPage() {
                         <span>Female</span>
                       </button>
                     </div>
-                  </div>
+                  </FormFieldGroup>
                 </div>
               </div>
             </div>
@@ -242,8 +238,7 @@ function AddChildPage() {
                 max={getTodayDate()}
                 disabled={submitting}
               />
-              <div className={styles.numberWrap}>
-                <label className={formFieldStyles.label}>Birth Weight</label>
+              <FormFieldGroup label="Birth Weight" className={styles.numberWrap}>
                 <div className={styles.lbOz}>
                   <input
                     type="number"
@@ -269,9 +264,8 @@ function AddChildPage() {
                   />
                   <span className={styles.unit}>oz</span>
                 </div>
-              </div>
-              <div className={styles.numberWrap}>
-                <label className={formFieldStyles.label}>Birth Height</label>
+              </FormFieldGroup>
+              <FormFieldGroup label="Birth Height" className={styles.numberWrap}>
                 <div className={styles.heightIn}>
                   <input
                     type="number"
@@ -286,7 +280,7 @@ function AddChildPage() {
                   />
                   <span className={styles.unit}>in</span>
                 </div>
-              </div>
+              </FormFieldGroup>
             </div>
 
             <div className={styles.notesWrap}>

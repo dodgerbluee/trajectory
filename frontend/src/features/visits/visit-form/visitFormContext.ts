@@ -12,7 +12,7 @@ export interface VisitFormContext {
   mode: VisitFormMode;
   formData: CreateVisitInput | UpdateVisitInput;
   /** Pages pass their own setState; sections use functional updates (prev => ({ ...prev, ... })). */
-  setFormData: React.Dispatch<React.SetStateAction<CreateVisitInput | UpdateVisitInput>> | React.Dispatch<React.SetStateAction<CreateVisitInput>> | React.Dispatch<React.SetStateAction<UpdateVisitInput>>;
+  setFormData: React.Dispatch<React.SetStateAction<CreateVisitInput>> | React.Dispatch<React.SetStateAction<UpdateVisitInput>>;
   submitting: boolean;
   /** Display hint: show Title field (e.g. for wellness). No visit-type logic inside sections. */
   showTitle: boolean;

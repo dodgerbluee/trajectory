@@ -61,7 +61,7 @@ export default function DocumentsSidebar({
         <div className={layout.sidebarDivider} />
 
         <nav className={layout.sidebarStats}>
-          <VisitStats stats={stats as any} vertical />
+          <VisitStats stats={stats} vertical />
         </nav>
       </div>
     </aside>

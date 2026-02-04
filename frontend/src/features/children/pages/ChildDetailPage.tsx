@@ -560,7 +560,7 @@ function ChildDetailPage() {
           {/* Tabs Section */}
           <div className={cd.childDetailSection}>
             {(() => {
-              const tabsArray: any[] = [];
+              const tabsArray: Array<{ id: string; label: string; content: React.ReactNode }> = [];
 
               tabsArray.push({
                 id: 'visits',

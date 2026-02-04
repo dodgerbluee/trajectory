@@ -35,7 +35,7 @@ export default function TrendsSidebar({
           {
             label: 'Illness',
             value: 0,
-            icon: LuPill as any,
+            icon: LuPill,
             color: 'red' as const,
             onClick: () => onChangeTab('illness'),
             active: activeTab === 'illness',
@@ -47,7 +47,7 @@ export default function TrendsSidebar({
           {
             label: 'Growth',
             value: 0,
-            icon: GoGraph as any,
+            icon: GoGraph,
             color: 'blue' as const,
             onClick: () => onChangeTab('growth'),
             active: activeTab === 'growth',

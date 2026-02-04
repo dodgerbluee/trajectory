@@ -21,7 +21,11 @@ interface VisitFormState {
   selectedIllnesses: IllnessType[];
 }
 
-
+/**
+ * Page for editing an existing visit
+ * Handles both limited (future) and full (past) visit editing
+ * Allows toggling between limited and full form for future visits
+ */
 function EditVisitPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -60,7 +64,7 @@ function EditVisitPage() {
         temperature: null,
         end_date: null,
         vision_prescription: null,
-        vision_refraction: { od: { sphere: null, cylinder: null, axis: null }, os: { sphere: null, cylinder: null, axis: null }, notes: undefined } as any,
+        vision_refraction: { od: { sphere: null, cylinder: null, axis: null }, os: { sphere: null, cylinder: null, axis: null }, notes: undefined },
         ordered_glasses: null,
         ordered_contacts: null,
         dental_procedure_type: null,
@@ -172,19 +176,19 @@ function EditVisitPage() {
         injury_location: visitData.injury_location,
         treatment: visitData.treatment,
         vision_prescription: visitData.vision_prescription,
-        vision_refraction: (visitData as any).vision_refraction || { od: { sphere: null, cylinder: null, axis: null }, os: { sphere: null, cylinder: null, axis: null }, notes: undefined },
-        ordered_glasses: (visitData as any).ordered_glasses ?? visitData.needs_glasses ?? null,
-        ordered_contacts: (visitData as any).ordered_contacts ?? null,
-        dental_procedure_type: (visitData as any).dental_procedure_type ?? null,
-        dental_notes: (visitData as any).dental_notes ?? null,
-        cleaning_type: (visitData as any).cleaning_type ?? null,
-        cavities_found: (visitData as any).cavities_found ?? null,
-        cavities_filled: (visitData as any).cavities_filled ?? null,
-        xrays_taken: (visitData as any).xrays_taken ?? null,
-        fluoride_treatment: (visitData as any).fluoride_treatment ?? null,
-        sealants_applied: (visitData as any).sealants_applied ?? null,
-        next_appointment_date: (visitData as any).next_appointment_date ?? null,
-        dental_procedures: (visitData as any).dental_procedures ?? null,
+        vision_refraction: ('vision_refraction' in visitData) ? visitData.vision_refraction : { od: { sphere: null, cylinder: null, axis: null }, os: { sphere: null, cylinder: null, axis: null }, notes: undefined },
+        ordered_glasses: ('ordered_glasses' in visitData) ? visitData.ordered_glasses : ((visitData as Visit).needs_glasses ?? null),
+        ordered_contacts: ('ordered_contacts' in visitData) ? visitData.ordered_contacts : null,
+        dental_procedure_type: ('dental_procedure_type' in visitData) ? visitData.dental_procedure_type : null,
+        dental_notes: ('dental_notes' in visitData) ? visitData.dental_notes : null,
+        cleaning_type: ('cleaning_type' in visitData) ? visitData.cleaning_type : null,
+        cavities_found: ('cavities_found' in visitData) ? visitData.cavities_found : null,
+        cavities_filled: ('cavities_filled' in visitData) ? visitData.cavities_filled : null,
+        xrays_taken: ('xrays_taken' in visitData) ? visitData.xrays_taken : null,
+        fluoride_treatment: ('fluoride_treatment' in visitData) ? visitData.fluoride_treatment : null,
+        sealants_applied: ('sealants_applied' in visitData) ? visitData.sealants_applied : null,
+        next_appointment_date: ('next_appointment_date' in visitData) ? visitData.next_appointment_date : null,
+        dental_procedures: ('dental_procedures' in visitData) ? visitData.dental_procedures : null,
         vaccines_administered: visitData.vaccines_administered || [],
         prescriptions: visitData.prescriptions || [],
         tags: visitData.tags || [],
@@ -192,8 +196,8 @@ function EditVisitPage() {
       });
 
       // Initialize selected illnesses from new `illnesses` array or legacy `illness_type`
-      const loadedIllnesses = (visitData as any).illnesses && (visitData as any).illnesses.length > 0
-        ? (visitData as any).illnesses as IllnessType[]
+      const loadedIllnesses = ('illnesses' in visitData && Array.isArray(visitData.illnesses) && visitData.illnesses.length > 0)
+        ? visitData.illnesses
         : [];
       setSelectedIllnesses(loadedIllnesses);
       
@@ -341,7 +345,7 @@ function EditVisitPage() {
             notes: currentVisit.notes,
             tags: currentVisit.tags,
           }
-        : ({ ...currentVisit } as any);
+        : { ...currentVisit };
       if (!useLimitedForm && currentVisit.visit_type === 'sick') {
         const illnessesToSend = currentIllnesses;
         if (illnessesToSend && illnessesToSend.length > 0) {

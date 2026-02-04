@@ -4,8 +4,7 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import { usePreferences } from '../../../contexts/PreferencesContext';
 import { useAuth } from '../../../contexts/AuthContext';
 import Card from '@shared/components/Card';
-import FormField from '@shared/components/FormField';
-import formFieldStyles from '@shared/components/FormField.module.css';
+import FormField, { FormFieldHint } from '@shared/components/FormField';
 import Button from '@shared/components/Button';
 import Notification from '@shared/components/Notification';
 import Tabs from '@shared/components/Tabs';
@@ -1094,10 +1093,8 @@ function SettingsPage() {
                   error={errors.username}
                   required
                   disabled={loading.username}
+                  hint={!errors.username ? 'Must be at least 2 characters long' : undefined}
                 />
-                {!errors.username && (
-                  <div className={formFieldStyles.hint}>Must be at least 2 characters long</div>
-                )}
 
                 <div className={s.passwordField}>
                   <label htmlFor="username-password" className={s.passwordLabel}>
@@ -1129,7 +1126,7 @@ function SettingsPage() {
                     <span className={s.passwordError}>{errors.usernamePassword}</span>
                   )}
                   {!errors.usernamePassword && (
-                    <div className={formFieldStyles.hint}>Enter your current password to confirm</div>
+                    <FormFieldHint>Enter your current password to confirm</FormFieldHint>
                   )}
                 </div>
 
@@ -1230,7 +1227,7 @@ function SettingsPage() {
                     <span className={s.passwordError}>{errors.newPassword}</span>
                   )}
                   {!errors.newPassword && (
-                    <div className={formFieldStyles.hint}>Must be at least 8 characters with uppercase, lowercase, number, and special character</div>
+                    <FormFieldHint>Must be at least 8 characters with uppercase, lowercase, number, and special character</FormFieldHint>
                   )}
                 </div>
 

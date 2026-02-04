@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { HiPlus } from 'react-icons/hi';
+import type { IconType } from 'react-icons';
 import { VisitStats } from '@features/visits';
 import { ChildSelector } from '@features/children';
 import Button from '@shared/components/Button';
@@ -10,7 +11,7 @@ import layout from '@shared/styles/VisitsLayout.module.css';
 interface Stat {
     label: string;
     value: number;
-    icon?: any;
+    icon?: IconType;
     color?: string;
     onClick?: () => void;
     active?: boolean;
@@ -42,7 +43,7 @@ export default function VisitFilterSidebar({ stats, childrenList, selectedChildI
                 <div className={layout.sidebarDivider} />
 
                 <nav className={layout.sidebarStats}>
-                    <VisitStats stats={stats as any} vertical />
+                    <VisitStats stats={stats} vertical />
                 </nav>
 
                 {!hideChildFilter && (

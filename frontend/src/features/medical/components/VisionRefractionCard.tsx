@@ -19,7 +19,7 @@ export type VisionRefraction = {
 };
 
 type VisionRefractionCardProps = {
-  value: VisionRefraction;
+  value: VisionRefraction | null | undefined;
   onChange: (value: VisionRefraction) => void;
   readOnly?: boolean;
 };
@@ -36,10 +36,17 @@ export function VisionRefractionCard({
   onChange,
   readOnly = false,
 }: VisionRefractionCardProps) {
+  const defaultValue: VisionRefraction = {
+    od: { sphere: null, cylinder: null, axis: null },
+    os: { sphere: null, cylinder: null, axis: null },
+    notes: undefined,
+  };
+  const actualValue = value ?? defaultValue;
+  
   const updateEye = (side: 'od' | 'os', eye: EyeRefraction) =>
-    onChange({ ...value, [side]: eye });
+    onChange({ ...actualValue, [side]: eye });
 
-  const hasValue = hasRefractionValue(value);
+  const hasValue = hasRefractionValue(actualValue);
 
   return (
     <div className={mui.card} data-key="refraction" aria-labelledby="vision-refraction-heading">
@@ -63,24 +70,24 @@ export function VisionRefractionCard({
             <div className={mui.visionRefractionRow}>
               <span className={mui.visionRefractionEyeLabel}>OD</span>
               <RefractionNumberInput
-                value={value.od.sphere}
-                onChange={(v) => updateEye('od', { ...value.od, sphere: v })}
+                value={actualValue.od.sphere}
+                onChange={(v) => updateEye('od', { ...actualValue.od, sphere: v })}
                 step={0.25}
                 readOnly={readOnly}
                 ariaLabel="OD sphere"
                 suffix="D"
               />
               <RefractionNumberInput
-                value={value.od.cylinder}
-                onChange={(v) => updateEye('od', { ...value.od, cylinder: v })}
+                value={actualValue.od.cylinder}
+                onChange={(v) => updateEye('od', { ...actualValue.od, cylinder: v })}
                 step={0.25}
                 readOnly={readOnly}
                 ariaLabel="OD cylinder"
                 suffix="D"
               />
               <RefractionNumberInput
-                value={value.od.axis}
-                onChange={(v) => updateEye('od', { ...value.od, axis: v })}
+                value={actualValue.od.axis}
+                onChange={(v) => updateEye('od', { ...actualValue.od, axis: v })}
                 min={0}
                 max={180}
                 step={1}
@@ -91,24 +98,24 @@ export function VisionRefractionCard({
             <div className={mui.visionRefractionRow}>
               <span className={mui.visionRefractionEyeLabel}>OS</span>
               <RefractionNumberInput
-                value={value.os.sphere}
-                onChange={(v) => updateEye('os', { ...value.os, sphere: v })}
+                value={actualValue.os.sphere}
+                onChange={(v) => updateEye('os', { ...actualValue.os, sphere: v })}
                 step={0.25}
                 readOnly={readOnly}
                 ariaLabel="OS sphere"
                 suffix="D"
               />
               <RefractionNumberInput
-                value={value.os.cylinder}
-                onChange={(v) => updateEye('os', { ...value.os, cylinder: v })}
+                value={actualValue.os.cylinder}
+                onChange={(v) => updateEye('os', { ...actualValue.os, cylinder: v })}
                 step={0.25}
                 readOnly={readOnly}
                 ariaLabel="OS cylinder"
                 suffix="D"
               />
               <RefractionNumberInput
-                value={value.os.axis}
-                onChange={(v) => updateEye('os', { ...value.os, axis: v })}
+                value={actualValue.os.axis}
+                onChange={(v) => updateEye('os', { ...actualValue.os, axis: v })}
                 min={0}
                 max={180}
                 step={1}
@@ -125,8 +132,8 @@ export function VisionRefractionCard({
               id="vision-refraction-notes"
               className={`${mui.input} ${mui.visionInputTextarea}`}
               placeholder="Refraction notes"
-              value={value.notes ?? ''}
-              onChange={(e) => onChange({ ...value, notes: e.target.value })}
+              value={actualValue.notes ?? ''}
+              onChange={(e) => onChange({ ...actualValue, notes: e.target.value })}
               disabled={readOnly}
               rows={2}
               aria-label="Refraction notes"

@@ -1,13 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
-import { visitsApi, childrenApi, ApiClientError } from '@lib/api-client';
-import type { Visit, Child, VisitAttachment } from '@shared/types/api';
-import { formatDate, formatTime, safeFormatDateTime, isFutureVisit } from '@lib/date-utils';
-import { visitHasOutcomeData } from '@lib/visit-utils';
+import type { AuditHistoryEvent } from '@shared/types/api';
+import { formatDate, formatTime, safeFormatDateTime } from '@lib/date-utils';
 import { getGoogleCalendarAddEventUrl } from '@lib/calendar-export';
 import { getVisitTypeLabel } from '@shared/lib/visit-labels';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
-import loadingStyles from '@shared/components/LoadingSpinner.module.css';
 import ErrorMessage from '@shared/components/ErrorMessage';
 import Card from '@shared/components/Card';
 import Button from '@shared/components/Button';
@@ -18,7 +15,9 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useFamilyPermissions } from '../../../contexts/FamilyPermissionsContext';
 import { VisionRefractionCard } from '@features/medical';
 import { AuditDiffView } from '@features/documents';
-import type { AuditHistoryEvent } from '@shared/types/api';
+// Import the new helpers for cognitive load reduction
+import { useVisitDetail } from '../hooks';
+import { isUpcomingVisit, getVisitTypeTitle, getCalendarExportTitle } from '../lib';
 import layoutStyles from '@shared/styles/visit-detail-layout.module.css';
 import pageLayout from '@shared/styles/page-layout.module.css';
 import styles from './VisitDetailPage.module.css';
@@ -29,139 +28,46 @@ function VisitDetailPage() {
   const location = useLocation();
   const { user } = useAuth();
   const { canEdit } = useFamilyPermissions();
-  
-  const [visit, setVisit] = useState<Visit | null>(null);
-  const [child, setChild] = useState<Child | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  const [attachments, setAttachments] = useState<VisitAttachment[]>([]);
-  const [loadingAttachments, setLoadingAttachments] = useState(false);
+
+  // Use the new hook that handles all visit detail data and state
+  const visitDetail = useVisitDetail(id ? parseInt(id) : undefined);
+  const { visit, child, attachments, history, loading, error, deleting, notification, deleteVisit, deleteAttachment, setNotification } = visitDetail;
+
+  // UI state (local to this component)
   const [activeTab, setActiveTab] = useState<'visit' | 'history' | 'attachments'>('visit');
 
-  // Reset active tab if attachments tab is removed and we're on it
+  // Auto-switch to visit tab if no attachments
   useEffect(() => {
     if (activeTab === 'attachments' && attachments.length === 0) {
       setActiveTab('visit');
     }
   }, [attachments.length, activeTab]);
-  const [history, setHistory] = useState<AuditHistoryEvent[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      loadVisit();
-    }
-  }, [id, location.key]);
-
-  const loadVisit = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const visitResponse = await visitsApi.getById(parseInt(id!));
-      setVisit(visitResponse.data);
-
-      const childResponse = await childrenApi.getById(visitResponse.data.child_id);
-      setChild(childResponse.data);
-      
-      // Load attachments and history
-      await Promise.all([
-        loadAttachments(parseInt(id!)),
-        loadHistory(parseInt(id!))
-      ]);
-    } catch (err) {
-      if (err instanceof ApiClientError) {
-        setError(err.message);
-      } else {
-        setError('Failed to load visit');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadAttachments = async (visitId: number) => {
-    try {
-      setLoadingAttachments(true);
-      const response = await visitsApi.getAttachments(visitId);
-      setAttachments(response.data);
-    } catch (error) {
-      console.error('Failed to load attachments:', error);
-    } finally {
-      setLoadingAttachments(false);
-    }
-  };
-
-  const loadHistory = async (visitId: number) => {
-    try {
-      setLoadingHistory(true);
-      const response = await visitsApi.getHistory(visitId);
-      setHistory(Array.isArray(response.data) ? response.data : []);
-    } catch (error) {
-      console.error('Failed to load history:', error);
-      setHistory([]);
-    } finally {
-      setLoadingHistory(false);
-    }
-  };
-
-  const handleAttachmentDelete = (attachmentId: number) => {
-    const updatedAttachments = attachments.filter(a => a.id !== attachmentId);
-    setAttachments(updatedAttachments);
-    
-    // If we deleted the last attachment and we're on the attachments tab, switch to visit tab
-    if (updatedAttachments.length === 0 && activeTab === 'attachments') {
-      setActiveTab('visit');
-    }
-    
-    // Reload history to reflect attachment deletion
-    if (id) {
-      loadHistory(parseInt(id));
-    }
-  };
-
-  const handleDelete = async () => {
+  /**
+   * Handle user request to delete the visit
+   * Shows confirmation dialog, then calls the deleteVisit hook
+   */
+  const handleDeleteClick = async () => {
     if (!window.confirm('Are you sure you want to delete this visit? This action cannot be undone.')) {
       return;
     }
 
-    setDeleting(true);
-    try {
-      await visitsApi.delete(parseInt(id!));
-      setNotification({ message: 'Visit deleted successfully', type: 'success' });
+    const success = await deleteVisit();
+    if (success && visit?.child_id) {
       setTimeout(() => {
-        navigate(`/children/${visit?.child_id}`);
+        navigate(`/children/${visit.child_id}`);
       }, 1000);
-    } catch (error) {
-      if (error instanceof ApiClientError) {
-        setNotification({ message: error.message, type: 'error' });
-      } else {
-        setNotification({ message: 'Failed to delete visit', type: 'error' });
-      }
-      setDeleting(false);
     }
   };
 
-  if (loading) {
-    return <LoadingSpinner message="Loading visit..." />;
-  }
-
-  if (error) {
-    return <ErrorMessage message={error} onRetry={loadVisit} />;
-  }
-
-  if (!visit || !child) {
-    return <ErrorMessage message="Visit not found" />;
-  }
-
-  // Show limited (upcoming) view only when future-dated and no outcome data; once full form is saved, show full view
-  const isFuture = isFutureVisit(visit) && !visitHasOutcomeData(visit);
-
+  /**
+   * Handle exporting visit to Google Calendar
+   */
   const handleExportToCalendar = () => {
+    if (!visit || !child) return;
+
     const typeLabel = getVisitTypeLabel(visit.visit_type);
-    const title = child.name ? `${child.name}'s ${typeLabel} Appointment` : `${typeLabel} Appointment`;
+    const title = getCalendarExportTitle(child.name, typeLabel);
     const url = getGoogleCalendarAddEventUrl({
       title,
       date: visit.visit_date,
@@ -170,6 +76,21 @@ function VisitDetailPage() {
     });
     window.open(url, '_blank', 'noopener,noreferrer');
   };
+
+  if (loading) {
+    return <LoadingSpinner message="Loading visit..." />;
+  }
+
+  if (error) {
+    return <ErrorMessage message={error} onRetry={() => visitDetail.loadVisitDetails()} />;
+  }
+
+  if (!visit || !child) {
+    return <ErrorMessage message="Visit not found" />;
+  }
+
+  // Determine if this is an upcoming visit (shows limited form)
+  const isFuture = isUpcomingVisit(visit);
 
   return (
     <div className={pageLayout.pageContainer}>
@@ -196,11 +117,11 @@ function VisitDetailPage() {
                 <>
                   <Link 
                     to={`/visits/${visit.id}/edit`}
-                    state={{ childId: visit.child_id, fromChild: (location.state as any)?.fromChild || false }}
+                    state={{ childId: visit.child_id, fromChild: (location.state as { fromChild?: boolean })?.fromChild || false }}
                   >
                     <Button variant="secondary" size="sm">{isFuture ? 'Edit appointment' : 'Edit Visit'}</Button>
                   </Link>
-                  <Button variant="danger" size="sm" onClick={handleDelete} disabled={deleting}>
+                  <Button variant="danger" size="sm" onClick={handleDeleteClick} disabled={deleting}>
                     {deleting ? 'Deleting...' : 'Delete Visit'}
                   </Button>
                 </>
@@ -211,11 +132,7 @@ function VisitDetailPage() {
           {/* Visit Header */}
           <div>
             <h2 className={styles.headerTitle}>
-              {visit.visit_type === 'wellness' ? 'Wellness Visit' : 
-               visit.visit_type === 'sick' ? 'Sick Visit' : 
-               visit.visit_type === 'injury' ? 'Injury Visit' :
-               visit.visit_type === 'vision' ? 'Vision Visit' :
-               visit.visit_type === 'dental' ? 'Dental Visit' : 'Visit'}
+              {getVisitTypeTitle(visit.visit_type)}
               {isFuture && <span className={styles.headerBadge}>Upcoming</span>}
             </h2>
             <p className={styles.headerDate}>
@@ -275,7 +192,7 @@ function VisitDetailPage() {
                     {/* Outcome sections only when not a future visit */}
                     {!isFuture && visit.visit_type === 'sick' && (
                       <div className={styles.infoStacked}>
-                        {visit.illnesses && visit.illnesses.length > 0 && (
+                        {'illnesses' in visit && visit.illnesses && visit.illnesses.length > 0 && (
                           <div className={styles.infoItem}>
                             <span className={styles.infoLabel}>Illnesses:</span>
                             <span className={styles.infoValue}>{visit.illnesses.map(i => i.replace('_', ' ')).join(', ')}</span>
@@ -333,9 +250,9 @@ function VisitDetailPage() {
 
                     {!isFuture && visit.visit_type === 'vision' && (
                       <div className={styles.infoStacked}>
-                        {(visit as any).vision_refraction ? (
+                        {'vision_refraction' in visit && visit.vision_refraction ? (
                           <div className={styles.infoItem}>
-                            <VisionRefractionCard value={(visit as any).vision_refraction} onChange={() => {}} readOnly />
+                            <VisionRefractionCard value={visit.vision_refraction} onChange={() => {}} readOnly />
                           </div>
                         ) : visit.vision_prescription ? (
                           <div className={styles.infoItem}>
@@ -345,63 +262,63 @@ function VisitDetailPage() {
                         ) : null}
                         <div className={styles.infoItem}>
                           <span className={styles.infoLabel}>Ordered Glasses:</span>
-                          <span className={styles.infoValue}>{(visit as any).ordered_glasses ? 'Yes' : 'No'}</span>
+                          <span className={styles.infoValue}>{'ordered_glasses' in visit && visit.ordered_glasses ? 'Yes' : 'No'}</span>
                         </div>
                         <div className={styles.infoItem}>
                           <span className={styles.infoLabel}>Ordered Contacts:</span>
-                          <span className={styles.infoValue}>{(visit as any).ordered_contacts ? 'Yes' : 'No'}</span>
+                          <span className={styles.infoValue}>{'ordered_contacts' in visit && visit.ordered_contacts ? 'Yes' : 'No'}</span>
                         </div>
                       </div>
                     )}
 
                     {!isFuture && visit.visit_type === 'dental' && (
                       <div className={styles.infoStacked}>
-                        {(visit as any).dental_procedure_type && (
+                        {'dental_procedure_type' in visit && visit.dental_procedure_type && (
                           <div className={styles.infoItem}>
                             <span className={styles.infoLabel}>Dental Visit Type:</span>
-                            <span className={styles.infoValue}>{(visit as any).dental_procedure_type}</span>
+                            <span className={styles.infoValue}>{visit.dental_procedure_type}</span>
                           </div>
                         )}
-                        {(visit as any).cleaning_type && (
+                        {'cleaning_type' in visit && visit.cleaning_type && (
                           <div className={styles.infoItem}>
                             <span className={styles.infoLabel}>Cleaning Type:</span>
-                            <span className={styles.infoValue}>{(visit as any).cleaning_type}</span>
+                            <span className={styles.infoValue}>{visit.cleaning_type}</span>
                           </div>
                         )}
-                        {(visit as any).cavities_found !== null && (
+                        {'cavities_found' in visit && visit.cavities_found !== null && (
                           <div className={styles.infoItem}>
                             <span className={styles.infoLabel}>Cavities Found:</span>
-                            <span className={styles.infoValue}>{(visit as any).cavities_found}</span>
+                            <span className={styles.infoValue}>{visit.cavities_found}</span>
                           </div>
                         )}
-                        {(visit as any).cavities_filled !== null && (
+                        {'cavities_filled' in visit && visit.cavities_filled !== null && (
                           <div className={styles.infoItem}>
                             <span className={styles.infoLabel}>Cavities Filled:</span>
-                            <span className={styles.infoValue}>{(visit as any).cavities_filled}</span>
+                            <span className={styles.infoValue}>{visit.cavities_filled}</span>
                           </div>
                         )}
                         <div className={styles.infoItem}>
                           <span className={styles.infoLabel}>X-Rays Taken:</span>
-                          <span className={styles.infoValue}>{(visit as any).xrays_taken ? 'Yes' : 'No'}</span>
+                          <span className={styles.infoValue}>{'xrays_taken' in visit && visit.xrays_taken ? 'Yes' : 'No'}</span>
                         </div>
                         <div className={styles.infoItem}>
                           <span className={styles.infoLabel}>Fluoride Treatment:</span>
-                          <span className={styles.infoValue}>{(visit as any).fluoride_treatment ? 'Yes' : 'No'}</span>
+                          <span className={styles.infoValue}>{'fluoride_treatment' in visit && visit.fluoride_treatment ? 'Yes' : 'No'}</span>
                         </div>
                         <div className={styles.infoItem}>
                           <span className={styles.infoLabel}>Sealants Applied:</span>
-                          <span className={styles.infoValue}>{(visit as any).sealants_applied ? 'Yes' : 'No'}</span>
+                          <span className={styles.infoValue}>{'sealants_applied' in visit && visit.sealants_applied ? 'Yes' : 'No'}</span>
                         </div>
-                        {(visit as any).next_appointment_date && (
+                        {'next_appointment_date' in visit && visit.next_appointment_date && (
                           <div className={styles.infoItem}>
                             <span className={styles.infoLabel}>Next Appointment:</span>
-                            <span className={styles.infoValue}>{formatDate((visit as any).next_appointment_date)}</span>
+                            <span className={styles.infoValue}>{formatDate(visit.next_appointment_date)}</span>
                           </div>
                         )}
-                        {(visit as any).dental_notes && (
+                        {'dental_notes' in visit && visit.dental_notes && (
                           <div className={styles.infoItem}>
                             <span className={styles.infoLabel}>Notes:</span>
-                            <span className={styles.infoValue}>{(visit as any).dental_notes}</span>
+                            <span className={styles.infoValue}>{visit.dental_notes}</span>
                           </div>
                         )}
                       </div>
@@ -499,7 +416,7 @@ function VisitDetailPage() {
                 label: 'History',
                 content: (
                   <div>
-                    <VisitHistory history={history} loading={loadingHistory} user={user} />
+                    <VisitHistory history={history} loading={visitDetail.loadingHistory} user={user} />
                   </div>
                 ),
               },
@@ -508,15 +425,15 @@ function VisitDetailPage() {
                 label: 'Attachments',
                 content: (
                   <div className={styles.attachmentsTab}>
-                    {loadingAttachments ? (
-                      <div className={loadingStyles.attachmentLoading}>Loading attachments...</div>
+                    {visitDetail.loadingAttachments ? (
+                      <div>Loading attachments...</div>
                     ) : (
                       <VisitAttachmentsList
                         attachments={attachments}
-                        onDelete={handleAttachmentDelete}
+                        onDelete={deleteAttachment}
                         readOnly={false}
                         visitId={visit.id}
-                        onUpdate={() => loadAttachments(visit.id)}
+                        onUpdate={() => visitDetail.loadVisitDetails()}
                       />
                     )}
                   </div>

@@ -1,8 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth as useAuthContext } from '../../../contexts/AuthContext';
-import FormField from '@shared/components/FormField';
-import formFieldStyles from '@shared/components/FormField.module.css';
+import FormField, { FormFieldHint } from '@shared/components/FormField';
 import Button from '@shared/components/Button';
 import ErrorMessage from '@shared/components/ErrorMessage';
 import Card from '@shared/components/Card';
@@ -194,9 +193,9 @@ function SignupPage() {
                   {errors.password}
                 </span>
               )}
-              <div className={formFieldStyles.hint}>
+              <FormFieldHint>
                 Password must include all of the following:
-              </div>
+              </FormFieldHint>
               <ul className={styles.passwordRequirements} aria-live="polite">
                 {passwordRequirements.map((requirement) => (
                   <li

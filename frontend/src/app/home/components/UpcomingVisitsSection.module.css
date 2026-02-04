@@ -73,12 +73,12 @@
 }
 
 .upcomingChipOverdue {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.45);
+  background: var(--color-danger-light);
+  border-color: var(--color-danger);
 }
 
 .upcomingChipOverdue .upcomingChipText {
-  color: #b91c1c;
+  color: var(--color-danger);
 }
 
 .upcomingChipOverdue:hover {
@@ -92,7 +92,7 @@
 }
 
 :global([data-theme="dark"]) .upcomingChipOverdue .upcomingChipText {
-  color: #fca5a5;
+  color: var(--color-danger-muted);
 }
 
 :global([data-theme="dark"]) .upcomingChipOverdue:hover {
@@ -107,7 +107,7 @@
   }
 
   .upcomingChipOverdue .upcomingChipText {
-    color: #fca5a5;
+    color: var(--color-danger-muted);
   }
 
   .upcomingChipOverdue:hover {

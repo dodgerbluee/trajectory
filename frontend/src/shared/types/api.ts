@@ -69,7 +69,7 @@ export interface ApiError {
     type: string;
     statusCode: number;
     field?: string;
-    details?: any;
+    details?: unknown;
   };
   meta: {
     timestamp: string;

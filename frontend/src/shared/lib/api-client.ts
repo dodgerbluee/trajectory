@@ -46,7 +46,7 @@ export class ApiClientError extends Error {
     message: string,
     public statusCode: number,
     public errorType: string,
-    public details?: any
+    public details?: unknown
   ) {
     super(message);
     this.name = 'ApiClientError';
@@ -159,7 +159,7 @@ async function request<T>(
     const response = await fetch(url, config);
 
     if (response.status === 204) {
-      return { data: undefined as any } as ApiResponse<T>;
+      return { data: undefined } as ApiResponse<T>;
     }
 
     const data = await response.json();

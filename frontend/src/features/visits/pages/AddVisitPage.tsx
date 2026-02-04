@@ -11,6 +11,8 @@ import LoadingSpinner from '@shared/components/LoadingSpinner';
 import { VisitTypeModal } from '@features/visits';
 import { useFormState } from '@shared/hooks';
 import { VISIT_TYPE_DEFAULTS, getSectionById, SectionWrapper, VisitFormSidebar } from '@visit-form';
+// Import new helpers for form initialization
+import { createEmptyVisitForm } from '../lib';
 import layoutStyles from '@shared/styles/visit-detail-layout.module.css';
 import pageLayout from '@shared/styles/page-layout.module.css';
 import formLayout from '@shared/styles/VisitFormLayout.module.css';
@@ -38,55 +40,10 @@ function AddVisitPage() {
   const visitTypeFromUrl = searchParams.get('type') as VisitType | null;
   const initialVisitType = visitTypeFromUrl || null;
 
+  // Initialize form state with semantic helper
   const { state: formState, update: updateForm, getCurrent: getCurrentForm } = useFormState<VisitFormState>({
     initialValue: {
-      visit: {
-        child_id: 0,
-        visit_date: '',
-        visit_time: null,
-        visit_type: initialVisitType || 'wellness',
-        location: null,
-        doctor_name: null,
-        title: null,
-        weight_value: null,
-        weight_ounces: null,
-        weight_percentile: null,
-        height_value: null,
-        height_percentile: null,
-        head_circumference_value: null,
-        head_circumference_percentile: null,
-        bmi_value: null,
-        bmi_percentile: null,
-        blood_pressure: null,
-        heart_rate: null,
-        symptoms: null,
-        temperature: null,
-        illness_start_date: null,
-        end_date: null,
-        injury_type: null,
-        injury_location: null,
-        treatment: null,
-        vision_prescription: null,
-        ordered_glasses: null,
-        ordered_contacts: null,
-        vision_refraction: { od: { sphere: null, cylinder: null, axis: null }, os: { sphere: null, cylinder: null, axis: null }, notes: undefined } as any,
-        dental_procedure_type: null,
-        dental_notes: null,
-        cleaning_type: null,
-        cavities_found: null,
-        cavities_filled: null,
-        xrays_taken: null,
-        fluoride_treatment: null,
-        sealants_applied: null,
-        next_appointment_date: null,
-        dental_procedures: null,
-        vaccines_administered: [],
-        prescriptions: [],
-        tags: [],
-        notes: null,
-        create_illness: false,
-        illness_severity: null,
-      },
+      visit: createEmptyVisitForm(initialVisitType || 'wellness'),
       selectedIllnesses: [],
     },
   });
@@ -160,11 +117,11 @@ function AddVisitPage() {
   }, [visitTypeFromUrl]);
 
   // Determine origin for back/cancel navigation
-  const fromState = (location.state || {}) as any;
+  const fromState = (location.state || {}) as { from?: string; fromTab?: string; fromChild?: boolean; childId?: string | number; fromVisits?: boolean };
   const originFrom = typeof fromState.from === 'string' ? fromState.from : null;
   const originFromTab = fromState.fromTab as string | undefined; // e.g. 'visits' when returning to home tab
   const originFromChild = !!fromState.fromChild;
-  const originChildId = fromState.childId ? parseInt(fromState.childId) : (childIdFromUrl ? parseInt(childIdFromUrl) : null);
+  const originChildId = fromState.childId ? parseInt(String(fromState.childId)) : (childIdFromUrl ? parseInt(childIdFromUrl) : null);
   const originFromVisits = !!fromState.fromVisits;
 
   useEffect(() => {
@@ -264,22 +221,26 @@ function AddVisitPage() {
     ]
   );
 
+  /**
+   * Handle visit form submission
+   * Validates form based on date (future = limited validation, past = full validation)
+   * Creates visit, uploads attachments, navigates to visit detail
+   */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     const { visit: currentVisit, selectedIllnesses: currentIllnesses } = getCurrentForm();
 
+    // Basic validation: date is required
     if (!currentVisit.visit_date || !currentVisit.visit_date.trim()) {
       setNotification({ message: 'Please enter a visit date', type: 'error' });
       return;
     }
 
-    if (useShortenedForm) {
-      // Future visit: no outcome/type-specific validation; backend allows pending appointments without injury_type/illnesses
-    } else {
-      // Use ref so we always have latest illnesses (avoids stale closure when Save then Submit quickly)
-      const illnessesToSend = currentVisit.visit_type === 'sick' ? currentIllnesses : null;
-      if (currentVisit.visit_type === 'sick' && (!illnessesToSend || illnessesToSend.length === 0)) {
+    // Conditional validation: future visits need less data, past/today need complete data
+    if (!useShortenedForm) {
+      // Past/today visits require type-specific validation
+      if (currentVisit.visit_type === 'sick' && (!currentIllnesses || currentIllnesses.length === 0)) {
         setNotification({ message: 'Please select at least one illness for sick visits', type: 'error' });
         return;
       }
@@ -293,9 +254,10 @@ function AddVisitPage() {
     setSubmitting(true);
 
     try {
-      // Build payload. For future date, send only pre-appointment fields.
+      // Prepare payload: future visits send minimal fields, full visits send all fields
       let payload: CreateVisitInput;
       if (useShortenedForm) {
+        // Future appointment: only pre-appointment fields
         payload = {
           child_id: currentVisit.child_id,
           visit_date: currentVisit.visit_date,
@@ -308,10 +270,10 @@ function AddVisitPage() {
           tags: currentVisit.tags ?? null,
         };
       } else {
+        // Full visit: all fields + selected illnesses
         payload = { ...currentVisit };
-        const illnessesToSend = currentVisit.visit_type === 'sick' ? currentIllnesses : null;
-        if (currentVisit.visit_type === 'sick' && illnessesToSend && illnessesToSend.length > 0) {
-          (payload as any).illnesses = illnessesToSend;
+        if (currentVisit.visit_type === 'sick' && currentIllnesses && currentIllnesses.length > 0) {
+          payload.illnesses = currentIllnesses;
         }
       }
       // Create the visit

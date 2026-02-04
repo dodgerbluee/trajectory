@@ -191,7 +191,7 @@ function SingleMetricGrowthChart({
         return Array.from(groupedByAge.entries())
           .sort(([ageA], [ageB]) => ageA - ageB)
           .map(([ageMonths, points]) => {
-            const transformed: any = {
+            const transformed: GrowthDataPoint | Record<string, number | null> = {
               age_months: ageMonths,
             };
 
@@ -228,8 +228,9 @@ function SingleMetricGrowthChart({
   const yAxisValues: number[] = [];
   if (isMultiChild) {
     uniqueChildren.forEach(child => {
-      transformedChartData.forEach((point: any) => {
-        const rawValue = point[`${dataKey}_${child.id}`];
+      transformedChartData.forEach((point: GrowthDataPoint | Record<string, number | null>) => {
+        const key = `${dataKey}_${child.id}`;
+        const rawValue = (point as Record<string, unknown>)[key];
         if (rawValue !== null && rawValue !== undefined) {
           const numValue = typeof rawValue === 'number' ? rawValue : parseFloat(String(rawValue));
           if (!isNaN(numValue) && isFinite(numValue)) {
@@ -246,8 +247,8 @@ function SingleMetricGrowthChart({
       });
     });
   } else {
-    transformedChartData.forEach((point: any) => {
-      const rawValue = point[dataKey];
+    transformedChartData.forEach((point: GrowthDataPoint | Record<string, number | null>) => {
+      const rawValue = (point as Record<string, unknown>)[dataKey];
       if (rawValue !== null && rawValue !== undefined) {
         const numValue = typeof rawValue === 'number' ? rawValue : parseFloat(String(rawValue));
         if (!isNaN(numValue) && isFinite(numValue)) {
@@ -311,7 +312,7 @@ function SingleMetricGrowthChart({
   };
 
   // Format tooltip
-  const formatTooltip = (value: any) => {
+  const formatTooltip = (value: unknown) => {
     const numValue = typeof value === 'number' ? value : (value === null || value === undefined ? null : parseFloat(String(value)));
     if (numValue === null || numValue === undefined || isNaN(numValue)) {
       return 'N/A';
@@ -357,9 +358,9 @@ function SingleMetricGrowthChart({
             }}
           />
           <Tooltip
-            formatter={(value: any) => formatTooltip(value)}
+            formatter={(value: unknown) => formatTooltip(value)}
             labelFormatter={(ageMonths) => {
-              const point = transformedChartData.find((d: any) => d.age_months === ageMonths);
+              const point = transformedChartData.find((d: GrowthDataPoint | Record<string, number | null>) => d.age_months === ageMonths);
               if (!point) return `Age: ${formatAgeLabel(ageMonths)}`;
               
               if (isMultiChild) {

@@ -47,15 +47,15 @@ function VisitCard({ visit, childName, childId, hasAttachments }: VisitCardProps
     if (visit.injury_type) badges.push({ key: 'injury', label: `🤕 ${visit.injury_type}` });
     // Render a single comma-separated illness label. Prefer `visit.illnesses` array,
     // otherwise fall back to legacy `visit.illness_type` if present.
-    const illnessesArr = (visit as any).illnesses;
+    const illnessesArr = 'illnesses' in visit ? visit.illnesses : null;
     const illnessLabel = Array.isArray(illnessesArr) && illnessesArr.length > 0
         ? illnessesArr.map(i => i.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())).join(', ')
-        : (visit as any).illness_type ? (visit as any).illness_type.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) : null;
+        : visit.illness_type ? visit.illness_type.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) : null;
     if (illnessLabel) badges.push({ key: 'illness', label: `🤒 ${illnessLabel}` });
     if (visit.visit_date) badges.push({ key: 'visit-date', label: `📅 ${formatDate(visit.visit_date)}` });
     // Dental appointment type (between visit date and cavities found)
-    if (visit.visit_type === 'dental' && (visit as any).dental_procedure_type) {
-      const dt = (visit as any).dental_procedure_type;
+    if (visit.visit_type === 'dental' && 'dental_procedure_type' in visit && visit.dental_procedure_type) {
+      const dt = visit.dental_procedure_type;
       const procedureLabel = typeof dt === 'string' ? dt.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) : String(dt);
       badges.push({ key: 'dental-type', label: `😁 ${procedureLabel}` });
     }
@@ -67,7 +67,7 @@ function VisitCard({ visit, childName, childId, hasAttachments }: VisitCardProps
     if (visit.vaccines_administered?.length) badges.push({ key: 'vax', label: `💉 ${visit.vaccines_administered.length}` });
     if (visit.prescriptions?.length) badges.push({ key: 'rx', label: `💊 ${visit.prescriptions.length}` });
         // Compact vision prescription preview (simple: OD <sphere>, OS <sphere>)
-    const vr: any = (visit as any).vision_refraction;
+    const vr = 'vision_refraction' in visit ? visit.vision_refraction : null;
     const fmt = (n: number | null) => (n === null || n === undefined ? '--' : Number(n).toFixed(2));
     if (visit.visit_type === 'vision') {
         if (vr && (vr.od || vr.os)) {
@@ -81,17 +81,16 @@ function VisitCard({ visit, childName, childId, hasAttachments }: VisitCardProps
             badges.push({ key: 'vision-presc', label: `👁️ ${short}` });
         }
     }
-    if ((visit as any).ordered_glasses) badges.push({ key: 'ordered-glasses', label: '👓' });
-    if ((visit as any).ordered_contacts) badges.push({ key: 'ordered-contacts', label: '🫧' });
+    if ('ordered_glasses' in visit && visit.ordered_glasses) badges.push({ key: 'ordered-glasses', label: '👓' });
+    if ('ordered_contacts' in visit && visit.ordered_contacts) badges.push({ key: 'ordered-contacts', label: '🫧' });
 
     // Dental visit badges
     if (visit.visit_type === 'dental') {
-      const v = visit as any;
-      if (v.cavities_found != null) badges.push({ key: 'cavities-found', label: `🦷 ${v.cavities_found} found` });
-      if (v.cavities_filled != null) badges.push({ key: 'cavities-filled', label: `🦷 ${v.cavities_filled} filled` });
-      if (v.xrays_taken === true) badges.push({ key: 'xrays', label: '🩻' });
-      if (v.fluoride_treatment === true) badges.push({ key: 'fluoride', label: '💧' });
-      if (v.sealants_applied === true) badges.push({ key: 'sealants', label: '🛡️' });
+      if ('cavities_found' in visit && visit.cavities_found != null) badges.push({ key: 'cavities-found', label: `🦷 ${visit.cavities_found} found` });
+      if ('cavities_filled' in visit && visit.cavities_filled != null) badges.push({ key: 'cavities-filled', label: `🦷 ${visit.cavities_filled} filled` });
+      if ('xrays_taken' in visit && visit.xrays_taken === true) badges.push({ key: 'xrays', label: '🩻' });
+      if ('fluoride_treatment' in visit && visit.fluoride_treatment === true) badges.push({ key: 'fluoride', label: '💧' });
+      if ('sealants_applied' in visit && visit.sealants_applied === true) badges.push({ key: 'sealants', label: '🛡️' });
     }
 
     return (

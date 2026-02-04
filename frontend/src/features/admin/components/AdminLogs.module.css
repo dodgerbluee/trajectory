@@ -58,15 +58,15 @@
   color: var(--color-text-inverse);
 }
 
-.levelBtn.levelInfo.active { background: #22c55e; }
-.levelBtn.levelWarn.active { background: #eab308; }
+.levelBtn.levelInfo.active { background: var(--color-log-info); }
+.levelBtn.levelWarn.active { background: var(--color-log-warn); }
 .levelBtn.levelError.active { background: var(--color-danger); }
-.levelBtn.levelDebug.active { background: #f97316; }
+.levelBtn.levelDebug.active { background: var(--color-log-debug); }
 
-.levelBtn.levelInfo:not(.active) { color: #22c55e; }
-.levelBtn.levelWarn:not(.active) { color: #eab308; }
+.levelBtn.levelInfo:not(.active) { color: var(--color-log-info); }
+.levelBtn.levelWarn:not(.active) { color: var(--color-log-warn); }
 .levelBtn.levelError:not(.active) { color: var(--color-danger); }
-.levelBtn.levelDebug:not(.active) { color: #f97316; }
+.levelBtn.levelDebug:not(.active) { color: var(--color-log-debug); }
 
 .refreshControls {
   display: flex;
@@ -155,9 +155,9 @@
 }
 
 .logLevelBracket.levelError { color: var(--color-danger); }
-.logLevelBracket.levelWarn { color: #eab308; }
-.logLevelBracket.levelInfo { color: #22c55e; }
-.logLevelBracket.levelDebug { color: #f97316; }
+.logLevelBracket.levelWarn { color: var(--color-log-warn); }
+.logLevelBracket.levelInfo { color: var(--color-log-info); }
+.logLevelBracket.levelDebug { color: var(--color-log-debug); }
 
 .logTag {
   color: var(--color-text-secondary);
@@ -248,6 +248,6 @@
 }
 
 .logLevelError { color: var(--color-danger); }
-.logLevelWarn { color: #b45309; }
+.logLevelWarn { color: var(--color-log-warn-dark); }
 .logLevelInfo { color: var(--color-primary); }
 .logLevelDebug { color: var(--color-text-secondary); }
