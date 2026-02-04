@@ -4,19 +4,15 @@
  */
 
 import type { Request, Response, NextFunction } from 'express';
-import { verifyToken } from '../lib/auth.js';
+import { verifyToken } from '../features/auth/service/auth.js';
 import { UnauthorizedError, ForbiddenError } from './error-handler.js';
-import { getIsInstanceAdmin } from '../lib/instance-admin.js';
+import { getIsInstanceAdmin } from '../features/admin/service/instance-admin.js';
 
 export interface AuthRequest extends Request {
   userId?: number;
   userEmail?: string;
 }
 
-/**
- * Authenticate request using JWT token
- * Attaches userId and userEmail to request object
- */
 export async function authenticate(
   req: AuthRequest,
   _res: Response,
@@ -39,9 +35,6 @@ export async function authenticate(
   }
 }
 
-/**
- * Require instance admin. Use after authenticate(); returns 403 if user is not instance admin.
- */
 export async function requireInstanceAdmin(
   req: AuthRequest,
   _res: Response,
@@ -63,10 +56,6 @@ export async function requireInstanceAdmin(
   }
 }
 
-/**
- * Authenticate from Bearer header or query.token (for img src etc).
- * Use for GET avatar so <img src="...?token=..."> works.
- */
 export async function authenticateHeaderOrQuery(
   req: AuthRequest,
   _res: Response,
@@ -93,10 +82,6 @@ export async function authenticateHeaderOrQuery(
   }
 }
 
-/**
- * Optional authentication - doesn't fail if token is missing
- * Useful for endpoints that work both authenticated and unauthenticated
- */
 export async function optionalAuthenticate(
   req: AuthRequest,
   _res: Response,

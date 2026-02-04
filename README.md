@@ -10,7 +10,7 @@ Self-hosted, privacy-first app for tracking children's health data: growth, visi
 
 - **Your data stays with you.** All data is stored in your own database and file storage. The app does not send health data to any third party.
 - **This app does not phone home.** No analytics, telemetry, or usage tracking. No external calls except what you configure (e.g. optional email for password reset).
-- **Data belongs to you.** As the self-hosted operator, you control the data. Back up your database and volumes; see [DEPLOYMENT.md](./DEPLOYMENT.md) for a backup approach. Export and restore tooling are planned.
+- **Data belongs to you.** As the self-hosted operator, you control the data. Back up your database and volumes; see [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) for a backup approach. Export and restore tooling are planned.
 
 ---
 
@@ -27,7 +27,7 @@ Self-hosted, privacy-first app for tracking children's health data: growth, visi
 
 - **Authentication:** Passwords hashed with bcrypt. Rate limiting and lockouts on login and password reset. JWT access and refresh tokens; no default admin account—you register the first user.
 - **Authorization:** Data is scoped by family. Only users in a child's family can see that child's data. All sensitive API endpoints require authentication and family checks.
-- **Deployment:** Run behind HTTPS in production. Use a reverse proxy (e.g. Nginx, Caddy, Nginx Proxy Manager) for TLS; the app does not terminate TLS. Secrets (database URL, JWT secrets) via environment variables; see `.env.example` and [DEPLOYMENT.md](./DEPLOYMENT.md).
+- **Deployment:** Run behind HTTPS in production. Use a reverse proxy (e.g. Nginx, Caddy, Nginx Proxy Manager) for TLS; the app does not terminate TLS. Secrets (database URL, JWT secrets) via environment variables; see `.env.example` and [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md).
 - **What this app does not do:** It does not encrypt data at rest (relies on your disk/volume security). It does not enforce TLS (your reverse proxy must). It does not provide a formal threat model document yet.
 - **Data in logs:** In production (`NODE_ENV=production`), the app does not log request bodies or other plaintext health data. Set `NODE_ENV=production` in production.
 - **Session tokens:** The app uses JWT access and refresh tokens in the `Authorization` header (Bearer). Tokens are not stored in cookies. Storage of tokens is the client's responsibility (e.g. memory or localStorage); use secure practices on the client.
@@ -51,7 +51,7 @@ Self-hosted, privacy-first app for tracking children's health data: growth, visi
    ```
 4. Put the app behind HTTPS (reverse proxy). Open the app, register the first user, and start adding children.
 
-For Portainer, Nginx Proxy Manager, backup, restore, upgrade, and rollback, see [DEPLOYMENT.md](./DEPLOYMENT.md). For versioning and release notes, see [VERSIONING.md](./VERSIONING.md).
+For Portainer, Nginx Proxy Manager, backup, restore, upgrade, and rollback, see [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md). For versioning and release notes, see [docs/VERSIONING.md](./docs/VERSIONING.md).
 
 **Development (run from source):** Use `docker-compose up` for backend + DB, or run backend and frontend separately; see [backend/README.md](./backend/README.md) and [frontend](./frontend).
 
@@ -62,8 +62,8 @@ For Portainer, Nginx Proxy Manager, backup, restore, upgrade, and rollback, see 
 ## License and support
 
 - **License:** [Polyform Noncommercial 1.0.0](./LICENSE). Free for noncommercial use. You may not sell or commercially distribute the software. The copyright holder may offer paid features or commercial terms separately.
-- **Docs:** [DEPLOYMENT.md](./DEPLOYMENT.md) (production, backup, updates). [backend/README.md](./backend/README.md) and [frontend](./frontend) for development. Detailed docs (e.g. threat model, restore) are planned.
-- **Security:** If you find a vulnerability, see [SECURITY.md](./SECURITY.md) when available; until then, report responsibly (e.g. private disclosure to the maintainers).
+- **Docs:** [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) (production, backup, updates). [backend/README.md](./backend/README.md) and [frontend](./frontend) for development. Detailed docs (e.g. threat model, restore) are planned.
+- **Security:** If you find a vulnerability, see [docs/SECURITY.md](./docs/SECURITY.md); report responsibly (e.g. private disclosure to the maintainers).
 
 ---
 

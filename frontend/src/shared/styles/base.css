@@ -1,0 +1,216 @@
+/* ============================================================================
+   Base – html, body, global typography, focus, theme
+   ============================================================================
+   Only: html, body, base typography (h1–h6, p), focus outline, .visually-hidden.
+   No layout, page, or component styles. Component styles belong in CSS Modules.
+   ============================================================================ */
+
+html {
+  overflow-y: scroll;
+  /* Prevent zoom on input focus (iOS) */
+  font-size: 16px;
+  /* Better text rendering */
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+  line-height: var(--line-height-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  overflow-x: hidden;
+  transition: background-color var(--transition-base), color var(--transition-base);
+  /* Allow 100vh to work on mobile */
+  position: relative;
+}
+
+/* Mobile: prevent horizontal scroll from fixed/absolute elements */
+@media (max-width: 768px) {
+  body {
+    /* Prevent zooming text on input focus (iOS) */
+    font-size: 16px;
+  }
+}
+
+/* Base typography – raw elements get sensible defaults from tokens */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0 0 var(--spacing-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  line-height: var(--line-height-tight);
+}
+
+h1 { font-size: var(--font-size-2xl); }
+h2 { font-size: var(--font-size-xl); }
+h3 { font-size: var(--font-size-lg); }
+h4, h5, h6 { font-size: var(--font-size-base); }
+
+p {
+  margin: 0 0 var(--spacing-md);
+  color: var(--color-text-primary);
+}
+
+/* Global focus outline for keyboard users (components may override) */
+:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px; /* a11y: keep 2px for visibility */
+}
+
+/* Accessibility – hide visually, keep for screen readers */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* Shared form primitive: .form-input used by FormField and by pages (Welcome, Settings, etc.) */
+input.form-input,
+textarea.form-input,
+select.form-input {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-base);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  transition: border-color var(--transition-base);
+  background-color: var(--entry-background-color);
+  color: var(--color-text-primary);
+  /* Ensure minimum touch target height */
+  min-height: 44px;
+}
+
+/* Mobile: larger input heights for easier tapping */
+@media (max-width: 640px) {
+  input.form-input,
+  textarea.form-input,
+  select.form-input {
+    font-size: 16px;
+    min-height: 48px;
+  }
+}
+
+input.form-input:focus,
+textarea.form-input:focus,
+select.form-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+input.form-input.error,
+textarea.form-input.error,
+select.form-input.error {
+  border-color: var(--color-danger);
+}
+
+/* Dark mode: form inputs focus ring */
+[data-theme="dark"] input.form-input:focus,
+[data-theme="dark"] textarea.form-input:focus,
+[data-theme="dark"] select.form-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-accent-muted-fill), var(--elevation-1);
+  outline: none;
+}
+
+/* Modern select dropdown styling */
+select.form-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+  cursor: pointer;
+  background-color: var(--color-background-card);
+  color: var(--color-text-primary);
+}
+
+[data-theme="dark"] select.form-input {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a3a3a3' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+}
+
+select.form-input option {
+  background-color: var(--color-background-card);
+  color: var(--color-text-primary);
+}
+
+select.form-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Shared form primitive: .form-input used by FormField and by pages (Welcome, Settings, etc.) */
+input.form-input,
+textarea.form-input,
+select.form-input {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-base);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  transition: border-color var(--transition-base);
+  background-color: var(--entry-background-color);
+  color: var(--color-text-primary);
+}
+
+input.form-input:focus,
+textarea.form-input:focus,
+select.form-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+input.form-input.error,
+textarea.form-input.error,
+select.form-input.error {
+  border-color: var(--color-danger);
+}
+
+/* Dark mode: form inputs focus ring */
+[data-theme="dark"] input.form-input:focus,
+[data-theme="dark"] textarea.form-input:focus,
+[data-theme="dark"] select.form-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-accent-muted-fill), var(--elevation-1);
+  outline: none;
+}
+
+/* Modern select dropdown styling */
+select.form-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+  cursor: pointer;
+  background-color: var(--color-background-card);
+  color: var(--color-text-primary);
+}
+
+[data-theme="dark"] select.form-input {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a3a3a3' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+}
+
+select.form-input option {
+  background-color: var(--color-background-card);
+  color: var(--color-text-primary);
+}
+
+select.form-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

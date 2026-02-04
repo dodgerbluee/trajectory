@@ -1,0 +1,128 @@
+.root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary, #667eea));
+  padding: var(--spacing-md);
+}
+
+.container {
+  width: 100%;
+  max-width: 400px;
+}
+
+.card {
+  box-shadow: var(--elevation-2);
+}
+
+.header {
+  text-align: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.logo {
+  height: 60px;
+  margin-bottom: var(--spacing-md);
+}
+
+.title {
+  font-size: var(--font-size-heading-2);
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--color-text-primary);
+}
+
+.subtitle {
+  font-size: var(--font-size-body);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin: var(--spacing-lg) 0;
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.formLabel {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.requiredIndicator {
+  color: var(--color-danger);
+  margin-left: 4px;
+}
+
+.formInput {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-body);
+  font-family: inherit;
+  background-color: var(--color-background-input);
+  color: var(--color-text-primary);
+  transition: border-color 0.2s;
+}
+
+.formInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.formInput.error {
+  border-color: var(--color-danger);
+}
+
+.formInput:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.formError {
+  font-size: 0.85rem;
+  color: var(--color-danger);
+}
+
+.button {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+}
+
+.footer {
+  text-align: center;
+  margin-top: var(--spacing-lg);
+  font-size: var(--font-size-body);
+  color: var(--color-text-secondary);
+}
+
+.footer p {
+  margin: 0;
+}
+
+.buttonAsLink {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+}
+
+.buttonAsLink:hover {
+  color: var(--color-primary-dark, #0066cc);
+  text-decoration: underline;
+}

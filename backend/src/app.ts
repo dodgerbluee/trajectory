@@ -1,30 +1,24 @@
-/**
- * Express application setup
- */
-
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
-import { childrenRouter } from './routes/children.js';
-import { measurementsRouter } from './routes/measurements.js';
-import { medicalEventsRouter } from './routes/medical-events.js';
-import attachmentsRouter from './routes/attachments.js';
-import avatars from './routes/avatars.js';
-import visitsRouter from './routes/visits.js';
-import illnessesRouter from './routes/illnesses.js';
-import { authRouter } from './routes/auth.js';
-import { usersRouter } from './routes/users.js';
-import { familiesRouter } from './routes/families.js';
-import { invitesRouter } from './routes/invites.js';
-import exportRouter from './routes/export.js';
-import { adminRouter } from './routes/admin.js';
+import { childrenRouter } from './routers/children.js';
+import { measurementsRouter } from './routers/measurements.js';
+import { medicalEventsRouter } from './routers/medical-events.js';
+import attachmentsRouter from './routers/attachments.js';
+import avatars from './routers/avatars.js';
+import visitsRouter from './routers/visits.js';
+import illnessesRouter from './routers/illnesses.js';
+import { authRouter } from './routers/auth.js';
+import { usersRouter } from './routers/users.js';
+import { familiesRouter } from './routers/families.js';
+import { invitesRouter } from './routers/invites.js';
+import exportRouter from './routers/export.js';
+import { adminRouter } from './routers/admin.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { logRequest } from './middleware/error-logger.js';
 
 export function createApp(): express.Application {
   const app = express();
-
-  // Middleware
   app.use(cors());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
@@ -52,19 +46,17 @@ export function createApp(): express.Application {
     });
   });
 
-  // API routes
-  app.use('/api/auth', authRouter); // Authentication endpoints
-  app.use('/api/users', usersRouter); // User management (instance admin only)
-  app.use('/api/families', familiesRouter); // Family list and invites
-  app.use('/api/invites', invitesRouter); // Accept invite by token
+  app.use('/api/auth', authRouter); 
+  app.use('/api/users', usersRouter); 
+  app.use('/api/families', familiesRouter);
+  app.use('/api/invites', invitesRouter); 
   app.use('/api/export', exportRouter);
   app.use('/api/admin', adminRouter);
   app.use('/api/children', childrenRouter);
-  app.use('/api/visits', visitsRouter); // Unified visits endpoint
-  app.use('/api/illnesses', illnessesRouter); // Illness tracking
+  app.use('/api/visits', visitsRouter); 
+  app.use('/api/illnesses', illnessesRouter); 
   app.use('/api/measurements', measurementsRouter);
   app.use('/api/medical-events', medicalEventsRouter);
-  // Mount avatar file serving at /api/avatars so only these requests hit it (not attachmentsRouter with global auth)
   app.use('/api/avatars', avatars.avatarFilesRouter);
   app.use('/api', avatars.default);
   app.use('/api', attachmentsRouter);
@@ -74,7 +66,6 @@ export function createApp(): express.Application {
   if (FRONTEND_DIR) {
     const frontendPath = path.resolve(process.cwd(), FRONTEND_DIR);
     
-    // Serve static assets with caching
     app.use(express.static(frontendPath, {
       maxAge: '1y', // Cache static assets for 1 year
       etag: true,
@@ -83,7 +74,6 @@ export function createApp(): express.Application {
 
     // Serve index.html for all non-API routes (React Router support)
     app.get('*', (req, res, next) => {
-      // Skip if it's an API route or health check
       if (req.path.startsWith('/api') || req.path === '/health') {
         return next();
       }

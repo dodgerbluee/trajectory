@@ -20,8 +20,8 @@ import dotenv from 'dotenv';
 import { createApp } from './app.js';
 import { testConnection, closePool } from './db/connection.js';
 import { runMigrations } from './db/migrations.js';
-import { ensureInstanceSettingsTable, getInstanceSetting } from './lib/instance-settings.js';
-import { setRuntimeLogLevel, type LogLevelValue } from './lib/admin-config.js';
+import { ensureInstanceSettingsTable, getInstanceSetting } from './features/shared/service/instance-settings.js';
+import { setRuntimeLogLevel, type LogLevelValue } from './features/admin/service/admin-config.js';
 
 // Load environment variables
 dotenv.config();

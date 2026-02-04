@@ -5,6 +5,9 @@ import { AuthProvider } from './contexts/AuthContext';
 import { PreferencesProvider } from './contexts/PreferencesContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ConfigProvider } from './contexts/ConfigContext';
+import { FamilyPermissionsProvider } from './contexts/FamilyPermissionsContext';
+import { OnboardingProvider } from './contexts/OnboardingContext';
+import { HomeTabRequestProvider } from './contexts/HomeTabRequestContext';
 import App from './App';
 import './index.css';
 
@@ -19,7 +22,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <PreferencesProvider>
           <ThemeProvider>
             <ConfigProvider>
-              <App />
+              <FamilyPermissionsProvider>
+                <OnboardingProvider>
+                  <HomeTabRequestProvider>
+                    <App />
+                  </HomeTabRequestProvider>
+                </OnboardingProvider>
+              </FamilyPermissionsProvider>
             </ConfigProvider>
           </ThemeProvider>
         </PreferencesProvider>

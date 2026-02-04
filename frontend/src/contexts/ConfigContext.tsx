@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { setAppTimezone } from '../lib/date-utils';
-import { API_BASE_URL } from '../lib/env.js';
+import { setAppTimezone } from '../shared/lib/date-utils';
+import { API_BASE_URL } from '../shared/lib/env.js';
 
 const ConfigContext = createContext<{ timezoneReady: boolean }>({ timezoneReady: false });
 

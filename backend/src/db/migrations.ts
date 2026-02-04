@@ -1,12 +1,11 @@
 /**
- * Database schema setup
+ * Database migrations
  *
- * On startup: ensures migrations table exists, then applies schema.sql if not yet applied.
- * Single schema file (idempotent); no incremental migration files.
+ * On startup: ensures migrations table exists, then applies all unapplied .sql files from backend/migrations/.
  */
 
 import { query, pool } from './connection.js';
-import { readFile } from 'fs/promises';
+import { readFile, readdir } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -19,9 +18,6 @@ interface MigrationRecord {
   applied_at: Date;
 }
 
-/**
- * Create the migrations tracking table if it doesn't exist
- */
 async function ensureMigrationsTable(): Promise<void> {
   await query(`
     CREATE TABLE IF NOT EXISTS migrations (
@@ -32,40 +28,92 @@ async function ensureMigrationsTable(): Promise<void> {
   `);
 }
 
-/**
- * Get list of already applied migrations
- */
+async function getMigrationFiles(): Promise<string[]> {
+  const possibleDirs = [
+    join(__dirname, '..', '..', 'migrations'),
+    join(process.cwd(), 'backend', 'migrations'),
+    join(process.cwd(), 'migrations'),
+  ];
+
+  for (const dir of possibleDirs) {
+    try {
+      const files = await readdir(dir);
+      return files
+        .filter(f => f.endsWith('.sql') && f !== 'schema.sql')
+        .sort();
+    } catch {
+      continue;
+    }
+  }
+
+  return [];
+}
+
+async function getMigrationPath(filename: string): Promise<string | null> {
+  const possiblePaths = [
+    join(__dirname, '..', '..', 'migrations', filename),
+    join(process.cwd(), 'backend', 'migrations', filename),
+    join(process.cwd(), 'migrations', filename),
+  ];
+
+  for (const path of possiblePaths) {
+    try {
+      await readFile(path, 'utf-8');
+      return path;
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
+async function applyIncrementalMigrations(): Promise<void> {
+  const appliedMigrations = await getAppliedMigrations();
+  const migrationFiles = await getMigrationFiles();
+
+  if (migrationFiles.length === 0) {
+    return;
+  }
+
+  for (const filename of migrationFiles) {
+    if (appliedMigrations.includes(filename)) {
+      continue;
+    }
+
+    const path = await getMigrationPath(filename);
+    if (!path) {
+      console.warn(`Warning: Migration file ${filename} not found, skipping`);
+      continue;
+    }
+
+    const sql = await readFile(path, 'utf-8');
+    await executeMigration(filename, sql);
+  }
+}
+
 async function getAppliedMigrations(): Promise<string[]> {
   try {
     const result = await query<MigrationRecord>('SELECT name FROM migrations ORDER BY id');
     return result.rows.map(row => row.name);
   } catch (error: unknown) {
-    // If migrations table doesn't exist yet, return empty array
-    // This will be handled by ensureMigrationsTable
     const err = error as Partial<{ code: unknown }>;
-    if (err.code === '42P01') { // relation does not exist
+    if (err.code === '42P01') {
       return [];
     }
     throw error;
   }
 }
 
-/**
- * Execute a migration SQL file
- * Wrapped in a transaction for atomicity - if migration fails, it's rolled back
- */
+// Execute a migration in a transaction (rolled back if it fails)
 async function executeMigration(name: string, sql: string): Promise<void> {
-  console.log(`  Applying migration: ${name}`);
   
-  // Use a transaction to ensure atomicity
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     
-    // Execute the migration SQL
     await client.query(sql);
     
-    // Record the migration
     await client.query('INSERT INTO migrations (name) VALUES ($1) ON CONFLICT (name) DO NOTHING', [name]);
     
     await client.query('COMMIT');
@@ -124,8 +172,7 @@ async function applyBaseSchema(): Promise<void> {
 }
 
 /**
- * Run database setup: apply schema.sql if not yet applied.
- * Single schema file (no incremental migrations).
+ * Run database setup: apply schema.sql if not yet applied, then apply incremental migrations.
  */
 export async function runMigrations(): Promise<void> {
   console.log('Running database migrations...\n');
@@ -133,6 +180,7 @@ export async function runMigrations(): Promise<void> {
   try {
     await ensureMigrationsTable();
     await applyBaseSchema();
+    await applyIncrementalMigrations();
 
     const appliedMigrations = await getAppliedMigrations();
     console.log(`Applied migrations: ${appliedMigrations.join(', ') || '(none)'}\n`);

@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
-import { familiesApi } from '../lib/api-client';
+import { familiesApi } from '../shared/lib/api-client';
 
 interface FamilyPermissionsContextType {
   /** True if the user is owner or parent in at least one family; false for view-only. */

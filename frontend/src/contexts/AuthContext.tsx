@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ApiClientError } from '../lib/api-client';
-import { API_BASE_URL } from '../lib/env.js';
+import { ApiClientError } from '../shared/lib/api-client';
+import { API_BASE_URL } from '../shared/lib/env.js';
 
 export interface User {
   id: number;

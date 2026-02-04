@@ -4,7 +4,7 @@ Utility scripts for development and maintenance.
 
 ## Mock Data Seeder
 
-Creates comprehensive mock data for development and testing.
+Creates mock data for development and testing.
 
 ### Usage
 

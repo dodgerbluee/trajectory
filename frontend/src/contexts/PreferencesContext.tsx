@@ -7,8 +7,8 @@ import {
   ReactNode,
 } from 'react';
 import { useAuth } from './AuthContext';
-import { preferencesApi } from '../lib/api-client';
-import { setDateFormat as setDateFormatInUtils, type DateFormat } from '../lib/date-utils';
+import { preferencesApi } from '../shared/lib/api-client';
+import { setDateFormat as setDateFormatInUtils, type DateFormat } from '../shared/lib/date-utils';
 
 export type ThemePreference = 'light' | 'dark' | 'system';
 

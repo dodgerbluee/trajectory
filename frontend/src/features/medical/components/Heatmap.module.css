@@ -1,0 +1,102 @@
+/* Heatmap – grid, cells, legend; tokens in styles/tokens.css */
+
+.grid {
+  display: flex;
+  gap: var(--spacing-xs);
+  overflow-x: auto;
+}
+
+.dayLabels {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-right: var(--spacing-sm);
+  padding: 0;
+  justify-content: flex-start;
+}
+
+.dayLabel {
+  height: 12px;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  text-align: right;
+  padding-right: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 12px;
+  max-height: 12px;
+  line-height: 12px;
+  margin: 0;
+}
+
+.weeks {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.week {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  align-items: stretch;
+  padding: 0;
+  margin: 0;
+}
+
+.cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cellEmpty {
+  cursor: default;
+  background-color: transparent;
+  opacity: 0;
+  width: 12px;
+  height: 12px;
+}
+
+.cell:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 2px var(--color-primary);
+  z-index: 1;
+  position: relative;
+}
+
+.cellContent {
+  font-size: 0.5rem;
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-bold);
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-lg);
+  justify-content: flex-end;
+}
+
+.legendLabel {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.legendColors {
+  display: flex;
+  gap: 2px;
+}
+
+.legendCell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}

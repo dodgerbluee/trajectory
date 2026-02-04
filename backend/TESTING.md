@@ -1,6 +1,6 @@
 # Testing Guide - Change Tracking System
 
-Comprehensive test cases and examples for the audit/change tracking system.
+Test cases for the audit/change tracking system.
 
 ---
 
@@ -48,7 +48,7 @@ npm test -- --watch
 
 ### 1. No-op Updates (No Diff Created)
 
-**Purpose:** Ensure no audit events are created when nothing actually changed.
+No audit events when nothing actually changed.
 
 **Test Cases:**
 - ✅ Same values (no change)
@@ -66,7 +66,7 @@ expect(mockRecordAuditEvent).not.toHaveBeenCalled();
 
 ### 2. Single Field Update
 
-**Purpose:** Verify single field changes are detected and recorded correctly.
+Single field changes are detected and recorded.
 
 **Test Cases:**
 - ✅ Date change (`visit_date`)
@@ -89,9 +89,9 @@ expect(Object.keys(diff)).toHaveLength(1);
 
 ### 3. Multiple Field Update
 
-**Purpose:** Verify multiple simultaneous changes are all tracked.
+Multiple simultaneous changes are all tracked.
 
-**Test Cases:**
+**Test Cases:****
 - ✅ 2-3 fields changed
 - ✅ 5+ fields changed (summary truncation)
 - ✅ Mixed types (date + number + string)

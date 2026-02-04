@@ -1,0 +1,99 @@
+/* AdminUsers – admin users page; tokens in styles/tokens.css */
+
+.pageHeader {
+  margin-bottom: var(--spacing-lg);
+}
+
+.title {
+  margin: 0 0 var(--spacing-xs);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.subtitle {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.table thead th {
+  text-align: left;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.02em;
+  border-bottom: var(--border-width-thick) solid var(--color-border);
+}
+
+.table tbody td {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.tableRow {
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.tableRow:hover {
+  background: var(--color-surface);
+}
+
+.tableRow:focus {
+  outline: var(--border-width-thick) solid var(--color-primary);
+  outline-offset: calc(-1 * var(--border-width-thick));
+}
+
+.tableUsername {
+  font-weight: var(--font-weight-medium);
+}
+
+.roleBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-2) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.roleBadgeIcon {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+}
+
+.roleBadgeTable {
+  padding: var(--spacing-sm) var(--spacing-sm-plus);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.roleBadgeInstanceAdmin {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.35), rgba(217, 119, 6, 0.35));
+  color: var(--color-log-warn);
+  border: 1px solid rgba(217, 119, 6, 0.4);
+}
+
+.roleBadgeUser {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}

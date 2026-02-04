@@ -6,7 +6,7 @@ labels: ["security"]
 assignees: []
 ---
 
-**Prefer private disclosure.** For sensitive vulnerabilities, use **Security** → **Advisories** → **Report a vulnerability** in this repo so the report stays private. See [SECURITY.md](SECURITY.md) for timeline and process.
+**Prefer private disclosure.** For sensitive vulnerabilities, use **Security** → **Advisories** → **Report a vulnerability** in this repo so the report stays private. See [docs/SECURITY.md](../../docs/SECURITY.md) for timeline and process.
 
 ---
 

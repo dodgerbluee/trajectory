@@ -1,0 +1,147 @@
+/* ImageCropUpload – upload section and cropper modal. */
+
+.root {
+  width: 100%;
+  position: relative;
+}
+
+.uploadSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.currentAvatarPreview {
+  margin-bottom: var(--spacing-sm);
+}
+
+.currentAvatarPreview img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--color-border);
+}
+
+.cropperModal {
+  /* Don't create a modal overlay - this component is already inside a modal */
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.cropperContainer {
+  background: transparent;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.cropperHeader {
+  padding-bottom: var(--spacing-md);
+  text-align: center;
+}
+
+.cropperHeader h3 {
+  margin: 0 0 var(--spacing-xs) 0;
+  color: var(--color-text-primary);
+  font-size: 1.25rem;
+}
+
+.cropperHeader p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.cropperArea {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  background: #000000;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.cropperControls {
+  padding-top: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.zoomControl {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.zoomControl label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.zoomSlider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-border);
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.zoomSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.zoomSlider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+}
+
+.zoomSlider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  cursor: pointer;
+  border: none;
+  transition: transform 0.2s;
+}
+
+.zoomSlider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+}
+
+.cropperActions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+}
+
+.cropperActions :global(.btn) {
+  min-width: 120px;
+}
+
+@media (max-width: 768px) {
+  .cropperArea {
+    height: 300px;
+  }
+
+  .cropperActions {
+    flex-direction: column;
+  }
+
+  .cropperActions :global(.btn) {
+    width: 100%;
+  }
+}

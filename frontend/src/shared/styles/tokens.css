@@ -1,0 +1,246 @@
+/* ============================================================================
+   Design Tokens – colors, spacing, typography, radius, elevation, transitions
+   ============================================================================
+   Convention: All migrated CSS must use var(--token-name). No hardcoded colors,
+   spacing, font-size, or border-radius outside this file. If a value appears
+   more than once, add a token here.
+   ============================================================================ */
+
+:root {
+  /* Colors – Primary */
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-light: #dbeafe;
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-900: #1e3a8a;
+  --color-accent-muted: rgba(37, 99, 235, 0.45);
+  --color-accent-muted-fill: rgba(37, 99, 235, 0.08);
+
+  /* Accent for visit pills (navy) */
+  --color-visit-accent: #0b3d91;
+  --color-visit-accent-2: #0f4bb3;
+
+  /* Secondary */
+  --color-secondary: #64748b;
+  --color-secondary-hover: #475569;
+
+  /* Semantic */
+  --color-success: #10b981;
+  --color-success-light: #d1fae5;
+  --color-warning: #f59e0b;
+  --color-warning-light: #fef3c7;
+  --color-vision: #7c3aed;
+  --color-vision-light: rgba(124, 58, 237, 0.08);
+  --color-dental: #06b6d4;
+  --color-dental-light: rgba(6, 182, 212, 0.08);
+  --color-info: #06b6d4;
+  --color-info-light: #cffafe;
+  --color-danger: #ef4444;
+  --color-danger-hover: #dc2626;
+  --color-danger-light: #fee2e2;
+  --color-error: var(--color-danger);
+
+  /* Neutral grays */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+
+  /* Background (light) */
+  --color-background: #f5f5f5;
+  --color-background-card: #ffffff;
+  --entry-background-color: #f0f0f0;
+  --color-surface: #f8fafc;
+  --color-border: #e2e8f0;
+
+  /* Text (light) */
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-text-inverse: #ffffff;
+
+  /* Typography */
+  --font-size-2xs: 0.6875rem;
+  --font-size-xs: 0.75rem;
+  --font-size-sm-tight: 0.8125rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-icon-lg: 1.5rem;
+  --font-size-title-lg: 1.75rem;
+  --font-size-step: 1.35rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  --font-size-touch: 0.95rem;
+  --font-size-lead: 1.1rem;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* Spacing */
+  --spacing-2: 2px;
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-sm-plus: 0.75rem;
+  --spacing-6: 0.375rem;
+  --spacing-md: 1rem;
+  --spacing-md-plus: 1.25rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  --spacing-xxl: 3rem;
+
+  /* Measurements UI only – component-specific; prefer --spacing-* elsewhere */
+  --m-space-1: 8px;
+  --m-space-2: 12px;
+  --m-space-3: 16px;
+
+  /* Focus ring (a11y) */
+  --color-focus-ring: var(--color-primary);
+
+  /* Sizes (avatars, inputs, icons) */
+  --size-avatar-compact: 5rem;
+  --size-avatar-overview: 7.5rem;
+  --size-tag-input-min: 7.5rem;
+  --size-touch-min: 2.75rem;
+  --size-icon-box: 2.5rem;
+  --size-icon-sm: 1.75rem;
+  --size-dot: 0.5rem;
+  --size-logo: 4.5rem;
+  --size-logo-header: 1.5rem;
+  --size-textarea-min: 3.75rem;
+  --size-grid-min: 6.25rem;
+  --border-width-thick: 2px;
+
+  /* Overlay on primary (e.g. tag-remove hover) */
+  --color-overlay-on-primary: rgba(255, 255, 255, 0.2);
+
+  /* Border radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-md-alt: 0.625rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Elevation */
+  --elevation-0: none;
+  --elevation-1: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --elevation-2: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --elevation-3: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --elevation-4: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --elevation-5: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+  --shadow-sm: var(--elevation-1);
+  --shadow-md: var(--elevation-3);
+  --shadow-lg: var(--elevation-4);
+
+  /* Transitions */
+  --transition-fast: 150ms ease-in-out;
+  --transition-base: 200ms ease-in-out;
+  --transition-slow: 300ms ease-in-out;
+
+  /* Z-index */
+  --z-base: 0;
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+
+  /* Font family */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+
+  /* Icon stroke (visit-type icons) */
+  --icon-stroke-default: 1px;
+  --icon-stroke-modal: 1.25px;
+  --icon-stroke-sick: 1px;
+}
+
+/* Dark theme overrides */
+[data-theme="dark"] {
+  --color-background: #0a0a0a;
+  --color-background-card: #121212;
+  --entry-background-color: #0f0f0f;
+  --color-surface: #1a1a1a;
+  --color-surface-subtle: #161616;
+  --color-surface-elevated: #1c1c1c;
+  --color-border: #2a2a2a;
+  --color-border-strong: #333;
+
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #a0a0a0;
+  --color-text-three: #e0e0e0;
+
+  --color-primary: #3b82f6;
+  --color-primary-hover: #60a5fa;
+  --color-primary-light: rgba(59, 130, 246, 0.1);
+  --color-accent-muted: rgba(96, 165, 250, 0.45);
+  --color-accent-muted-fill: rgba(59, 130, 246, 0.08);
+  --color-accent-glow: rgba(59, 130, 246, 0.25);
+
+  --color-success: #10b981;
+  --color-success-light: rgba(16, 185, 129, 0.15);
+  --color-warning: #f59e0b;
+  --color-warning-light: rgba(245, 158, 11, 0.15);
+  --color-info: #06b6d4;
+  --color-info-light: rgba(6, 182, 212, 0.15);
+  --color-danger: #ef4444;
+  --color-danger-hover: #dc2626;
+  --color-danger-light: rgba(239, 68, 68, 0.15);
+  --color-danger-muted: #fca5a5;
+  --color-warning-muted: #fbbf24;
+  --color-success-muted: #34d399;
+  --color-audit-danger-bg: rgba(239, 68, 68, 0.2);
+  --color-audit-warning-bg: rgba(245, 158, 11, 0.2);
+  --color-audit-success-bg: rgba(16, 185, 129, 0.2);
+
+  /* Log levels */
+  --color-log-info: #22c55e;
+  --color-log-warn: #eab308;
+  --color-log-debug: #f97316;
+  --color-log-warn-dark: #b45309;
+
+  --elevation-1: 0 1px 3px 0 rgba(0, 0, 0, 0.5), 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --elevation-2: 0 3px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
+  --elevation-3: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+  --elevation-4: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+  --elevation-5: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+
+  --shadow-sm: var(--elevation-1);
+  --shadow-md: var(--elevation-3);
+  --shadow-lg: var(--elevation-4);
+
+  --color-focus-ring: var(--color-primary);
+
+  /* Breakpoints – mobile-first */
+  --bp-xs: 375px;
+  --bp-sm: 480px;
+  --bp-md: 640px;
+  --bp-lg: 768px;
+  --bp-xl: 1024px;
+  --bp-2xl: 1200px;
+  --bp-3xl: 1600px;
+}
