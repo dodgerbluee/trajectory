@@ -14,11 +14,15 @@
   align-items: center;
   justify-content: center;
   gap: var(--spacing-xs);
+  /* Mobile: ensure touch targets are 44px minimum */
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .sm {
   padding: var(--spacing-xs) var(--spacing-md);
   font-size: var(--font-size-sm);
+  min-height: 40px;
 }
 
 .md {
@@ -115,4 +119,17 @@
   background-color: var(--color-border);
   border-color: var(--color-primary-light);
   box-shadow: var(--elevation-2);
+}
+
+/* Mobile: larger touch targets on small screens */
+@media (max-width: 640px) {
+  .root {
+    padding: var(--spacing-md) var(--spacing-lg);
+    min-height: 48px;
+  }
+
+  .sm {
+    padding: var(--spacing-sm) var(--spacing-md);
+    min-height: 44px;
+  }
 }

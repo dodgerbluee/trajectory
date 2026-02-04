@@ -11,7 +11,7 @@ jest.mock('../../../../db/connection.js', () => ({
   query: jest.fn(),
 }));
 
-import { query } from '../../db/connection.js';
+import { query } from '../../../../db/connection.js';
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
 

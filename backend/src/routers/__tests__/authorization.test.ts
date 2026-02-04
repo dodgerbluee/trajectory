@@ -8,7 +8,7 @@ import request from 'supertest';
 
 // Mock before importing app (so routes use mocks)
 jest.mock('../../db/connection.js');
-jest.mock('../../lib/family-access.js');
+jest.mock('../../features/families/service/family-access.js');
 jest.mock('../../middleware/auth.js', () => {
   const testAuth = (req: { headers: Record<string, string | undefined>; userId?: number }, _res: unknown, next: () => void) => {
     const id = req.headers['x-test-user-id'];
@@ -24,7 +24,7 @@ jest.mock('../../middleware/auth.js', () => {
 });
 
 import { query } from '../../db/connection.js';
-import { canAccessChild, getFamilyIdsForUser, getAccessibleChildIds } from '../../lib/family-access.js';
+import { canAccessChild, getFamilyIdsForUser, getAccessibleChildIds } from '../../features/families/service/family-access.js';
 import { createApp } from '../../app.js';
 
 const mockQuery = query as jest.MockedFunction<typeof query>;

@@ -1,24 +1,25 @@
 /**
  * Jest configuration for backend tests
- * Uses default ts-jest (CommonJS) so tests run without Node ESM flags.
+ * Uses ts-jest (CommonJS) so tests run without Node ESM flags.
  * Config is .cjs so it loads under package.json "type": "module".
  */
 
 /** @type {import('jest').Config} */
 module.exports = {
-  preset: 'ts-jest/presets/default',
+  preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'node',
   rootDir: '.',
   setupFiles: ['<rootDir>/jest.setup.cjs'],
   modulePaths: ['<rootDir>/node_modules'],
+  extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
-    '^(\\.{1,2}/.*)\\.js$': '$1',
+    '^(\\.\\.?/.*?)\\.js$': '$1',
   },
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
-      useESM: false,
+      useESM: true,
       tsconfig: {
-        module: 'CommonJS',
+        module: 'ESNext',
         moduleResolution: 'node',
         esModuleInterop: true,
       },

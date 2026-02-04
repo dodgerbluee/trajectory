@@ -10,6 +10,14 @@
     border-color var(--transition-base), box-shadow var(--transition-base);
 }
 
+/* Mobile: reduce padding on small screens */
+@media (max-width: 640px) {
+  .root {
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+  }
+}
+
 .title {
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-semibold);

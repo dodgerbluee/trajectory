@@ -8,11 +8,11 @@ import type { AuthRequest } from '../../middleware/auth.js';
 
 // Mock dependencies
 jest.mock('../../db/connection.js');
-jest.mock('../../lib/audit.js');
+jest.mock('../../features/shared/service/audit.js');
 
 import { query } from '../../db/connection.js';
-import { canViewAuditHistory } from '../../lib/audit.js';
-import { buildFieldDiff } from '../../lib/field-diff.js';
+import { canViewAuditHistory } from '../../features/shared/service/audit.js';
+import { buildFieldDiff } from '../../features/shared/service/field-diff.js';
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockCanViewAuditHistory = canViewAuditHistory as jest.MockedFunction<typeof canViewAuditHistory>;

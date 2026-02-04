@@ -234,4 +234,13 @@
   --shadow-lg: var(--elevation-4);
 
   --color-focus-ring: var(--color-primary);
+
+  /* Breakpoints – mobile-first */
+  --bp-xs: 375px;
+  --bp-sm: 480px;
+  --bp-md: 640px;
+  --bp-lg: 768px;
+  --bp-xl: 1024px;
+  --bp-2xl: 1200px;
+  --bp-3xl: 1600px;
 }

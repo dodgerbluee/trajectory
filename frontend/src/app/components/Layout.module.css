@@ -111,6 +111,7 @@
 
   .headerContent {
     padding: var(--spacing-sm) var(--spacing-md);
+    min-height: 48px;
   }
 
   .appTitle {
@@ -119,5 +120,34 @@
 
   .main {
     padding: var(--spacing-lg) var(--spacing-md);
+  }
+}
+
+/* Small phones (< 480px) */
+@media (max-width: 480px) {
+  .header {
+    padding: var(--spacing-xs);
+    top: var(--spacing-xs);
+  }
+
+  .headerContent {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    height: 48px;
+  }
+
+  .appTitle {
+    font-size: var(--font-size-sm);
+  }
+
+  .appLogo {
+    height: 28px;
+  }
+
+  .main {
+    padding: var(--spacing-md) var(--spacing-sm);
+  }
+
+  .contentWrapper {
+    max-width: 100%;
   }
 }
