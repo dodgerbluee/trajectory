@@ -97,4 +97,3 @@ Scripts from repo root: `npm run install:all`, `npm run build`, `npm run lint`. 
 Thank you to all the contributors who have helped make Trajectory better!
 
 [![Contributors](https://contrib.rocks/image?repo=dodgerbluee/trajectory)](https://github.com/dodgerbluee/trajectory/graphs/contributors)
-
