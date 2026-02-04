@@ -606,7 +606,11 @@ router.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
 
 router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    console.log('[POST /api/visits] Request body:', JSON.stringify(req.body, null, 2));
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[POST /api/visits] Request body:', JSON.stringify(req.body, null, 2));
+    } else {
+      console.log('[POST /api/visits] Request body: present (redacted in production)');
+    }
 
     const childId = parseInt(req.body.child_id);
     console.log('[POST /api/visits] Parsed childId:', childId);

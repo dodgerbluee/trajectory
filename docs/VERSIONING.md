@@ -32,3 +32,28 @@ Version tags (e.g. `v0.1.0`, `v1.0.0`) follow the version scheme above.
 ## 1.x compatibility (when 1.0.0 is released)
 
 Once at 1.0.0, within a major version (e.g. 1.x) we avoid breaking API or schema changes without a major bump. Fixes and new features are backward-compatible where possible. If a breaking change is required, it will be documented and reflected in the version (e.g. 2.0.0).
+
+---
+
+## Trajectory Release Flow (How it works)
+
+Every merge to `main`:
+- Build & push `trajectory:dev`
+- Build & push `trajectory:sha-<commit>`
+
+When semantic-release cuts a release (from main, with proper commit messages):
+- Build & push `trajectory:vX.Y.Z`
+- Move `trajectory:latest` to this release
+- Create a GitHub Release
+
+### User Choices
+- **Stable:** `image: trajectory:latest`
+- **Pin:** `image: trajectory:v0.6.0`
+- **Living dangerously:** `image: trajectory:dev`
+
+**Best Practice:**
+> Never push `latest` from main without a version tag. Only move `latest` when a real, tagged release is cut. This prevents accidental breakage for users tracking `latest`.
+
+This flow is simple, familiar, and trusted. It ensures that only tested, tagged releases are promoted to `latest`, while development builds remain isolated under `dev` tags.
+
+---
