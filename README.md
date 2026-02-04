@@ -6,68 +6,37 @@ Self-hosted, privacy-first app for tracking children's health data: growth, visi
 
 ---
 
-## Privacy and data ownership
+## 📚 Documentation
 
-- **Your data stays with you.** All data is stored in your own database and file storage. The app does not send health data to any third party.
-- **This app does not phone home.** No analytics, telemetry, or usage tracking. No external calls except what you configure (e.g. optional email for password reset).
-- **Data belongs to you.** As the self-hosted operator, you control the data. Back up your database and volumes; see [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) for a backup approach. Export and restore tooling are planned.
+For complete documentation, guides, and detailed information, please visit:
 
----
+**[📖 https://dodgerbluee.github.io/trajectory-docs/](https://dodgerbluee.github.io/trajectory-docs/)**
 
-## Boundaries (important)
-
-- **Not medical advice.** Trajectory is a record-keeping tool only. It does not provide medical advice, diagnosis, or treatment. Always rely on qualified healthcare providers for medical decisions.
-- **Self-hosted only.** You install and run the app. There is no hosted service run by the project.
-- **No telemetry.** The software does not collect or report usage data. If that changes in the future, it would be opt-in and documented.
-- **Compliance (COPPA / GDPR):** As the self-hosted operator, you are the data controller. You are responsible for complying with applicable laws (e.g. COPPA, GDPR) where you and your users are located. The app does not process or transfer data to third parties; you control where data is stored and how it is backed up.
-
----
-
-## Security
-
-- **Authentication:** Passwords hashed with bcrypt. Rate limiting and lockouts on login and password reset. JWT access and refresh tokens; no default admin account—you register the first user.
-- **Authorization:** Data is scoped by family. Only users in a child's family can see that child's data. All sensitive API endpoints require authentication and family checks.
-- **Deployment:** Run behind HTTPS in production. Use a reverse proxy (e.g. Nginx, Caddy, Nginx Proxy Manager) for TLS; the app does not terminate TLS. Secrets (database URL, JWT secrets) via environment variables; see `.env.example` and [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md).
-- **What this app does not do:** It does not encrypt data at rest (relies on your disk/volume security). It does not enforce TLS (your reverse proxy must). It does not provide a formal threat model document yet.
-- **Data in logs:** In production (`NODE_ENV=production`), the app does not log request bodies or other plaintext health data. Set `NODE_ENV=production` in production.
-- **Session tokens:** The app uses JWT access and refresh tokens in the `Authorization` header (Bearer). Tokens are not stored in cookies. Storage of tokens is the client's responsibility (e.g. memory or localStorage); use secure practices on the client.
-- **CSRF:** State-changing APIs require the JWT in the `Authorization` header. There is no cookie-based session, so traditional CSRF (cross-site request forgery via cookies) does not apply. Same-origin or CORS policy should be configured appropriately.
-- **XSS:** The frontend is React; React escapes text by default. Sensitive output paths should avoid `dangerouslySetInnerHTML`; the app does not use it for user content.
+This includes:
+- **Quick Start** - Get up and running in minutes
+- **Deployment Guide** - Production setup, backup, restore, and updates
+- **User Guide** - Features, how-tos, and best practices
+- **Security** - Threat model, authentication, and compliance information
+- **Operations** - Monitoring, troubleshooting, and maintenance
+- **FAQ** - Frequently asked questions
 
 ---
 
-## Quick start
+## Quick Links
 
-**Requirements:** Docker and Docker Compose.
-
-1. Clone the repo and create env from the production example:
-   ```bash
-   cp .env.prod.example .env
-   ```
-2. Edit `.env`: set a strong `DB_PASSWORD`, `JWT_SECRET`, and `JWT_REFRESH_SECRET` (the app will not start in production with placeholder secrets); set `IMAGE` to your app image (e.g. from GitHub Container Registry).
-3. Start the stack:
-   ```bash
-   docker-compose -f docker-compose.prod.yml up -d
-   ```
-4. Put the app behind HTTPS (reverse proxy). Open the app, register the first user, and start adding children.
-
-For Portainer, Nginx Proxy Manager, backup, restore, upgrade, and rollback, see [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md). For versioning and release notes, see [docs/VERSIONING.md](./docs/VERSIONING.md).
-
-**Development (run from source):** Use `docker-compose up` for backend + DB, or run backend and frontend separately; see [backend/README.md](./backend/README.md) and [frontend](./frontend).
-
-**Stop:** `docker-compose -f docker-compose.prod.yml down`
+| Resource | Link |
+|----------|------|
+| 📖 Full Documentation | [https://dodgerbluee.github.io/trajectory-docs/](https://dodgerbluee.github.io/trajectory-docs/) |
+| 🚀 Quick Start Guide | [Quick Start](https://dodgerbluee.github.io/trajectory-docs/quick-start) |
+| 🐳 Deployment Guide | [Deployment](https://dodgerbluee.github.io/trajectory-docs/deployment-docs) |
+| 🔒 Security Info | [Security](https://dodgerbluee.github.io/trajectory-docs/security) |
+| 💬 FAQ | [FAQ](https://dodgerbluee.github.io/trajectory-docs/faq) |
+| 🐛 Report Issues | [GitHub Issues](https://github.com/dodgerbluee/trajectory/issues) |
+| 📋 License | [Polyform Noncommercial 1.0.0](./LICENSE) |
 
 ---
 
-## License and support
-
-- **License:** [Polyform Noncommercial 1.0.0](./LICENSE). Free for noncommercial use. You may not sell or commercially distribute the software. The copyright holder may offer paid features or commercial terms separately.
-- **Docs:** [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) (production, backup, updates). [backend/README.md](./backend/README.md) and [frontend](./frontend) for development. Detailed docs (e.g. threat model, restore) are planned.
-- **Security:** If you find a vulnerability, see [docs/SECURITY.md](./docs/SECURITY.md); report responsibly (e.g. private disclosure to the maintainers).
-
----
-
-## Project layout
+## Project Layout
 
 | Path | Description |
 |------|-------------|
@@ -76,7 +45,13 @@ For Portainer, Nginx Proxy Manager, backup, restore, upgrade, and rollback, see 
 | `database/` | PostgreSQL init script |
 | `backend/migrations/` | Schema and migrations |
 
-Scripts from repo root: `npm run install:all`, `npm run build`, `npm run lint`. See `backend/` and `frontend/` READMEs for more.
+Scripts from repo root: `npm run install:all`, `npm run build`, `npm run lint`. See `backend/` and `frontend/` READMEs for development info.
+
+---
+
+## Development
+
+**Development (run from source):** Use `docker-compose up` for backend + DB, or run backend and frontend separately; see [backend/README.md](./backend/README.md) and [frontend](./frontend).
 
 ---
 
