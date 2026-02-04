@@ -40,6 +40,6 @@ Create a `.env` (or copy from `.env.example`). Used by both Docker and local dev
 
 ## Local dev
 
-1. Start Postgres: `npm run db:start` (or `./start.sh` for full stack).
+1. Start Postgres: `npm run db:start` (or `docker-compose up` for full stack).
 2. Ensure `DATABASE_URL` in `.env` points at that DB.
 3. `npm run dev`.

@@ -13,7 +13,7 @@ React app (Vite, TypeScript). Growth charts (Recharts), visit/illness forms, ava
 
 ## Local dev
 
-1. Backend and DB must be running (e.g. `./start.sh` or `npm run dev` in backend with DB up).
+1. Backend and DB must be running (e.g. `docker-compose up` or `npm run dev` in backend with DB up).
 2. `npm run dev`. Default dev server uses Vite proxy for `/api` → backend.
 
 Build-time env: `VITE_API_URL`. Empty for relative API calls (proxy); set to backend base URL if needed.

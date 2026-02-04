@@ -1,6 +1,6 @@
 # Component Pattern Guide
 
-**Goal:** Document established patterns and best practices for building components in the Trajectory frontend.
+Established patterns for building components in the Trajectory frontend.
 
 ---
 

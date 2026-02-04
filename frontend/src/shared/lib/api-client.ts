@@ -347,7 +347,6 @@ export const childrenApi = {
     });
 
     if (!response.ok) {
-      // Handle 401 with token refresh
       if (response.status === 401 && accessToken) {
         const newToken = await tryRefreshToken();
         if (newToken) {
@@ -580,7 +579,6 @@ export const visitsApi = {
     });
 
     if (!response.ok) {
-      // Handle 401 with token refresh
       if (response.status === 401 && accessToken) {
         const newToken = await tryRefreshToken();
         if (newToken) {

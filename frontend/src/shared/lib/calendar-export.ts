@@ -39,7 +39,6 @@ export function buildIcsFromEvents(events: CalendarEvent[]): string {
   const vevents = events
     .map((e) => {
       const start = toIcsDate(e.date);
-      // All-day: end is next day in ICS
       const endDate = new Date(e.date + 'T12:00:00Z');
       endDate.setUTCDate(endDate.getUTCDate() + 1);
       const end =

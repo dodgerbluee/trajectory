@@ -1,4 +1,3 @@
-// App timezone from server (/health); used for date/time formatting. Default UTC until loaded.
 let appTimezone = 'UTC';
 
 export type DateFormat = 'MM/DD/YYYY' | 'DD/MM/YYYY' | 'YYYY-MM-DD';
@@ -21,12 +20,8 @@ export function setDateFormat(format: DateFormat): void {
   currentDateFormat = format;
 }
 
-/**
- * Calculate age from date of birth
- */
 export function calculateAge(dateOfBirth: string): { years: number; months: number } {
   const today = new Date();
-  // Parse date string directly to avoid timezone issues
   const dateStr = dateOfBirth.split('T')[0];
   const parts = dateStr.split('-');
   const birthDate = parts.length === 3 
@@ -41,7 +36,6 @@ export function calculateAge(dateOfBirth: string): { years: number; months: numb
     months += 12;
   }
   
-  // Adjust if birthday hasn't occurred this month yet
   if (today.getDate() < birthDate.getDate()) {
     months--;
     if (months < 0) {
@@ -53,9 +47,6 @@ export function calculateAge(dateOfBirth: string): { years: number; months: numb
   return { years, months };
 }
 
-/**
- * Format age for display
- */
 export function formatAge(years: number, months: number): string {
   if (years === 0) {
     return `${months} ${months === 1 ? 'month' : 'months'} old`;
@@ -66,10 +57,8 @@ export function formatAge(years: number, months: number): string {
   }
 }
 
-/**
- * Format date for display using the current user preference (MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD).
- * Parses YYYY-MM-DD string directly to avoid timezone issues.
- */
+// Format date using current user preference (MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD).
+// Parses YYYY-MM-DD directly to avoid timezone issues.
 export function formatDate(dateString: string): string {
   const parts = dateString.split('T')[0].split('-');
   if (parts.length !== 3) {
@@ -94,9 +83,7 @@ export function formatDate(dateString: string): string {
   }
 }
 
-/**
- * Format time "HH:MM" or "HH:MM:SS" as 12-hour time (e.g. "9:30 AM", "12:00 PM").
- */
+// Format time "HH:MM" or "HH:MM:SS" as 12-hour (e.g. "9:30 AM", "12:00 PM").
 export function formatTime(hhmm: string): string {
   const parts = hhmm.trim().split(':');
   const h = parseInt(parts[0] ?? '0', 10);

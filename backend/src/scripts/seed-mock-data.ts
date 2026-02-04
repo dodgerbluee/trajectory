@@ -3,7 +3,7 @@
 /**
  * Development Mock Data Seeder
  *
- * Creates comprehensive mock data for development/testing.
+ * Creates mock data for development/testing.
  *
  * Usage (inside Docker):
  *   docker compose exec app node dist/scripts/seed-mock-data.js [options]

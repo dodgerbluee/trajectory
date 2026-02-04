@@ -62,9 +62,6 @@ export class ForbiddenError extends AppError {
   }
 }
 
-/**
- * Standard error response format
- */
 interface ErrorResponse {
   error: {
     message: string;
@@ -80,9 +77,6 @@ interface ErrorResponse {
   };
 }
 
-/**
- * Create standardized error response
- */
 function createErrorResponse(
   err: Error,
   statusCode: number,

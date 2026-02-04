@@ -1,8 +1,7 @@
 /**
- * Database schema setup
+ * Database migrations
  *
- * On startup: ensures migrations table exists, then applies schema.sql if not yet applied.
- * Single schema file (idempotent); no incremental migration files.
+ * On startup: ensures migrations table exists, then applies all unapplied .sql files from backend/migrations/.
  */
 
 import { query, pool } from './connection.js';
@@ -19,9 +18,6 @@ interface MigrationRecord {
   applied_at: Date;
 }
 
-/**
- * Create the migrations tracking table if it doesn't exist
- */
 async function ensureMigrationsTable(): Promise<void> {
   await query(`
     CREATE TABLE IF NOT EXISTS migrations (
@@ -32,9 +28,6 @@ async function ensureMigrationsTable(): Promise<void> {
   `);
 }
 
-/**
- * Get list of migration files from the migrations directory
- */
 async function getMigrationFiles(): Promise<string[]> {
   const possibleDirs = [
     join(__dirname, '..', '..', 'migrations'),
@@ -45,12 +38,10 @@ async function getMigrationFiles(): Promise<string[]> {
   for (const dir of possibleDirs) {
     try {
       const files = await readdir(dir);
-      // Get all SQL files except schema.sql, sorted by name
       return files
         .filter(f => f.endsWith('.sql') && f !== 'schema.sql')
         .sort();
     } catch {
-      // Try next directory
       continue;
     }
   }
@@ -58,9 +49,6 @@ async function getMigrationFiles(): Promise<string[]> {
   return [];
 }
 
-/**
- * Get the path to a migration file
- */
 async function getMigrationPath(filename: string): Promise<string | null> {
   const possiblePaths = [
     join(__dirname, '..', '..', 'migrations', filename),
@@ -73,7 +61,6 @@ async function getMigrationPath(filename: string): Promise<string | null> {
       await readFile(path, 'utf-8');
       return path;
     } catch {
-      // Try next path
       continue;
     }
   }
@@ -81,20 +68,17 @@ async function getMigrationPath(filename: string): Promise<string | null> {
   return null;
 }
 
-/**
- * Apply individual migration files (those not named schema.sql)
- */
 async function applyIncrementalMigrations(): Promise<void> {
   const appliedMigrations = await getAppliedMigrations();
   const migrationFiles = await getMigrationFiles();
 
   if (migrationFiles.length === 0) {
-    return; // No migrations to apply
+    return;
   }
 
   for (const filename of migrationFiles) {
     if (appliedMigrations.includes(filename)) {
-      continue; // Already applied
+      continue;
     }
 
     const path = await getMigrationPath(filename);
@@ -108,40 +92,28 @@ async function applyIncrementalMigrations(): Promise<void> {
   }
 }
 
-/**
- * Get list of already applied migrations
- */
 async function getAppliedMigrations(): Promise<string[]> {
   try {
     const result = await query<MigrationRecord>('SELECT name FROM migrations ORDER BY id');
     return result.rows.map(row => row.name);
   } catch (error: unknown) {
-    // If migrations table doesn't exist yet, return empty array
-    // This will be handled by ensureMigrationsTable
     const err = error as Partial<{ code: unknown }>;
-    if (err.code === '42P01') { // relation does not exist
+    if (err.code === '42P01') {
       return [];
     }
     throw error;
   }
 }
 
-/**
- * Execute a migration SQL file
- * Wrapped in a transaction for atomicity - if migration fails, it's rolled back
- */
+// Execute a migration in a transaction (rolled back if it fails)
 async function executeMigration(name: string, sql: string): Promise<void> {
-  console.log(`  Applying migration: ${name}`);
   
-  // Use a transaction to ensure atomicity
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     
-    // Execute the migration SQL
     await client.query(sql);
     
-    // Record the migration
     await client.query('INSERT INTO migrations (name) VALUES ($1) ON CONFLICT (name) DO NOTHING', [name]);
     
     await client.query('COMMIT');

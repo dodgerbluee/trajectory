@@ -1,15 +1,8 @@
-/**
- * Form validation utilities
- */
-
 export interface ValidationResult {
   isValid: boolean;
   errors: Record<string, string>;
 }
 
-/**
- * Validate required field
- */
 export function validateRequired(value: string | null | undefined, fieldName: string): string | undefined {
   if (!value || value.trim().length === 0) {
     return `${fieldName} is required`;
@@ -17,9 +10,6 @@ export function validateRequired(value: string | null | undefined, fieldName: st
   return undefined;
 }
 
-/**
- * Validate date format (YYYY-MM-DD)
- */
 export function validateDate(value: string, fieldName: string): string | undefined {
   if (!value) {
     return `${fieldName} is required`;

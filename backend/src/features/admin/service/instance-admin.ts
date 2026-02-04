@@ -4,9 +4,6 @@
 
 import { query } from '../../../db/connection.js';
 
-/**
- * Returns true if the user has instance admin privilege.
- */
 export async function getIsInstanceAdmin(userId: number): Promise<boolean> {
   const result = await query<{ is_instance_admin: boolean }>(
     'SELECT is_instance_admin FROM users WHERE id = $1',

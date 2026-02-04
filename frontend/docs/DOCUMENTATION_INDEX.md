@@ -1,10 +1,10 @@
-# 📚 Documentation Index & Quick Reference
+# Documentation Index & Quick Reference
 
-**Your Guide to Everything Trajectory Frontend**
+Guide to the Trajectory frontend documentation.
 
 ---
 
-## 🚀 Quick Navigation
+## Quick Navigation
 
 ### **I'm a New Developer**
 → Start here: **[QUICK_START.md](/frontend/QUICK_START.md)**
@@ -42,7 +42,7 @@
 
 ---
 
-## 📋 Document Directory
+## Document Directory
 
 ### **Frontend Documentation** (`/frontend/`)
 
@@ -66,7 +66,7 @@
 
 ---
 
-## 🎯 Finding What You Need
+## Finding What You Need
 
 ### **By Task**
 

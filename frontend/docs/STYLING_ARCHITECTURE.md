@@ -1,6 +1,6 @@
 # Styling Architecture Guide
 
-**Goal:** Document the styling system, CSS patterns, and design decisions for the Trajectory frontend.
+Styling system, CSS patterns, and design decisions for the Trajectory frontend.
 
 ---
 

@@ -41,23 +41,14 @@ const JWT_REFRESH_SECRET = getRequiredSecret(
 );
 const BCRYPT_ROUNDS = 12;
 
-/**
- * Hash a password using bcrypt
- */
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, BCRYPT_ROUNDS);
 }
 
-/**
- * Verify a password against a hash
- */
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
   return bcrypt.compare(password, hash);
 }
 
-/**
- * Generate an access token (short-lived, 15 minutes)
- */
 export function generateAccessToken(userId: number, email: string): string {
   return jwt.sign(
     { userId, email, type: 'access' },
@@ -66,9 +57,6 @@ export function generateAccessToken(userId: number, email: string): string {
   );
 }
 
-/**
- * Generate a refresh token (longer-lived, 7 days)
- */
 export function generateRefreshToken(userId: number, email: string): string {
   return jwt.sign(
     { userId, email, type: 'refresh' },
@@ -77,9 +65,6 @@ export function generateRefreshToken(userId: number, email: string): string {
   );
 }
 
-/**
- * Verify and decode a JWT token
- */
 export function verifyToken(token: string, isRefresh = false): { userId: number; email: string; type: string } {
   const secret = isRefresh ? JWT_REFRESH_SECRET : JWT_SECRET;
   const decoded = jwt.verify(token, secret);
@@ -93,23 +78,14 @@ export function verifyToken(token: string, isRefresh = false): { userId: number;
   return { userId: payload.userId, email: payload.email, type: payload.type };
 }
 
-/**
- * Generate a secure random token for password reset
- */
 export function generateResetToken(): string {
   return crypto.randomBytes(32).toString('hex');
 }
 
-/**
- * Hash a token for storage in database
- */
 export function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
-/**
- * Validate password strength
- */
 export function validatePasswordStrength(password: string): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
@@ -139,9 +115,6 @@ export function validatePasswordStrength(password: string): { valid: boolean; er
   };
 }
 
-/**
- * Validate email format
- */
 export function validateEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);

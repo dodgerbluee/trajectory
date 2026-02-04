@@ -1,6 +1,6 @@
-# 🎨 CSS Architecture & Styling Patterns
+# CSS Architecture & Styling Patterns
 
-**Goal:** Ensure consistent, maintainable styling across the application with complete dark mode support.
+Consistent, maintainable styling across the application with dark mode support.
 
 ---
 

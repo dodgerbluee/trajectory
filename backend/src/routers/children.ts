@@ -26,7 +26,6 @@ export const childrenRouter = express.Router();
 
 childrenRouter.use(authenticate);
 
-/** Ensure the authenticated user can access the child in req.params.childId; 404 otherwise. */
 async function requireChildAccess(req: AuthRequest, _res: Response, next: NextFunction): Promise<void> {
   try {
     const childId = validatePositiveInteger(req.params.childId, 'childId');

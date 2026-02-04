@@ -1,6 +1,6 @@
 # Testing Guide
 
-**Goal:** Document testing strategies and best practices for the Trajectory frontend application.
+Testing strategies and best practices for the Trajectory frontend.
 
 ---
 
@@ -23,7 +23,6 @@ The Trajectory frontend uses:
 
 - **Manual Testing** - Critical user flows tested in development
 - **Type Safety** - TypeScript catches many bugs at compile time (0 errors!)
-- **Build Verification** - Ensures no regressions with each build
 - **Browser Testing** - Cross-browser compatibility verification
 
 ### **Setup**

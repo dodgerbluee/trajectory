@@ -92,7 +92,7 @@ Optional:
 
 **TLS:** The app does not terminate TLS. Configure your reverse proxy to use **TLS 1.2 or newer** and strong ciphers. Disable TLS 1.0/1.1 for production.
 
-**Clock / NTP:** Dates and times are stored in the database and used for visits, illnesses, and measurements. Ensure the host (and containers) use NTP or a time sync service so clocks do not drift; incorrect time can affect sorting and reporting.
+**Clock / NTP:** Dates and times are stored in the database for visits, illnesses, and measurements. Use NTP or a time sync service so clocks don't drift; incorrect time can affect sorting and reporting.
 
 **Timezone:** Set `TZ` in your compose environment (e.g. `TZ=America/New_York`) so the app and database use a consistent timezone for dates and times. The UI fetches the configured timezone from `/health` and uses it for formatting. Default is UTC.
 

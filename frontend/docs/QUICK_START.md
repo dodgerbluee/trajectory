@@ -1,7 +1,5 @@
 # Development Setup & Quick Start
 
-**Goal:** Get new developers productive in 15 minutes.
-
 ---
 
 ## **Prerequisites**
