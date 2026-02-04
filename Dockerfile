@@ -72,11 +72,11 @@ RUN mkdir -p /app/uploads /app/avatars && \
     chown -R nodejs:nodejs /app
 
 # Expose port
-EXPOSE 3001
+EXPOSE 5017
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3001/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+  CMD node -e "require('http').get('http://localhost:5017/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Environment variables
 ENV FRONTEND_DIR=public

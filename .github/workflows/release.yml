@@ -16,13 +16,14 @@ jobs:
   release:
     name: Semantic Release
     runs-on: ubuntu-latest
+    outputs:
+      new_release_version: ${{ steps.version.outputs.version }}
     
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -34,7 +35,6 @@ jobs:
           npm install --save-dev \
             semantic-release \
             @semantic-release/changelog \
-            @semantic-release/git \
             @semantic-release/github \
             @semantic-release/npm \
             @semantic-release/commit-analyzer \
@@ -46,10 +46,25 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
 
+      - name: Get new version
+        id: version
+        run: |
+          # Fetch latest tags
+          git fetch --tags
+          # Get the latest tag
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LATEST_TAG" ]; then
+            VERSION=${LATEST_TAG#v}
+            echo "version=${VERSION}" >> $GITHUB_OUTPUT
+            echo "New version: ${VERSION}"
+          else
+            echo "No version tag found"
+          fi
+
   build-and-push:
     name: Build and Push Docker Images
     needs: release
-    if: needs.release.outputs.new_release_published == 'true'
+    if: needs.release.outputs.new_release_version != ''
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -62,12 +77,11 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Get version
+      - name: Set version
         id: version
         run: |
-          VERSION=$(cat package.json | jq -r '.version')
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "Version: ${VERSION}"
+          echo "version=${{ needs.release.outputs.new_release_version }}" >> $GITHUB_OUTPUT
+          echo "Version: ${{ needs.release.outputs.new_release_version }}"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

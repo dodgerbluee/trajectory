@@ -26,7 +26,7 @@ import { setRuntimeLogLevel, type LogLevelValue } from './features/admin/service
 // Load environment variables
 dotenv.config();
 
-const PORT = parseInt(process.env.PORT || '3001', 10);
+const PORT = parseInt(process.env.APP_PORT || '5017', 10);
 const HOST = process.env.HOST || '0.0.0.0'; // Bind to 0.0.0.0 for Docker container accessibility
 
 async function main() {

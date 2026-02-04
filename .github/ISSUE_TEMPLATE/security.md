@@ -1,6 +1,6 @@
 ---
 name: Security vulnerability
-description: Report a security vulnerability (prefer private disclosure)
+about: Report a security vulnerability (prefer private disclosure)
 title: "[Security] "
 labels: ["security"]
 assignees: []

@@ -77,3 +77,24 @@ For Portainer, Nginx Proxy Manager, backup, restore, upgrade, and rollback, see 
 | `backend/migrations/` | Schema and migrations |
 
 Scripts from repo root: `npm run install:all`, `npm run build`, `npm run lint`. See `backend/` and `frontend/` READMEs for more.
+
+---
+
+## Repository Analytics
+
+![Repobeats analytics](https://repobeats.axiom.co/api/embed/39986e2891a5d4afb63ddbb16135a45180d964a6.svg "Repobeats analytics image")
+
+---
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=dodgerbluee/trajectory&type=Date)](https://star-history.com/#dodgerbluee/trajectory&Date)
+
+---
+
+## Contributors
+
+Thank you to all the contributors who have helped make Trajectory better!
+
+[![Contributors](https://contrib.rocks/image?repo=dodgerbluee/trajectory)](https://github.com/dodgerbluee/trajectory/graphs/contributors)
+
