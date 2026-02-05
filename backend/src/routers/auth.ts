@@ -75,6 +75,7 @@ authRouter.get(
 /**
  * POST /api/auth/generate-registration-code
  * No auth. Generates a code and logs it to server; only when no users exist.
+ * Safe to call multiple times - regenerates the code each time if no users exist.
  */
 authRouter.post(
   '/generate-registration-code',
@@ -82,8 +83,11 @@ authRouter.post(
     if (await hasAnyUsers()) {
       throw new BadRequestError('Registration code can only be generated when no users exist.');
     }
-    initializeRegistrationCode();
-    res.json(createResponse({ message: 'Registration code generated and logged to container logs.' }));
+    const code = initializeRegistrationCode();
+    res.json(createResponse({ 
+      message: 'Registration code generated and logged to container logs.',
+      code // Return it in the response too for testing/debugging
+    }));
   })
 );
 
