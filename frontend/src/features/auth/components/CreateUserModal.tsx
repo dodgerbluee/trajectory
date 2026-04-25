@@ -134,7 +134,7 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
     } else if (username.trim().length < 2) {
       newErrors.username = 'Username must be at least 2 characters';
     }
-    if (email.trim()) {
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       newErrors.email = 'Invalid email format';
     }
     if (!password) {

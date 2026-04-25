@@ -995,6 +995,72 @@ export const adminUsersApi = {
 };
 
 // ============================================================================
+// OAuth Providers (admin)
+// ============================================================================
+
+export interface OAuthProviderConfig {
+  id: number;
+  name: string;
+  displayName: string;
+  providerType: 'authentik' | 'generic_oidc';
+  clientId: string;
+  issuerUrl: string;
+  scopes: string;
+  autoRegister: boolean;
+  enabled: boolean;
+  hasClientSecret: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OAuthProviderCreateInput {
+  name: string;
+  displayName: string;
+  providerType: 'authentik' | 'generic_oidc';
+  clientId: string;
+  clientSecret: string;
+  issuerUrl: string;
+  scopes?: string;
+  autoRegister?: boolean;
+  enabled?: boolean;
+}
+
+export interface OAuthProviderUpdateInput {
+  displayName?: string;
+  providerType?: 'authentik' | 'generic_oidc';
+  clientId?: string;
+  clientSecret?: string;
+  issuerUrl?: string;
+  scopes?: string;
+  autoRegister?: boolean;
+  enabled?: boolean;
+}
+
+export const oauthProvidersApi = {
+  async list(): Promise<ApiResponse<OAuthProviderConfig[]>> {
+    return request<OAuthProviderConfig[]>('/api/admin/oauth-providers');
+  },
+  async create(input: OAuthProviderCreateInput): Promise<ApiResponse<OAuthProviderConfig>> {
+    return request<OAuthProviderConfig>('/api/admin/oauth-providers', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+  async update(
+    id: number,
+    input: OAuthProviderUpdateInput
+  ): Promise<ApiResponse<OAuthProviderConfig>> {
+    return request<OAuthProviderConfig>(`/api/admin/oauth-providers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    });
+  },
+  async remove(id: number): Promise<void> {
+    await request<void>(`/api/admin/oauth-providers/${id}`, { method: 'DELETE' });
+  },
+};
+
+// ============================================================================
 // Health Check
 // ============================================================================
 

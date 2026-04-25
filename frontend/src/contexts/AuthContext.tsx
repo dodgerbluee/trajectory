@@ -25,6 +25,7 @@ interface AuthContextType {
   checkAuth: () => Promise<void>;
   updateUsername: (newUsername: string, currentPassword: string) => Promise<void>;
   updatePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  setSession: (user: User, accessToken: string, refreshToken: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -223,6 +224,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const setSession = (nextUser: User, accessToken: string, refreshTokenValue: string) => {
+    setTokens(accessToken, refreshTokenValue);
+    setUser(nextUser);
+    localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
+  };
+
   const updateUsername = async (newUsername: string, currentPassword: string) => {
     const accessToken = getAccessToken();
     if (!accessToken) {
@@ -275,6 +282,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         checkAuth,
         updateUsername,
         updatePassword,
+        setSession,
       }}
     >
       {children}

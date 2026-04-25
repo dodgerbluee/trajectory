@@ -9,11 +9,13 @@ import avatars from './routers/avatars.js';
 import visitsRouter from './routers/visits.js';
 import illnessesRouter from './routers/illnesses.js';
 import { authRouter } from './routers/auth.js';
+import { oauthRouter } from './routers/oauth.js';
 import { usersRouter } from './routers/users.js';
 import { familiesRouter } from './routers/families.js';
 import { invitesRouter } from './routers/invites.js';
 import exportRouter from './routers/export.js';
 import { adminRouter } from './routers/admin.js';
+import { oauthAdminRouter } from './routers/oauth-admin.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { logRequest } from './middleware/error-logger.js';
 
@@ -46,11 +48,13 @@ export function createApp(): express.Application {
     });
   });
 
-  app.use('/api/auth', authRouter); 
+  app.use('/api/auth/oauth', oauthRouter);
+  app.use('/api/auth', authRouter);
   app.use('/api/users', usersRouter); 
   app.use('/api/families', familiesRouter);
   app.use('/api/invites', invitesRouter); 
   app.use('/api/export', exportRouter);
+  app.use('/api/admin/oauth-providers', oauthAdminRouter);
   app.use('/api/admin', adminRouter);
   app.use('/api/children', childrenRouter);
   app.use('/api/visits', visitsRouter); 

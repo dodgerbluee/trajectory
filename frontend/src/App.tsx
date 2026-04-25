@@ -3,7 +3,7 @@ import { Layout } from './app/components';
 import ErrorBoundary from './shared/components/ErrorBoundary';
 import { ProtectedRoute, AdminRoute } from './features/auth';
 import { HomePage } from './app/home';
-import { LoginPage, SignupPage, InvitePage } from './features/auth';
+import { LoginPage, SignupPage, InvitePage, OAuthCallbackPage } from './features/auth';
 import { AddChildPage, EditChildPage, ChildDetailPage } from './features/children';
 import { AddVisitPage, EditVisitPage, VisitDetailPage } from './features/visits';
 import { AddIllnessPage, EditIllnessPage, IllnessDetailPage } from './features/illnesses';
@@ -28,6 +28,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<SignupPage />} />
         <Route path="/invite" element={<InvitePage />} />
+        <Route path="/auth/oauth/complete" element={<OAuthCallbackPage />} />
         <Route path="/forgot-password" element={<Navigate to="/login" replace />} />
 
         {/* Protected routes */}
