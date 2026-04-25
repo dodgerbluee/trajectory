@@ -6,7 +6,9 @@ import Button from '@shared/components/Button';
 import Card from '@shared/components/Card';
 import CreateUserModal from './CreateUserModal';
 import { ApiClientError } from '@lib/api-client';
+import { API_BASE_URL } from '@lib/env.js';
 import { useAuth as useAuthContext } from '../../../contexts/AuthContext';
+import { useSSOProviders } from '../hooks/useSSOProviders';
 import styles from './LoginPage.module.css';
 
 function LoginPage() {
@@ -19,6 +21,7 @@ function LoginPage() {
   const [createUserOpen, setCreateUserOpen] = useState(false);
 
   const { login, isAuthenticated } = useAuthContext();
+  const { providers, allowLocalLogin } = useSSOProviders();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from ?? '/';
@@ -94,6 +97,26 @@ function LoginPage() {
             </div>
           )}
 
+          {providers.length > 0 && (
+            <div className={styles.ssoSection}>
+              {providers.map((p) => (
+                <Button
+                  key={p.name}
+                  type="button"
+                  variant="secondary"
+                  fullWidth
+                  onClick={() => {
+                    window.location.href = `${API_BASE_URL}/api/auth/oauth/login?provider=${encodeURIComponent(p.name)}`;
+                  }}
+                >
+                  Sign in with {p.displayName}
+                </Button>
+              ))}
+              {allowLocalLogin && <div className={styles.ssoDivider}>or</div>}
+            </div>
+          )}
+
+          {!allowLocalLogin && providers.length > 0 ? null : (
           <form onSubmit={handleSubmit} className={styles.form} noValidate>
             <FormField
               label="Username"
@@ -156,6 +179,7 @@ function LoginPage() {
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
+          )}
 
           <div className={styles.footer}>
             <p>

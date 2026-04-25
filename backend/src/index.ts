@@ -22,8 +22,7 @@ import { testConnection, closePool } from './db/connection.js';
 import { runMigrations } from './db/migrations.js';
 import { ensureInstanceSettingsTable, getInstanceSetting } from './features/shared/service/instance-settings.js';
 import { setRuntimeLogLevel, type LogLevelValue } from './features/admin/service/admin-config.js';
-import { query } from './db/connection.js';
-import { initializeRegistrationCode } from './features/auth/service/registration-code.js';
+import { initializeOAuthProviders } from './features/auth/service/oauth/index.js';
 
 // Load environment variables
 dotenv.config();
@@ -63,11 +62,8 @@ async function main() {
       setRuntimeLogLevel(savedLogLevel as LogLevelValue);
     }
 
-    // If no users exist, generate and log registration code
-    const userCount = await query<{ count: string }>('SELECT COUNT(*)::text as count FROM users');
-    if (parseInt(userCount.rows[0]?.count || '0', 10) === 0) {
-      initializeRegistrationCode();
-    }
+    // Initialize OAuth providers (DB-configured, with env-var fallback)
+    await initializeOAuthProviders();
 
     // Step 3: Create Express application
     // Only create the app after database is ready to ensure all routes

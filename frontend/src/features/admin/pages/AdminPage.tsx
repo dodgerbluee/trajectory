@@ -1,9 +1,10 @@
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import Card from '@shared/components/Card';
-import { LuSettings, LuUsers, LuScrollText } from 'react-icons/lu';
+import { LuSettings, LuUsers, LuScrollText, LuKeyRound } from 'react-icons/lu';
 import AdminGeneral from '../components/AdminGeneral';
 import AdminUsers from '../components/AdminUsers';
 import AdminLogs from '../components/AdminLogs';
+import AdminSSO from '../components/AdminSSO';
 import layout from '@shared/styles/SettingsLayout.module.css';
 
 function AdminPage() {
@@ -14,6 +15,7 @@ function AdminPage() {
   const isGeneral = path === '/admin' || path === '/admin/general';
   const isUsers = path.startsWith('/admin/users');
   const isLogs = path === '/admin/logs';
+  const isSSO = path === '/admin/sso';
 
   return (
     <div className={layout.pageGrid}>
@@ -41,6 +43,14 @@ function AdminPage() {
             </button>
             <button
               type="button"
+              className={`${layout.sidebarItem} ${isSSO ? layout.active : ''}`}
+              onClick={() => navigate('/admin/sso')}
+            >
+              <LuKeyRound className={layout.sidebarIcon} />
+              <span>SSO</span>
+            </button>
+            <button
+              type="button"
               className={`${layout.sidebarItem} ${isLogs ? layout.active : ''}`}
               onClick={() => navigate('/admin/logs')}
             >
@@ -53,6 +63,7 @@ function AdminPage() {
               <Route index element={<Navigate to="general" replace />} />
               <Route path="general" element={<AdminGeneral />} />
               <Route path="users" element={<AdminUsers />} />
+              <Route path="sso" element={<AdminSSO />} />
               <Route path="logs" element={<AdminLogs />} />
             </Routes>
           </main>
