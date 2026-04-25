@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import type { Illness } from '@shared/types/api';
 import { IllnessesTimeline, IllnessesSidebar } from '@features/illnesses';
 import Button from '@shared/components/Button';
-import { useFamilyPermissions } from '../../../../contexts/FamilyPermissionsContext';
+import { useFamilyPermissions } from '@/contexts/FamilyPermissionsContext';
 import visitsLayout from '@shared/styles/VisitsLayout.module.css';
 
 type FilterIllnessStatus = 'ongoing' | 'ended' | undefined;
