@@ -16,59 +16,98 @@ interface ImageCropUploadProps {
   isInModal?: boolean;
 }
 
-// Cap the source dimensions before handing the image to the cropper. Many
-// Android devices cap canvas surfaces around 4096px and fail silently (black
-// image) right near that limit. 2048px is plenty for an avatar — the user can
-// still zoom in the cropper — and stays well under every device's hard ceiling.
+// Cap source dimensions before handing the image to the cropper. Many Android
+// devices cap canvas surfaces around 4096px and fail silently (black image)
+// near that limit. 2048px is plenty for an avatar and stays well under every
+// device's hard ceiling.
 const MAX_SOURCE_DIM = 2048;
 const HEIC_EXT_RE = /\.(heic|heif)$/i;
 
 function isUnsupportedFormat(file: File): boolean {
   const t = (file.type || '').toLowerCase();
-  // Android Chrome cannot decode HEIC/HEIF — the picker accepts the file but the
-  // resulting <img> renders blank. Reject up front with a clear message.
   return t === 'image/heic' || t === 'image/heif' || HEIC_EXT_RE.test(file.name);
 }
 
+function loadImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Image element failed to decode'));
+    img.src = url;
+  });
+}
+
+interface PreparedSource {
+  url: string;
+  image: HTMLImageElement;
+  width: number;
+  height: number;
+}
+
 /**
- * Decode the picked file with EXIF orientation applied, downscale if it exceeds
- * the mobile-safe canvas budget, and re-encode to JPEG. Returns both an object
- * URL for the cropper UI and the oriented bitmap so the final crop can draw
- * from the same source without re-decoding the file.
+ * Decode the picked file via Image element (universally compatible across
+ * Android browsers), validate dimensions, and downscale through canvas if it
+ * exceeds the mobile-safe size budget. Returns an object URL for the cropper
+ * UI plus the decoded HTMLImageElement so the final crop drawImage uses the
+ * same source. Modern browsers (Chrome 81+, Safari 13.1+) auto-apply EXIF
+ * orientation when drawing an Image element to canvas, so rotation is handled.
  */
-async function prepareSource(file: File): Promise<{ url: string; bitmap: ImageBitmap }> {
-  const decoded = await createImageBitmap(file, { imageOrientation: 'from-image' });
+async function prepareSource(file: File): Promise<PreparedSource> {
+  const sourceUrl = URL.createObjectURL(file);
+  let image: HTMLImageElement;
+  try {
+    image = await loadImage(sourceUrl);
+  } catch (err) {
+    URL.revokeObjectURL(sourceUrl);
+    throw new Error(`Couldn't decode this image (${file.type || 'unknown type'}). Try a JPEG or PNG.`);
+  }
 
-  const maxDim = Math.max(decoded.width, decoded.height);
-  const scale = maxDim > MAX_SOURCE_DIM ? MAX_SOURCE_DIM / maxDim : 1;
-  const width = Math.round(decoded.width * scale);
-  const height = Math.round(decoded.height * scale);
+  const naturalW = image.naturalWidth;
+  const naturalH = image.naturalHeight;
+  if (!naturalW || !naturalH) {
+    URL.revokeObjectURL(sourceUrl);
+    throw new Error('Image decoded with 0 dimensions — the format may be unsupported on this device.');
+  }
 
+  const maxDim = Math.max(naturalW, naturalH);
+  if (maxDim <= MAX_SOURCE_DIM) {
+    return { url: sourceUrl, image, width: naturalW, height: naturalH };
+  }
+
+  // Downscale via canvas. drawImage from an Image element bakes EXIF
+  // orientation into the output on modern browsers.
+  const scale = MAX_SOURCE_DIM / maxDim;
+  const w = Math.round(naturalW * scale);
+  const h = Math.round(naturalH * scale);
   const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
+  canvas.width = w;
+  canvas.height = h;
   const ctx = canvas.getContext('2d');
   if (!ctx) {
-    decoded.close?.();
-    throw new Error('Canvas 2D context unavailable');
+    URL.revokeObjectURL(sourceUrl);
+    throw new Error('Canvas 2D context unavailable on this device.');
   }
-  ctx.drawImage(decoded, 0, 0, width, height);
-  decoded.close?.();
+  ctx.drawImage(image, 0, 0, w, h);
 
   const blob: Blob = await new Promise((resolve, reject) => {
     canvas.toBlob(
-      (b) => (b ? resolve(b) : reject(new Error('Failed to encode image'))),
+      (b) => (b ? resolve(b) : reject(new Error('Canvas failed to encode (out of memory?)'))),
       'image/jpeg',
       0.92,
     );
   });
-  const bitmap = await createImageBitmap(blob);
-  return { url: URL.createObjectURL(blob), bitmap };
+
+  URL.revokeObjectURL(sourceUrl);
+
+  const downscaledUrl = URL.createObjectURL(blob);
+  const downscaledImage = await loadImage(downscaledUrl);
+  return { url: downscaledUrl, image: downscaledImage, width: w, height: h };
 }
 
 const ImageCropUpload = forwardRef<ImageCropUploadHandle, ImageCropUploadProps>(
   ({ onImageCropped, currentImageUrl, disabled, isInModal }, ref) => {
-  const [source, setSource] = useState<{ url: string; bitmap: ImageBitmap } | null>(null);
+  const [source, setSource] = useState<PreparedSource | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -76,27 +115,22 @@ const ImageCropUpload = forwardRef<ImageCropUploadHandle, ImageCropUploadProps>(
   const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Release the cropper source (object URL + bitmap) whenever it changes and on unmount.
+  // Release the cropper source object URL whenever it changes and on unmount.
   useEffect(() => {
     return () => {
-      if (source) {
-        URL.revokeObjectURL(source.url);
-        source.bitmap.close?.();
-      }
+      if (source) URL.revokeObjectURL(source.url);
     };
   }, [source]);
 
-  // Revoke pending preview blob URL on unmount to avoid leaks.
   useEffect(() => {
     return () => {
       if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
     };
   }, [pendingPreviewUrl]);
 
-  // Expose crop and cancel methods to parent via ref
   useImperativeHandle(ref, () => ({
     saveCrop: handleSaveCrop,
-    cancel: handleCancel
+    cancel: handleCancel,
   }));
 
   const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
@@ -107,33 +141,44 @@ const ImageCropUpload = forwardRef<ImageCropUploadHandle, ImageCropUploadProps>(
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setError(null);
+
     if (file.size > 10 * 1024 * 1024) {
-      alert('Image must be less than 10MB');
+      setError('Image must be less than 10MB.');
+      setShowCropper(true);
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+    if (!file.type.startsWith('image/') && !HEIC_EXT_RE.test(file.name)) {
+      setError('Please select an image file.');
+      setShowCropper(true);
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
     if (isUnsupportedFormat(file)) {
-      alert(
-        'HEIC/HEIF images aren’t supported on Android. Switch your camera to JPEG, or pick a different photo.',
-      );
+      setError('HEIC/HEIF images aren’t supported on Android. Switch your camera to JPEG, or pick a different photo.');
+      setShowCropper(true);
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
     try {
       const prepared = await prepareSource(file);
+      console.info('[ImageCropUpload] prepared', {
+        file: { name: file.name, type: file.type, size: file.size },
+        decoded: { width: prepared.width, height: prepared.height },
+      });
       setSource(prepared);
       setShowCropper(true);
       setCrop({ x: 0, y: 0 });
       setZoom(1);
     } catch (err) {
-      console.error('Failed to prepare image:', err);
-      alert(
-        'Couldn’t read that image. It may be in an unsupported format or too large for this device.',
-      );
+      const message = err instanceof Error ? err.message : 'Unknown error preparing image';
+      console.error('[ImageCropUpload] prepareSource failed', err, {
+        file: { name: file.name, type: file.type, size: file.size },
+      });
+      setError(message);
+      setShowCropper(true);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -145,16 +190,13 @@ const ImageCropUpload = forwardRef<ImageCropUploadHandle, ImageCropUploadProps>(
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-
-    if (!ctx) {
-      throw new Error('Failed to get canvas context');
-    }
+    if (!ctx) throw new Error('Failed to get canvas context');
 
     canvas.width = croppedAreaPixels.width;
     canvas.height = croppedAreaPixels.height;
 
     ctx.drawImage(
-      source.bitmap,
+      source.image,
       croppedAreaPixels.x,
       croppedAreaPixels.y,
       croppedAreaPixels.width,
@@ -162,18 +204,21 @@ const ImageCropUpload = forwardRef<ImageCropUploadHandle, ImageCropUploadProps>(
       0,
       0,
       croppedAreaPixels.width,
-      croppedAreaPixels.height
+      croppedAreaPixels.height,
     );
 
     return new Promise((resolve, reject) => {
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          reject(new Error('Failed to create blob'));
-          return;
-        }
-        const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
-        resolve(file);
-      }, 'image/jpeg', 0.95);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error('Failed to create blob'));
+            return;
+          }
+          resolve(new File([blob], 'avatar.jpg', { type: 'image/jpeg' }));
+        },
+        'image/jpeg',
+        0.95,
+      );
     });
   };
 
@@ -181,28 +226,25 @@ const ImageCropUpload = forwardRef<ImageCropUploadHandle, ImageCropUploadProps>(
     try {
       const croppedImage = await createCroppedImage();
       onImageCropped(croppedImage);
-      // Show the new cropped image in the preview before user clicks modal "Save Avatar"
       setPendingPreviewUrl((prev) => {
         if (prev) URL.revokeObjectURL(prev);
         return URL.createObjectURL(croppedImage);
       });
       setShowCropper(false);
       setSource(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    } catch (error) {
-      console.error('Error cropping image:', error);
-      alert('Failed to crop image');
+      setError(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch (err) {
+      console.error('[ImageCropUpload] crop failed', err);
+      setError(err instanceof Error ? err.message : 'Failed to crop image');
     }
   };
 
   const handleCancel = () => {
     setShowCropper(false);
     setSource(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    setError(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
@@ -252,7 +294,12 @@ const ImageCropUpload = forwardRef<ImageCropUploadHandle, ImageCropUploadProps>(
             </div>
 
             <div className={cropStyles.cropperArea}>
-              {source && (
+              {error && (
+                <div className={cropStyles.cropperError} role="alert">
+                  {error}
+                </div>
+              )}
+              {!error && source && (
                 <Cropper
                   image={source.url}
                   crop={crop}
@@ -279,15 +326,16 @@ const ImageCropUpload = forwardRef<ImageCropUploadHandle, ImageCropUploadProps>(
                   value={zoom}
                   onChange={(e) => setZoom(Number(e.target.value))}
                   className={cropStyles.zoomSlider}
+                  disabled={!source || !!error}
                 />
               </div>
 
               {!isInModal && (
                 <div className={cropStyles.cropperActions}>
                   <Button type="button" onClick={handleCancel} variant="secondary">
-                    Cancel
+                    {error ? 'Close' : 'Cancel'}
                   </Button>
-                  <Button type="button" onClick={handleSaveCrop}>
+                  <Button type="button" onClick={handleSaveCrop} disabled={!source || !!error}>
                     Save Avatar
                   </Button>
                 </div>
