@@ -65,55 +65,6 @@
   padding: var(--spacing-lg);
 }
 
-.avatarButton {
-  position: relative;
-  display: block;
-  border: none;
-  background: none;
-  padding: 0;
-  outline: none;
-  cursor: pointer;
-}
-
-.avatarButton:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-  border-radius: 50%;
-}
-
-.avatarImg {
-  width: 6rem;
-  height: 6rem;
-  border-radius: 50%;
-  object-fit: cover;
-  box-shadow: var(--elevation-2);
-  display: block;
-}
-
-.avatarOverlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.avatarButton:hover .avatarOverlay {
-  opacity: 1;
-}
-
-.avatarEditIcon {
-  font-size: 1.5rem;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
-}
-
 .avatarHint {
   margin: var(--spacing-xs) 0 0;
   font-size: var(--font-size-sm);
@@ -304,10 +255,6 @@
   width: 8rem;
 }
 
-.avatarModalOverlay {
-  padding: var(--spacing-md);
-}
-
 /* ----- Mobile (<768px): stack form, full-width controls, drop wide gaps ----- */
 @media (max-width: 767.98px) {
   .header {
@@ -323,11 +270,6 @@
   .avatarWrap {
     padding: var(--spacing-sm);
     align-self: center;
-  }
-
-  .avatarImg {
-    width: 5rem;
-    height: 5rem;
   }
 
   .row,
@@ -367,9 +309,5 @@
   .sectionTitle {
     font-size: var(--font-size-sm);
     margin-bottom: var(--spacing-sm);
-  }
-
-  .avatarModalOverlay {
-    padding: 0;
   }
 }

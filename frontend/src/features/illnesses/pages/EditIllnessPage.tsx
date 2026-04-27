@@ -1,11 +1,11 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import { LuCheck, LuX } from 'react-icons/lu';
 import { illnessesApi, childrenApi, visitsApi, ApiClientError } from '@lib/api-client';
 import type { Child, UpdateIllnessInput, IllnessType, Illness } from '@shared/types/api';
 import { getTodayDate } from '@lib/validation';
 import Card from '@shared/components/Card';
 import FormField from '@shared/components/FormField';
-import Button from '@shared/components/Button';
 import Notification from '@shared/components/Notification';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
 import { IllnessEntryFormFields } from '@features/illnesses';
@@ -154,14 +154,24 @@ function EditIllnessPage() {
               <Link to={`/illnesses/${illness.id}`} className={pageLayout.breadcrumb}>
                 ← Back to Illness
               </Link>
-              <div className={layoutStyles.detailActions}>
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? 'Updating Illness...' : 'Update Illness'}
-                </Button>
-                <Link to={`/illnesses/${illness.id}`}>
-                  <Button type="button" variant="secondary" disabled={submitting}>
-                    Cancel
-                  </Button>
+              <div className={layoutStyles.iconActions}>
+                <button
+                  type="submit"
+                  className={`${layoutStyles.iconAction} ${layoutStyles.iconActionPrimary}`}
+                  disabled={submitting}
+                  title={submitting ? 'Saving…' : 'Save'}
+                  aria-label={submitting ? 'Saving' : 'Save'}
+                >
+                  <LuCheck aria-hidden />
+                </button>
+                <Link
+                  to={`/illnesses/${illness.id}`}
+                  className={layoutStyles.iconAction}
+                  title="Cancel"
+                  aria-label="Cancel"
+                  aria-disabled={submitting || undefined}
+                >
+                  <LuX aria-hidden />
                 </Link>
               </div>
             </div>

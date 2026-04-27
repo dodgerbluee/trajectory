@@ -43,9 +43,15 @@ function PullToRefresh({
     const el = containerRef.current;
     if (!el || disabled) return;
 
+    // The `.container` div is not the scroll container — the document
+    // (window) is. Reading `el.scrollTop` is always 0, so checking it would
+    // fire PTR mid-page. Read the document scroll position instead.
+    const docScrollTop = () =>
+      window.scrollY || document.documentElement.scrollTop || 0;
+
     const onTouchStart = (e: TouchEvent) => {
       if (refreshing) return;
-      if (el.scrollTop > 0) {
+      if (docScrollTop() > 0) {
         startYRef.current = null;
         return;
       }
@@ -62,8 +68,9 @@ function PullToRefresh({
         activeRef.current = false;
         return;
       }
-      // Only treat as PTR if user starts dragging downward at top.
-      if (el.scrollTop > 0) {
+      // Only treat as PTR if user is dragging downward while the page is
+      // already scrolled to the very top.
+      if (docScrollTop() > 0) {
         startYRef.current = null;
         if (activeRef.current) setPull(0);
         activeRef.current = false;

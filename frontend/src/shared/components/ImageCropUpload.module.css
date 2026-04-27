@@ -9,19 +9,99 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
 }
 
-.currentAvatarPreview {
-  margin-bottom: var(--spacing-sm);
-}
+/* Avatar trigger: the avatar IS the change-photo control. A dark overlay
+   with "Change photo" / "Add photo" fades in on hover/focus. The whole
+   thing is a <button> so keyboard users get the same affordance.
 
-.currentAvatarPreview img {
+   Empty state (no avatar yet) keeps the overlay always visible so users
+   can find the upload entry point without hovering. */
+.avatarTrigger {
+  position: relative;
   width: 120px;
   height: 120px;
-  border-radius: 50%;
-  object-fit: cover;
+  padding: 0;
   border: 3px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface, var(--color-background-card));
+  cursor: pointer;
+  overflow: hidden;
+  display: block;
+  transition: border-color 120ms ease, transform 120ms ease;
+}
+
+.avatarTrigger:hover,
+.avatarTrigger:focus-visible {
+  border-color: var(--color-primary);
+}
+
+.avatarTrigger:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.avatarTrigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.avatarTrigger img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.avatarOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium, 500);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 140ms ease;
+  pointer-events: none;
+}
+
+.avatarOverlay > svg {
+  width: 22px;
+  height: 22px;
+}
+
+.avatarTrigger:hover .avatarOverlay,
+.avatarTrigger:focus-visible .avatarOverlay {
+  opacity: 1;
+}
+
+/* When there's no current image, keep the overlay visible so the
+   upload affordance is always discoverable. */
+.avatarTrigger[data-empty='true'] .avatarOverlay {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avatarTrigger,
+  .avatarOverlay {
+    transition: none;
+  }
+}
+
+.uploadHint {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  text-align: center;
 }
 
 .cropperModal {

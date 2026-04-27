@@ -12,7 +12,14 @@ export default defineConfig({
       // We already have a manifest in public/; let the plugin own it instead
       // (avoid drift). The plugin will inject <link rel="manifest"> automatically.
       injectRegister: 'auto',
-      includeAssets: ['logo/trajectory.png'],
+      includeAssets: [
+        'logo/trajectory.png',
+        'icons/icon-192.png',
+        'icons/icon-512.png',
+        'icons/icon-192-maskable.png',
+        'icons/icon-512-maskable.png',
+        'icons/apple-touch-icon.png',
+      ],
       manifest: {
         name: 'Trajectory',
         short_name: 'Trajectory',
@@ -22,21 +29,37 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#f5f5f5',
-        theme_color: '#2563eb',
+        // Dark background so the home-screen icon (white logo) doesn't disappear
+        // into a white tile on Android, and the splash screen feels intentional.
+        background_color: '#0a0a0a',
+        theme_color: '#0a0a0a',
         categories: ['health', 'medical', 'lifestyle'],
         icons: [
           {
-            src: '/logo/trajectory.png',
+            src: '/icons/icon-192.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: '/logo/trajectory.png',
+            src: '/icons/icon-512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any',
+          },
+          // Maskable variants: logo sits at ~70% inside a dark square so
+          // Android's adaptive-icon masking can't clip the logo edges.
+          {
+            src: '/icons/icon-192-maskable.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+          {
+            src: '/icons/icon-512-maskable.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
           },
         ],
       },

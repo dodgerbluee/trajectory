@@ -5,12 +5,10 @@ import { childrenApi, ApiClientError } from '@lib/api-client';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { validateChildForm, getTodayDate } from '@lib/validation';
 import type { Gender } from '@shared/types/api';
-import Card from '@shared/components/Card';
 import FormField, { FormFieldGroup } from '@shared/components/FormField';
 import Button from '@shared/components/Button';
 import Notification from '@shared/components/Notification';
 import ImageCropUpload from '@shared/components/ImageCropUpload';
-import { ChildAvatar } from '@features/children/components';
 import modalStyles from '@shared/components/Modal.module.css';
 import styles from './AddChildPage.module.css';
 
@@ -34,8 +32,6 @@ function AddChildPage() {
     birth_height: '',
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
-  const [showAvatarEditor, setShowAvatarEditor] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [notification, setNotification] = useState<{
@@ -44,11 +40,8 @@ function AddChildPage() {
   } | null>(null);
 
   const handleImageCropped = (croppedFile: File) => {
-    if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
     setAvatarFile(croppedFile);
-    setAvatarPreviewUrl(URL.createObjectURL(croppedFile));
     setErrors((e) => ({ ...e, avatar: '' }));
-    setShowAvatarEditor(false);
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -152,31 +145,10 @@ function AddChildPage() {
             {/* Top section: Avatar left, Name/DOB/Gender right */}
             <div className={styles.topRow}>
               <div className={styles.avatarWrap}>
-                <button
-                  type="button"
-                  onClick={() => setShowAvatarEditor(true)}
-                  className={styles.avatarButton}
-                  title="Click to change photo"
+                <ImageCropUpload
+                  onImageCropped={handleImageCropped}
                   disabled={submitting}
-                >
-                  {avatarPreviewUrl ? (
-                    <img
-                      src={avatarPreviewUrl}
-                      alt="New avatar"
-                      className={styles.avatarImg}
-                    />
-                  ) : (
-                    <ChildAvatar
-                      avatar={null}
-                      gender={formData.gender}
-                      alt="Default avatar"
-                      className={styles.avatarImg}
-                    />
-                  )}
-                  <div className={styles.avatarOverlay}>
-                    <span className={styles.avatarEditIcon} aria-hidden>✏️</span>
-                  </div>
-                </button>
+                />
                 <p className={styles.avatarHint}>Tap to change photo</p>
               </div>
               <div className={styles.nameAndDetails}>
@@ -305,36 +277,6 @@ function AddChildPage() {
             </div>
           </form>
       </div>
-
-      {/* Avatar editor modal */}
-      {showAvatarEditor && (
-        <div
-          className={`${modalStyles.overlay} ${styles.avatarModalOverlay}`}
-          style={{ zIndex: 1001 }}
-          onClick={() => setShowAvatarEditor(false)}
-        >
-            <Card onClick={(e) => e.stopPropagation()}>
-              <div className={modalStyles.header}>
-                <h2>Change photo</h2>
-                <button
-                  type="button"
-                  onClick={() => setShowAvatarEditor(false)}
-                  className={modalStyles.close}
-                  aria-label="Close"
-                >
-                  ×
-                </button>
-              </div>
-              <div className={modalStyles.body}>
-                <ImageCropUpload
-                  onImageCropped={handleImageCropped}
-                  currentImageUrl={avatarPreviewUrl ?? undefined}
-                  disabled={false}
-                />
-              </div>
-            </Card>
-        </div>
-      )}
     </div>
   );
 }

@@ -14,7 +14,6 @@ import { VISIT_TYPE_DEFAULTS, getSectionById, SectionWrapper, VisitFormSidebar }
 import layoutStyles from '@shared/styles/visit-detail-layout.module.css';
 import pageLayout from '@shared/styles/page-layout.module.css';
 import formLayout from '@shared/styles/VisitFormLayout.module.css';
-import styles from './EditVisitPage.module.css';
 
 interface VisitFormState {
   visit: UpdateVisitInput;
@@ -412,10 +411,10 @@ function EditVisitPage() {
               >
                 ← Back to {child.name}
               </Link>
-              <div className={styles.iconActions}>
+              <div className={layoutStyles.iconActions}>
                 <button
                   type="submit"
-                  className={`${styles.iconAction} ${styles.iconActionPrimary}`}
+                  className={`${layoutStyles.iconAction} ${layoutStyles.iconActionPrimary}`}
                   disabled={submitting || deleting}
                   title={submitting ? 'Saving…' : 'Save'}
                   aria-label={submitting ? 'Saving' : 'Save'}
@@ -424,7 +423,7 @@ function EditVisitPage() {
                 </button>
                 <Link
                   to={`/visits/${id}`}
-                  className={styles.iconAction}
+                  className={layoutStyles.iconAction}
                   title="Cancel"
                   aria-label="Cancel"
                   aria-disabled={submitting || deleting || undefined}
@@ -433,7 +432,7 @@ function EditVisitPage() {
                 </Link>
                 <button
                   type="button"
-                  className={`${styles.iconAction} ${styles.iconActionDanger}`}
+                  className={`${layoutStyles.iconAction} ${layoutStyles.iconActionDanger}`}
                   onClick={handleDelete}
                   disabled={submitting || deleting}
                   title={deleting ? 'Deleting…' : 'Delete'}

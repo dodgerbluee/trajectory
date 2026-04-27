@@ -8,6 +8,7 @@ import ErrorMessage from '@shared/components/ErrorMessage';
 import Tabs from '@shared/components/Tabs';
 import modalStyles from '@shared/components/Modal.module.css';
 import mui from '@shared/styles/MeasurementsUI.module.css';
+import detailLayout from '@shared/styles/visit-detail-layout.module.css';
 import s from '../SettingsPage.module.css';
 import RoleBadge from '@shared/components/RoleBadge';
 import { FamilyOverviewCard, MemberRow, InviteRow } from '../../components';
@@ -15,7 +16,7 @@ import { ApiClientError, childrenApi, familiesApi } from '@lib/api-client';
 import type { Child, Family, FamilyInvite, FamilyMember } from '@shared/types/api';
 import { calculateAge, formatAge, formatDate } from '@lib/date-utils';
 import { ChildAvatar } from '@features/children';
-import { LuUserPlus } from 'react-icons/lu';
+import { LuUserPlus, LuPencil, LuTrash2 } from 'react-icons/lu';
 import { useFamilyPermissions } from '@/contexts/FamilyPermissionsContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -593,21 +594,28 @@ export default function FamilyTab({
                                           </div>
                                         </div>
                                         {canEditFamily && (
-                                          <div className={s.familyActions}>
-                                            <Link to={`/children/${child.id}/edit`}>
-                                              <Button variant="secondary" size="sm">Edit</Button>
+                                          <div className={`${s.familyActions} ${detailLayout.iconActions}`}>
+                                            <Link
+                                              to={`/children/${child.id}/edit`}
+                                              className={detailLayout.iconAction}
+                                              title={`Edit ${child.name}`}
+                                              aria-label={`Edit ${child.name}`}
+                                            >
+                                              <LuPencil aria-hidden />
                                             </Link>
-                                            <Button
-                                              variant="danger"
-                                              size="sm"
+                                            <button
+                                              type="button"
+                                              className={`${detailLayout.iconAction} ${detailLayout.iconActionDanger}`}
                                               onClick={() => {
                                                 setDeleteConfirmChild(child);
                                                 setConfirmDeleteChildInput('');
                                               }}
                                               disabled={deletingChildId === child.id}
+                                              title={deletingChildId === child.id ? 'Deleting…' : `Delete ${child.name}`}
+                                              aria-label={deletingChildId === child.id ? `Deleting ${child.name}` : `Delete ${child.name}`}
                                             >
-                                              {deletingChildId === child.id ? 'Deleting…' : 'Delete'}
-                                            </Button>
+                                              <LuTrash2 aria-hidden />
+                                            </button>
                                           </div>
                                         )}
                                       </div>

@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import { LuPencil, LuTrash2 } from 'react-icons/lu';
 import { illnessesApi, childrenApi, visitsApi, ApiClientError } from '@lib/api-client';
 import type { Illness, Child, Visit } from '@shared/types/api';
 import { formatDate } from '@lib/date-utils';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
 import ErrorMessage from '@shared/components/ErrorMessage';
 import Card from '@shared/components/Card';
-import Button from '@shared/components/Button';
 import Notification from '@shared/components/Notification';
 import { useFamilyPermissions } from '../../../contexts/FamilyPermissionsContext';
 import layoutStyles from '@shared/styles/visit-detail-layout.module.css';
@@ -134,13 +134,26 @@ function IllnessDetailPage() {
               ← Back to {child.name}
             </Link>
             {canEdit && (
-            <div className={layoutStyles.detailActions}>
-              <Link to={`/illnesses/${illness.id}/edit`} state={{ childId: illness.child_id, fromChild: true }}>
-                <Button variant="secondary" size="sm">Edit Illness</Button>
+            <div className={layoutStyles.iconActions}>
+              <Link
+                to={`/illnesses/${illness.id}/edit`}
+                state={{ childId: illness.child_id, fromChild: true }}
+                className={layoutStyles.iconAction}
+                title="Edit illness"
+                aria-label="Edit illness"
+              >
+                <LuPencil aria-hidden />
               </Link>
-              <Button variant="danger" size="sm" onClick={handleDelete} disabled={deleting}>
-                {deleting ? 'Deleting...' : 'Delete Illness'}
-              </Button>
+              <button
+                type="button"
+                className={`${layoutStyles.iconAction} ${layoutStyles.iconActionDanger}`}
+                onClick={handleDelete}
+                disabled={deleting}
+                title={deleting ? 'Deleting…' : 'Delete illness'}
+                aria-label={deleting ? 'Deleting illness' : 'Delete illness'}
+              >
+                <LuTrash2 aria-hidden />
+              </button>
             </div>
             )}
           </div>

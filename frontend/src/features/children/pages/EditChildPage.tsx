@@ -1,17 +1,16 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import { LuCheck, LuX } from 'react-icons/lu';
 import { childrenApi, ApiClientError } from '@lib/api-client';
 import { validateChildForm, formatDateForInput, getTodayDate } from '@lib/validation';
 import type { Child, Gender } from '@shared/types/api';
 import Card from '@shared/components/Card';
 import FormField from '@shared/components/FormField';
-import Button from '@shared/components/Button';
 import Notification from '@shared/components/Notification';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
 import ErrorMessage from '@shared/components/ErrorMessage';
 import ImageCropUpload from '@shared/components/ImageCropUpload';
 import pageLayout from '@shared/styles/page-layout.module.css';
-import formLayout from '@shared/styles/FormLayout.module.css';
 import detailLayout from '@shared/styles/visit-detail-layout.module.css';
 import styles from './EditChildPage.module.css';
 
@@ -167,13 +166,6 @@ function EditChildPage() {
 
   return (
     <div className={pageLayout.pageContainer}>
-      <div className={`${pageLayout.pageHeader} ${detailLayout.detailHeader}`}>
-        <div>
-          <Link to={`/children/${id}`} className={pageLayout.breadcrumb}>← Back to Child</Link>
-          <h1 className={detailLayout.headerTitle}>Edit {child.name}</h1>
-        </div>
-      </div>
-
       {notification && (
         <Notification
           message={notification.message}
@@ -184,6 +176,43 @@ function EditChildPage() {
 
       <Card>
         <form onSubmit={handleSubmit} className={styles.form}>
+          <div className={detailLayout.detailHeader}>
+            <Link to={`/children/${id}`} className={pageLayout.breadcrumb}>← Back to {child.name}</Link>
+            <div className={detailLayout.iconActions}>
+              <button
+                type="submit"
+                className={`${detailLayout.iconAction} ${detailLayout.iconActionPrimary}`}
+                disabled={submitting}
+                title={submitting ? 'Saving…' : 'Save'}
+                aria-label={submitting ? 'Saving' : 'Save'}
+              >
+                <LuCheck aria-hidden />
+              </button>
+              <Link
+                to={`/children/${id}`}
+                className={detailLayout.iconAction}
+                title="Cancel"
+                aria-label="Cancel"
+                aria-disabled={submitting || undefined}
+              >
+                <LuX aria-hidden />
+              </Link>
+            </div>
+          </div>
+
+          <h1 className={detailLayout.headerTitle}>Edit {child.name}</h1>
+
+          {/* Avatar at top: ImageCropUpload renders the avatar-as-trigger
+              (click to change). Errors surface below the trigger. */}
+          <div className={styles.avatarSection}>
+            <ImageCropUpload
+              onImageCropped={handleImageCropped}
+              currentImageUrl={currentAvatarUrl}
+              disabled={submitting}
+            />
+            {errors.avatar && <span className={styles.formError}>{errors.avatar}</span>}
+          </div>
+
           <FormField
             label="Name"
             type="text"
@@ -257,7 +286,7 @@ function EditChildPage() {
             disabled={submitting}
           />
 
-          <div className={styles.formField}>
+            <div className={styles.formField}>
               <label htmlFor="gender" className={styles.formLabel}>
                 Gender <span className={styles.required}>*</span>
               </label>
@@ -274,18 +303,6 @@ function EditChildPage() {
               </select>
             </div>
 
-            <div className={styles.formField}>
-              <label className={styles.formLabel}>
-                Avatar (Optional)
-              </label>
-              <ImageCropUpload
-                onImageCropped={handleImageCropped}
-                currentImageUrl={currentAvatarUrl}
-                disabled={submitting}
-              />
-              {errors.avatar && <span className={styles.formError}>{errors.avatar}</span>}
-            </div>
-
             <FormField
               label="Notes"
               type="textarea"
@@ -295,17 +312,6 @@ function EditChildPage() {
               rows={4}
               disabled={submitting}
             />
-
-          <div className={`${formLayout.formActions} ${detailLayout.detailActions}`}>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? 'Saving...' : 'Save Changes'}
-            </Button>
-            <Link to={`/children/${id}`}>
-              <Button type="button" variant="secondary" disabled={submitting}>
-                Cancel
-              </Button>
-            </Link>
-          </div>
         </form>
       </Card>
     </div>

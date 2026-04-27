@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import Cropper, { Area } from 'react-easy-crop';
+import { LuCamera } from 'react-icons/lu';
 import Button from './Button';
-import fileUploadStyles from './FileUpload.module.css';
 import cropStyles from './ImageCropUpload.module.css';
 
 export interface ImageCropUploadHandle {
@@ -145,12 +145,26 @@ const ImageCropUpload = forwardRef<ImageCropUploadHandle, ImageCropUploadProps>(
     <div className={cropStyles.root}>
       {!showCropper ? (
         <div className={cropStyles.uploadSection}>
-          {(pendingPreviewUrl || currentImageUrl) && (
-            <div className={cropStyles.currentAvatarPreview}>
-              <img src={pendingPreviewUrl || currentImageUrl || undefined} alt="Avatar preview" />
-            </div>
-          )}
-          
+          {/* Avatar IS the trigger: click anywhere on it to change photo.
+              Keyboard-accessible because it's a real <button>. */}
+          <button
+            type="button"
+            className={cropStyles.avatarTrigger}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={disabled}
+            data-empty={!(pendingPreviewUrl || currentImageUrl) || undefined}
+            aria-label={currentImageUrl ? 'Change avatar' : 'Upload avatar'}
+            title={currentImageUrl ? 'Change avatar' : 'Upload avatar'}
+          >
+            {(pendingPreviewUrl || currentImageUrl) && (
+              <img src={pendingPreviewUrl || currentImageUrl || undefined} alt="" />
+            )}
+            <span className={cropStyles.avatarOverlay} aria-hidden="true">
+              <LuCamera />
+              {currentImageUrl ? 'Change' : 'Add photo'}
+            </span>
+          </button>
+
           <input
             ref={fileInputRef}
             type="file"
@@ -160,19 +174,8 @@ const ImageCropUpload = forwardRef<ImageCropUploadHandle, ImageCropUploadProps>(
             style={{ display: 'none' }}
             id="avatar-upload"
           />
-          
-          <label htmlFor="avatar-upload">
-            <Button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={disabled}
-              variant="secondary"
-            >
-              📷 {currentImageUrl ? 'Change Avatar' : 'Upload Avatar'}
-            </Button>
-          </label>
-          
-          <p className={fileUploadStyles.uploadHint}>
+
+          <p className={cropStyles.uploadHint}>
             Max 10MB. Images will be cropped to a circle.
           </p>
         </div>

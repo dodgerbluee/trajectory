@@ -1,9 +1,5 @@
 /* MobileHomeFeed – assembled mobile home screen */
 
-.feed {
-  padding-bottom: var(--spacing-xl);
-}
-
 .header {
   /* Card already provides outer padding; only need a sliver above the greeting */
   padding: 0 0 var(--spacing-sm);
