@@ -163,6 +163,40 @@
   background: rgba(0, 0, 0, 0.85);
 }
 
+.cropperLoading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: #fff;
+  font-size: var(--font-size-sm);
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.cropperSpinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #fff;
+  animation: cropperSpin 0.8s linear infinite;
+}
+
+@keyframes cropperSpin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cropperSpinner {
+    animation-duration: 2s;
+  }
+}
+
 .cropperControls {
   padding-top: var(--spacing-md);
   display: flex;

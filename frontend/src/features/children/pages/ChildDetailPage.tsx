@@ -19,6 +19,13 @@ import Tabs from '@shared/components/Tabs';
 import { type DocumentTypeFilter } from '@features/documents/components/DocumentsSidebar';
 import Cropper, { type Area } from 'react-easy-crop';
 import cropStyles from '@shared/components/ImageCropUpload.module.css';
+import {
+  isHeic,
+  prepareImageSource,
+  releaseImageSource,
+  cropToFile,
+  type PreparedImageSource,
+} from '@lib/image-crop';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
 import { LuPill } from 'react-icons/lu';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -61,7 +68,11 @@ function ChildDetailPage() {
   // Avatar editor: tap the hero avatar → OS file picker → cropper modal opens
   // with the chosen file. "Save" crops + uploads in one step. No staging.
   const avatarFileInputRef = useRef<HTMLInputElement>(null);
-  const [pickedImageSrc, setPickedImageSrc] = useState<string | null>(null);
+  const [avatarEditorOpen, setAvatarEditorOpen] = useState(false);
+  const [avatarSource, setAvatarSource] = useState<PreparedImageSource | null>(null);
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const [avatarLoadingMessage, setAvatarLoadingMessage] = useState('Loading photo…');
+  const [avatarError, setAvatarError] = useState<string | null>(null);
   const [avatarCrop, setAvatarCrop] = useState({ x: 0, y: 0 });
   const [avatarZoom, setAvatarZoom] = useState(1);
   const [avatarCroppedAreaPixels, setAvatarCroppedAreaPixels] = useState<Area | null>(null);
@@ -252,7 +263,7 @@ function ChildDetailPage() {
     );
   }, [visits]);
 
-  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     // Always reset the input so picking the same file twice still triggers change
     if (avatarFileInputRef.current) avatarFileInputRef.current.value = '';
@@ -261,18 +272,35 @@ function ChildDetailPage() {
       setNotification({ message: 'Image must be less than 10MB', type: 'error' });
       return;
     }
-    if (!file.type.startsWith('image/')) {
+    if (!file.type.startsWith('image/') && !/\.(heic|heif)$/i.test(file.name)) {
       setNotification({ message: 'Please select an image file', type: 'error' });
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setPickedImageSrc(reader.result as string);
-      setAvatarCrop({ x: 0, y: 0 });
-      setAvatarZoom(1);
-      setAvatarCroppedAreaPixels(null);
-    };
-    reader.readAsDataURL(file);
+
+    setAvatarError(null);
+    setAvatarLoadingMessage(isHeic(file) ? 'Converting HEIC photo…' : 'Loading photo…');
+    setAvatarLoading(true);
+    setAvatarEditorOpen(true);
+    setAvatarSource(null);
+    setAvatarCrop({ x: 0, y: 0 });
+    setAvatarZoom(1);
+    setAvatarCroppedAreaPixels(null);
+
+    try {
+      const prepared = await prepareImageSource(file);
+      console.info('[ChildDetailPage] avatar prepared', {
+        file: { name: file.name, type: file.type, size: file.size },
+        decoded: { width: prepared.width, height: prepared.height },
+      });
+      setAvatarSource(prepared);
+    } catch (err) {
+      console.error('[ChildDetailPage] avatar prepareImageSource failed', err, {
+        file: { name: file.name, type: file.type, size: file.size },
+      });
+      setAvatarError(err instanceof Error ? err.message : 'Unknown error preparing image');
+    } finally {
+      setAvatarLoading(false);
+    }
   };
 
   const handleAvatarCropComplete = useCallback((_area: Area, areaPixels: Area) => {
@@ -281,47 +309,23 @@ function ChildDetailPage() {
 
   const closeAvatarEditor = () => {
     if (uploadingAvatar) return;
-    setPickedImageSrc(null);
+    setAvatarEditorOpen(false);
+    releaseImageSource(avatarSource);
+    setAvatarSource(null);
+    setAvatarError(null);
+    setAvatarLoading(false);
     setAvatarCroppedAreaPixels(null);
   };
 
   const handleAvatarSave = async () => {
-    if (!child || !pickedImageSrc || !avatarCroppedAreaPixels) return;
+    if (!child || !avatarSource || !avatarCroppedAreaPixels) return;
     try {
       setUploadingAvatar(true);
-      // Crop on canvas → File
-      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const i = new Image();
-        i.onload = () => resolve(i);
-        i.onerror = reject;
-        i.src = pickedImageSrc;
-      });
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Failed to get canvas context');
-      canvas.width = avatarCroppedAreaPixels.width;
-      canvas.height = avatarCroppedAreaPixels.height;
-      ctx.drawImage(
-        img,
-        avatarCroppedAreaPixels.x,
-        avatarCroppedAreaPixels.y,
-        avatarCroppedAreaPixels.width,
-        avatarCroppedAreaPixels.height,
-        0,
-        0,
-        avatarCroppedAreaPixels.width,
-        avatarCroppedAreaPixels.height,
-      );
-      const blob: Blob = await new Promise((resolve, reject) => {
-        canvas.toBlob(
-          (b) => (b ? resolve(b) : reject(new Error('Failed to create blob'))),
-          'image/jpeg',
-          0.95,
-        );
-      });
-      const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
+      const file = await cropToFile(avatarSource, avatarCroppedAreaPixels);
       await childrenApi.uploadAvatar(child.id, file);
-      setPickedImageSrc(null);
+      setAvatarEditorOpen(false);
+      releaseImageSource(avatarSource);
+      setAvatarSource(null);
       setAvatarCroppedAreaPixels(null);
       setNotification({ message: 'Avatar updated successfully!', type: 'success' });
       await loadChild();
@@ -748,7 +752,7 @@ function ChildDetailPage() {
         <input
           ref={avatarFileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/*,.heic,.heif"
           onChange={handleAvatarFileChange}
           style={{ display: 'none' }}
           aria-hidden="true"
@@ -757,7 +761,7 @@ function ChildDetailPage() {
       )}
 
       {/* Avatar Cropper Modal — opens after a file is picked */}
-      {pickedImageSrc && (
+      {avatarEditorOpen && (
         <div className={modalStyles.overlay} onClick={closeAvatarEditor}>
           <div
             className={`${modalStyles.content} ${modalStyles.contentLarge}`}
@@ -777,17 +781,30 @@ function ChildDetailPage() {
             </div>
             <div className={modalStyles.body}>
               <div className={cropStyles.cropperArea}>
-                <Cropper
-                  image={pickedImageSrc}
-                  crop={avatarCrop}
-                  zoom={avatarZoom}
-                  aspect={1}
-                  cropShape="round"
-                  showGrid={false}
-                  onCropChange={setAvatarCrop}
-                  onZoomChange={setAvatarZoom}
-                  onCropComplete={handleAvatarCropComplete}
-                />
+                {avatarLoading && (
+                  <div className={cropStyles.cropperLoading} role="status" aria-live="polite">
+                    <span className={cropStyles.cropperSpinner} aria-hidden="true" />
+                    {avatarLoadingMessage}
+                  </div>
+                )}
+                {!avatarLoading && avatarError && (
+                  <div className={cropStyles.cropperError} role="alert">
+                    {avatarError}
+                  </div>
+                )}
+                {!avatarLoading && !avatarError && avatarSource && (
+                  <Cropper
+                    image={avatarSource.url}
+                    crop={avatarCrop}
+                    zoom={avatarZoom}
+                    aspect={1}
+                    cropShape="round"
+                    showGrid={false}
+                    onCropChange={setAvatarCrop}
+                    onZoomChange={setAvatarZoom}
+                    onCropComplete={handleAvatarCropComplete}
+                  />
+                )}
               </div>
               <div className={cropStyles.cropperControls}>
                 <div className={cropStyles.zoomControl}>
@@ -801,15 +818,25 @@ function ChildDetailPage() {
                     value={avatarZoom}
                     onChange={(e) => setAvatarZoom(Number(e.target.value))}
                     className={cropStyles.zoomSlider}
+                    disabled={!avatarSource || avatarLoading || !!avatarError}
                   />
                 </div>
               </div>
             </div>
             <div className={modalStyles.footer}>
               <Button variant="secondary" onClick={closeAvatarEditor} disabled={uploadingAvatar}>
-                Cancel
+                {avatarError ? 'Close' : 'Cancel'}
               </Button>
-              <Button onClick={handleAvatarSave} disabled={uploadingAvatar || !avatarCroppedAreaPixels}>
+              <Button
+                onClick={handleAvatarSave}
+                disabled={
+                  uploadingAvatar ||
+                  !avatarSource ||
+                  !avatarCroppedAreaPixels ||
+                  avatarLoading ||
+                  !!avatarError
+                }
+              >
                 {uploadingAvatar ? 'Uploading…' : 'Save Avatar'}
               </Button>
             </div>
