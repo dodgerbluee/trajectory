@@ -100,3 +100,42 @@
   height: 12px;
   border-radius: 2px;
 }
+
+/* ---------- Mobile (≤ 768px): fit on one line, no horizontal scroll ---------- */
+@media (max-width: 768px) {
+  .grid {
+    /* Disable horizontal scroll; cells reflow to fit the available width. */
+    overflow-x: visible;
+    gap: 2px;
+    width: 100%;
+  }
+
+  .dayLabels {
+    display: none;
+  }
+
+  .weeks {
+    gap: 1px;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .week {
+    /* Each week column shares the available width equally. */
+    flex: 1 1 0;
+    min-width: 0;
+    gap: 1px;
+  }
+
+  .cell,
+  .cellEmpty {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    border-radius: 1px;
+  }
+
+  .legend {
+    margin-top: var(--spacing-md);
+  }
+}

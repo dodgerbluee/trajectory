@@ -152,6 +152,15 @@ function AddIllnessPage() {
     }));
   };
 
+  const handleCancel = () => {
+    const state = location.state as { fromChild?: boolean; childId?: number; fromTab?: string } | null;
+    if (state?.fromChild && state?.childId != null) {
+      navigate(`/children/${state.childId}`, { state: { tab: state.fromTab ?? 'illnesses' } });
+    } else {
+      navigate('/', { state: { tab: 'illnesses' } });
+    }
+  };
+
   return (
     <div className={pageLayout.pageContainer}>
       {notification && (
@@ -169,7 +178,7 @@ function AddIllnessPage() {
               <Link to={backHref} state={{ tab: 'illnesses' }} className={pageLayout.breadcrumb}>
                 ← Back to {backLabel}
               </Link>
-              <div className={layoutStyles.detailActions}>
+              <div className={`${layoutStyles.detailActions} ${layoutStyles.detailActionsHideOnMobile}`}>
                 <Button type="submit" disabled={submitting}>
                   {submitting ? 'Adding Illness...' : 'Add Illness'}
                 </Button>
@@ -177,14 +186,7 @@ function AddIllnessPage() {
                   type="button"
                   variant="secondary"
                   disabled={submitting}
-                  onClick={() => {
-                    const state = location.state as { fromChild?: boolean; childId?: number; fromTab?: string } | null;
-                    if (state?.fromChild && state?.childId != null) {
-                      navigate(`/children/${state.childId}`, { state: { tab: state.fromTab ?? 'illnesses' } });
-                    } else {
-                      navigate('/', { state: { tab: 'illnesses' } });
-                    }
-                  }}
+                  onClick={handleCancel}
                 >
                   Cancel
                 </Button>
@@ -252,6 +254,22 @@ function AddIllnessPage() {
                   />
                 </div>
             </SectionWrapper>
+
+            {/* Mobile-only bottom actions — header row hides Save/Cancel on
+                phones; users finish the form and see the actions at the end. */}
+            <div className={layoutStyles.bottomActions}>
+              <Button type="submit" disabled={submitting}>
+                {submitting ? 'Adding Illness...' : 'Add Illness'}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={submitting}
+                onClick={handleCancel}
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
         </Card>
       </form>

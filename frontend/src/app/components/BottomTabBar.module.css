@@ -1,0 +1,124 @@
+/* BottomTabBar – fixed mobile bottom navigation */
+
+.bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-bottom-nav);
+  background: var(--color-background-card);
+  border-top: 1px solid var(--color-border);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.04);
+  padding-bottom: var(--safe-bottom);
+  /* Hide on tablet+ – the top header is the nav there. */
+}
+
+@media (min-width: 768px) {
+  .bar { display: none; }
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: stretch;
+  height: var(--bottom-tab-height);
+}
+
+.list > li {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.tab {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--color-text-secondary);
+  font: inherit;
+  cursor: pointer;
+  padding: 4px 6px;
+  min-height: 48px;
+  transition: color var(--transition-fast);
+}
+
+.tab:active { color: var(--color-primary); }
+.tab.active { color: var(--color-primary); }
+
+.icon {
+  width: 22px;
+  height: 22px;
+  stroke-width: 2;
+}
+
+.tab.active .icon { stroke-width: 2.4; }
+
+.label {
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+}
+
+/* FAB slot: keep grid cell structure but DO NOT establish a containing block –
+   the FAB is absolutely positioned to the .bar (the nearest positioned ancestor)
+   so it centers on the viewport, not on its 1/5 grid cell. */
+.fabSlot {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.fab {
+  -webkit-appearance: none;
+  appearance: none;
+  border: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--elevation-3);
+  cursor: pointer;
+  /* Pin to true viewport horizontal center, independent of grid math
+     (which can drift if the bar's containing block is asymmetric, e.g.
+     scrollbar gutter or safe-area insets). Anchor the lift via top. */
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) translateY(-14px);
+  transition: transform var(--transition-fast), background var(--transition-fast);
+}
+
+.fab:active {
+  transform: translate(-50%, -50%) translateY(-12px) scale(0.96);
+  background: var(--color-primary-hover);
+}
+
+.fabIcon {
+  width: 28px;
+  height: 28px;
+  stroke-width: 2.4;
+}
+
+/* Reduce motion: drop FAB lift transition */
+@media (prefers-reduced-motion: reduce) {
+  .fab,
+  .fab:active {
+    transition: none;
+  }
+}

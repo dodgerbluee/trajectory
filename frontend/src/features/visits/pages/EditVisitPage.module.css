@@ -1,7 +1,91 @@
-/* Edit visit page – actions */
+/* Edit visit page – compact icon-only actions (top-right of header) */
 
-.visitDetailActions {
-  display: flex;
-  gap: var(--spacing-sm);
+.iconActions {
+  display: inline-flex;
   align-items: center;
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+}
+
+.iconAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+
+.iconAction > svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  display: block;
+}
+
+.iconAction:hover,
+.iconAction:focus-visible {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.iconAction:active {
+  transform: scale(0.96);
+}
+
+.iconAction:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.iconAction:disabled,
+.iconAction[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Primary (Save): solid primary fill so it reads as the affirmative action. */
+.iconActionPrimary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.iconActionPrimary:hover,
+.iconActionPrimary:focus-visible {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  filter: brightness(0.95);
+}
+
+/* Danger (Delete): tinted on hover only — prevents accidental visual weight. */
+.iconActionDanger:hover,
+.iconActionDanger:focus-visible {
+  background: color-mix(in srgb, var(--color-error, #d33) 12%, transparent);
+  color: var(--color-error, #d33);
+  border-color: var(--color-error, #d33);
+}
+
+.iconActionDanger:focus-visible {
+  outline-color: var(--color-error, #d33);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iconAction {
+    transition: none;
+  }
+  .iconAction:active {
+    transform: none;
+  }
 }

@@ -21,6 +21,7 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Runtime / user data (local dev)
+data/
 uploads/
 avatars/
 

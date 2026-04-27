@@ -96,6 +96,39 @@
 
 @media (max-width: 768px) {
   .selection {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+  }
+
+  /* Last (5th) item spans both columns to fill the row cleanly. */
+  .button:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .button {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-width: 2px;
+    min-height: 64px;
+    text-align: left;
+  }
+
+  .iconWrapper {
+    font-size: var(--font-size-2xl);
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+
+  .label {
+    font-size: var(--font-size-base);
+    margin-bottom: 0;
+  }
+
+  /* Description is redundant at this density; hide on mobile. */
+  .description {
+    display: none;
   }
 }

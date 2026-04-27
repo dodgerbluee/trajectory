@@ -7,13 +7,14 @@ import Card from '@shared/components/Card';
 import Tabs from '@shared/components/Tabs';
 import { AllIllnessesView } from '@features/illnesses';
 import { AllVisitsView } from '@features/visits';
-import { MetricsView, TrendsSidebar } from '@features/medical';
+import { MetricsView, MobileTrendsView, TrendsSidebar } from '@features/medical';
 import { VisitTypeModal } from '@features/visits';
 import type { VisitType } from '@shared/types/api';
-import { FamilyTabView } from '../components';
+import { FamilyTabView, MobileHomeFeed } from '../components';
 import { useFamiliesData } from '../hooks/useFamiliesData';
 import { useUpcomingVisitsData } from '../hooks/useUpcomingVisitsData';
 import { useChildrenData } from '@features/children/hooks';
+import { useIsMobile } from '@shared/hooks';
 import styles from './HomePage.module.css';
 import pageLayout from '@shared/styles/page-layout.module.css';
 import visitsLayout from '@shared/styles/VisitsLayout.module.css';
@@ -24,6 +25,7 @@ function HomePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const homeTabRequest = useHomeTabRequest();
+  const isMobile = useIsMobile();
   const stateTab = (location.state as { tab?: HomeTab } | null)?.tab;
   const stateMessage = (location.state as { message?: string } | null)?.message;
   const [activeTab, setActiveTab] = useState<HomeTab>(stateTab ?? 'family');
@@ -69,15 +71,27 @@ function HomePage() {
       {loading && <LoadingSpinner message="Loading family..." />}
       {error && <ErrorMessage message={error} onRetry={handleRetry} />}
       {!loading && !error && (
-        <FamilyTabView
-          children={children}
-          families={families}
-          upcomingVisits={upcomingVisits}
-          loading={loadingFamilies || loadingChildren}
-          error={errorFamilies || errorChildren}
-          loadingUpcoming={loadingUpcoming}
-          onRetry={handleRetry}
-        />
+        isMobile ? (
+          <MobileHomeFeed
+            children={children}
+            families={families}
+            upcomingVisits={upcomingVisits}
+            loading={loadingFamilies || loadingChildren}
+            error={errorFamilies || errorChildren}
+            loadingUpcoming={loadingUpcoming}
+            onRetry={handleRetry}
+          />
+        ) : (
+          <FamilyTabView
+            children={children}
+            families={families}
+            upcomingVisits={upcomingVisits}
+            loading={loadingFamilies || loadingChildren}
+            error={errorFamilies || errorChildren}
+            loadingUpcoming={loadingUpcoming}
+            onRetry={handleRetry}
+          />
+        )
       )}
     </div>
   );
@@ -101,7 +115,9 @@ function HomePage() {
     {
       id: 'trends',
       label: 'Trends',
-      content: (
+      content: isMobile ? (
+        <MobileTrendsView />
+      ) : (
         <div className={visitsLayout.pageLayout}>
           <TrendsSidebar
             activeTab={metricsActiveTab}
@@ -158,11 +174,18 @@ function HomePage() {
         </div>
       )}
       <Card>
-        <Tabs
-          tabs={tabs}
-          activeTab={activeTab}
-          onTabChange={(tabId) => setActiveTab(tabId as HomeTab)}
-        />
+        {isMobile ? (
+          // On mobile the bottom tab bar already navigates between Family /
+          // Visits / Illness / Trends, so we render the active tab's content
+          // directly and drop the redundant in-page Tabs strip.
+          tabs.find((t) => t.id === activeTab)?.content ?? null
+        ) : (
+          <Tabs
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={(tabId) => setActiveTab(tabId as HomeTab)}
+          />
+        )}
       </Card>
       {/* Visit type modal triggered via navigation state (no URL query) on the Home page */}
       <VisitTypeModal

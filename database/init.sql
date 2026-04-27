@@ -1,5 +1,9 @@
--- Trajectory database schema
+-- Trajectory database schema (consolidated from all migrations)
 -- PostgreSQL
+-- This is the initial schema that includes all changes from previous migrations:
+-- - Base schema (schema.sql)
+-- - Migration 20260203-000000-email-optional.sql: Make email optional on users
+-- - Migration 20260204-000000-temperature-decimal.sql: Change temperature type to DECIMAL(5,2)
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -9,9 +13,60 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Auth: users (must exist before families/family_members)
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255),
+    password_hash VARCHAR(255) NOT NULL,
+    username VARCHAR(255) NOT NULL,
+    email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    is_instance_admin BOOLEAN NOT NULL DEFAULT FALSE,
+    theme VARCHAR(20) DEFAULT 'system',
+    date_format VARCHAR(20) DEFAULT 'MM/DD/YYYY',
+    onboarding_completed BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    last_login_at TIMESTAMP,
+    failed_login_attempts INTEGER NOT NULL DEFAULT 0,
+    locked_until TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_lower_unique ON users (LOWER(username));
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_unique_nullable ON users (email) WHERE email IS NOT NULL;
+
+-- Families and membership (before children)
+CREATE TABLE IF NOT EXISTS families (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS family_members (
+    family_id INTEGER NOT NULL REFERENCES families(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    role VARCHAR(20) NOT NULL DEFAULT 'parent' CHECK (role IN ('owner', 'parent', 'read_only')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (family_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_family_members_user ON family_members(user_id);
+
+CREATE TABLE IF NOT EXISTS family_invites (
+    id SERIAL PRIMARY KEY,
+    family_id INTEGER NOT NULL REFERENCES families(id) ON DELETE CASCADE,
+    role VARCHAR(20) NOT NULL CHECK (role IN ('parent', 'read_only')),
+    token_hash VARCHAR(255) NOT NULL UNIQUE,
+    created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_family_invites_family ON family_invites(family_id);
+CREATE INDEX IF NOT EXISTS idx_family_invites_token ON family_invites(token_hash);
+CREATE INDEX IF NOT EXISTS idx_family_invites_expires ON family_invites(expires_at);
+
 -- Children
 CREATE TABLE IF NOT EXISTS children (
     id SERIAL PRIMARY KEY,
+    family_id INTEGER NOT NULL REFERENCES families(id) ON DELETE RESTRICT,
     name VARCHAR(255) NOT NULL,
     date_of_birth DATE NOT NULL,
     gender VARCHAR(20) NOT NULL CHECK (gender IN ('male', 'female')),
@@ -25,6 +80,7 @@ CREATE TABLE IF NOT EXISTS children (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     CONSTRAINT check_birth_weight_ounces CHECK (birth_weight_ounces IS NULL OR (birth_weight_ounces >= 0 AND birth_weight_ounces < 16))
 );
+CREATE INDEX IF NOT EXISTS idx_children_family ON children(family_id);
 
 -- Measurements
 CREATE TABLE IF NOT EXISTS measurements (
@@ -65,11 +121,12 @@ CREATE TABLE IF NOT EXISTS medical_events (
     CONSTRAINT check_date_range CHECK (end_date IS NULL OR end_date >= start_date)
 );
 
--- Visits (wellness, sick, injury, vision)
+-- Visits (wellness, sick, injury, vision, dental)
 CREATE TABLE IF NOT EXISTS visits (
     id SERIAL PRIMARY KEY,
     child_id INTEGER NOT NULL REFERENCES children(id) ON DELETE CASCADE,
     visit_date DATE NOT NULL,
+    visit_time TIME,
     visit_type VARCHAR(50) NOT NULL CHECK (visit_type IN ('wellness', 'sick', 'injury', 'vision', 'dental')),
     location VARCHAR(255),
     doctor_name VARCHAR(255),
@@ -85,16 +142,18 @@ CREATE TABLE IF NOT EXISTS visits (
     bmi_percentile DECIMAL(5,2),
     blood_pressure VARCHAR(20),
     heart_rate INTEGER,
-    illness_type VARCHAR(100),
     symptoms TEXT,
     temperature DECIMAL(5,2),
+    illness_start_date DATE,
     end_date DATE,
     injury_type VARCHAR(100),
     injury_location VARCHAR(255),
     treatment TEXT,
-    follow_up_date DATE,
     vision_prescription TEXT,
     needs_glasses BOOLEAN,
+    ordered_glasses BOOLEAN,
+    ordered_contacts BOOLEAN,
+    vision_refraction JSONB,
     dental_procedure_type VARCHAR(100),
     dental_notes TEXT,
     cleaning_type VARCHAR(50),
@@ -103,7 +162,6 @@ CREATE TABLE IF NOT EXISTS visits (
     xrays_taken BOOLEAN,
     fluoride_treatment BOOLEAN,
     sealants_applied BOOLEAN,
-    next_appointment_date DATE,
     dental_procedures JSONB,
     vaccines_administered TEXT,
     prescriptions JSONB,
@@ -119,22 +177,24 @@ CREATE TABLE IF NOT EXISTS visits (
         (bmi_percentile IS NULL OR (bmi_percentile >= 0 AND bmi_percentile <= 100))
     ),
     CONSTRAINT check_visits_temperature CHECK (temperature IS NULL OR (temperature >= 95.0 AND temperature <= 110.0)),
-    CONSTRAINT check_visits_end_date CHECK (end_date IS NULL OR end_date >= visit_date),
+    CONSTRAINT check_visits_illness_start_date CHECK (illness_start_date IS NULL OR illness_start_date <= visit_date),
+    CONSTRAINT check_visits_end_date CHECK (end_date IS NULL OR end_date >= COALESCE(illness_start_date, visit_date)),
     CONSTRAINT check_heart_rate_range CHECK (heart_rate IS NULL OR (heart_rate >= 40 AND heart_rate <= 250)),
-    CONSTRAINT check_illness_type_for_sick CHECK (
-        (visit_type = 'sick' AND illness_type IS NOT NULL) OR (visit_type IN ('wellness', 'injury', 'vision', 'dental'))
-    ),
     CONSTRAINT check_cavities_found CHECK (cavities_found IS NULL OR cavities_found >= 0),
     CONSTRAINT check_cavities_filled CHECK (cavities_filled IS NULL OR cavities_filled >= 0),
     CONSTRAINT check_cavities_filled_vs_found CHECK (
         cavities_filled IS NULL OR cavities_found IS NULL OR cavities_filled <= cavities_found
-    ),
-    CONSTRAINT check_next_appointment_date CHECK (
-        next_appointment_date IS NULL OR next_appointment_date >= visit_date
     )
 );
 
--- Illnesses (types in illness_illness_types)
+-- Visit–illness join (illnesses recorded at a visit)
+CREATE TABLE IF NOT EXISTS visit_illnesses (
+    id SERIAL PRIMARY KEY,
+    visit_id INTEGER NOT NULL REFERENCES visits(id) ON DELETE CASCADE,
+    illness_type VARCHAR(100) NOT NULL
+);
+
+-- Illnesses (standalone; types in illness_illness_types)
 CREATE TABLE IF NOT EXISTS illnesses (
     id SERIAL PRIMARY KEY,
     child_id INTEGER NOT NULL REFERENCES children(id) ON DELETE CASCADE,
@@ -161,6 +221,7 @@ CREATE TABLE IF NOT EXISTS illness_illness_types (
 CREATE INDEX IF NOT EXISTS idx_illness_illness_types_illness ON illness_illness_types(illness_id);
 CREATE INDEX IF NOT EXISTS idx_illness_illness_types_type ON illness_illness_types(illness_type);
 
+-- Attachments
 CREATE SEQUENCE IF NOT EXISTS attachment_id_seq;
 
 CREATE TABLE IF NOT EXISTS measurement_attachments (
@@ -206,54 +267,121 @@ CREATE INDEX IF NOT EXISTS idx_measurement_attachments_measurement ON measuremen
 CREATE INDEX IF NOT EXISTS idx_visit_attachments_visit ON visit_attachments(visit_id);
 CREATE INDEX IF NOT EXISTS idx_child_attachments_child ON child_attachments(child_id);
 
-CREATE TRIGGER update_children_updated_at BEFORE UPDATE ON children
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_measurements_updated_at BEFORE UPDATE ON measurements
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_medical_events_updated_at BEFORE UPDATE ON medical_events
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_visits_updated_at BEFORE UPDATE ON visits
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_illnesses_updated_at BEFORE UPDATE ON illnesses
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Sessions and auth support
+CREATE TABLE IF NOT EXISTS user_sessions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(255) NOT NULL UNIQUE,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    last_used_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    user_agent TEXT,
+    ip_address VARCHAR(45)
+);
 
--- Seed data
-INSERT INTO children (name, date_of_birth, gender, notes) VALUES
-    ('Emma Johnson', '2022-03-15', 'female', 'First child, no known allergies'),
-    ('Liam Smith', '2020-07-22', 'male', 'Lactose intolerant'),
-    ('Olivia Brown', '2023-11-08', 'female', NULL);
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(255) NOT NULL UNIQUE,
+    expires_at TIMESTAMP NOT NULL,
+    used BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
 
-INSERT INTO measurements (child_id, measurement_date, label, weight_value, weight_ounces, weight_percentile, height_value, height_percentile, head_circumference_value, head_circumference_percentile) VALUES
-    (1, '2022-03-15', 'Birth', 7, 3, 45.0, 19.50, 50.0, 13.80, 48.0),
-    (1, '2022-04-15', '1 month checkup', 8, 13, 52.0, 21.25, 55.0, 14.50, 50.0),
-    (1, '2022-06-15', '3 month checkup', 12, 8, 60.0, 23.75, 62.0, 15.80, 58.0),
-    (1, '2022-09-15', '6 month checkup', 16, 3, 65.0, 26.00, 68.0, 17.00, 62.0),
-    (1, '2023-03-15', '1 year checkup', 22, 0, 70.0, 30.00, 72.0, 18.20, 65.0),
-    (1, '2024-03-15', '2 year checkup', 28, 8, 72.0, 34.50, 75.0, 19.00, 68.0),
-    (2, '2020-07-22', 'Birth', 8, 2, 58.0, 20.50, 60.0, 14.20, 55.0),
-    (2, '2021-07-22', '1 year checkup', 24, 0, 75.0, 31.00, 78.0, 18.50, 70.0),
-    (2, '2022-07-22', '2 year checkup', 30, 8, 78.0, 36.00, 80.0, 19.50, 72.0),
-    (2, '2023-07-22', '3 year checkup', 35, 0, 75.0, 39.50, 78.0, 20.00, 70.0),
-    (2, '2024-07-22', '4 year checkup', 40, 8, 72.0, 42.00, 75.0, 20.30, 68.0),
-    (3, '2023-11-08', 'Birth', 6, 13, 38.0, 19.00, 42.0, 13.50, 40.0),
-    (3, '2023-12-08', '1 month checkup', 8, 3, 42.0, 20.50, 45.0, 14.20, 43.0),
-    (3, '2024-02-08', '3 month checkup', 11, 13, 48.0, 23.00, 50.0, 15.50, 48.0),
-    (3, '2024-05-08', '6 month checkup', 15, 8, 52.0, 25.50, 55.0, 16.80, 52.0),
-    (3, '2024-11-08', '1 year checkup', 21, 0, 58.0, 29.50, 60.0, 18.00, 58.0);
+CREATE TABLE IF NOT EXISTS login_attempts (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    ip_address VARCHAR(45) NOT NULL,
+    success BOOLEAN NOT NULL,
+    attempted_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
 
-INSERT INTO medical_events (child_id, event_type, start_date, end_date, description) VALUES
-    (1, 'doctor_visit', '2022-03-15', NULL, 'Initial newborn checkup. All vitals normal. Received first Hepatitis B vaccine.'),
-    (1, 'doctor_visit', '2022-04-15', NULL, '1-month wellness visit. Growing well, no concerns.'),
-    (1, 'illness', '2022-05-10', '2022-05-14', 'Common cold. Mild congestion and cough. Resolved without medication.'),
-    (1, 'doctor_visit', '2022-06-15', NULL, '3-month checkup. Received DTaP, Hib, IPV, PCV vaccines.'),
-    (1, 'illness', '2023-01-20', '2023-01-27', 'Ear infection. Prescribed amoxicillin. Full recovery.'),
-    (1, 'doctor_visit', '2023-03-15', NULL, '1-year wellness visit. Received MMR and Varicella vaccines.'),
-    (2, 'doctor_visit', '2020-07-22', NULL, 'Birth checkup. Healthy newborn, APGAR scores 9/10.'),
-    (2, 'illness', '2021-03-15', '2021-03-18', 'Mild fever and runny nose. Monitored at home, no intervention needed.'),
-    (2, 'doctor_visit', '2021-07-22', NULL, '1-year wellness visit. All vaccinations up to date.'),
-    (2, 'illness', '2022-11-05', '2022-11-12', 'Stomach bug. Vomiting and diarrhea. Maintained hydration, recovered fully.'),
-    (2, 'doctor_visit', '2024-07-22', NULL, '4-year wellness visit. Vision and hearing screening passed.'),
-    (3, 'doctor_visit', '2023-11-08', NULL, 'Birth checkup. Healthy delivery, no complications.'),
-    (3, 'doctor_visit', '2023-12-08', NULL, '1-month wellness visit. Feeding well, gaining weight appropriately.'),
-    (3, 'illness', '2024-06-15', '2024-06-18', 'Mild diaper rash. Treated with zinc oxide cream. Cleared up quickly.'),
-    (3, 'doctor_visit', '2024-11-08', NULL, '1-year wellness visit. Developmental milestones on track.');
+-- Global instance settings (e.g. log_level for admin)
+CREATE TABLE IF NOT EXISTS instance_settings (
+    key VARCHAR(255) PRIMARY KEY,
+    value TEXT NOT NULL
+);
+INSERT INTO instance_settings (key, value) VALUES ('log_level', 'info')
+ON CONFLICT (key) DO NOTHING;
+
+-- Audit (change history for visits/illnesses)
+CREATE TABLE IF NOT EXISTS audit_events (
+    id BIGSERIAL PRIMARY KEY,
+    entity_type VARCHAR(50) NOT NULL CHECK (entity_type IN ('visit', 'illness')),
+    entity_id INTEGER NOT NULL,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    action VARCHAR(20) NOT NULL CHECK (action IN ('created', 'updated', 'deleted')),
+    changed_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    request_id UUID,
+    changes JSONB NOT NULL,
+    summary TEXT
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_measurements_child_date ON measurements(child_id, measurement_date DESC);
+CREATE INDEX IF NOT EXISTS idx_medical_events_child_date ON medical_events(child_id, start_date DESC);
+CREATE INDEX IF NOT EXISTS idx_visits_child_date ON visits(child_id, visit_date DESC);
+CREATE INDEX IF NOT EXISTS idx_visits_type ON visits(visit_type);
+CREATE INDEX IF NOT EXISTS idx_visits_injury_type ON visits(injury_type) WHERE injury_type IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_visit_illnesses_visit ON visit_illnesses(visit_id);
+CREATE INDEX IF NOT EXISTS idx_visit_illnesses_type ON visit_illnesses(illness_type);
+CREATE INDEX IF NOT EXISTS idx_illnesses_child_date ON illnesses(child_id, start_date DESC);
+CREATE INDEX IF NOT EXISTS idx_illnesses_severity ON illnesses(severity) WHERE severity IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_measurement_attachments_measurement ON measurement_attachments(measurement_id);
+CREATE INDEX IF NOT EXISTS idx_visit_attachments_visit ON visit_attachments(visit_id);
+CREATE INDEX IF NOT EXISTS idx_child_attachments_child ON child_attachments(child_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_user ON user_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_token ON user_sessions(token_hash);
+CREATE INDEX IF NOT EXISTS idx_sessions_expires ON user_sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_reset_tokens_token ON password_reset_tokens(token_hash);
+CREATE INDEX IF NOT EXISTS idx_reset_tokens_expires ON password_reset_tokens(expires_at);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_email_ip ON login_attempts(email, ip_address);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_attempted ON login_attempts(attempted_at);
+CREATE INDEX IF NOT EXISTS idx_audit_events_entity ON audit_events (entity_type, entity_id, changed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_events_user ON audit_events (user_id, changed_at DESC) WHERE user_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_audit_events_changed_at ON audit_events (changed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_events_changes_gin ON audit_events USING GIN (changes);
+
+-- Triggers
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_children_updated_at') THEN
+        CREATE TRIGGER update_children_updated_at BEFORE UPDATE ON children
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+END $$;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_measurements_updated_at') THEN
+        CREATE TRIGGER update_measurements_updated_at BEFORE UPDATE ON measurements
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+END $$;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_medical_events_updated_at') THEN
+        CREATE TRIGGER update_medical_events_updated_at BEFORE UPDATE ON medical_events
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+END $$;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_visits_updated_at') THEN
+        CREATE TRIGGER update_visits_updated_at BEFORE UPDATE ON visits
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+END $$;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_illnesses_updated_at') THEN
+        CREATE TRIGGER update_illnesses_updated_at BEFORE UPDATE ON illnesses
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+END $$;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_users_updated_at') THEN
+        CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+END $$;

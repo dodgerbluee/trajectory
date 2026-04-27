@@ -1,6 +1,7 @@
 import type { Child } from '@shared/types/api';
 import visitsLayout from '@shared/styles/VisitsLayout.module.css';
-import { TrendsSidebar, MetricsView } from '@features/medical';
+import { TrendsSidebar, MetricsView, MobileTrendsView } from '@features/medical';
+import { useIsMobile } from '@shared/hooks';
 
 type MetricsActiveTab = 'illness' | 'growth';
 
@@ -19,6 +20,12 @@ export default function TrendsTab({
   metricsYear,
   onChangeMetricsYear,
 }: Props) {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return <MobileTrendsView fixedChildId={child.id} />;
+  }
+
   return (
     <div className={visitsLayout.pageLayout}>
       <TrendsSidebar

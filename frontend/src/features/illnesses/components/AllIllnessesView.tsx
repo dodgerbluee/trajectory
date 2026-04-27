@@ -1,12 +1,27 @@
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 import { LuActivity } from 'react-icons/lu';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
 import ErrorMessage from '@shared/components/ErrorMessage';
+import { useIsMobile } from '@shared/hooks';
 import visitsLayout from '@shared/styles/VisitsLayout.module.css';
 import { IllnessesTimeline } from '.';
 import { IllnessesSidebar } from '@features/illnesses';
+import MobileIllnessesView from './MobileIllnessesView';
 import { useIllnesses } from '../hooks';
+
+/**
+ * Mobile branch is rendered before the desktop hook fires so the two
+ * variants don't both subscribe to `useIllnesses` simultaneously.
+ */
 function AllIllnessesView() {
+  const isMobile = useIsMobile();
+  if (isMobile) {
+    return <MobileIllnessesView />;
+  }
+  return <DesktopAllIllnessesView />;
+}
+
+function DesktopAllIllnessesView() {
   const {
     allIllnesses,
     illnesses,
@@ -66,4 +81,4 @@ function AllIllnessesView() {
   );
 }
 
-export default AllIllnessesView;
+export default memo(AllIllnessesView);

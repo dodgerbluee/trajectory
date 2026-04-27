@@ -12,6 +12,7 @@ import ErrorMessage from '@shared/components/ErrorMessage';
 import ImageCropUpload from '@shared/components/ImageCropUpload';
 import pageLayout from '@shared/styles/page-layout.module.css';
 import formLayout from '@shared/styles/FormLayout.module.css';
+import detailLayout from '@shared/styles/visit-detail-layout.module.css';
 import styles from './EditChildPage.module.css';
 
 function EditChildPage() {
@@ -166,10 +167,10 @@ function EditChildPage() {
 
   return (
     <div className={pageLayout.pageContainer}>
-      <div className={pageLayout.pageHeader}>
+      <div className={`${pageLayout.pageHeader} ${detailLayout.detailHeader}`}>
         <div>
           <Link to={`/children/${id}`} className={pageLayout.breadcrumb}>← Back to Child</Link>
-          <h1>Edit {child.name}</h1>
+          <h1 className={detailLayout.headerTitle}>Edit {child.name}</h1>
         </div>
       </div>
 
@@ -295,7 +296,7 @@ function EditChildPage() {
               disabled={submitting}
             />
 
-          <div className={formLayout.formActions}>
+          <div className={`${formLayout.formActions} ${detailLayout.detailActions}`}>
             <Button type="submit" disabled={submitting}>
               {submitting ? 'Saving...' : 'Save Changes'}
             </Button>

@@ -8,7 +8,8 @@ Single source of truth for the database schema (tables, indexes, triggers). Appl
 
 The app records when `schema.sql` has been applied in a `migrations` table and does not re-run it.
 
-**Note:** `database/init.sql` in the repo root is a legacy Docker Postgres init script. The app does not mount it; schema comes from backend migrations only. If you use Docker init elsewhere, keep that file in sync with `schema.sql`.
+
+**Note:** `../../database/init.sql` is a Docker Postgres init script that includes all schema and migration changes consolidated together. It is kept in sync with `schema.sql`.
 
 ## Manual run
 

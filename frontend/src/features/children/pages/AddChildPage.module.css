@@ -307,3 +307,69 @@
 .avatarModalOverlay {
   padding: var(--spacing-md);
 }
+
+/* ----- Mobile (<768px): stack form, full-width controls, drop wide gaps ----- */
+@media (max-width: 767.98px) {
+  .header {
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .topRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-md);
+  }
+
+  .avatarWrap {
+    padding: var(--spacing-sm);
+    align-self: center;
+  }
+
+  .avatarImg {
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .row,
+  .rowHalf {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .rowHalf > :global(.form-field):first-child {
+    margin-top: 0;
+  }
+
+  .birthRow {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .lbOz :global(.form-input),
+  .heightIn :global(.form-input) {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+    gap: var(--spacing-xs);
+    padding-top: var(--spacing-md);
+  }
+
+  .actions button,
+  .actions button[type="submit"] {
+    width: 100%;
+  }
+
+  .sectionTitle {
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .avatarModalOverlay {
+    padding: 0;
+  }
+}

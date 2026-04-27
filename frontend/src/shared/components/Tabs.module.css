@@ -38,3 +38,28 @@
 
 .content {
 }
+
+/* ----- Mobile (<768px): horizontally-scrollable tab header with snap ----- */
+@media (max-width: 767.98px) {
+  .header {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: var(--spacing-md);
+    scrollbar-width: none;
+  }
+
+  .header::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tabButton {
+    flex: 0 0 auto;
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-size-sm);
+    min-height: var(--size-touch-min);
+    scroll-snap-align: start;
+    white-space: nowrap;
+  }
+}

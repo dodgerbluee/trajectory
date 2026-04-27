@@ -169,18 +169,33 @@
   .backRow {
     grid-column: 1;
     grid-row: 1;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+  }
+  .backRow > .backLink {
+    flex: 0 0 auto;
   }
   .topRow {
     grid-column: 1;
     grid-row: 2;
   }
-  .sidebarCell {
+  /* On mobile the form body takes priority above the fold; the
+     "Add to visit" sidebar drops to the bottom of the page so users
+     can reach it after scanning/entering primary fields. */
+  .bodyCell {
     grid-column: 1;
     grid-row: 3;
   }
-  .bodyCell {
+  .sidebarCell {
     grid-column: 1;
     grid-row: 4;
+  }
+  /* Sidebar is the last thing on the page on mobile — stop it from
+     stretching to fill leftover height; let it size to its content. */
+  .sidebarCell,
+  .sidebarCell > aside,
+  .sidebarCell > aside > div {
+    flex: 0 0 auto;
   }
   .root.hasDateBanner {
     grid-template-rows: auto auto auto auto 1fr;
@@ -195,10 +210,10 @@
     grid-column: 1;
     grid-row: 3;
   }
-  .root.hasDateBanner .sidebarCell {
+  .root.hasDateBanner .bodyCell {
     grid-row: 4;
   }
-  .root.hasDateBanner .bodyCell {
+  .root.hasDateBanner .sidebarCell {
     grid-row: 5;
   }
 }

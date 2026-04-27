@@ -2,8 +2,20 @@
 
 .container {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
+}
+
+/* Mobile: reserve space at the bottom for BottomTabBar (incl. safe area) */
+.containerMobile {
+  padding-bottom: calc(var(--bottom-tab-height) + var(--safe-bottom));
+}
+
+/* Helpers */
+.hideOnMobile { display: inline-flex; }
+@media (max-width: 767px) {
+  .hideOnMobile { display: none !important; }
 }
 
 .header {
@@ -21,7 +33,7 @@
 .headerContent {
   max-width: 1600px;
   width: 100%;
-  height: 50px;
+  height: 63px;
   background-color: var(--color-background-card);
   border-radius: var(--radius-lg);
   padding: 0 var(--spacing-lg);
@@ -81,6 +93,29 @@
   color: var(--color-text-primary);
 }
 
+/* Mobile header hamburger that opens the top-down More menu. */
+.headerMenuButton {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+.headerMenuButton:hover { background-color: var(--color-background-hover, rgba(0, 0, 0, 0.04)); }
+.headerMenuButton:active { background-color: var(--color-background-pressed, rgba(0, 0, 0, 0.08)); }
+.headerMenuButton svg { width: 24px; height: 24px; stroke-width: 2; }
+@media (min-width: 768px) {
+  .headerMenuButton { display: none; }
+}
+
 .main {
   padding: var(--spacing-md);
   display: flex;
@@ -107,11 +142,13 @@
 @media (max-width: 768px) {
   .header {
     padding: var(--spacing-sm);
+    top: 0;
+    padding-top: calc(var(--spacing-sm) + var(--safe-top));
   }
 
   .headerContent {
     padding: var(--spacing-sm) var(--spacing-md);
-    min-height: 48px;
+    min-height: 60px;
   }
 
   .appTitle {
@@ -119,7 +156,10 @@
   }
 
   .main {
-    padding: var(--spacing-lg) var(--spacing-md);
+    /* `.containerMobile` already reserves space for the BottomTabBar (incl.
+       safe-area inset); avoid stacking another --spacing-lg on top of it,
+       which left a noticeable dead band under the last card. */
+    padding: var(--spacing-lg) var(--spacing-md) var(--spacing-sm);
   }
 }
 
@@ -132,7 +172,7 @@
 
   .headerContent {
     padding: var(--spacing-xs) var(--spacing-sm);
-    height: 48px;
+    height: 60px;
   }
 
   .appTitle {
@@ -140,11 +180,11 @@
   }
 
   .appLogo {
-    height: 28px;
+    height: 35px;
   }
 
   .main {
-    padding: var(--spacing-md) var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-sm) var(--spacing-xs);
   }
 
   .contentWrapper {

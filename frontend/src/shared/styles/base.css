@@ -13,6 +13,9 @@ html {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Use dynamic viewport height where supported (mobile address-bar aware) */
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 body {
@@ -28,6 +31,12 @@ body {
   transition: background-color var(--transition-base), color var(--transition-base);
   /* Allow 100vh to work on mobile */
   position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  /* Avoid iOS rubber-band overscroll bleeding white */
+  background-color: var(--color-background);
+  /* Tap highlight cleanup on mobile */
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Mobile: prevent horizontal scroll from fixed/absolute elements */

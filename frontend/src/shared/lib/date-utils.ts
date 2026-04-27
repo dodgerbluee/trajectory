@@ -47,14 +47,22 @@ export function calculateAge(dateOfBirth: string): { years: number; months: numb
   return { years, months };
 }
 
+/**
+ * Compact age label, e.g. "12y 4mo", "3y", "5mo", "0mo".
+ *
+ * Designed for tight UI surfaces (kid cards, family tab, growth chart
+ * tooltips) where the verbose "12 years 4 months old" was wrapping or
+ * crowding adjacent controls. Keep it short — no leading/trailing words,
+ * no pluralization (unit suffix is the same singular/plural).
+ */
 export function formatAge(years: number, months: number): string {
   if (years === 0) {
-    return `${months} ${months === 1 ? 'month' : 'months'} old`;
-  } else if (months === 0) {
-    return `${years} ${years === 1 ? 'year' : 'years'} old`;
-  } else {
-    return `${years} ${years === 1 ? 'year' : 'years'} ${months} ${months === 1 ? 'month' : 'months'} old`;
+    return `${months}mo`;
   }
+  if (months === 0) {
+    return `${years}y`;
+  }
+  return `${years}y ${months}mo`;
 }
 
 // Format date using current user preference (MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD).

@@ -108,28 +108,14 @@ function ChildDetailPage() {
       const endedIllnesses = illnessesResponse.data.filter(i => i.end_date).sort((a, b) => new Date(b.end_date!).getTime() - new Date(a.end_date!).getTime());
       const lastEndedIllness = endedIllnesses.length > 0 ? endedIllnesses[0] : null;
       setLastIllness(lastEndedIllness);
-      // Determine which visits have attachments so the timeline can show an indicator
-      try {
-        const visitAttachmentChecks = await Promise.all(
-          allVisitsResponse.data.map(async (visit) => {
-            try {
-              const attachmentsResp = await visitsApi.getAttachments(visit.id);
-              return (attachmentsResp.data && attachmentsResp.data.length > 0) ? visit.id : null;
-            } catch (err) {
-              // On error, treat as no attachments for that visit
-              return null;
-            }
-          })
-        );
-
-        const visitIdsWithAttachments = new Set<number>();
-        visitAttachmentChecks.forEach(id => {
-          if (id !== null) visitIdsWithAttachments.add(id as number);
-        });
-        setVisitsWithAttachments(visitIdsWithAttachments);
-      } catch (err) {
-        // ignore attachment population errors
+      // Determine which visits have attachments so the timeline can show an indicator.
+      // The list endpoint already returns has_attachments per visit (computed via EXISTS),
+      // so we no longer need a per-visit network probe.
+      const visitIdsWithAttachments = new Set<number>();
+      for (const v of allVisitsResponse.data) {
+        if (v.has_attachments) visitIdsWithAttachments.add(v.id);
       }
+      setVisitsWithAttachments(visitIdsWithAttachments);
 
       // Get most recent wellness/sick/vision/dental visit (only on or before today; visits sorted by date DESC)
       const lastPastWellness = wellnessVisitsResponse.data.find(v => !isFutureVisit(v)) ?? null;

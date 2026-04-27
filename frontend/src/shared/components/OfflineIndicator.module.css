@@ -1,0 +1,49 @@
+.banner {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky, 100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: var(--spacing-xs) var(--spacing-md);
+  background-color: var(--color-warning-bg, #fef3c7);
+  color: var(--color-warning-text, #78350f);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  text-align: center;
+  border-bottom: 1px solid var(--color-warning-border, #fcd34d);
+  /* Respect iOS notch when the banner sits above other sticky UI. */
+  padding-top: max(var(--spacing-xs), env(safe-area-inset-top));
+}
+
+.dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background-color: var(--color-warning-text, #78350f);
+  flex-shrink: 0;
+}
+
+@media (max-width: 767.98px) {
+  .banner {
+    font-size: var(--font-size-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .banner {
+    animation: slideDown 0.2s ease-out;
+  }
+  @keyframes slideDown {
+    from {
+      transform: translateY(-100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+}

@@ -125,7 +125,7 @@
   --size-icon-sm: 1.75rem;
   --size-dot: 0.5rem;
   --size-logo: 4.5rem;
-  --size-logo-header: 1.5rem;
+  --size-logo-header: 1.875rem;
   --size-textarea-min: 3.75rem;
   --size-grid-min: 6.25rem;
   --border-width-thick: 2px;
@@ -177,6 +177,34 @@
   --icon-stroke-default: 1px;
   --icon-stroke-modal: 1.25px;
   --icon-stroke-sick: 1px;
+
+  /* Breakpoints – mobile-first. Use in JS via getComputedStyle or in @media
+     queries (CSS spec doesn't allow var() inside media queries directly; the
+     numeric values below are the source of truth — keep media queries in
+     sync). */
+  --bp-xs: 375px;
+  --bp-sm: 480px;
+  --bp-md: 640px;
+  --bp-lg: 768px;
+  --bp-xl: 1024px;
+  --bp-2xl: 1200px;
+  --bp-3xl: 1600px;
+
+  /* Safe-area insets (notch / home indicator). Defaults to 0 when not on a
+     device with insets. Pages should use these for fixed top/bottom UI. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
+  /* Mobile shell heights */
+  --bottom-tab-height: 56px;
+  --mobile-header-height: 70px;
+
+  /* Z-index additions for mobile shell */
+  --z-bottom-nav: 1035;
+  --z-sheet-backdrop: 1045;
+  --z-sheet: 1055;
 }
 
 /* Dark theme overrides */
@@ -234,13 +262,4 @@
   --shadow-lg: var(--elevation-4);
 
   --color-focus-ring: var(--color-primary);
-
-  /* Breakpoints – mobile-first */
-  --bp-xs: 375px;
-  --bp-sm: 480px;
-  --bp-md: 640px;
-  --bp-lg: 768px;
-  --bp-xl: 1024px;
-  --bp-2xl: 1200px;
-  --bp-3xl: 1600px;
 }

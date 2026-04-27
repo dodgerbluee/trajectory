@@ -280,6 +280,8 @@ export interface Visit {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  // Present on list responses; omitted on single-row fetches.
+  has_attachments?: boolean;
 }
 
 export interface CreateVisitInput {
@@ -472,6 +474,9 @@ export interface VisitRow {
   notes: string | null;
   created_at: Date;
   updated_at: Date;
+
+  // Computed in list queries (LEFT JOIN / EXISTS); absent in single-row fetches
+  has_attachments?: boolean;
 }
 
 /**
@@ -603,6 +608,7 @@ export function visitRowToVisit(row: VisitRow): Visit {
     notes: row.notes,
     created_at: row.created_at.toISOString(),
     updated_at: row.updated_at.toISOString(),
+    ...(row.has_attachments !== undefined ? { has_attachments: !!row.has_attachments } : {}),
   };
 }
 

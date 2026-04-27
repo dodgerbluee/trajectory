@@ -1,4 +1,5 @@
 export { default as AllVisitsView } from './AllVisitsView';
+export { default as MobileAllVisitsView } from './MobileAllVisitsView';
 export { default as VisitFilterSidebar } from './VisitFilterSidebar';
 export { default as VisitAttachmentsList } from './VisitAttachmentsList';
 export { default as VisitCard } from './VisitCard';

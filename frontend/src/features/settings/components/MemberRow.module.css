@@ -79,3 +79,33 @@
   background: var(--color-danger-light);
   border-color: var(--color-danger);
 }
+
+/* ----- Mobile (<768px): stack member info above role/remove actions ----- */
+@media (max-width: 767.98px) {
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+  }
+
+  .main {
+    width: 100%;
+  }
+
+  .badge,
+  .roleSelect {
+    margin-left: 0;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .actions {
+    width: 100%;
+    display: flex;
+  }
+
+  .actions > * {
+    width: 100%;
+  }
+}

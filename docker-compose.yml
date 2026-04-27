@@ -3,7 +3,7 @@ services:
     image: postgres:16-alpine
     container_name: trajectory-db
     volumes:
-      - ../trajectory-data/data:/var/lib/postgresql/data
+      - ./data/data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-trajectory}
       POSTGRES_USER: ${POSTGRES_USER:-trajectory_user}
@@ -28,8 +28,8 @@ services:
       - "5017:5017"
     volumes:
       # Local app data (instead of named volumes)
-      - ../trajectory-data/uploads_data:/app/uploads
-      - ../trajectory-data/avatars_data:/app/avatars
+      - ./data/uploads_data:/app/uploads
+      - ./data/avatars_data:/app/avatars
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-trajectory_user}:${DB_PASSWORD:-development_password}@database:5432/${POSTGRES_DB:-trajectory}
       NODE_ENV: development

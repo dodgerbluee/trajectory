@@ -5,3 +5,35 @@
   gap: var(--spacing-sm);
   align-items: center;
 }
+
+/* The grid breakpoint in VisitFormLayout is 900px; mirror it so the
+   header/footer action visibility flips at the same threshold the layout
+   collapses from two-column to single-column. */
+@media (max-width: 900px) {
+  .visitDetailActions {
+    display: none;
+  }
+}
+
+/* Bottom actions: rendered at the end of the form. Visible only when the
+   layout is single-column (header is too cramped for buttons). On desktop
+   the top-right header row is the canonical action target. */
+.bottomActions {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .bottomActions {
+    display: flex;
+    gap: var(--spacing-sm);
+    justify-content: flex-end;
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .bottomActions > * {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}

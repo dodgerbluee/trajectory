@@ -1,0 +1,81 @@
+/* QuickActionsRow – four large tap targets */
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-sm);
+  padding: 0 var(--spacing-md);
+  margin-top: var(--spacing-sm);
+}
+
+.action {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--color-text-primary);
+  min-height: 72px;
+  transition: transform var(--transition-fast), background var(--transition-fast);
+}
+
+.action:active {
+  transform: scale(0.97);
+  background: var(--color-surface);
+}
+
+.iconWrap {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+}
+
+.iconVisit {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.iconIllness {
+  background: var(--color-danger-light, var(--color-warning-light));
+  color: var(--color-danger, var(--color-warning));
+}
+
+.iconMeasure {
+  background: var(--color-success-light, var(--color-primary-light));
+  color: var(--color-success, var(--color-primary));
+}
+
+.iconDoc {
+  background: var(--color-info-light, var(--color-surface));
+  color: var(--color-info, var(--color-text-secondary));
+}
+
+.label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-align: center;
+  line-height: 1.1;
+  color: var(--color-text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .action { transition: none; }
+  .action:active { transform: none; }
+}

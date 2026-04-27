@@ -104,6 +104,8 @@ function FileUpload({
         onClick={handleClick}
         disabled={disabled || uploading}
         variant="secondary"
+        size="sm"
+        className={styles.uploadButton}
       >
         {uploading ? '📤 Uploading...' : '📎 Attach File'}
       </Button>

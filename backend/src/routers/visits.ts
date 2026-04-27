@@ -509,7 +509,7 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
     const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
 
-    let queryText = 'SELECT * FROM visits WHERE child_id = ANY($1::int[])';
+    let queryText = `SELECT v.*, EXISTS(SELECT 1 FROM visit_attachments va WHERE va.visit_id = v.id) AS has_attachments FROM visits v WHERE v.child_id = ANY($1::int[])`;
     const queryParams: unknown[] = [accessibleChildIds];
     let paramCount = 2;
 
@@ -517,22 +517,22 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
       if (!accessibleChildIds.includes(childId)) {
         return res.json(createResponse([]));
       }
-      queryText += ` AND child_id = $${paramCount++}`;
+      queryText += ` AND v.child_id = $${paramCount++}`;
       queryParams.push(childId);
     }
 
     if (visitType) {
-      queryText += ` AND visit_type = $${paramCount++}`;
+      queryText += ` AND v.visit_type = $${paramCount++}`;
       queryParams.push(visitType);
     }
 
     if (futureOnly) {
-      queryText += ` AND visit_date > CURRENT_DATE`;
+      queryText += ` AND v.visit_date > CURRENT_DATE`;
     }
 
     queryText += futureOnly
-      ? ` ORDER BY visit_date ASC, id ASC LIMIT $${paramCount++} OFFSET $${paramCount++}`
-      : ` ORDER BY visit_date DESC, id DESC LIMIT $${paramCount++} OFFSET $${paramCount++}`;
+      ? ` ORDER BY v.visit_date ASC, v.id ASC LIMIT $${paramCount++} OFFSET $${paramCount++}`
+      : ` ORDER BY v.visit_date DESC, v.id DESC LIMIT $${paramCount++} OFFSET $${paramCount++}`;
     queryParams.push(limit, offset);
 
     const result = await query<VisitRow>(queryText, queryParams);

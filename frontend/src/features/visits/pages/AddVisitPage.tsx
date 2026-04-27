@@ -443,6 +443,17 @@ function AddVisitPage() {
               })()}
             </div>
           </div>
+          {/* Mobile-only bottom actions — the header row collapses too tightly
+              once the layout is single-column, so Save/Cancel get a roomy
+              spot at the end of the form. Hidden on desktop via CSS. */}
+          <div className={styles.bottomActions}>
+            <Button type="submit" disabled={submitting} size="sm">
+              {submitting ? 'Saving...' : 'Save'}
+            </Button>
+            <Button type="button" variant="secondary" size="sm" disabled={submitting} onClick={handleCancel}>
+              Cancel
+            </Button>
+          </div>
         </Card>
       </form>
 

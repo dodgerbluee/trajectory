@@ -240,3 +240,67 @@
   color: var(--color-text-primary);
   font-weight: var(--font-weight-semibold);
 }
+
+/* ----- Mobile (<768px): compact hero, condensed metadata, scroll-snap last/next strip ----- */
+@media (max-width: 767.98px) {
+  .childDetailSection {
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .overviewHeader {
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-md);
+  }
+
+  .overviewMain {
+    gap: var(--spacing-md);
+    align-items: center;
+  }
+
+  .overviewAvatarImg {
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .overviewName {
+    font-size: var(--font-size-xl);
+    margin: 0 0 var(--spacing-xs) 0;
+  }
+
+  .overviewDetailItem {
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+  }
+
+  .overviewDetailLabel {
+    min-width: 0;
+    font-size: var(--font-size-xs);
+  }
+
+  .overviewDetailValue {
+    font-size: var(--font-size-sm);
+  }
+
+  /* Last/Next visits: single row, horizontally scrollable, snap-aligned */
+  .overviewVisitsStrip {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: var(--spacing-sm);
+    margin: 0 calc(-1 * var(--spacing-md)) var(--spacing-md);
+    padding: var(--spacing-xs) var(--spacing-md);
+    scrollbar-width: none;
+  }
+
+  .overviewVisitsStrip::-webkit-scrollbar {
+    display: none;
+  }
+
+  .overviewLastVisit {
+    flex: 0 0 auto;
+    min-width: 14rem;
+    scroll-snap-align: start;
+  }
+}

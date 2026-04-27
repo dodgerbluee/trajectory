@@ -5,11 +5,25 @@ import { LuActivity, LuHeart, LuPill, LuEye } from 'react-icons/lu';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
 import ErrorMessage from '@shared/components/ErrorMessage';
+import { useIsMobile } from '@shared/hooks';
 import visitsLayout from '@shared/styles/VisitsLayout.module.css';
 import { VisitFilterSidebar, VisitsTimelineView } from '.';
+import MobileAllVisitsView from './MobileAllVisitsView';
 import { useAllVisits } from '../hooks';
 
+/**
+ * Mobile branch is rendered before the desktop hook fires so the two
+ * variants don't both subscribe to `useAllVisits` simultaneously.
+ */
 function AllVisitsView() {
+  const isMobile = useIsMobile();
+  if (isMobile) {
+    return <MobileAllVisitsView />;
+  }
+  return <DesktopAllVisitsView />;
+}
+
+function DesktopAllVisitsView() {
   const {
     visits,
     children,

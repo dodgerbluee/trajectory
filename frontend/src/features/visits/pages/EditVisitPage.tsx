@@ -1,12 +1,12 @@
 import { useState, FormEvent, useEffect, useMemo, useCallback, type Dispatch, type SetStateAction } from 'react';
 import { Link, useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { LuCheck, LuX, LuTrash2 } from 'react-icons/lu';
 import { visitsApi, childrenApi, ApiClientError } from '@lib/api-client';
 import type { Child, UpdateVisitInput, IllnessType, Visit, VisitAttachment } from '@shared/types/api';
 import { getTodayDate } from '@lib/validation';
 import { isFutureVisit, isFutureDate } from '@lib/date-utils';
 import { visitHasOutcomeData } from '@lib/visit-utils';
 import Card from '@shared/components/Card';
-import Button from '@shared/components/Button';
 import Notification from '@shared/components/Notification';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
 import { useFormState } from '@shared/hooks';
@@ -38,6 +38,7 @@ function EditVisitPage() {
   const [visit, setVisit] = useState<Visit | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   
   const { state: formState, update: updateForm, getCurrent: getCurrentForm } = useFormState<VisitFormState>({
@@ -311,6 +312,22 @@ function EditVisitPage() {
     ]
   );
 
+  const handleDelete = async () => {
+    if (!visit) return;
+    if (!window.confirm('Are you sure you want to delete this visit? This action cannot be undone.')) {
+      return;
+    }
+    setDeleting(true);
+    try {
+      await visitsApi.delete(visit.id);
+      navigate(`/children/${visit.child_id}`);
+    } catch (err) {
+      const message = err instanceof ApiClientError ? err.message : 'Failed to delete visit';
+      setNotification({ message, type: 'error' });
+      setDeleting(false);
+    }
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
@@ -395,15 +412,35 @@ function EditVisitPage() {
               >
                 ← Back to {child.name}
               </Link>
-              <div className={styles.visitDetailActions}>
-                <Button type="submit" disabled={submitting} size="sm">
-                  {submitting ? 'Saving...' : 'Save'}
-                </Button>
-                <Link to={`/visits/${id}`}>
-                  <Button type="button" variant="secondary" size="sm" disabled={submitting}>
-                    Cancel
-                  </Button>
+              <div className={styles.iconActions}>
+                <button
+                  type="submit"
+                  className={`${styles.iconAction} ${styles.iconActionPrimary}`}
+                  disabled={submitting || deleting}
+                  title={submitting ? 'Saving…' : 'Save'}
+                  aria-label={submitting ? 'Saving' : 'Save'}
+                >
+                  <LuCheck aria-hidden />
+                </button>
+                <Link
+                  to={`/visits/${id}`}
+                  className={styles.iconAction}
+                  title="Cancel"
+                  aria-label="Cancel"
+                  aria-disabled={submitting || deleting || undefined}
+                >
+                  <LuX aria-hidden />
                 </Link>
+                <button
+                  type="button"
+                  className={`${styles.iconAction} ${styles.iconActionDanger}`}
+                  onClick={handleDelete}
+                  disabled={submitting || deleting}
+                  title={deleting ? 'Deleting…' : 'Delete'}
+                  aria-label={deleting ? 'Deleting' : 'Delete'}
+                >
+                  <LuTrash2 aria-hidden />
+                </button>
               </div>
             </div>
             <div className={formLayout.sidebarCell}>

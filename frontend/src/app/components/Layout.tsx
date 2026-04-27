@@ -2,9 +2,13 @@ import { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useHomeTabRequest } from '@/contexts/HomeTabRequestContext';
+import { useIsMobile } from '@shared/hooks';
 import { ThemeToggle, AboutDropdown, VersionFooter } from '@features/theme';
 import { IllnessNotification } from '@features/illnesses';
 import OnboardingOverlay from '@features/onboarding/components/OnboardingOverlay';
+import BottomTabBar from './BottomTabBar';
+import MoreMenuSheet from './MoreMenuSheet';
+import OfflineIndicator from '@shared/components/OfflineIndicator';
 import styles from './Layout.module.css';
 
 interface LayoutProps {
@@ -15,6 +19,7 @@ function Layout({ children }: LayoutProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const homeTabRequest = useHomeTabRequest();
+  const isMobile = useIsMobile();
 
   const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
@@ -23,7 +28,8 @@ function Layout({ children }: LayoutProps) {
   };
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} ${isMobile ? styles.containerMobile : ''}`}>
+      <OfflineIndicator />
       <OnboardingOverlay />
       <header className={styles.header}>
         <div className={styles.headerContent}>
@@ -37,13 +43,21 @@ function Layout({ children }: LayoutProps) {
           </Link>
           <div className={styles.headerActions}>
             {user && (
-              <span className={styles.userName} title={user.email}>
+              <span className={`${styles.userName} ${styles.hideOnMobile}`} title={user.email}>
                 {user.username}
               </span>
             )}
             <IllnessNotification />
-            <AboutDropdown />
-            <ThemeToggle />
+            {/* About + theme toggle live in the More sheet on mobile to free up
+                header space; keep them visible on tablet+. */}
+            <span className={styles.hideOnMobile}>
+              <AboutDropdown />
+            </span>
+            <span className={styles.hideOnMobile}>
+              <ThemeToggle />
+            </span>
+            {/* Mobile-only: dropdown menu (replaces former drawer-from-top sheet). */}
+            {isMobile ? <MoreMenuSheet /> : null}
           </div>
         </div>
       </header>
@@ -53,9 +67,11 @@ function Layout({ children }: LayoutProps) {
           {children}
         </div>
       </main>
-      <div className={styles.footerWrapper}>
+      <div className={`${styles.footerWrapper} ${styles.hideOnMobile}`}>
         <VersionFooter />
       </div>
+
+      {isMobile ? <BottomTabBar /> : null}
     </div>
   );
 }

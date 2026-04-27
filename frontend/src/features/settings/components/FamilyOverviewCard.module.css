@@ -68,3 +68,41 @@
 .cardOverview :global([data-card-content]) {
   padding: var(--spacing-md) var(--spacing-lg);
 }
+
+/* ----- Mobile (<768px): stacked rows, full-width edit input + actions ----- */
+@media (max-width: 767.98px) {
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-xs);
+  }
+
+  .edit {
+    width: 100%;
+  }
+
+  .editInput {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+    gap: var(--spacing-xs);
+    margin-top: var(--spacing-sm);
+    padding-top: var(--spacing-sm);
+  }
+
+  .actions > * {
+    width: 100%;
+  }
+
+  .card :global([data-card-title]) {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .card :global([data-card-content]),
+  .cardOverview :global([data-card-content]) {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+}

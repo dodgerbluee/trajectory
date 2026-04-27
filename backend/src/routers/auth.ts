@@ -68,6 +68,7 @@ authRouter.get(
     const hasUsers = await hasAnyUsers();
     const requiresCode = !hasUsers;
     const codeActive = isRegistrationCodeActive();
+    console.log('[DEBUG] registration-code-required check - hasUsers:', hasUsers, 'codeActive:', codeActive);
     res.json(createResponse({ success: true, requiresCode, codeActive }));
   })
 );
@@ -75,15 +76,20 @@ authRouter.get(
 /**
  * POST /api/auth/generate-registration-code
  * No auth. Generates a code and logs it to server; only when no users exist.
- * Safe to call multiple times - regenerates the code each time if no users exist.
+ * Generates a FRESH code each time, invalidating any previous code.
  */
 authRouter.post(
   '/generate-registration-code',
   asyncHandler(async (_req: Request, res: Response) => {
+    console.log('[DEBUG] generate-registration-code endpoint called');
     if (await hasAnyUsers()) {
+      console.log('[DEBUG] Users already exist, rejecting code generation');
       throw new BadRequestError('Registration code can only be generated when no users exist.');
     }
+    console.log('[DEBUG] No users exist, clearing old code and generating new one');
+    clearRegistrationCode(); // Clear any previous code first
     const code = initializeRegistrationCode();
+    console.log('[DEBUG] Code generated:', code);
     res.json(createResponse({ 
       message: 'Registration code generated and logged to container logs.',
       code // Return it in the response too for testing/debugging
@@ -199,13 +205,15 @@ authRouter.post(
       [user.id, tokenHash, req.get('user-agent') || null, req.ip]
     );
 
+    const userRow = user as UserRow & { is_instance_admin?: boolean; onboarding_completed?: boolean };
     res.status(201).json(
       createResponse({
         user: {
-          id: user.id,
-          email: user.email,
-          username: user.username,
-          onboardingCompleted: user.onboarding_completed ?? false,
+          id: userRow.id,
+          email: userRow.email,
+          username: userRow.username,
+          onboardingCompleted: userRow.onboarding_completed ?? false,
+          isInstanceAdmin: isFirstUser,
         },
         accessToken,
         refreshToken,
@@ -282,8 +290,8 @@ authRouter.post(
     );
 
     // Generate tokens
-    const accessToken = generateAccessToken(user.id, user.email);
-    const refreshToken = generateRefreshToken(user.id, user.email);
+    const accessToken = generateAccessToken(user.id, user.email || '');
+    const refreshToken = generateRefreshToken(user.id, user.email || '');
 
     // Store refresh token in database
     const tokenHash = hashToken(refreshToken);
@@ -357,8 +365,8 @@ authRouter.post(
     const user = userResult.rows[0];
 
     // Generate new tokens
-    const newAccessToken = generateAccessToken(user.id, user.email);
-    const newRefreshToken = generateRefreshToken(user.id, user.email);
+    const newAccessToken = generateAccessToken(user.id, user.email || '');
+    const newRefreshToken = generateRefreshToken(user.id, user.email || '');
 
     // Update session with new refresh token
     const newTokenHash = hashToken(newRefreshToken);

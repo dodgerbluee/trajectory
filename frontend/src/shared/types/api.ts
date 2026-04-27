@@ -314,6 +314,8 @@ export interface Visit {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  // Present on list responses; absent on single-row fetches.
+  has_attachments?: boolean;
 }
 
 export interface CreateVisitInput {

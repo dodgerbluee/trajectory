@@ -97,3 +97,33 @@
   background: var(--color-primary-light);
   color: var(--color-primary);
 }
+
+/* ----- Mobile (<768px): tighter cells; table keeps horizontal scroll ----- */
+@media (max-width: 767.98px) {
+  .pageHeader {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .title {
+    font-size: var(--font-size-xl);
+  }
+
+  .table thead th {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .table tbody td {
+    padding: var(--spacing-sm);
+  }
+
+  .roleBadgeTable {
+    padding: var(--spacing-2) var(--spacing-sm);
+    font-size: 0.625rem;
+  }
+
+  /* Hint horizontal scroll: subtle right-edge fade */
+  .tableWrap {
+    margin: 0 calc(-1 * var(--spacing-sm));
+    padding: 0 var(--spacing-sm);
+  }
+}

@@ -1,13 +1,12 @@
-import { useEffect, useState } from 'react';
-import { illnessesApi, childrenApi, ApiClientError } from '@lib/api-client';
+import { useState } from 'react';
 import { ChildAvatar } from '@features/children';
-import type { HeatmapData, Child } from '@shared/types/api';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
 import ErrorMessage from '@shared/components/ErrorMessage';
 import Card from '@shared/components/Card';
 import Button from '@shared/components/Button';
 import Heatmap from './Heatmap';
 import GrowthChartTab from './GrowthChartTab';
+import { useHeatmapData } from '../hooks';
 import { formatDate } from '@lib/date-utils';
 import { HiChevronLeft, HiChevronRight } from 'react-icons/hi';
 import styles from './MetricsView.module.css';
@@ -27,10 +26,6 @@ function MetricsView({
   onSelectedYearChange,
   filterChildId: filterChildIdProp,
 }: MetricsViewProps) {
-  const [heatmapData, setHeatmapData] = useState<HeatmapData | null>(null);
-  const [children, setChildren] = useState<Child[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [internalYear] = useState(new Date().getFullYear());
   const [internalFilterChildId] = useState<number | undefined>(undefined);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -40,36 +35,10 @@ function MetricsView({
   const filterChildId = filterChildIdProp ?? internalFilterChildId;
   const activeTab = activeTabProp ?? internalActiveTab;
 
-  useEffect(() => {
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedYear, filterChildId]);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const [heatmapResponse, childrenResponse] = await Promise.all([
-        illnessesApi.getHeatmapData({
-          year: selectedYear,
-          child_id: filterChildId,
-        }),
-        childrenApi.getAll(),
-      ]);
-
-      setHeatmapData(heatmapResponse.data);
-      setChildren(childrenResponse.data);
-    } catch (err) {
-      if (err instanceof ApiClientError) {
-        setError(err.message);
-      } else {
-        setError('Failed to load metrics data');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { heatmapData, children, loading, error, reload } = useHeatmapData(
+    selectedYear,
+    filterChildId,
+  );
 
   const handleDayClick = (date: string) => {
     setSelectedDate(date);
@@ -86,7 +55,7 @@ function MetricsView({
   }
 
   if (error) {
-    return <ErrorMessage message={error} onRetry={loadData} />;
+    return <ErrorMessage message={error} onRetry={reload} />;
   }
 
   if (!heatmapData) {

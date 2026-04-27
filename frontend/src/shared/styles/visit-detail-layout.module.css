@@ -16,7 +16,7 @@
 .detailHeader {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
 }
 
 .detailHeader :global(.breadcrumb) {
@@ -37,4 +37,65 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+}
+
+/* Mobile: stack the header column-wise so the action buttons sit on their own
+   row and aren't cramped next to the breadcrumb. Buttons go full-width and
+   reverse-order so the primary submit appears first. */
+@media (max-width: 767.98px) {
+  .detailHeader:has(.detailActions) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm);
+  }
+
+  .detailActions {
+    flex-direction: column-reverse;
+    width: 100%;
+    gap: var(--spacing-xs);
+  }
+
+  .detailActions > * {
+    width: 100%;
+  }
+
+  /* Inline action: keep button at natural width even on mobile (e.g. Export). */
+  .detailActions > .detailActionInline {
+    width: auto;
+    align-self: flex-start;
+  }
+
+  .detailActionInline > * {
+    width: auto;
+  }
+
+  .headerTitle {
+    font-size: var(--font-size-xl);
+  }
+}
+
+/* Optional bottom-of-form action row used by Add/Edit pages on mobile.
+   Pair with `.detailActionsHideOnMobile` on the header actions to relocate
+   Save/Cancel from the top of the page to underneath the form body. */
+.bottomActions {
+  display: none;
+}
+
+@media (max-width: 767.98px) {
+  .bottomActions {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: var(--spacing-xs);
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .bottomActions > * {
+    width: 100%;
+  }
+
+  .detailActionsHideOnMobile {
+    display: none !important;
+  }
 }

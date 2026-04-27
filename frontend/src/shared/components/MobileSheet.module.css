@@ -1,0 +1,133 @@
+/* MobileSheet – bottom sheet primitive */
+
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-sheet);
+  pointer-events: none;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+  pointer-events: auto;
+  z-index: var(--z-sheet-backdrop);
+}
+
+.sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-background-card);
+  border-top-left-radius: var(--radius-xl);
+  border-top-right-radius: var(--radius-xl);
+  box-shadow: var(--elevation-5);
+  transform: translateY(100%);
+  transition: transform 220ms cubic-bezier(0.32, 0.72, 0, 1);
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - var(--safe-top) - 16px);
+  padding-bottom: var(--safe-bottom);
+  outline: none;
+  z-index: var(--z-sheet);
+}
+
+/* Top-down sheet variant */
+.placement_top {
+  top: 0;
+  bottom: auto;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-bottom-left-radius: var(--radius-xl);
+  border-bottom-right-radius: var(--radius-xl);
+  transform: translateY(-100%);
+  padding-top: var(--safe-top);
+  padding-bottom: 0;
+  max-height: calc(100dvh - var(--safe-bottom) - 16px);
+}
+
+.size_auto { /* default – content height */ }
+.size_half { height: 60dvh; }
+.size_full { height: calc(100dvh - var(--safe-top) - 16px); }
+
+.open .backdrop { opacity: 1; }
+.open .sheet { transform: translateY(0); }
+
+.closing .backdrop { opacity: 0; }
+.closing .sheet { transform: translateY(100%); }
+
+/* Top-placement enter/exit overrides */
+.closing .placement_top { transform: translateY(-100%); }
+
+.handleArea {
+  flex-shrink: 0;
+  padding: var(--spacing-sm) var(--spacing-md) var(--spacing-xs);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+.handleArea:active { cursor: grabbing; }
+
+.handle {
+  width: 40px;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--color-gray-300);
+  margin: 6px auto 8px;
+}
+
+[data-theme="dark"] .handle {
+  background: var(--color-gray-600);
+}
+
+.title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  text-align: center;
+  padding: 0 var(--spacing-md);
+}
+
+.content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: var(--spacing-md);
+}
+
+/* Reduced motion: snap, no transition */
+@media (prefers-reduced-motion: reduce) {
+  .sheet,
+  .backdrop {
+    transition: none;
+  }
+}
+
+/* On tablet+ keep the sheet narrower and centered like a modal */
+@media (min-width: 768px) {
+  .sheet {
+    left: 50%;
+    right: auto;
+    bottom: 5vh;
+    transform: translate(-50%, 100%);
+    width: min(560px, 92vw);
+    border-radius: var(--radius-xl);
+    max-height: 80dvh;
+  }
+  .open .sheet { transform: translate(-50%, 0); }
+  .closing .sheet { transform: translate(-50%, 100%); }
+
+  /* Top placement on tablet: anchor near top, drop down */
+  .placement_top {
+    top: 5vh;
+    bottom: auto;
+    transform: translate(-50%, calc(-100% - 5vh));
+    border-radius: var(--radius-xl);
+  }
+  .closing .placement_top { transform: translate(-50%, calc(-100% - 5vh)); }
+}

@@ -1,4 +1,5 @@
 import { useState, FormEvent, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { LuEye, LuEyeOff } from 'react-icons/lu';
 import { useAuth } from '@/contexts/AuthContext';
 import { authApi, ApiClientError } from '@lib/api-client';
@@ -19,6 +20,7 @@ interface CreateUserModalProps {
 type Step = 'loading' | 'code' | 'form' | 'code-required';
 
 function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken }: CreateUserModalProps) {
+  const navigate = useNavigate();
   const { register } = useAuth();
   const [step, setStep] = useState<Step>('loading');
 
@@ -69,9 +71,9 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
     authApi
       .getRegistrationCodeRequired()
       .then(async (res) => {
-        const { requiresCode: req, codeActive: active } = res.data;
-        if (req && !active) {
-          // Auto-generate the code
+        const { requiresCode: req } = res.data;
+        if (req) {
+          // Code is required - always generate a fresh one
           try {
             await authApi.generateRegistrationCode();
             // Re-check to confirm code is now active
@@ -91,8 +93,6 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
               setError('Failed to generate registration code. Please check server logs.');
             }
           }
-        } else if (req && active) {
-          setStep('code');
         } else {
           setStep('form');
         }
@@ -175,6 +175,8 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
       );
       onSuccess?.();
       onClose();
+      // Navigate to home to trigger onboarding for first-time users
+      navigate('/');
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.statusCode === 409) {
@@ -246,8 +248,17 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
               <p className={styles.subtitle}>
                 Enter the registration code to create the first account.
               </p>
+              <div className={styles.codeInfoBox}>
+                <strong>Where to find your code:</strong>
+                <ul>
+                  <li><strong>Docker:</strong> Check container logs with <code>docker compose logs</code></li>
+                </ul>
+                <p>
+                  The code appears as <code>XXXX-XXXX-XXXX</code> in the startup logs.
+                </p>
+              </div>
               {error && (
-                <ErrorMessage message={error} onRetry={() => setError(null)} />
+                <ErrorMessage message={error} />
               )}
               <FormField
                 label="Registration code"
@@ -274,7 +285,7 @@ function CreateUserModal({ isOpen, onClose, onSuccess, inviteToken: _inviteToken
           {step === 'form' && (
             <form onSubmit={handleSubmitForm} className={styles.form} noValidate>
               {error && (
-                <ErrorMessage message={error} onRetry={() => setError(null)} />
+                <ErrorMessage message={error} />
               )}
               <FormField
                 label="Username"

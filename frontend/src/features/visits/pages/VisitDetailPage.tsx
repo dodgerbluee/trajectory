@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useParams, useLocation } from 'react-router-dom';
+import { LuPencil, LuCalendarPlus } from 'react-icons/lu';
 import type { AuditHistoryEvent } from '@shared/types/api';
 import { formatDate, formatTime, safeFormatDateTime } from '@lib/date-utils';
 import { getGoogleCalendarAddEventUrl } from '@lib/calendar-export';
@@ -7,7 +8,6 @@ import { getVisitTypeLabel } from '@shared/lib/visit-labels';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
 import ErrorMessage from '@shared/components/ErrorMessage';
 import Card from '@shared/components/Card';
-import Button from '@shared/components/Button';
 import Notification from '@shared/components/Notification';
 import { VisitAttachmentsList } from '@features/visits';
 import Tabs from '@shared/components/Tabs';
@@ -24,14 +24,13 @@ import styles from './VisitDetailPage.module.css';
 
 function VisitDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
   const { canEdit } = useFamilyPermissions();
 
   // Use the new hook that handles all visit detail data and state
   const visitDetail = useVisitDetail(id ? parseInt(id) : undefined);
-  const { visit, child, attachments, history, loading, error, deleting, notification, deleteVisit, deleteAttachment, setNotification } = visitDetail;
+  const { visit, child, attachments, history, loading, error, notification, deleteAttachment, setNotification } = visitDetail;
 
   // UI state (local to this component)
   const [activeTab, setActiveTab] = useState<'visit' | 'history' | 'attachments'>('visit');
@@ -42,23 +41,6 @@ function VisitDetailPage() {
       setActiveTab('visit');
     }
   }, [attachments.length, activeTab]);
-
-  /**
-   * Handle user request to delete the visit
-   * Shows confirmation dialog, then calls the deleteVisit hook
-   */
-  const handleDeleteClick = async () => {
-    if (!window.confirm('Are you sure you want to delete this visit? This action cannot be undone.')) {
-      return;
-    }
-
-    const success = await deleteVisit();
-    if (success && visit?.child_id) {
-      setTimeout(() => {
-        navigate(`/children/${visit.child_id}`);
-      }, 1000);
-    }
-  };
 
   /**
    * Handle exporting visit to Google Calendar
@@ -109,22 +91,26 @@ function VisitDetailPage() {
             <Link to={`/children/${visit.child_id}`} className={pageLayout.breadcrumb}>
               ← Back to {child.name}
             </Link>
-            <div className={layoutStyles.detailActions}>
-              <Button variant="secondary" size="sm" onClick={handleExportToCalendar}>
-                Export to Calendar
-              </Button>
+            <div className={styles.iconActions}>
+              <button
+                type="button"
+                className={styles.iconAction}
+                onClick={handleExportToCalendar}
+                title="Export to Calendar"
+                aria-label="Export to Calendar"
+              >
+                <LuCalendarPlus aria-hidden />
+              </button>
               {canEdit && (
-                <>
-                  <Link 
-                    to={`/visits/${visit.id}/edit`}
-                    state={{ childId: visit.child_id, fromChild: (location.state as { fromChild?: boolean })?.fromChild || false }}
-                  >
-                    <Button variant="secondary" size="sm">{isFuture ? 'Edit appointment' : 'Edit Visit'}</Button>
-                  </Link>
-                  <Button variant="danger" size="sm" onClick={handleDeleteClick} disabled={deleting}>
-                    {deleting ? 'Deleting...' : 'Delete Visit'}
-                  </Button>
-                </>
+                <Link
+                  to={`/visits/${visit.id}/edit`}
+                  state={{ childId: visit.child_id, fromChild: (location.state as { fromChild?: boolean })?.fromChild || false }}
+                  className={styles.iconAction}
+                  title={isFuture ? 'Edit appointment' : 'Edit visit'}
+                  aria-label={isFuture ? 'Edit appointment' : 'Edit visit'}
+                >
+                  <LuPencil aria-hidden />
+                </Link>
               )}
             </div>
           </div>

@@ -5,3 +5,4 @@ export { default as IllnessNotification } from './IllnessNotification';
 export { default as IllnessesInput } from './IllnessesInput';
 export { default as IllnessesSidebar } from './IllnessesSidebar';
 export { default as IllnessesTimeline } from './IllnessesTimeline';
+export { default as MobileIllnessesView } from './MobileIllnessesView';

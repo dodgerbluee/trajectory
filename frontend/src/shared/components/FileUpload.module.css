@@ -7,6 +7,15 @@
   margin-bottom: var(--spacing-lg);
 }
 
+/* Don't let the flex-column parent stretch the trigger button to full width.
+   The button should size to its content (📎 Attach File) regardless of
+   viewport — on mobile, full-width was overwhelming the form. */
+.uploadButton {
+  align-self: flex-start;
+  width: auto;
+  min-width: 0;
+}
+
 .uploadError {
   color: var(--color-danger);
   font-size: var(--font-size-sm);

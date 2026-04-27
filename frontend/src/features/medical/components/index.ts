@@ -1,4 +1,5 @@
 export { default as MetricsView } from './MetricsView';
+export { default as MobileTrendsView } from './MobileTrendsView';
 export { default as TrendsSidebar } from './TrendsSidebar';
 export { default as Heatmap } from './Heatmap';
 export { default as GrowthChartTab } from './GrowthChartTab';
