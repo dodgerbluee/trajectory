@@ -16,9 +16,59 @@ interface ImageCropUploadProps {
   isInModal?: boolean;
 }
 
+// Cap the source dimensions before handing the image to the cropper. Many
+// Android devices cap canvas surfaces around 4096px and fail silently (black
+// image) right near that limit. 2048px is plenty for an avatar — the user can
+// still zoom in the cropper — and stays well under every device's hard ceiling.
+const MAX_SOURCE_DIM = 2048;
+const HEIC_EXT_RE = /\.(heic|heif)$/i;
+
+function isUnsupportedFormat(file: File): boolean {
+  const t = (file.type || '').toLowerCase();
+  // Android Chrome cannot decode HEIC/HEIF — the picker accepts the file but the
+  // resulting <img> renders blank. Reject up front with a clear message.
+  return t === 'image/heic' || t === 'image/heif' || HEIC_EXT_RE.test(file.name);
+}
+
+/**
+ * Decode the picked file with EXIF orientation applied, downscale if it exceeds
+ * the mobile-safe canvas budget, and re-encode to JPEG. Returns both an object
+ * URL for the cropper UI and the oriented bitmap so the final crop can draw
+ * from the same source without re-decoding the file.
+ */
+async function prepareSource(file: File): Promise<{ url: string; bitmap: ImageBitmap }> {
+  const decoded = await createImageBitmap(file, { imageOrientation: 'from-image' });
+
+  const maxDim = Math.max(decoded.width, decoded.height);
+  const scale = maxDim > MAX_SOURCE_DIM ? MAX_SOURCE_DIM / maxDim : 1;
+  const width = Math.round(decoded.width * scale);
+  const height = Math.round(decoded.height * scale);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    decoded.close?.();
+    throw new Error('Canvas 2D context unavailable');
+  }
+  ctx.drawImage(decoded, 0, 0, width, height);
+  decoded.close?.();
+
+  const blob: Blob = await new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (b) => (b ? resolve(b) : reject(new Error('Failed to encode image'))),
+      'image/jpeg',
+      0.92,
+    );
+  });
+  const bitmap = await createImageBitmap(blob);
+  return { url: URL.createObjectURL(blob), bitmap };
+}
+
 const ImageCropUpload = forwardRef<ImageCropUploadHandle, ImageCropUploadProps>(
   ({ onImageCropped, currentImageUrl, disabled, isInModal }, ref) => {
-  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [source, setSource] = useState<{ url: string; bitmap: ImageBitmap } | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -26,7 +76,17 @@ const ImageCropUpload = forwardRef<ImageCropUploadHandle, ImageCropUploadProps>(
   const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Revoke pending blob URL on unmount to avoid leaks
+  // Release the cropper source (object URL + bitmap) whenever it changes and on unmount.
+  useEffect(() => {
+    return () => {
+      if (source) {
+        URL.revokeObjectURL(source.url);
+        source.bitmap.close?.();
+      }
+    };
+  }, [source]);
+
+  // Revoke pending preview blob URL on unmount to avoid leaks.
   useEffect(() => {
     return () => {
       if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
@@ -43,38 +103,46 @@ const ImageCropUpload = forwardRef<ImageCropUploadHandle, ImageCropUploadProps>(
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // Validate file size (max 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        alert('Image must be less than 10MB');
-        return;
-      }
+    if (!file) return;
 
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        alert('Please select an image file');
-        return;
-      }
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Image must be less than 10MB');
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+    if (isUnsupportedFormat(file)) {
+      alert(
+        'HEIC/HEIF images aren’t supported on Android. Switch your camera to JPEG, or pick a different photo.',
+      );
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImageSrc(reader.result as string);
-        setShowCropper(true);
-        setCrop({ x: 0, y: 0 });
-        setZoom(1);
-      };
-      reader.readAsDataURL(file);
+    try {
+      const prepared = await prepareSource(file);
+      setSource(prepared);
+      setShowCropper(true);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+    } catch (err) {
+      console.error('Failed to prepare image:', err);
+      alert(
+        'Couldn’t read that image. It may be in an unsupported format or too large for this device.',
+      );
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
   const createCroppedImage = async (): Promise<File> => {
-    if (!imageSrc || !croppedAreaPixels) {
+    if (!source || !croppedAreaPixels) {
       throw new Error('No image to crop');
     }
 
-    const image = await createImage(imageSrc);
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
@@ -82,13 +150,11 @@ const ImageCropUpload = forwardRef<ImageCropUploadHandle, ImageCropUploadProps>(
       throw new Error('Failed to get canvas context');
     }
 
-    // Set canvas size to the cropped area
     canvas.width = croppedAreaPixels.width;
     canvas.height = croppedAreaPixels.height;
 
-    // Draw the cropped image
     ctx.drawImage(
-      image,
+      source.bitmap,
       croppedAreaPixels.x,
       croppedAreaPixels.y,
       croppedAreaPixels.width,
@@ -99,7 +165,6 @@ const ImageCropUpload = forwardRef<ImageCropUploadHandle, ImageCropUploadProps>(
       croppedAreaPixels.height
     );
 
-    // Convert canvas to blob then to file
     return new Promise((resolve, reject) => {
       canvas.toBlob((blob) => {
         if (!blob) {
@@ -122,8 +187,7 @@ const ImageCropUpload = forwardRef<ImageCropUploadHandle, ImageCropUploadProps>(
         return URL.createObjectURL(croppedImage);
       });
       setShowCropper(false);
-      setImageSrc(null);
-      // Reset file input
+      setSource(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -135,7 +199,7 @@ const ImageCropUpload = forwardRef<ImageCropUploadHandle, ImageCropUploadProps>(
 
   const handleCancel = () => {
     setShowCropper(false);
-    setImageSrc(null);
+    setSource(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -188,9 +252,9 @@ const ImageCropUpload = forwardRef<ImageCropUploadHandle, ImageCropUploadProps>(
             </div>
 
             <div className={cropStyles.cropperArea}>
-              {imageSrc && (
+              {source && (
                 <Cropper
-                  image={imageSrc}
+                  image={source.url}
                   crop={crop}
                   zoom={zoom}
                   aspect={1}
@@ -202,7 +266,7 @@ const ImageCropUpload = forwardRef<ImageCropUploadHandle, ImageCropUploadProps>(
                 />
               )}
             </div>
-            
+
             <div className={cropStyles.cropperControls}>
               <div className={cropStyles.zoomControl}>
                 <label htmlFor="zoom-slider">Zoom</label>
@@ -217,7 +281,7 @@ const ImageCropUpload = forwardRef<ImageCropUploadHandle, ImageCropUploadProps>(
                   className={cropStyles.zoomSlider}
                 />
               </div>
-              
+
               {!isInModal && (
                 <div className={cropStyles.cropperActions}>
                   <Button type="button" onClick={handleCancel} variant="secondary">
@@ -238,15 +302,5 @@ const ImageCropUpload = forwardRef<ImageCropUploadHandle, ImageCropUploadProps>(
 );
 
 ImageCropUpload.displayName = 'ImageCropUpload';
-
-// Helper function to create an image element from a URL
-function createImage(url: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.addEventListener('load', () => resolve(image));
-    image.addEventListener('error', (error) => reject(error));
-    image.src = url;
-  });
-}
 
 export default ImageCropUpload;
