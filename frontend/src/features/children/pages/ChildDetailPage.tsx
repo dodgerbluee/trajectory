@@ -575,6 +575,7 @@ function ChildDetailPage() {
                     currentPage={illnessesCurrentPage}
                     itemsPerPage={illnessesItemsPerPage}
                     totalItems={illnessItems.length}
+                    onAddVisitClick={() => setShowVisitTypeModal(true)}
                     onPageChange={setIllnessesCurrentPage}
                     onItemsPerPageChange={setIllnessesItemsPerPage}
                   />

@@ -32,3 +32,12 @@
   color: var(--color-text-secondary) !important;
   padding: var(--spacing-xl) !important;
 }
+
+.emptyActions {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  margin-top: calc(-1 * var(--spacing-md));
+  padding-bottom: var(--spacing-xl);
+}

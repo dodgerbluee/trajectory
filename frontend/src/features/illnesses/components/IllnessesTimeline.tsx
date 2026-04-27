@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { ReactNode, useMemo } from 'react';
 import type { Illness, Child } from '@shared/types/api';
 import TimelineItem from '@shared/components/TimelineItem';
 import Card from '@shared/components/Card';
@@ -13,6 +13,7 @@ interface IllnessesTimelineProps {
   currentPage?: number;
   itemsPerPage?: number;
   totalItems?: number;
+  emptyActions?: ReactNode;
   onPageChange?: (page: number) => void;
   onItemsPerPageChange?: (items: number) => void;
 }
@@ -29,6 +30,7 @@ export default function IllnessesTimeline({
   currentPage = 0,
   itemsPerPage = 20,
   totalItems = 0,
+  emptyActions,
   onPageChange,
   onItemsPerPageChange,
 }: IllnessesTimelineProps) {
@@ -50,6 +52,7 @@ export default function IllnessesTimeline({
     return (
       <Card>
         <p className={tl.empty}>{emptyMessage}</p>
+        {emptyActions && <div className={tl.emptyActions}>{emptyActions}</div>}
       </Card>
     );
   }

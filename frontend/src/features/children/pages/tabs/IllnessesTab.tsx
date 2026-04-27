@@ -1,6 +1,10 @@
 import { LuActivity } from 'react-icons/lu';
+import { HiPlus } from 'react-icons/hi';
+import { useNavigate } from 'react-router-dom';
 import type { Illness } from '@shared/types/api';
 import { IllnessesTimeline, IllnessesSidebar } from '@features/illnesses';
+import Button from '@shared/components/Button';
+import { useFamilyPermissions } from '@/contexts/FamilyPermissionsContext';
 import visitsLayout from '@shared/styles/VisitsLayout.module.css';
 
 type FilterIllnessStatus = 'ongoing' | 'ended' | undefined;
@@ -14,6 +18,7 @@ type Props = {
   currentPage: number;
   itemsPerPage: number;
   totalItems: number;
+  onAddVisitClick: () => void;
   onPageChange: (page: number) => void;
   onItemsPerPageChange: (itemsPerPage: number) => void;
 };
@@ -27,9 +32,20 @@ export default function IllnessesTab({
   currentPage,
   itemsPerPage,
   totalItems,
+  onAddVisitClick,
   onPageChange,
   onItemsPerPageChange,
 }: Props) {
+  const navigate = useNavigate();
+  const { canEdit } = useFamilyPermissions();
+  const showEmptyActions = canEdit && illnesses.length === 0;
+
+  const handleAddIllness = () => {
+    navigate('/illnesses/new', {
+      state: { fromChild: true, childId, fromTab: 'illnesses' },
+    });
+  };
+
   return (
     <div className={visitsLayout.pageLayout}>
       <IllnessesSidebar
@@ -72,6 +88,18 @@ export default function IllnessesTab({
           currentPage={currentPage}
           itemsPerPage={itemsPerPage}
           totalItems={totalItems}
+          emptyActions={showEmptyActions ? (
+            <>
+              <Button type="button" onClick={handleAddIllness} size="lg">
+                <HiPlus aria-hidden />
+                <span>Add Illness</span>
+              </Button>
+              <Button type="button" onClick={onAddVisitClick} size="lg" variant="secondary">
+                <HiPlus aria-hidden />
+                <span>Add Visit</span>
+              </Button>
+            </>
+          ) : undefined}
           onPageChange={onPageChange}
           onItemsPerPageChange={onItemsPerPageChange}
         />
