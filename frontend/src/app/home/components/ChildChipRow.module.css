@@ -11,7 +11,7 @@
 .row {
   display: flex;
   align-items: flex-start;
-  gap: var(--spacing-md);
+  gap: 5px;
   flex: 1 1 auto;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -19,6 +19,13 @@
   scrollbar-width: none;
 }
 .row::-webkit-scrollbar { display: none; }
+
+/* Center the row contents when there are more than 3 children. `safe center`
+ * avoids clipping the leading cells if the contents overflow the viewport
+ * (browser falls back to flex-start in that case). */
+.rowCentered {
+  justify-content: safe center;
+}
 
 .cell {
   -webkit-appearance: none;
@@ -38,6 +45,9 @@
   width: 64px;
   min-height: 76px;
   transition: color var(--transition-fast);
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .avatarRing {

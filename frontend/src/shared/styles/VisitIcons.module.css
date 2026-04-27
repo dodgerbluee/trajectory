@@ -66,9 +66,9 @@
 }
 
 /* Per-type colors */
-.iconWellness { color: var(--color-success); }
+.iconWellness { color: var(--color-primary); }
 .iconSick { color: var(--color-danger); }
-.iconInjury { color: var(--color-visit-accent); }
+.iconInjury { color: var(--color-injury); }
 .iconVision { color: var(--color-vision); }
 .iconDental { color: var(--color-dental); }
 .iconIllness { color: var(--color-warning); }
@@ -77,9 +77,9 @@
   color: var(--color-visit-accent-2);
 }
 
-:global([data-theme="dark"]) .iconWellness { color: var(--color-success); }
+:global([data-theme="dark"]) .iconWellness { color: var(--color-primary); }
 :global([data-theme="dark"]) .iconSick { color: var(--color-danger); }
-:global([data-theme="dark"]) .iconInjury { color: var(--color-visit-accent); }
+:global([data-theme="dark"]) .iconInjury { color: var(--color-injury); }
 :global([data-theme="dark"]) .iconVision { color: var(--color-vision); }
 :global([data-theme="dark"]) .iconDental { color: var(--color-dental); }
 :global([data-theme="dark"]) .iconIllness { color: var(--color-warning); }

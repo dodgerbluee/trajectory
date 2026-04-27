@@ -1,0 +1,42 @@
+/* BirthWeight / BirthHeight inputs — compact unit-suffixed number fields. */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  min-height: var(--size-touch-min);
+}
+
+.input {
+  width: 5.5rem;
+  min-width: 5.5rem;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.input::-webkit-inner-spin-button,
+.input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.unit {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+@media (max-width: 767.98px) {
+  /* Inputs shrink-to-fit so lb+oz (or the height number) stay on one line
+     even inside a tight 2-up column on mobile. */
+  .input {
+    width: 4rem;
+    min-width: 0;
+    flex: 0 0 auto;
+  }
+
+  .row {
+    gap: var(--spacing-xs);
+  }
+}

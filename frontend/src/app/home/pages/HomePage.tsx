@@ -173,20 +173,20 @@ function HomePage() {
           </button>
         </div>
       )}
-      <Card>
-        {isMobile ? (
-          // On mobile the bottom tab bar already navigates between Family /
-          // Visits / Illness / Trends, so we render the active tab's content
-          // directly and drop the redundant in-page Tabs strip.
-          tabs.find((t) => t.id === activeTab)?.content ?? null
-        ) : (
+      {isMobile ? (
+        // Mobile: render the active tab's content directly (no page-level
+        // Card). The mobile views supply their own card-style frame inside
+        // PullToRefresh so the whole body translates together when pulling.
+        tabs.find((t) => t.id === activeTab)?.content ?? null
+      ) : (
+        <Card>
           <Tabs
             tabs={tabs}
             activeTab={activeTab}
             onTabChange={(tabId) => setActiveTab(tabId as HomeTab)}
           />
-        )}
-      </Card>
+        </Card>
+      )}
       {/* Visit type modal triggered via navigation state (no URL query) on the Home page */}
       <VisitTypeModal
         isOpen={!!((location.state as { openAddVisit?: boolean })?.openAddVisit)}

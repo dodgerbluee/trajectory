@@ -53,6 +53,15 @@ function AboutDropdown() {
           >
             Settings
           </Link>
+          <Link
+            to="/family"
+            className={styles.item}
+            onClick={() => setIsOpen(false)}
+            data-onboarding="family-menu-item"
+            role="menuitem"
+          >
+            Family
+          </Link>
           {user?.isInstanceAdmin && (
             <Link
               to="/admin"

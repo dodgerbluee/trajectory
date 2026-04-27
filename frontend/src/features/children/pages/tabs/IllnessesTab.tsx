@@ -1,7 +1,10 @@
 import { LuActivity } from 'react-icons/lu';
+import { useNavigate } from 'react-router-dom';
 import type { Illness } from '@shared/types/api';
 import { IllnessesTimeline, IllnessesSidebar } from '@features/illnesses';
 import visitsLayout from '@shared/styles/VisitsLayout.module.css';
+import MobileFilterBar, { type MobileFilterOption } from '@shared/components/MobileFilterBar';
+import { useFamilyPermissions } from '@/contexts/FamilyPermissionsContext';
 
 type FilterIllnessStatus = 'ongoing' | 'ended' | undefined;
 
@@ -30,8 +33,50 @@ export default function IllnessesTab({
   onPageChange,
   onItemsPerPageChange,
 }: Props) {
+  const navigate = useNavigate();
+  const { canEdit } = useFamilyPermissions();
+
+  const handleAddIllness = () => {
+    navigate(`/illnesses/new?child_id=${childId}`, {
+      state: { fromChild: true, childId, fromTab: 'illnesses' },
+    });
+  };
+
+  const filterOptions: MobileFilterOption[] = [
+    {
+      key: 'all',
+      label: 'All',
+      count: illnesses.length,
+      icon: LuActivity,
+      active: !filterIllnessStatus,
+      isDefault: true,
+      onSelect: () => onChangeFilterIllnessStatus(undefined),
+    },
+    {
+      key: 'ongoing',
+      label: 'Ongoing',
+      count: illnesses.filter((i) => !i.end_date).length,
+      icon: LuActivity,
+      active: filterIllnessStatus === 'ongoing',
+      onSelect: () => onChangeFilterIllnessStatus('ongoing'),
+    },
+    {
+      key: 'ended',
+      label: 'Ended',
+      count: illnesses.filter((i) => !!i.end_date).length,
+      icon: LuActivity,
+      active: filterIllnessStatus === 'ended',
+      onSelect: () => onChangeFilterIllnessStatus('ended'),
+    },
+  ];
+
   return (
     <div className={visitsLayout.pageLayout}>
+      <MobileFilterBar
+        title="Filter illnesses"
+        options={filterOptions}
+        primaryAction={canEdit ? { label: 'Add Illness', onClick: handleAddIllness } : undefined}
+      />
       <IllnessesSidebar
         stats={[
           {
@@ -69,6 +114,7 @@ export default function IllnessesTab({
         <IllnessesTimeline
           illnesses={visibleIllnesses}
           showChildName={false}
+          flat
           currentPage={currentPage}
           itemsPerPage={itemsPerPage}
           totalItems={totalItems}

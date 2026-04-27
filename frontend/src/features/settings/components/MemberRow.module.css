@@ -93,11 +93,17 @@
     width: 100%;
   }
 
-  .badge,
   .roleSelect {
     margin-left: 0;
     width: 100%;
     min-width: 0;
+  }
+
+  /* Keep the role badge (e.g. Owner) compact and right-aligned next to the
+   * member info on mobile; only the <select> needs the full-width treatment. */
+  .badge {
+    margin-left: auto;
+    width: auto;
   }
 
   .actions {

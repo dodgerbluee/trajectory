@@ -34,10 +34,12 @@
   --color-success-light: #d1fae5;
   --color-warning: #f59e0b;
   --color-warning-light: #fef3c7;
-  --color-vision: #7c3aed;
-  --color-vision-light: rgba(124, 58, 237, 0.08);
+  --color-vision: #10b981;
+  --color-vision-light: rgba(16, 185, 129, 0.08);
   --color-dental: #06b6d4;
   --color-dental-light: rgba(6, 182, 212, 0.08);
+  --color-injury: #f97316;
+  --color-injury-light: rgba(249, 115, 22, 0.1);
   --color-info: #06b6d4;
   --color-info-light: #cffafe;
   --color-danger: #ef4444;

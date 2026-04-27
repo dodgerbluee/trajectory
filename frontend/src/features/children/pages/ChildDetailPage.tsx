@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
-import { LuEye, LuHeart, LuThermometer } from 'react-icons/lu';
+import { LuCamera, LuEye, LuStethoscope, LuThermometer } from 'react-icons/lu';
 import { childrenApi, visitsApi, illnessesApi, ApiClientError } from '@lib/api-client';
 import type { Child, Visit, VisitType, Illness, VisitAttachment, ChildAttachment } from '@shared/types/api';
 import { calculateAge, formatAge, formatDate, isFutureVisit } from '@lib/date-utils';
@@ -17,7 +17,8 @@ import vi from '@shared/styles/VisitIcons.module.css';
 import { ChildAvatar } from '@features/children/components';
 import Tabs from '@shared/components/Tabs';
 import { type DocumentTypeFilter } from '@features/documents/components/DocumentsSidebar';
-import ImageCropUpload, { type ImageCropUploadHandle } from '@shared/components/ImageCropUpload';
+import Cropper, { type Area } from 'react-easy-crop';
+import cropStyles from '@shared/components/ImageCropUpload.module.css';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
 import { LuPill } from 'react-icons/lu';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -56,10 +57,14 @@ function ChildDetailPage() {
   const [documents, setDocuments] = useState<Array<(VisitAttachment & { visit: Visit; type: 'visit' }) | (ChildAttachment & { type: 'child' })>>([]);
   const [documentTypeFilter, setDocumentTypeFilter] = useState<DocumentTypeFilter>('all');
   const [loadingDocuments, setLoadingDocuments] = useState(false);
-  const [showAvatarEditor, setShowAvatarEditor] = useState(false);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const imageCropUploadRef = useRef<ImageCropUploadHandle>(null);
+  // Avatar editor: tap the hero avatar → OS file picker → cropper modal opens
+  // with the chosen file. "Save" crops + uploads in one step. No staging.
+  const avatarFileInputRef = useRef<HTMLInputElement>(null);
+  const [pickedImageSrc, setPickedImageSrc] = useState<string | null>(null);
+  const [avatarCrop, setAvatarCrop] = useState({ x: 0, y: 0 });
+  const [avatarZoom, setAvatarZoom] = useState(1);
+  const [avatarCroppedAreaPixels, setAvatarCroppedAreaPixels] = useState<Area | null>(null);
   const { canEdit } = useFamilyPermissions();
   const onboarding = useOnboarding();
   const [notification, setNotification] = useState<{
@@ -68,6 +73,13 @@ function ChildDetailPage() {
   } | null>(null);
   // Track which visits have attachments (visit ID set)
   const [visitsWithAttachments, setVisitsWithAttachments] = useState<Set<number>>(new Set());
+
+  // Guard against the ghost click that fires when a long-press on the home
+  // child-chip navigates here while the user's finger is still down — the
+  // pointerup lands on the avatar button below and would otherwise open the
+  // avatar editor immediately. Ignore avatar clicks for a short window after
+  // mount; the user can still tap deliberately a moment later.
+  const avatarReadyAtRef = useRef<number>(Date.now() + 500);
 
   const loadChild = useCallback(async () => {
     if (!id) {
@@ -240,20 +252,78 @@ function ChildDetailPage() {
     );
   }, [visits]);
 
-  const handleImageCropped = (croppedFile: File) => {
-    setAvatarFile(croppedFile);
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Always reset the input so picking the same file twice still triggers change
+    if (avatarFileInputRef.current) avatarFileInputRef.current.value = '';
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setNotification({ message: 'Image must be less than 10MB', type: 'error' });
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      setNotification({ message: 'Please select an image file', type: 'error' });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPickedImageSrc(reader.result as string);
+      setAvatarCrop({ x: 0, y: 0 });
+      setAvatarZoom(1);
+      setAvatarCroppedAreaPixels(null);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAvatarCropComplete = useCallback((_area: Area, areaPixels: Area) => {
+    setAvatarCroppedAreaPixels(areaPixels);
+  }, []);
+
+  const closeAvatarEditor = () => {
+    if (uploadingAvatar) return;
+    setPickedImageSrc(null);
+    setAvatarCroppedAreaPixels(null);
   };
 
   const handleAvatarSave = async () => {
-    if (!child || !avatarFile) return;
-
+    if (!child || !pickedImageSrc || !avatarCroppedAreaPixels) return;
     try {
       setUploadingAvatar(true);
-      await childrenApi.uploadAvatar(child.id, avatarFile);
-      setShowAvatarEditor(false);
-      setAvatarFile(null);
+      // Crop on canvas → File
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const i = new Image();
+        i.onload = () => resolve(i);
+        i.onerror = reject;
+        i.src = pickedImageSrc;
+      });
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Failed to get canvas context');
+      canvas.width = avatarCroppedAreaPixels.width;
+      canvas.height = avatarCroppedAreaPixels.height;
+      ctx.drawImage(
+        img,
+        avatarCroppedAreaPixels.x,
+        avatarCroppedAreaPixels.y,
+        avatarCroppedAreaPixels.width,
+        avatarCroppedAreaPixels.height,
+        0,
+        0,
+        avatarCroppedAreaPixels.width,
+        avatarCroppedAreaPixels.height,
+      );
+      const blob: Blob = await new Promise((resolve, reject) => {
+        canvas.toBlob(
+          (b) => (b ? resolve(b) : reject(new Error('Failed to create blob'))),
+          'image/jpeg',
+          0.95,
+        );
+      });
+      const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
+      await childrenApi.uploadAvatar(child.id, file);
+      setPickedImageSrc(null);
+      setAvatarCroppedAreaPixels(null);
       setNotification({ message: 'Avatar updated successfully!', type: 'success' });
-      // Reload child data to show new avatar
       await loadChild();
     } catch (error) {
       if (error instanceof ApiClientError) {
@@ -412,7 +482,7 @@ function ChildDetailPage() {
       )}
 
       {/* Unified Overview and Tabs Section */}
-      <Card>
+      <Card className={cd.pageCard}>
         <div className={cd.childDetailBody}>
           {/* Overview Section - without header title */}
           <div className={cd.childDetailSection}>
@@ -423,9 +493,13 @@ function ChildDetailPage() {
                   {canEdit ? (
                     <button
                       type="button"
-                      onClick={() => setShowAvatarEditor(true)}
+                      onClick={() => {
+                        if (Date.now() < avatarReadyAtRef.current) return;
+                        avatarFileInputRef.current?.click();
+                      }}
                       className={cd.overviewAvatarButton}
-                      title="Click to edit avatar"
+                      title="Change photo"
+                      aria-label={child.avatar ? 'Change photo' : 'Add photo'}
                     >
                       <ChildAvatar
                         avatar={child.avatar}
@@ -433,8 +507,11 @@ function ChildDetailPage() {
                         alt={`${child.name}'s avatar`}
                         className={cd.overviewAvatarImg}
                       />
-                      <div className={cd.overviewAvatarOverlay}>
-                        <span className={cd.overviewAvatarEditIcon} aria-hidden>✏️</span>
+                      <div className={cd.overviewAvatarOverlay} aria-hidden="true">
+                        <LuCamera />
+                        <span className={cd.overviewAvatarOverlayText}>
+                          {child.avatar ? 'Change' : 'Add photo'}
+                        </span>
                       </div>
                     </button>
                   ) : (
@@ -503,7 +580,7 @@ function ChildDetailPage() {
                   return (
                     <div key={card.key} className={cd.overviewLastVisit}>
                       <div className={`${vi.iconOutline} ${iconTypeClass}`} aria-hidden>
-                        {card.visitType === 'wellness' && <LuHeart className={vi.typeSvg} />}
+                        {card.visitType === 'wellness' && <LuStethoscope className={vi.typeSvg} />}
                         {card.visitType === 'sick' && <LuPill className={vi.typeSvg} />}
                         {card.visitType === 'injury' && <MdOutlinePersonalInjury className={`${vi.typeSvg} ${vi.typeSvgFilled}`} />}
                         {card.visitType === 'vision' && <LuEye className={vi.typeSvg} />}
@@ -516,7 +593,8 @@ function ChildDetailPage() {
                             to={card.last.href}
                             className={card.next ? cd.overviewVisitRow : `${cd.overviewVisitRow} ${cd.overviewVisitRowStacked}`}
                           >
-                            <span className={cd.overviewVisitLabel}>{card.next ? 'Last:' : card.visitType === 'illness' ? 'Last Illness:' : `Last ${typeLabel} Visit:`}</span>
+                            <span className={`${cd.overviewVisitLabel} ${cd.overviewVisitLabelLong}`}>{card.next ? 'Last:' : card.visitType === 'illness' ? 'Last Illness:' : `Last ${typeLabel} Visit:`}</span>
+                            <span className={`${cd.overviewVisitLabel} ${cd.overviewVisitLabelShort}`} aria-hidden="true">Last:</span>
                             <span className={cd.overviewVisitDate}>{formatDate(card.last.date)}</span>
                           </Link>
                         )}
@@ -525,7 +603,8 @@ function ChildDetailPage() {
                             to={card.next.href}
                             className={card.last ? cd.overviewVisitRow : `${cd.overviewVisitRow} ${cd.overviewVisitRowStacked}`}
                           >
-                            <span className={cd.overviewVisitLabel}>{card.last ? 'Next:' : `Next ${typeLabel} Visit:`}</span>
+                            <span className={`${cd.overviewVisitLabel} ${cd.overviewVisitLabelLong}`}>{card.last ? 'Next:' : `Next ${typeLabel} Visit:`}</span>
+                            <span className={`${cd.overviewVisitLabel} ${cd.overviewVisitLabelShort}`} aria-hidden="true">Next:</span>
                             <span className={cd.overviewVisitDate}>{formatDate(card.next.date)}</span>
                           </Link>
                         )}
@@ -664,62 +743,74 @@ function ChildDetailPage() {
         onClose={() => setShowVisitTypeModal(false)}
       />
 
-      {/* Avatar Editor Modal */}
-      {showAvatarEditor && (
-        <div className={modalStyles.overlay} onClick={() => !uploadingAvatar && setShowAvatarEditor(false)}>
-          <div className={`${modalStyles.content} ${modalStyles.contentLarge}`} onClick={(e) => e.stopPropagation()}>
+      {/* Hidden file input — driven by the hero avatar button above */}
+      {canEdit && (
+        <input
+          ref={avatarFileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleAvatarFileChange}
+          style={{ display: 'none' }}
+          aria-hidden="true"
+          tabIndex={-1}
+        />
+      )}
+
+      {/* Avatar Cropper Modal — opens after a file is picked */}
+      {pickedImageSrc && (
+        <div className={modalStyles.overlay} onClick={closeAvatarEditor}>
+          <div
+            className={`${modalStyles.content} ${modalStyles.contentLarge}`}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className={modalStyles.header}>
-              <h2>Edit Avatar</h2>
+              <h2>Adjust Your Avatar</h2>
               <button
                 type="button"
-                onClick={() => setShowAvatarEditor(false)}
+                onClick={closeAvatarEditor}
                 className={modalStyles.close}
                 disabled={uploadingAvatar}
+                aria-label="Close"
               >
                 ×
               </button>
             </div>
             <div className={modalStyles.body}>
-              <ImageCropUpload
-                ref={imageCropUploadRef}
-                onImageCropped={handleImageCropped}
-                currentImageUrl={child.avatar ? childrenApi.getAvatarUrl(child.avatar) : childrenApi.getDefaultAvatarUrl(child.gender)}
-                disabled={uploadingAvatar}
-                isInModal={true}
-              />
-              {avatarFile && (
-                <div style={{ marginTop: 'var(--spacing-md)', textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
-                  ✓ New avatar ready to upload
+              <div className={cropStyles.cropperArea}>
+                <Cropper
+                  image={pickedImageSrc}
+                  crop={avatarCrop}
+                  zoom={avatarZoom}
+                  aspect={1}
+                  cropShape="round"
+                  showGrid={false}
+                  onCropChange={setAvatarCrop}
+                  onZoomChange={setAvatarZoom}
+                  onCropComplete={handleAvatarCropComplete}
+                />
+              </div>
+              <div className={cropStyles.cropperControls}>
+                <div className={cropStyles.zoomControl}>
+                  <label htmlFor="child-avatar-zoom">Zoom</label>
+                  <input
+                    id="child-avatar-zoom"
+                    type="range"
+                    min={1}
+                    max={3}
+                    step={0.1}
+                    value={avatarZoom}
+                    onChange={(e) => setAvatarZoom(Number(e.target.value))}
+                    className={cropStyles.zoomSlider}
+                  />
                 </div>
-              )}
+              </div>
             </div>
             <div className={modalStyles.footer}>
-              <Button
-                variant="secondary"
-                onClick={async () => {
-                  // If cropper is showing, cancel it; otherwise close modal
-                  imageCropUploadRef.current?.cancel();
-                  if (!avatarFile) {
-                    setShowAvatarEditor(false);
-                  }
-                }}
-                disabled={uploadingAvatar}
-              >
+              <Button variant="secondary" onClick={closeAvatarEditor} disabled={uploadingAvatar}>
                 Cancel
               </Button>
-              <Button
-                onClick={async () => {
-                  // If no file cropped yet, save the crop first
-                  if (!avatarFile) {
-                    await imageCropUploadRef.current?.saveCrop();
-                  } else {
-                    // Upload the already-cropped avatar
-                    await handleAvatarSave();
-                  }
-                }}
-                disabled={uploadingAvatar}
-              >
-                {uploadingAvatar ? 'Uploading...' : avatarFile ? 'Save Avatar' : 'Crop & Continue'}
+              <Button onClick={handleAvatarSave} disabled={uploadingAvatar || !avatarCroppedAreaPixels}>
+                {uploadingAvatar ? 'Uploading…' : 'Save Avatar'}
               </Button>
             </div>
           </div>

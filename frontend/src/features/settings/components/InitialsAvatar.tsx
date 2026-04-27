@@ -17,7 +17,7 @@ function getColorIndex(name: string): number {
 
 const AVATAR_COLORS = [
   'var(--color-primary)',
-  'var(--color-vision, #7c3aed)',
+  '#7c3aed',
   'var(--color-success)',
   'var(--color-info)',
   'var(--color-warning)',

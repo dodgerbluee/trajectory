@@ -1,0 +1,203 @@
+/* MobileFilterBar – mobile-only filter bar + bottom sheet for ChildDetail tabs (Visits, Illness, Documents).
+ * Hidden by default on desktop; shown only at <768px. */
+
+.root {
+  display: none;
+}
+
+@media (max-width: 767.98px) {
+  .root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-sm);
+  }
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.filterButton {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  min-height: 36px;
+}
+
+.filterButton:active {
+  background: var(--color-surface);
+}
+
+.filterCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+}
+
+.activeChip {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: inherit;
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  min-height: 28px;
+}
+
+.primaryAction {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-left: auto;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-full);
+  /* Match .filterButton exactly so the two pill buttons read as a matched
+   * pair on either side of the bar. */
+  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  min-height: 36px;
+}
+
+.primaryAction:active {
+  filter: brightness(0.95);
+}
+
+/* ---------- Bottom sheet contents ---------- */
+
+.sheetBody {
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.sheetSectionTitle {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sheetChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.sheetChip {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  min-height: 40px;
+}
+
+.sheetChip:active {
+  background: var(--color-surface);
+}
+
+.sheetChipActive {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.sheetChipIcon {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+}
+
+.sheetChipIcon :global(svg) {
+  width: 14px;
+  height: 14px;
+}
+
+.sheetChipCount {
+  margin-left: 4px;
+  font-size: var(--font-size-xs);
+  opacity: 0.75;
+}
+
+.sheetActions {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--color-border);
+}
+
+.sheetClear,
+.sheetApply {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  border-radius: var(--radius-md);
+  padding: 12px;
+  font: inherit;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  min-height: 48px;
+  border: 1px solid var(--color-border);
+  background: var(--color-background-card);
+  color: var(--color-text-primary);
+}
+
+.sheetClear:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sheetApply {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}

@@ -59,6 +59,12 @@ function IllnessCard({ illness, childName, childId, hasAttachments }: IllnessCar
                   </span>
                 )}
               </div>
+              {illness.start_date && (
+                <div className={t.mobileMeta} aria-hidden="true">
+                  {formatDate(illness.start_date)}
+                  {illness.end_date ? ` – ${formatDate(illness.end_date)}` : ' · Ongoing'}
+                </div>
+              )}
             </div>
             <span className={t.arrowCompact} aria-hidden>→</span>
           </div>

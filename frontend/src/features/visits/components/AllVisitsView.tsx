@@ -1,7 +1,7 @@
 import { useMemo, memo } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { DentalToothIcon } from '@hugeicons/core-free-icons';
-import { LuActivity, LuHeart, LuPill, LuEye } from 'react-icons/lu';
+import { LuActivity, LuStethoscope, LuPill, LuEye } from 'react-icons/lu';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
 import ErrorMessage from '@shared/components/ErrorMessage';
@@ -45,7 +45,7 @@ function DesktopAllVisitsView() {
 
   const sidebarStats = useMemo(() => [
     { label: 'Total Visits', value: stats.total, icon: LuActivity, color: 'gray', onClick: () => setFilterVisitType(undefined), active: !filterVisitType },
-    { label: 'Wellness', value: stats.wellness, icon: LuHeart, color: 'emerald', onClick: () => setFilterVisitType('wellness'), active: filterVisitType === 'wellness' },
+    { label: 'Wellness', value: stats.wellness, icon: LuStethoscope, color: 'emerald', onClick: () => setFilterVisitType('wellness'), active: filterVisitType === 'wellness' },
     { label: 'Sick', value: stats.sick, icon: LuPill, color: 'red', onClick: () => setFilterVisitType('sick'), active: filterVisitType === 'sick' },
     { label: 'Injury', value: stats.injury, icon: MdOutlinePersonalInjury, color: 'blue', onClick: () => setFilterVisitType('injury'), active: filterVisitType === 'injury' },
     { label: 'Dental', value: stats.dental, icon: (props: { className?: string }) => <HugeiconsIcon icon={DentalToothIcon} {...props} size={24} color="currentColor" />, color: 'teal', onClick: () => setFilterVisitType('dental'), active: filterVisitType === 'dental' },

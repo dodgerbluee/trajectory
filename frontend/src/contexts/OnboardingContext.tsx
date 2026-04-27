@@ -41,9 +41,9 @@ const STEP_INDEX: Record<OnboardingStep, number> = ONBOARDING_STEPS.reduce(
 /** Canonical route for each step so Back can navigate to the right page */
 const STEP_CANONICAL: Partial<Record<OnboardingStep, { pathname: string; state?: { tab?: string; familySubTab?: string } }>> = {
   welcome_home: { pathname: '/' },
-  go_settings_family: { pathname: '/settings', state: { tab: 'family' } },
-  create_family: { pathname: '/settings', state: { tab: 'family' } },
-  add_child: { pathname: '/settings', state: { tab: 'family', familySubTab: 'members' } },
+  go_settings_family: { pathname: '/family' },
+  create_family: { pathname: '/family' },
+  add_child: { pathname: '/family' },
   return_home_click_child: { pathname: '/' },
 };
 

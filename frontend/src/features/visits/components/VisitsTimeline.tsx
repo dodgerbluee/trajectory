@@ -1,4 +1,4 @@
-import { useMemo, memo } from 'react';
+import { useMemo, memo, type ReactNode } from 'react';
 import type { Visit, Child } from '@shared/types/api';
 import TimelineItem from '@shared/components/TimelineItem';
 import Card from '@shared/components/Card';
@@ -16,6 +16,10 @@ interface VisitsTimelineProps {
   totalItems?: number;
   onPageChange?: (page: number) => void;
   onItemsPerPageChange?: (items: number) => void;
+  /** When true, render the list without an outer Card wrapper.
+   * Used inside ChildDetailPage where the page-level Card already provides
+   * the body frame and an inner Card creates double-bordering / wasted padding. */
+  flat?: boolean;
 }
 
 /**
@@ -34,6 +38,7 @@ function VisitsTimeline({
   totalItems = 0,
   onPageChange,
   onItemsPerPageChange,
+  flat = false,
 }: VisitsTimelineProps) {
   const childMap = useMemo(() => {
     const map = new Map<number, Child>();
@@ -49,17 +54,21 @@ function VisitsTimeline({
     });
   }, [visits]);
 
+  const Frame = flat
+    ? ({ children: c }: { children: ReactNode }) => <>{c}</>
+    : Card;
+
   if (sortedVisits.length === 0) {
     return (
-      <Card>
+      <Frame>
         <p className={tl.empty}>{emptyMessage}</p>
-      </Card>
+      </Frame>
     );
   }
 
   return (
     <>
-      <Card>
+      <Frame>
         <div className={tl.list}>
           {sortedVisits.map((visit) => {
             const child = childMap.get(visit.child_id);
@@ -75,7 +84,7 @@ function VisitsTimeline({
             );
           })}
         </div>
-      </Card>
+      </Frame>
       {totalItems > 0 && onPageChange && onItemsPerPageChange && (
         <PaginationControls
           currentPage={currentPage}

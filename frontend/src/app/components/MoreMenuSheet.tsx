@@ -113,7 +113,7 @@ function MoreMenuSheet() {
               <button
                 type="button"
                 className={styles.row}
-                onClick={() => go('/settings')}
+                onClick={() => go('/family')}
                 role="menuitem"
               >
                 <LuUsers className={styles.rowIcon} aria-hidden="true" />

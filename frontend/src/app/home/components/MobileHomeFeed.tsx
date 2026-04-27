@@ -84,10 +84,9 @@ function MobileHomeFeed({
   }, [illnesses, selectedChildId]);
 
   const recent = useMemo(() => {
+    const base = recentVisits.filter((v) => !isFutureDate(v.visit_date));
     const filtered =
-      selectedChildId == null
-        ? recentVisits
-        : recentVisits.filter((v) => v.child_id === selectedChildId);
+      selectedChildId == null ? base : base.filter((v) => v.child_id === selectedChildId);
     return [...filtered]
       .sort((a, b) => new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime())
       .slice(0, 5);

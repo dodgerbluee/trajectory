@@ -1,4 +1,4 @@
-/* UpcomingVisitsCarousel – horizontal swipe cards */
+/* UpcomingVisitsCarousel – full-width single-line rows (no longer a carousel) */
 
 .section {
   margin-top: var(--spacing-md);
@@ -12,40 +12,38 @@
   padding: 0 var(--spacing-md);
 }
 
-.scroller {
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--spacing-md);
   display: flex;
-  gap: var(--spacing-md);
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x mandatory;
-  padding: var(--spacing-xs) var(--spacing-md) var(--spacing-md);
-  scrollbar-width: none;
+  flex-direction: column;
+  gap: var(--spacing-sm);
 }
-.scroller::-webkit-scrollbar { display: none; }
 
-.card {
-  flex: 0 0 78%;
-  max-width: 320px;
-  scroll-snap-align: start;
+.row {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
   background: var(--color-background-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-md);
-  display: grid;
-  grid-template-columns: 56px 1fr;
-  gap: var(--spacing-md);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-sm-plus);
   text-decoration: none;
   color: inherit;
   box-shadow: var(--elevation-1);
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  min-height: 56px;
 }
 
-.card:active {
-  transform: scale(0.98);
+.row:active {
+  transform: scale(0.99);
   box-shadow: var(--elevation-2);
 }
 
-.card.overdue {
+.row.overdue {
   border-color: var(--color-warning);
   background: var(--color-warning-light);
 }
@@ -57,20 +55,21 @@
   justify-content: center;
   background: var(--color-primary-light);
   color: var(--color-primary);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  padding: 4px var(--spacing-xs);
   line-height: 1;
+  min-width: 48px;
 }
 
 .month {
-  font-size: var(--font-size-xs);
+  font-size: 10px;
   font-weight: var(--font-weight-semibold);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .day {
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
   margin-top: 2px;
 }
@@ -82,29 +81,13 @@
   gap: 2px;
 }
 
-.kindRow {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-}
-
-.icon {
-  display: inline-flex;
-  width: 18px;
-  height: 18px;
-  align-items: center;
-  justify-content: center;
-}
-
-.icon :global(svg) {
-  width: 16px;
-  height: 16px;
-}
-
-.kindLabel {
-  font-weight: var(--font-weight-medium);
+/* Title row: child name on the left, type chip pushed right of the name to
+ * keep everything on a single visual line. */
+.titleRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+  min-width: 0;
 }
 
 .childName {
@@ -114,31 +97,58 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
-.meta {
-  font-size: var(--font-size-sm);
+.typeChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.icon {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon :global(svg) {
+  width: 14px;
+  height: 14px;
+}
+
+.typeLabel {
+  font-weight: var(--font-weight-medium);
+}
+
+.metaRow {
+  font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.dot {
-  margin: 0 4px;
-}
-
 .dateLine {
-  margin-top: var(--spacing-xs);
-  font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
 }
 
 .overdueTag {
-  margin-top: var(--spacing-xs);
-  font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
   color: var(--color-warning);
+}
+
+.chevron {
+  font-size: var(--font-size-lg);
+  color: var(--color-text-tertiary);
+  line-height: 1;
 }
 
 .empty {
@@ -160,8 +170,9 @@
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
-  min-height: 110px;
+  min-height: 56px;
   border-color: transparent;
+  display: block;
 }
 
 @keyframes shimmer {

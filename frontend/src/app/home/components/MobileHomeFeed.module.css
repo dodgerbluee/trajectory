@@ -1,5 +1,16 @@
 /* MobileHomeFeed – assembled mobile home screen */
 
+/* Outer body frame: replaces the page-level <Card> on mobile so the entire
+ * frame (background + border) translates as one piece during pull-to-refresh
+ * (PullToRefresh wraps this element). */
+.feed {
+  background-color: var(--color-background-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-sm);
+}
+
 .header {
   /* Card already provides outer padding; only need a sliver above the greeting */
   padding: 0 0 var(--spacing-sm);

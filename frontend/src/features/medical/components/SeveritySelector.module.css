@@ -13,10 +13,18 @@
 }
 
 .options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-xs);
+  /* 5 buttons per row → two rows of 1–5 / 6–10. The Clear button (when
+   * present) is pushed to its own row and centered. */
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--spacing-md);
   margin-top: var(--spacing-sm);
+  justify-items: stretch;
+  /* Cap the row width on wide viewports so the buttons stay comfortably
+   * spaced and centered rather than stretching edge-to-edge. */
+  max-width: 75rem;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .option {
@@ -24,9 +32,11 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 3.125rem;
+  width: 3.5rem;
+  /* Tap-friendly target: full grid-cell width, ≥56px tall. */
+  min-height: 3.5rem;
   height: var(--size-textarea-min);
-  padding: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
   border: var(--border-width-thick) solid var(--color-border);
   border-radius: var(--radius-md);
   background-color: var(--color-background-card);
@@ -64,6 +74,10 @@
 }
 
 .clear {
+  /* Span the full grid row so it sits centered below the 1–10 grid. */
+  grid-column: 1 / -1;
+  justify-self: center;
+  margin-top: var(--spacing-xs);
   padding: var(--spacing-sm) var(--spacing-md);
   border: var(--border-width-thick) solid var(--color-border);
   border-radius: var(--radius-md);

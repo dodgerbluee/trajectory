@@ -58,3 +58,26 @@
   gap: var(--spacing-xs);
   margin-bottom: var(--spacing-sm);
 }
+
+/* Two-up paired row used for DOB+DueDate, Weight+Height. */
+.pairRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+  align-items: start;
+}
+
+/* Name + Gender — Name compact, Gender auto-sizes to its segmented control. */
+.pairRowNameGender {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--spacing-md);
+  align-items: start;
+}
+
+@media (max-width: 767.98px) {
+  .pairRow,
+  .pairRowNameGender {
+    gap: var(--spacing-sm);
+  }
+}

@@ -143,6 +143,10 @@
   background: #000000;
   border-radius: var(--radius-md);
   overflow: hidden;
+  /* Prevent the browser from hijacking horizontal touch drags as page scroll
+   * or edge-swipe back gestures while the user pans/zooms the cropper. */
+  touch-action: none;
+  overscroll-behavior: contain;
 }
 
 .cropperControls {
@@ -171,6 +175,9 @@
   background: var(--color-border);
   outline: none;
   -webkit-appearance: none;
+  /* Lock the slider to its own gesture so dragging the thumb on touch
+   * devices doesn't bubble up as a page scroll/back-swipe. */
+  touch-action: pan-x;
 }
 
 .zoomSlider::-webkit-slider-thumb {

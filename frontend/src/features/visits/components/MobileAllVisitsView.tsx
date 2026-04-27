@@ -189,15 +189,15 @@ function MobileAllVisitsView() {
                               <span className={styles.titleText}>
                                 {v.title || getVisitTypeLabel(v.visit_type)}
                               </span>
+                              {!overdue && (
+                                <span className={styles.upcomingTag}>Upcoming</span>
+                              )}
                             </span>
                             <span className={styles.meta}>
                               {child?.name ?? `Child #${v.child_id}`}
                               {v.visit_time ? ` · ${formatTime(v.visit_time)}` : ''}
                               {v.doctor_name ? ` · ${v.doctor_name}` : ''}
                             </span>
-                            {!overdue && (
-                              <span className={styles.upcomingTag}>Upcoming</span>
-                            )}
                           </span>
                           <span className={styles.chevron} aria-hidden="true">
                             ›

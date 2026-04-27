@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import type { Illness, Child } from '@shared/types/api';
 import TimelineItem from '@shared/components/TimelineItem';
 import Card from '@shared/components/Card';
@@ -15,6 +15,8 @@ interface IllnessesTimelineProps {
   totalItems?: number;
   onPageChange?: (page: number) => void;
   onItemsPerPageChange?: (items: number) => void;
+  /** When true, render the list without an outer Card wrapper. */
+  flat?: boolean;
 }
 
 /**
@@ -31,6 +33,7 @@ export default function IllnessesTimeline({
   totalItems = 0,
   onPageChange,
   onItemsPerPageChange,
+  flat = false,
 }: IllnessesTimelineProps) {
   const childMap = useMemo(() => {
     const map = new Map<number, Child>();
@@ -46,17 +49,21 @@ export default function IllnessesTimeline({
     });
   }, [illnesses]);
 
+  const Frame = flat
+    ? ({ children: c }: { children: ReactNode }) => <>{c}</>
+    : Card;
+
   if (sortedIllnesses.length === 0) {
     return (
-      <Card>
+      <Frame>
         <p className={tl.empty}>{emptyMessage}</p>
-      </Card>
+      </Frame>
     );
   }
 
   return (
     <>
-      <Card>
+      <Frame>
         <div className={tl.list}>
           {sortedIllnesses.map((illness) => {
             const child = childMap.get(illness.child_id);
@@ -71,7 +78,7 @@ export default function IllnessesTimeline({
             );
           })}
         </div>
-      </Card>
+      </Frame>
       {totalItems > 0 && onPageChange && onItemsPerPageChange && (
         <PaginationControls
           currentPage={currentPage}

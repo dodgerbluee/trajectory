@@ -1,6 +1,13 @@
 /**
- * UpcomingVisitsCarousel – horizontally swipeable cards of upcoming visits
- * for the mobile home feed. Scopes to a single child if `filterChildId` is set.
+ * UpcomingVisitsCarousel – full-width vertical list of upcoming visits for the
+ * mobile home feed. (Name kept for import stability; layout is no longer a
+ * carousel.) Scopes to a single child if `filterChildId` is set.
+ *
+ * Each row spans the full available width and renders on a single visual line:
+ *   [date block]  Child Name · Type        Past due / date  ›
+ *
+ * Putting the visit type to the right of the child name keeps each row to a
+ * single line and reclaims the vertical space the previous swipe cards used.
  */
 
 import { useMemo } from 'react';
@@ -43,10 +50,10 @@ function UpcomingVisitsCarousel({
     return (
       <section className={styles.section} aria-busy="true">
         <h2 className={styles.title}>Upcoming</h2>
-        <div className={styles.scroller}>
-          <div className={`${styles.card} ${styles.skeleton}`} />
-          <div className={`${styles.card} ${styles.skeleton}`} />
-        </div>
+        <ul className={styles.list}>
+          <li className={`${styles.row} ${styles.skeleton}`} />
+          <li className={`${styles.row} ${styles.skeleton}`} />
+        </ul>
       </section>
     );
   }
@@ -65,7 +72,7 @@ function UpcomingVisitsCarousel({
       <h2 id="mobile-upcoming-heading" className={styles.title}>
         Upcoming
       </h2>
-      <div className={styles.scroller} role="list">
+      <ul className={styles.list} role="list">
         {visits.map((v) => {
           const child = childById.get(v.child_id);
           const overdue = !isFutureDate(v.visit_date);
@@ -73,41 +80,45 @@ function UpcomingVisitsCarousel({
           const day = date.toLocaleDateString(undefined, { day: 'numeric' });
           const month = date.toLocaleDateString(undefined, { month: 'short' });
           return (
-            <Link
-              key={v.id}
-              to={`/visits/${v.id}`}
-              className={`${styles.card} ${overdue ? styles.overdue : ''}`}
-              role="listitem"
-            >
-              <div className={styles.dateBlock} aria-hidden="true">
-                <div className={styles.month}>{month}</div>
-                <div className={styles.day}>{day}</div>
-              </div>
-              <div className={styles.body}>
-                <div className={styles.kindRow}>
-                  <span className={styles.icon}>{getVisitTypeIcon(v.visit_type)}</span>
-                  <span className={styles.kindLabel}>{getVisitTypeLabel(v.visit_type)}</span>
+            <li key={v.id}>
+              <Link
+                to={`/visits/${v.id}`}
+                className={`${styles.row} ${overdue ? styles.overdue : ''}`}
+              >
+                <div className={styles.dateBlock} aria-hidden="true">
+                  <div className={styles.month}>{month}</div>
+                  <div className={styles.day}>{day}</div>
                 </div>
-                {child ? <div className={styles.childName}>{child.name}</div> : null}
-                <div className={styles.meta}>
-                  {v.doctor_name ? <span>{v.doctor_name}</span> : null}
-                  {v.location ? (
-                    <span className={styles.dot} aria-hidden="true">
-                      ·
+                <div className={styles.body}>
+                  <div className={styles.titleRow}>
+                    <span className={styles.childName}>
+                      {child?.name ?? 'Child'}
                     </span>
-                  ) : null}
-                  {v.location ? <span>{v.location}</span> : null}
+                    <span className={styles.typeChip}>
+                      <span className={styles.icon} aria-hidden="true">
+                        {getVisitTypeIcon(v.visit_type)}
+                      </span>
+                      <span className={styles.typeLabel}>
+                        {getVisitTypeLabel(v.visit_type)}
+                      </span>
+                    </span>
+                  </div>
+                  <div className={styles.metaRow}>
+                    {overdue ? (
+                      <span className={styles.overdueTag}>Past due — add outcome</span>
+                    ) : (
+                      <span className={styles.dateLine}>{formatDate(v.visit_date)}</span>
+                    )}
+                  </div>
                 </div>
-                {overdue ? (
-                  <div className={styles.overdueTag}>Past due — add outcome</div>
-                ) : (
-                  <div className={styles.dateLine}>{formatDate(v.visit_date)}</div>
-                )}
-              </div>
-            </Link>
+                <span className={styles.chevron} aria-hidden="true">
+                  ›
+                </span>
+              </Link>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </section>
   );
 }

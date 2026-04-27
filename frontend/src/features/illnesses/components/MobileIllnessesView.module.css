@@ -1,16 +1,25 @@
 /* MobileIllnessesView – mobile illnesses list (mirrors MobileAllVisitsView) */
 
 .root {
+  /* Card-style body panel wrapping header + filter chips + list.
+   * Match the Home (Family) tab body frame: rely on the page shell for
+   * horizontal gutters so the panel spans full width on phones. */
+  margin: 0 0 var(--spacing-xl);
+  /* Top padding tuned so the H1 cap-height aligns with the Home greeting. */
+  padding: var(--spacing-sm) 0 var(--spacing-md);
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
-  min-height: 100%;
 }
 
 .header {
   position: sticky;
   top: var(--mobile-header-height, 0);
   z-index: 5;
-  background: transparent;
+  background: var(--color-background-card);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -84,7 +93,7 @@
 }
 
 .list {
-  padding: var(--spacing-sm) var(--spacing-md) var(--spacing-xl);
+  padding: var(--spacing-sm) var(--spacing-md) 0;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);

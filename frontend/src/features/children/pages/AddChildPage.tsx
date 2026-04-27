@@ -1,14 +1,18 @@
-import { useState, FormEvent } from 'react';
+import { FormEvent, useState } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { FaMars, FaVenus } from 'react-icons/fa';
 import { childrenApi, ApiClientError } from '@lib/api-client';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { validateChildForm, getTodayDate } from '@lib/validation';
-import type { Gender } from '@shared/types/api';
+import { getTodayDate } from '@lib/validation';
 import FormField, { FormFieldGroup } from '@shared/components/FormField';
 import Button from '@shared/components/Button';
 import Notification from '@shared/components/Notification';
 import ImageCropUpload from '@shared/components/ImageCropUpload';
+import {
+  GenderToggle,
+  BirthWeightInput,
+  BirthHeightInput,
+} from '@features/children/components';
+import { useChildFormState } from '@features/children/hooks/useChildFormState';
 import modalStyles from '@shared/components/Modal.module.css';
 import styles from './AddChildPage.module.css';
 
@@ -21,18 +25,18 @@ function AddChildPage() {
   const familyIdFromQuery = searchParams.get('family_id');
   const familyId = familyIdFromState ?? (familyIdFromQuery ? parseInt(familyIdFromQuery, 10) : undefined);
   const familyIdValid = familyId != null && !Number.isNaN(familyId) && familyId > 0 ? familyId : undefined;
-  const [formData, setFormData] = useState({
-    name: '',
-    date_of_birth: getTodayDate(),
-    gender: 'male' as Gender,
-    notes: '',
-    due_date: '',
-    birth_weight: '',
-    birth_weight_ounces: '',
-    birth_height: '',
-  });
+  const fromOnboarding = (location.state as { fromOnboarding?: boolean } | null)?.fromOnboarding;
+
+  const {
+    formData,
+    updateField,
+    errors,
+    clearError,
+    validate,
+    toCreatePayload,
+  } = useChildFormState();
+
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [notification, setNotification] = useState<{
     message: string;
@@ -41,38 +45,19 @@ function AddChildPage() {
 
   const handleImageCropped = (croppedFile: File) => {
     setAvatarFile(croppedFile);
-    setErrors((e) => ({ ...e, avatar: '' }));
+    clearError('avatar');
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    const validation = validateChildForm(formData);
-    if (!validation.isValid) {
-      setErrors(validation.errors);
-      return;
-    }
-
-    setErrors({});
+    if (!validate()) return;
     setSubmitting(true);
 
     try {
-      const response = await childrenApi.create({
-        ...(familyIdValid != null && { family_id: familyIdValid }),
-        name: formData.name.trim(),
-        date_of_birth: formData.date_of_birth,
-        gender: formData.gender,
-        notes: formData.notes.trim() || undefined,
-        due_date: formData.due_date || null,
-        birth_weight: formData.birth_weight ? parseFloat(formData.birth_weight) : null,
-        birth_weight_ounces: formData.birth_weight_ounces && formData.birth_weight_ounces.trim() !== ''
-          ? (() => {
-              const parsed = parseInt(formData.birth_weight_ounces, 10);
-              return isNaN(parsed) ? null : parsed;
-            })()
-          : null,
-        birth_height: formData.birth_height ? parseFloat(formData.birth_height) : null,
-      });
+      const response = await childrenApi.create(
+        toCreatePayload({ family_id: familyIdValid }),
+      );
 
       if (avatarFile) {
         try {
@@ -104,8 +89,6 @@ function AddChildPage() {
     }
   };
 
-  const fromOnboarding = (location.state as { fromOnboarding?: boolean } | null)?.fromOnboarding;
-
   const handleClose = () => {
     if (fromOnboarding) navigate('/', { replace: true, state: { tab: 'family' } });
     else navigate(-1);
@@ -120,162 +103,124 @@ function AddChildPage() {
         className={`${modalStyles.content} ${modalStyles.contentCard}`}
         onClick={(e) => e.stopPropagation()}
       >
-          <div className={`${modalStyles.header} ${styles.header}`}>
-            <h2>Add Child</h2>
-            <button
-              type="button"
-              onClick={handleClose}
-              className={modalStyles.close}
-              disabled={submitting || fromOnboarding}
-              aria-label="Close"
-            >
-              ×
-            </button>
-          </div>
+        <div className={`${modalStyles.header} ${styles.header}`}>
+          <h2>Add Child</h2>
+          <button
+            type="button"
+            onClick={handleClose}
+            className={modalStyles.close}
+            disabled={submitting || fromOnboarding}
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
 
-          {notification && (
-            <Notification
-              message={notification.message}
-              type={notification.type}
-              onClose={() => setNotification(null)}
-            />
-          )}
+        {notification && (
+          <Notification
+            message={notification.message}
+            type={notification.type}
+            onClose={() => setNotification(null)}
+          />
+        )}
 
-          <form onSubmit={handleSubmit} className={styles.form}>
-            {/* Top section: Avatar left, Name/DOB/Gender right */}
-            <div className={styles.topRow}>
-              <div className={styles.avatarWrap}>
-                <ImageCropUpload
-                  onImageCropped={handleImageCropped}
-                  disabled={submitting}
-                />
-                <p className={styles.avatarHint}>Tap to change photo</p>
-              </div>
-              <div className={styles.nameAndDetails}>
+        <form onSubmit={handleSubmit} className={styles.form}>
+          {/* Avatar (left) + Name & DOB (right) */}
+          <div className={styles.topRow}>
+            <div className={styles.avatarWrap}>
+              <ImageCropUpload
+                onImageCropped={handleImageCropped}
+                disabled={submitting}
+              />
+              <p className={styles.avatarHint}>Tap to change photo</p>
+            </div>
+            <div className={styles.nameAndDetails}>
+              <div className={styles.pairRowNameGender}>
                 <FormField
                   label="Name"
                   type="text"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) => updateField('name', e.target.value)}
                   error={errors.name}
                   required
                   placeholder="Child's name"
                   disabled={submitting}
                 />
-                <div className={`${styles.row} ${styles.rowHalf}`}>
-                  <FormField
-                    label="Date of Birth"
-                    type="date"
-                    value={formData.date_of_birth}
-                    onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                    error={errors.date_of_birth}
-                    required
-                    max={getTodayDate()}
+                <FormFieldGroup label="Gender" required>
+                  <GenderToggle
+                    value={formData.gender}
+                    onChange={(g) => updateField('gender', g)}
                     disabled={submitting}
                   />
-                  <FormFieldGroup label="Gender" required className={styles.genderField}>
-                    <div className={styles.genderToggle} role="group" aria-label="Gender">
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, gender: 'male' })}
-                        className={`${styles.genderOption} ${formData.gender === 'male' ? styles.selected : ''}`}
-                        disabled={submitting}
-                      >
-                        <FaMars className={styles.genderOptionIcon} aria-hidden />
-                        <span>Male</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, gender: 'female' })}
-                        className={`${styles.genderOption} ${formData.gender === 'female' ? styles.selected : ''}`}
-                        disabled={submitting}
-                      >
-                        <FaVenus className={styles.genderOptionIcon} aria-hidden />
-                        <span>Female</span>
-                      </button>
-                    </div>
-                  </FormFieldGroup>
-                </div>
+                </FormFieldGroup>
               </div>
             </div>
+          </div>
 
-            {/* Birth details: Due Date, Weight, Height on one row */}
-            <h3 className={styles.sectionTitle}>Birth details</h3>
-            <div className={styles.birthRow}>
-              <FormField
-                label="Due Date"
-                type="date"
-                value={formData.due_date}
-                onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                max={getTodayDate()}
-                disabled={submitting}
-              />
-              <FormFieldGroup label="Birth Weight" className={styles.numberWrap}>
-                <div className={styles.lbOz}>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    value={formData.birth_weight}
-                    onChange={(e) => setFormData({ ...formData, birth_weight: e.target.value })}
-                    placeholder="7"
-                    min="0"
-                    disabled={submitting}
-                    className={`form-input ${styles.inputNoSpinner}`}
-                  />
-                  <span className={styles.unit}>lb</span>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    value={formData.birth_weight_ounces}
-                    onChange={(e) => setFormData({ ...formData, birth_weight_ounces: e.target.value })}
-                    placeholder="8"
-                    min="0"
-                    max="15"
-                    disabled={submitting}
-                    className={`form-input ${styles.inputNoSpinner}`}
-                  />
-                  <span className={styles.unit}>oz</span>
-                </div>
-              </FormFieldGroup>
-              <FormFieldGroup label="Birth Height" className={styles.numberWrap}>
-                <div className={styles.heightIn}>
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    value={formData.birth_height}
-                    onChange={(e) => setFormData({ ...formData, birth_height: e.target.value })}
-                    placeholder="20"
-                    min="0"
-                    step="0.1"
-                    disabled={submitting}
-                    className={`form-input ${styles.inputNoSpinner}`}
-                  />
-                  <span className={styles.unit}>in</span>
-                </div>
-              </FormFieldGroup>
-            </div>
+          {/* Date of Birth + Due Date */}
+          <div className={styles.pairRow}>
+            <FormField
+              label="Date of Birth"
+              type="date"
+              value={formData.date_of_birth}
+              onChange={(e) => updateField('date_of_birth', e.target.value)}
+              error={errors.date_of_birth}
+              required
+              max={getTodayDate()}
+              disabled={submitting}
+            />
+            <FormField
+              label="Due Date"
+              type="date"
+              value={formData.due_date}
+              onChange={(e) => updateField('due_date', e.target.value)}
+              max={getTodayDate()}
+              disabled={submitting}
+            />
+          </div>
 
-            <div className={styles.notesWrap}>
-              <FormField
-                label="Notes"
-                type="textarea"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Optional notes"
-                rows={2}
-                disabled={submitting}
-              />
-            </div>
+          {/* Birth Weight + Birth Height */}
+          <div className={styles.pairRow}>
+            <BirthWeightInput
+              pounds={formData.birth_weight}
+              ounces={formData.birth_weight_ounces}
+              onPoundsChange={(v) => updateField('birth_weight', v)}
+              onOuncesChange={(v) => updateField('birth_weight_ounces', v)}
+              disabled={submitting}
+            />
+            <BirthHeightInput
+              value={formData.birth_height}
+              onChange={(v) => updateField('birth_height', v)}
+              disabled={submitting}
+            />
+          </div>
 
-            <div className={styles.actions}>
-              <Button type="button" variant="secondary" onClick={handleClose} disabled={submitting || fromOnboarding}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={submitting}>
-                {submitting ? 'Adding...' : 'Add Child'}
-              </Button>
-            </div>
-          </form>
+          <div className={styles.notesWrap}>
+            <FormField
+              label="Notes"
+              type="textarea"
+              value={formData.notes}
+              onChange={(e) => updateField('notes', e.target.value)}
+              placeholder="Optional notes"
+              rows={2}
+              disabled={submitting}
+            />
+          </div>
+
+          <div className={styles.actions}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleClose}
+              disabled={submitting || fromOnboarding}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? 'Adding...' : 'Add Child'}
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   );

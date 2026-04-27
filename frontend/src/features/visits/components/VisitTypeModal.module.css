@@ -28,7 +28,7 @@
 
 .buttonWellness:hover {
   background: var(--color-surface);
-  border-color: var(--color-success);
+  border-color: var(--color-primary);
 }
 
 .buttonSick:hover {
@@ -38,7 +38,7 @@
 
 .buttonInjury:hover {
   background: var(--color-surface);
-  border-color: var(--color-visit-accent);
+  border-color: var(--color-injury);
 }
 
 .buttonVision:hover {
@@ -52,7 +52,7 @@
 }
 
 [data-theme="dark"] .buttonWellness:hover {
-  background: rgba(16, 185, 129, 0.1);
+  background: var(--color-primary-light);
 }
 
 [data-theme="dark"] .buttonSick:hover {
@@ -60,7 +60,7 @@
 }
 
 [data-theme="dark"] .buttonInjury:hover {
-  background: rgba(11, 61, 145, 0.12);
+  background: var(--color-injury-light);
 }
 
 [data-theme="dark"] .buttonVision:hover {
@@ -99,11 +99,6 @@
     grid-template-columns: repeat(2, 1fr);
     gap: var(--spacing-sm);
     margin-bottom: var(--spacing-md);
-  }
-
-  /* Last (5th) item spans both columns to fill the row cleanly. */
-  .button:last-child {
-    grid-column: 1 / -1;
   }
 
   .button {

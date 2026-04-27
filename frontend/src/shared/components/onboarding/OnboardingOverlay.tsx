@@ -185,7 +185,7 @@ export default function OnboardingOverlay() {
   const location = useLocation();
   const onboarding = useOnboarding();
   const pathname = location.pathname;
-  const isSettings = pathname === '/settings';
+  const isFamily = pathname === '/family';
   const isHome = pathname === '/';
   const isChildDetail = /^\/children\/\d+$/.test(pathname);
   const isAddChild = pathname === '/children/new';
@@ -200,10 +200,10 @@ export default function OnboardingOverlay() {
   }, [onboarding?.isActive, onboarding?.step, isHome]);
 
   useEffect(() => {
-    if (!onboarding?.isActive || onboarding.step !== 'create_family' || !isSettings) return;
+    if (!onboarding?.isActive || onboarding.step !== 'create_family' || !isFamily) return;
     const id = setInterval(() => setCreateFamilyModalTick((t) => t + 1), 200);
     return () => clearInterval(id);
-  }, [onboarding?.isActive, onboarding?.step, isSettings]);
+  }, [onboarding?.isActive, onboarding?.step, isFamily]);
 
   useEffect(() => {
     if (!onboarding?.isActive) {
@@ -212,16 +212,14 @@ export default function OnboardingOverlay() {
     }
     if (onboarding.step === 'go_settings_family' && isHome) {
       setSpotlightSelector(
-        typeof document !== 'undefined' && document.querySelector('[data-onboarding="settings-menu-item"]')
-          ? '[data-onboarding="settings-menu-item"]'
+        typeof document !== 'undefined' && document.querySelector('[data-onboarding="family-menu-item"]')
+          ? '[data-onboarding="family-menu-item"]'
           : '[data-onboarding="settings-menu"]'
       );
-    } else if (onboarding.step === 'go_settings_family' && isSettings) {
-      setSpotlightSelector('[data-onboarding="settings-family-tab"]');
-    } else if (onboarding.step === 'create_family' && isSettings) {
+    } else if (onboarding.step === 'create_family' && isFamily) {
       const modalOpen = typeof document !== 'undefined' && document.querySelector('[data-onboarding="create-family-modal"]');
       setSpotlightSelector(modalOpen ? '[data-onboarding="create-family-modal"]' : '[data-onboarding="add-family"]');
-    } else if (onboarding.step === 'add_child' && isSettings) {
+    } else if (onboarding.step === 'add_child' && isFamily) {
       setSpotlightSelector('[data-onboarding="add-child"]');
     } else if (onboarding.step === 'return_home_click_child' && isHome) {
       setSpotlightSelector('[data-onboarding="child-card"]');
@@ -240,7 +238,7 @@ export default function OnboardingOverlay() {
     } else {
       setSpotlightSelector(null);
     }
-  }, [onboarding?.isActive, onboarding?.step, isHome, isSettings, isChildDetail, dropdownCheckTick, createFamilyModalTick]);
+  }, [onboarding?.isActive, onboarding?.step, isHome, isFamily, isChildDetail, dropdownCheckTick, createFamilyModalTick]);
 
   /* When Create family modal is spotlighted, add body class so CSS can highlight the Create button */
   useEffect(() => {
@@ -302,25 +300,9 @@ export default function OnboardingOverlay() {
             <SpotlightOverlay targetRect={spotlightRect} padding={12} />
             <div className={`${styles.promptFloating} ${styles.promptFloatingBottom}`}>
               <Card className={styles.promptCard}>
-                <h2 className={styles.promptTitle}>Go to Settings, then Family</h2>
+                <h2 className={styles.promptTitle}>Open Family</h2>
                 <p className={styles.promptCopy}>
-                  Click the <strong>down arrow (▼)</strong> next to your name in the top right, then choose <strong>Settings</strong>. Once there, click <strong>Family</strong> in the left sidebar.
-                </p>
-                <PromptActions showBack={showBack} showSkip={showSkipInPopup} onBack={goBack} onSkip={handleSkip} />
-              </Card>
-            </div>
-          </>
-        );
-      }
-      if (isSettings) {
-        return (
-          <>
-            <SpotlightOverlay targetRect={spotlightRect} padding={8} />
-            <div className={`${styles.promptFloating} ${styles.promptFloatingBottom}`}>
-              <Card className={styles.promptCard}>
-                <h2 className={styles.promptTitle}>Click Family</h2>
-                <p className={styles.promptCopy}>
-                  In the left sidebar, click <strong>Family</strong> to open Family Settings.
+                  Click the <strong>down arrow (▼)</strong> next to your name in the top right, then choose <strong>Family</strong>.
                 </p>
                 <PromptActions showBack={showBack} showSkip={showSkipInPopup} onBack={goBack} onSkip={handleSkip} />
               </Card>
@@ -331,13 +313,13 @@ export default function OnboardingOverlay() {
     }
 
     if (step === 'create_family') {
-      if (!isSettings) {
+      if (!isFamily) {
         return (
           <div className={`${styles.promptFloating} ${styles.promptFloatingBottom}`}>
             <Card className={styles.promptCard}>
               <h2 className={styles.promptTitle}>Create a family</h2>
               <p className={styles.promptCopy}>
-                Go to <strong>Settings → Family</strong> to add a family. Use the menu in the top right.
+                Open <strong>Family</strong> from the menu in the top right to add a family.
               </p>
               <PromptActions showBack={showBack} showSkip={showSkipInPopup} onBack={goBack} onSkip={handleSkip} />
             </Card>
@@ -361,20 +343,20 @@ export default function OnboardingOverlay() {
     }
 
     if (step === 'add_child') {
-      if (!isSettings && !isAddChild) {
+      if (!isFamily && !isAddChild) {
         return (
           <div className={`${styles.promptFloating} ${styles.promptFloatingBottom}`}>
             <Card className={styles.promptCard}>
               <h2 className={styles.promptTitle}>Add a child</h2>
               <p className={styles.promptCopy}>
-                Go to <strong>Settings → Family</strong> and click <strong>Add Child</strong> for your family.
+                Open <strong>Family</strong> and click <strong>Add Child</strong> for your family.
               </p>
               <PromptActions showBack={showBack} showSkip={showSkipInPopup} onBack={goBack} onSkip={handleSkip} />
             </Card>
           </div>
         );
       }
-      if (isSettings) {
+      if (isFamily) {
         return (
           <>
             <SpotlightOverlay targetRect={spotlightRect} padding={10} />

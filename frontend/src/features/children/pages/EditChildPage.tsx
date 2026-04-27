@@ -1,15 +1,24 @@
-import { useState, FormEvent, useEffect } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { LuCheck, LuX } from 'react-icons/lu';
 import { childrenApi, ApiClientError } from '@lib/api-client';
-import { validateChildForm, formatDateForInput, getTodayDate } from '@lib/validation';
-import type { Child, Gender } from '@shared/types/api';
+import { getTodayDate } from '@lib/validation';
+import type { Child } from '@shared/types/api';
 import Card from '@shared/components/Card';
-import FormField from '@shared/components/FormField';
+import FormField, { FormFieldGroup } from '@shared/components/FormField';
 import Notification from '@shared/components/Notification';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
 import ErrorMessage from '@shared/components/ErrorMessage';
 import ImageCropUpload from '@shared/components/ImageCropUpload';
+import {
+  GenderToggle,
+  BirthWeightInput,
+  BirthHeightInput,
+} from '@features/children/components';
+import {
+  childFormDataFromChild,
+  useChildFormState,
+} from '@features/children/hooks/useChildFormState';
 import pageLayout from '@shared/styles/page-layout.module.css';
 import detailLayout from '@shared/styles/visit-detail-layout.module.css';
 import styles from './EditChildPage.module.css';
@@ -17,24 +26,23 @@ import styles from './EditChildPage.module.css';
 function EditChildPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
+
   const [child, setChild] = useState<Child | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  
-  const [formData, setFormData] = useState({
-    name: '',
-    date_of_birth: '',
-    gender: 'male' as Gender,
-    notes: '',
-    due_date: '',
-    birth_weight: '',
-    birth_weight_ounces: '',
-    birth_height: '',
-  });
+
+  const {
+    formData,
+    updateField,
+    reset,
+    errors,
+    clearError,
+    validate,
+    toUpdatePayload,
+  } = useChildFormState();
+
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [currentAvatarUrl, setCurrentAvatarUrl] = useState<string | null>(null);
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [notification, setNotification] = useState<{
     message: string;
@@ -53,17 +61,7 @@ function EditChildPage() {
       setLoadError(null);
       const response = await childrenApi.getById(parseInt(id));
       setChild(response.data);
-      setFormData({
-        name: response.data.name,
-        date_of_birth: formatDateForInput(response.data.date_of_birth),
-        gender: response.data.gender,
-        notes: response.data.notes || '',
-        due_date: response.data.due_date ? formatDateForInput(response.data.due_date) : '',
-        birth_weight: response.data.birth_weight?.toString() || '',
-        birth_weight_ounces: response.data.birth_weight_ounces?.toString() || '',
-        birth_height: response.data.birth_height?.toString() || '',
-      });
-      // Set current avatar URL if exists
+      reset(childFormDataFromChild(response.data));
       if (response.data.avatar) {
         setCurrentAvatarUrl(childrenApi.getAvatarUrl(response.data.avatar));
       } else {
@@ -82,87 +80,42 @@ function EditChildPage() {
 
   const handleImageCropped = (croppedFile: File) => {
     setAvatarFile(croppedFile);
-    setErrors({ ...errors, avatar: '' });
+    clearError('avatar');
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-
-    // Validate form
-    const validation = validateChildForm(formData);
-    if (!validation.isValid) {
-      setErrors(validation.errors);
-      return;
-    }
-
+    if (!validate()) return;
     if (!id) return;
 
-    setErrors({});
     setSubmitting(true);
 
     try {
-      await childrenApi.update(parseInt(id), {
-        name: formData.name.trim(),
-        date_of_birth: formData.date_of_birth,
-        gender: formData.gender,
-        notes: formData.notes.trim() || undefined,
-        due_date: formData.due_date || null,
-        birth_weight: formData.birth_weight ? parseFloat(formData.birth_weight) : null,
-        birth_weight_ounces: formData.birth_weight_ounces && formData.birth_weight_ounces.trim() !== '' 
-          ? (() => {
-              const parsed = parseInt(formData.birth_weight_ounces, 10);
-              return isNaN(parsed) ? null : parsed;
-            })()
-          : null,
-        birth_height: formData.birth_height ? parseFloat(formData.birth_height) : null,
-      });
+      await childrenApi.update(parseInt(id), toUpdatePayload());
 
-      // Upload new avatar if provided
       if (avatarFile) {
         try {
           await childrenApi.uploadAvatar(parseInt(id), avatarFile);
         } catch (avatarError) {
           console.error('Failed to upload avatar:', avatarError);
-          // Continue - child was updated successfully
         }
       }
 
-      setNotification({
-        message: 'Child updated successfully!',
-        type: 'success',
-      });
-
-      // Navigate back after a short delay
-      setTimeout(() => {
-        navigate(`/children/${id}`);
-      }, 1000);
+      setNotification({ message: 'Child updated successfully!', type: 'success' });
+      setTimeout(() => navigate(`/children/${id}`), 1000);
     } catch (error) {
       if (error instanceof ApiClientError) {
-        setNotification({
-          message: error.message,
-          type: 'error',
-        });
+        setNotification({ message: error.message, type: 'error' });
       } else {
-        setNotification({
-          message: 'Failed to update child',
-          type: 'error',
-        });
+        setNotification({ message: 'Failed to update child', type: 'error' });
       }
       setSubmitting(false);
     }
   };
 
-  if (loading) {
-    return <LoadingSpinner message="Loading child..." />;
-  }
-
-  if (loadError) {
-    return <ErrorMessage message={loadError} onRetry={loadChild} />;
-  }
-
-  if (!child) {
-    return <ErrorMessage message="Child not found" />;
-  }
+  if (loading) return <LoadingSpinner message="Loading child..." />;
+  if (loadError) return <ErrorMessage message={loadError} onRetry={loadChild} />;
+  if (!child) return <ErrorMessage message="Child not found" />;
 
   return (
     <div className={pageLayout.pageContainer}>
@@ -177,7 +130,9 @@ function EditChildPage() {
       <Card>
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={detailLayout.detailHeader}>
-            <Link to={`/children/${id}`} className={pageLayout.breadcrumb}>← Back to {child.name}</Link>
+            <Link to={`/children/${id}`} className={pageLayout.breadcrumb}>
+              ← Back to {child.name}
+            </Link>
             <div className={detailLayout.iconActions}>
               <button
                 type="submit"
@@ -202,8 +157,6 @@ function EditChildPage() {
 
           <h1 className={detailLayout.headerTitle}>Edit {child.name}</h1>
 
-          {/* Avatar at top: ImageCropUpload renders the avatar-as-trigger
-              (click to change). Errors surface below the trigger. */}
           <div className={styles.avatarSection}>
             <ImageCropUpload
               onImageCropped={handleImageCropped}
@@ -213,105 +166,76 @@ function EditChildPage() {
             {errors.avatar && <span className={styles.formError}>{errors.avatar}</span>}
           </div>
 
-          <FormField
-            label="Name"
-            type="text"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            error={errors.name}
-            required
-            placeholder="Enter child's name"
-            disabled={submitting}
-          />
+          {/* Name + Gender */}
+          <div className={styles.pairRowNameGender}>
+            <FormField
+              label="Name"
+              type="text"
+              value={formData.name}
+              onChange={(e) => updateField('name', e.target.value)}
+              error={errors.name}
+              required
+              placeholder="Enter child's name"
+              disabled={submitting}
+            />
+            <FormFieldGroup label="Gender" required>
+              <GenderToggle
+                value={formData.gender}
+                onChange={(g) => updateField('gender', g)}
+                disabled={submitting}
+              />
+            </FormFieldGroup>
+          </div>
 
-          <FormField
-            label="Date of Birth"
-            type="date"
-            value={formData.date_of_birth}
-            onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-            error={errors.date_of_birth}
-            required
-            max={getTodayDate()}
-            disabled={submitting}
-          />
+          {/* Date of Birth + Due Date */}
+          <div className={styles.pairRow}>
+            <FormField
+              label="Date of Birth"
+              type="date"
+              value={formData.date_of_birth}
+              onChange={(e) => updateField('date_of_birth', e.target.value)}
+              error={errors.date_of_birth}
+              required
+              max={getTodayDate()}
+              disabled={submitting}
+            />
+            <FormField
+              label="Due Date (Optional)"
+              type="date"
+              value={formData.due_date}
+              onChange={(e) => updateField('due_date', e.target.value)}
+              max={getTodayDate()}
+              disabled={submitting}
+            />
+          </div>
 
-          <FormField
-            label="Due Date (Optional)"
-            type="date"
-            value={formData.due_date}
-            onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-            max={getTodayDate()}
-            disabled={submitting}
-          />
-
-          <div className={styles.formField}>
-            <label className={styles.formLabel}>Birth Weight (Optional)</label>
-            <div style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'flex-end' }}>
-              <div style={{ flex: 1 }}>
-                <FormField
-                  label="Pounds"
-                  type="number"
-                  value={formData.birth_weight}
-                  onChange={(e) => setFormData({ ...formData, birth_weight: e.target.value })}
-                  placeholder="e.g., 7"
-                  step="1"
-                  min="0"
-                  disabled={submitting}
-                />
-              </div>
-              <div style={{ flex: 1 }}>
-                <FormField
-                  label="Ounces"
-                  type="number"
-                  value={formData.birth_weight_ounces}
-                  onChange={(e) => setFormData({ ...formData, birth_weight_ounces: e.target.value })}
-                  placeholder="e.g., 8"
-                  step="1"
-                  min="0"
-                  max="15"
-                  disabled={submitting}
-                />
-              </div>
-            </div>
+          {/* Birth Weight + Birth Height */}
+          <div className={styles.pairRow}>
+            <BirthWeightInput
+              label="Birth Weight (Optional)"
+              pounds={formData.birth_weight}
+              ounces={formData.birth_weight_ounces}
+              onPoundsChange={(v) => updateField('birth_weight', v)}
+              onOuncesChange={(v) => updateField('birth_weight_ounces', v)}
+              disabled={submitting}
+            />
+            <BirthHeightInput
+              label="Birth Height (Optional)"
+              value={formData.birth_height}
+              onChange={(v) => updateField('birth_height', v)}
+              disabled={submitting}
+            />
           </div>
 
           <FormField
-            label="Birth Height (inches) (Optional)"
-            type="number"
-            value={formData.birth_height}
-            onChange={(e) => setFormData({ ...formData, birth_height: e.target.value })}
-            placeholder="e.g., 20.5"
-            step="0.1"
-            min="0"
+            label="Notes"
+            type="textarea"
+            value={formData.notes}
+            onChange={(e) => updateField('notes', e.target.value)}
+            placeholder="Optional notes (e.g., allergies, medical conditions)"
+            rows={4}
             disabled={submitting}
           />
-
-            <div className={styles.formField}>
-              <label htmlFor="gender" className={styles.formLabel}>
-                Gender <span className={styles.required}>*</span>
-              </label>
-              <select
-                id="gender"
-                value={formData.gender}
-                onChange={(e) => setFormData({ ...formData, gender: e.target.value as Gender })}
-                className={styles.formInput}
-                disabled={submitting}
-                required
-              >
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-              </select>
-            </div>
-
-            <FormField
-              label="Notes"
-              type="textarea"
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="Optional notes (e.g., allergies, medical conditions)"
-              rows={4}
-              disabled={submitting}
-            />
         </form>
       </Card>
     </div>

@@ -1,0 +1,44 @@
+/* GenderToggle — segmented two-option control for child gender. */
+
+.toggle {
+  display: inline-flex;
+  gap: 0;
+  padding: 2px;
+}
+
+.option {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 0.5rem 1rem;
+  min-height: var(--size-touch-min);
+  border: 1px solid var(--color-border);
+  border-radius: calc(var(--radius-md) - 1px);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.option:hover:not(:disabled) {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.option.selected {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.option:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.optionIcon {
+  font-size: 1.125rem;
+  flex-shrink: 0;
+}

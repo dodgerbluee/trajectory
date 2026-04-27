@@ -1,44 +1,92 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+/**
+ * FamilyPage – dedicated /family route hosting Members + Management sub-views.
+ *
+ * Replaces the old FamilyTab inside SettingsPage. Layout: left-rail sub-tab
+ * nav (vertical on both mobile + desktop) + main panel. Sub-tab is encoded
+ * in the `?sub=` query param so onboarding/deeplinks survive a refresh.
+ *
+ * Body content (members listing, management cards, all modals) is a direct
+ * port of the prior FamilyTab implementation; CSS classes still come from
+ * SettingsPage.module.css to avoid forking 800+ lines of CSS.
+ */
+
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { LuUserPlus, LuPencil, LuTrash2, LuUsers, LuSettings } from 'react-icons/lu';
+
 import Card from '@shared/components/Card';
 import FormField from '@shared/components/FormField';
 import Button from '@shared/components/Button';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
 import ErrorMessage from '@shared/components/ErrorMessage';
-import Tabs from '@shared/components/Tabs';
+import Notification from '@shared/components/Notification';
+import RoleBadge from '@shared/components/RoleBadge';
 import modalStyles from '@shared/components/Modal.module.css';
 import mui from '@shared/styles/MeasurementsUI.module.css';
 import detailLayout from '@shared/styles/visit-detail-layout.module.css';
-import s from '../SettingsPage.module.css';
-import RoleBadge from '@shared/components/RoleBadge';
-import { FamilyOverviewCard, MemberRow, InviteRow } from '../../components';
+import pageLayout from '@shared/styles/page-layout.module.css';
+import layout from '@shared/styles/SettingsLayout.module.css';
+import s from '@features/settings/pages/SettingsPage.module.css';
+import familyLayout from './FamilyPage.module.css';
+
+import { FamilyOverviewCard, MemberRow, InviteRow } from '@features/settings/components';
 import { ApiClientError, childrenApi, familiesApi } from '@lib/api-client';
 import type { Child, Family, FamilyInvite, FamilyMember } from '@shared/types/api';
 import { calculateAge, formatAge, formatDate } from '@lib/date-utils';
 import { ChildAvatar } from '@features/children';
-import { LuUserPlus, LuPencil, LuTrash2 } from 'react-icons/lu';
 import { useFamilyPermissions } from '@/contexts/FamilyPermissionsContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useAuth } from '@/contexts/AuthContext';
-import type { NotifyFn } from './types';
 
 const INVITE_TOKENS_KEY = 'trajectory_invite_tokens';
+const NOTIFICATION_DISMISS_MS = 3000;
 
-type FamilySubTab = 'management' | 'members';
+type FamilySubTab = 'members' | 'management';
 
-export default function FamilyTab({
-  notify,
-  initialSubTab,
-}: {
-  notify: NotifyFn;
-  initialSubTab?: FamilySubTab;
-}) {
+type Notify = (n: { message: string; type: 'success' | 'error' }, timeoutMs?: number) => void;
+
+function readSubTabFromUrl(search: string): FamilySubTab {
+  const params = new URLSearchParams(search);
+  const v = params.get('sub');
+  return v === 'management' ? 'management' : 'members';
+}
+
+export default function FamilyPage() {
   const { user } = useAuth();
   const { refreshPermissions } = useFamilyPermissions();
   const onboarding = useOnboarding();
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  const [familySubTab, setFamilySubTab] = useState<FamilySubTab>(initialSubTab ?? 'members');
+  // ---- Notification (own, since we're not nested in SettingsPage anymore) ----
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const notificationTimerRef = useRef<number | null>(null);
+  const notify: Notify = useMemo(() => {
+    return (n, timeoutMs = NOTIFICATION_DISMISS_MS) => {
+      setNotification(n);
+      if (notificationTimerRef.current != null) window.clearTimeout(notificationTimerRef.current);
+      notificationTimerRef.current = window.setTimeout(() => setNotification(null), timeoutMs);
+    };
+  }, []);
 
+  // ---- Sub-tab (URL-driven) ----
+  const [familySubTab, setFamilySubTab] = useState<FamilySubTab>(() =>
+    readSubTabFromUrl(location.search)
+  );
+  useEffect(() => {
+    setFamilySubTab(readSubTabFromUrl(location.search));
+  }, [location.search]);
+
+  const setSubTab = (next: FamilySubTab) => {
+    setFamilySubTab(next);
+    const params = new URLSearchParams(location.search);
+    if (next === 'members') params.delete('sub');
+    else params.set('sub', next);
+    const qs = params.toString();
+    navigate({ pathname: '/family', search: qs ? `?${qs}` : '' }, { replace: true });
+  };
+
+  // ---- All-state ported from FamilyTab.tsx ----
   const [loading, setLoading] = useState({
     family: false,
     familyCreate: false,
@@ -81,10 +129,7 @@ export default function FamilyTab({
 
   const [savingMemberRole, setSavingMemberRole] = useState<{ familyId: number; userId: number } | null>(null);
 
-  useEffect(() => {
-    if (initialSubTab) setFamilySubTab(initialSubTab);
-  }, [initialSubTab]);
-
+  // Onboarding: arriving on /family advances go_settings_family → create_family.
   useEffect(() => {
     if (onboarding?.isActive && onboarding.step === 'go_settings_family') {
       onboarding.reportOnSettingsFamilyTab();
@@ -255,7 +300,10 @@ export default function FamilyTab({
         ],
       }));
     } catch (err) {
-      notify({ message: err instanceof ApiClientError ? err.message || 'Failed to create invite' : 'Failed to create invite', type: 'error' }, 4000);
+      notify(
+        { message: err instanceof ApiClientError ? err.message || 'Failed to create invite' : 'Failed to create invite', type: 'error' },
+        4000
+      );
     } finally {
       setLoading((l) => ({ ...l, invite: false }));
     }
@@ -274,7 +322,10 @@ export default function FamilyTab({
       }
       notify({ message: 'Role updated', type: 'success' });
     } catch (err) {
-      notify({ message: err instanceof ApiClientError ? err.message || 'Failed to update role' : 'Failed to update role', type: 'error' }, 4000);
+      notify(
+        { message: err instanceof ApiClientError ? err.message || 'Failed to update role' : 'Failed to update role', type: 'error' },
+        4000
+      );
     } finally {
       setSavingMemberRole(null);
     }
@@ -289,7 +340,10 @@ export default function FamilyTab({
       }));
       notify({ message: 'Member removed from family', type: 'success' });
     } catch (err) {
-      notify({ message: err instanceof ApiClientError ? err.message || 'Failed to remove member' : 'Failed to remove member', type: 'error' }, 4000);
+      notify(
+        { message: err instanceof ApiClientError ? err.message || 'Failed to remove member' : 'Failed to remove member', type: 'error' },
+        4000
+      );
     }
   };
 
@@ -308,7 +362,10 @@ export default function FamilyTab({
       }));
       notify({ message: 'Invite revoked', type: 'success' });
     } catch (err) {
-      notify({ message: err instanceof ApiClientError ? err.message || 'Failed to revoke invite' : 'Failed to revoke invite', type: 'error' }, 4000);
+      notify(
+        { message: err instanceof ApiClientError ? err.message || 'Failed to revoke invite' : 'Failed to revoke invite', type: 'error' },
+        4000
+      );
     }
   };
 
@@ -320,7 +377,10 @@ export default function FamilyTab({
       setFamilies((prev) => prev.map((f) => (f.id === familyId ? { ...f, name } : f)));
       notify({ message: 'Family renamed', type: 'success' });
     } catch (err) {
-      notify({ message: err instanceof ApiClientError ? err.message || 'Failed to rename family' : 'Failed to rename family', type: 'error' }, 4000);
+      notify(
+        { message: err instanceof ApiClientError ? err.message || 'Failed to rename family' : 'Failed to rename family', type: 'error' },
+        4000
+      );
     } finally {
       setLoading((l) => ({ ...l, familyRename: false }));
       setFamilyActionId(null);
@@ -345,7 +405,10 @@ export default function FamilyTab({
       });
       notify({ message: 'Family deleted', type: 'success' });
     } catch (err) {
-      notify({ message: err instanceof ApiClientError ? err.message || 'Failed to delete family' : 'Failed to delete family', type: 'error' }, 4000);
+      notify(
+        { message: err instanceof ApiClientError ? err.message || 'Failed to delete family' : 'Failed to delete family', type: 'error' },
+        4000
+      );
     } finally {
       setLoading((l) => ({ ...l, familyDelete: false }));
       setFamilyActionId(null);
@@ -371,14 +434,143 @@ export default function FamilyTab({
       });
       notify({ message: 'Left family', type: 'success' });
     } catch (err) {
-      notify({ message: err instanceof ApiClientError ? err.message || 'Failed to leave family' : 'Failed to leave family', type: 'error' }, 4000);
+      notify(
+        { message: err instanceof ApiClientError ? err.message || 'Failed to leave family' : 'Failed to leave family', type: 'error' },
+        4000
+      );
     } finally {
       setLoading((l) => ({ ...l, familyLeave: false }));
       setFamilyActionId(null);
     }
   };
 
-  const familyManagementContent = loading.family ? (
+  // ---- Members sub-tab content ----
+  const membersContent = (
+    <div className={s.familyMembersTab}>
+      {loadingKids && <LoadingSpinner message="Loading children…" />}
+      {errorKids && <ErrorMessage message={errorKids} onRetry={loadChildren} />}
+      {!loadingKids && !errorKids && (
+        <div className={s.familyMembersByFamily}>
+          {[...families]
+            .sort((a, b) => a.id - b.id)
+            .map((family) => {
+              const kids = childrenByFamilyId[family.id] ?? [];
+              const canEditFamily = family.role === 'owner' || family.role === 'parent';
+              return (
+                <Card key={family.id} title={family.name} className={s.familyMembersFamilyCard}>
+                  <div className={s.familyMembersKidsGrid}>
+                    {kids.map((child) => {
+                      const age = calculateAge(child.date_of_birth);
+                      const ageText = formatAge(age.years, age.months);
+                      return (
+                        <Card key={child.id} className={s.familyCard}>
+                          <div className={s.familyContent}>
+                            <div className={s.familyAvatar}>
+                              <ChildAvatar
+                                avatar={child.avatar}
+                                gender={child.gender}
+                                alt={`${child.name}'s avatar`}
+                                className={s.familyAvatarImg}
+                              />
+                            </div>
+                            <div className={s.familyInfo}>
+                              <h2 className={s.familyName}>{child.name}</h2>
+                              <div className={s.familyDetails}>
+                                <span>{ageText}</span>
+                                <span>•</span>
+                                <span>{formatDate(child.date_of_birth)}</span>
+                              </div>
+                            </div>
+                            {canEditFamily && (
+                              <div className={`${s.familyActions} ${detailLayout.iconActions}`}>
+                                <Link
+                                  to={`/children/${child.id}/edit`}
+                                  className={detailLayout.iconAction}
+                                  title={`Edit ${child.name}`}
+                                  aria-label={`Edit ${child.name}`}
+                                >
+                                  <LuPencil aria-hidden />
+                                </Link>
+                                <button
+                                  type="button"
+                                  className={`${detailLayout.iconAction} ${detailLayout.iconActionDanger}`}
+                                  onClick={() => {
+                                    setDeleteConfirmChild(child);
+                                    setConfirmDeleteChildInput('');
+                                  }}
+                                  disabled={deletingChildId === child.id}
+                                  title={deletingChildId === child.id ? 'Deleting…' : `Delete ${child.name}`}
+                                  aria-label={
+                                    deletingChildId === child.id
+                                      ? `Deleting ${child.name}`
+                                      : `Delete ${child.name}`
+                                  }
+                                >
+                                  <LuTrash2 aria-hidden />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </Card>
+                      );
+                    })}
+
+                    {canEditFamily && (
+                      <Link
+                        to="/children/new"
+                        state={{ familyId: family.id, fromOnboarding: onboarding?.isActive }}
+                        className={s.familyAddLink}
+                        data-onboarding={
+                          families.length > 0 && family.id === families[0].id ? 'add-child' : undefined
+                        }
+                      >
+                        <Card className={`${s.familyCard} ${s.familyAddCard}`}>
+                          <div className={s.familyContent}>
+                            <div className={s.familyAvatar}>
+                              <div className={s.familyAddAvatar}>+</div>
+                            </div>
+                            <div className={s.familyInfo}>
+                              <h2 className={s.familyName}>Add Child</h2>
+                              <div className={s.familyDetails}>
+                                <span>Add a child to {family.name}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      </Link>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
+
+          <button
+            type="button"
+            onClick={() => setShowAddFamilyModal(true)}
+            className={s.familyAddFamilyButton}
+            data-onboarding="add-family"
+          >
+            <Card className={`${s.familyCard} ${s.familyAddCard}`}>
+              <div className={s.familyContent}>
+                <div className={s.familyAvatar}>
+                  <div className={s.familyAddAvatar}>+</div>
+                </div>
+                <div className={s.familyInfo}>
+                  <h2 className={s.familyName}>Add Family</h2>
+                  <div className={s.familyDetails}>
+                    <span>Create a new family</span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  // ---- Management sub-tab content ----
+  const managementContent = loading.family ? (
     <div className={s.familySettingsLoading}>Loading…</div>
   ) : families.length === 0 ? (
     <div className={s.familySettingsEmpty}>No families found.</div>
@@ -415,8 +607,14 @@ export default function FamilyTab({
               noCard
             />
 
-            <section className={s.familyManagementSection} aria-labelledby={`family-members-heading-${family.id}`}>
-              <h3 id={`family-members-heading-${family.id}`} className={s.familyManagementSectionTitle}>
+            <section
+              className={s.familyManagementSection}
+              aria-labelledby={`family-members-heading-${family.id}`}
+            >
+              <h3
+                id={`family-members-heading-${family.id}`}
+                className={s.familyManagementSectionTitle}
+              >
                 Members
               </h3>
               <div className={s.familyManagementSectionContent}>
@@ -433,7 +631,9 @@ export default function FamilyTab({
                         canRemove={family.role === 'owner' || family.role === 'parent'}
                         onRemove={() => handleRemoveMember(family.id, member.user_id)}
                         onRoleChange={(userId, newRole) => handleRoleChange(family.id, userId, newRole)}
-                        savingUserId={savingMemberRole?.familyId === family.id ? savingMemberRole.userId : null}
+                        savingUserId={
+                          savingMemberRole?.familyId === family.id ? savingMemberRole.userId : null
+                        }
                       />
                     ))}
                   </div>
@@ -443,8 +643,14 @@ export default function FamilyTab({
 
             {(family.role === 'owner' || family.role === 'parent') && (
               <>
-                <section className={s.familyManagementSection} aria-labelledby={`family-invite-heading-${family.id}`}>
-                  <h3 id={`family-invite-heading-${family.id}`} className={s.familyManagementSectionTitle}>
+                <section
+                  className={s.familyManagementSection}
+                  aria-labelledby={`family-invite-heading-${family.id}`}
+                >
+                  <h3
+                    id={`family-invite-heading-${family.id}`}
+                    className={s.familyManagementSectionTitle}
+                  >
                     Invite member
                   </h3>
                   <div className={s.familyManagementSectionContent}>
@@ -454,7 +660,9 @@ export default function FamilyTab({
                         type="select"
                         id={`invite-role-${family.id}`}
                         value={createInviteRole}
-                        onChange={(e) => setCreateInviteRole(e.target.value as 'parent' | 'read_only')}
+                        onChange={(e) =>
+                          setCreateInviteRole(e.target.value as 'parent' | 'read_only')
+                        }
                         options={[
                           { value: 'parent', label: 'Parent (can edit)' },
                           { value: 'read_only', label: 'View only' },
@@ -469,15 +677,20 @@ export default function FamilyTab({
                         title="Create invite"
                       >
                         <LuUserPlus className={mui.cardIcon} size={18} aria-hidden />
-                        <span className={mui.cardAddLabel}>{loading.invite ? 'Creating…' : 'Create invite'}</span>
+                        <span className={mui.cardAddLabel}>
+                          {loading.invite ? 'Creating…' : 'Create invite'}
+                        </span>
                       </button>
                     </div>
                     <p className={s.familySettingsInviteHelper}>
-                      Share the invite link with the person you want to add. They'll need to sign in or create an account to join.
+                      Share the invite link with the person you want to add. They'll need to sign
+                      in or create an account to join.
                     </p>
                     {newInviteToken?.familyId === family.id && (
                       <div className={s.familySettingsInviteLinkBox}>
-                        <span className={s.familySettingsInviteLinkLabel}>Invite link — copy and share</span>
+                        <span className={s.familySettingsInviteLinkLabel}>
+                          Invite link — copy and share
+                        </span>
                         <div className={s.familySettingsInviteLinkCode}>
                           {typeof window !== 'undefined'
                             ? `${window.location.origin}/invite?token=${newInviteToken.token}`
@@ -493,12 +706,19 @@ export default function FamilyTab({
                                   ? `${window.location.origin}/invite?token=${newInviteToken.token}`
                                   : `/invite?token=${newInviteToken.token}`;
                               navigator.clipboard.writeText(inviteUrl);
-                              notify({ message: 'Invite link copied to clipboard', type: 'success' }, 2000);
+                              notify(
+                                { message: 'Invite link copied to clipboard', type: 'success' },
+                                2000
+                              );
                             }}
                           >
                             Copy link
                           </Button>
-                          <Button variant="secondary" size="sm" onClick={() => setNewInviteToken(null)}>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setNewInviteToken(null)}
+                          >
                             Dismiss
                           </Button>
                         </div>
@@ -507,8 +727,14 @@ export default function FamilyTab({
                   </div>
                 </section>
 
-                <section className={s.familyManagementSection} aria-labelledby={`family-pending-heading-${family.id}`}>
-                  <h3 id={`family-pending-heading-${family.id}`} className={s.familyManagementSectionTitle}>
+                <section
+                  className={s.familyManagementSection}
+                  aria-labelledby={`family-pending-heading-${family.id}`}
+                >
+                  <h3
+                    id={`family-pending-heading-${family.id}`}
+                    className={s.familyManagementSectionTitle}
+                  >
                     Pending invites
                   </h3>
                   <div className={s.familyManagementSectionContent}>
@@ -545,145 +771,56 @@ export default function FamilyTab({
   );
 
   return (
-    <>
-      <Card title="Family Settings">
-        <p className={s.familySettingsPageSubtitle}>
-          See who's in your family, invite others, and manage access.
-        </p>
-        <Tabs
-          activeTab={familySubTab}
-          onTabChange={(id) => setFamilySubTab(id as FamilySubTab)}
-          tabs={[
-            {
-              id: 'members',
-              label: 'Members',
-              content: (
-                <div className={s.familyMembersTab}>
-                  {loadingKids && <LoadingSpinner message="Loading children…" />}
-                  {errorKids && <ErrorMessage message={errorKids} onRetry={loadChildren} />}
-                  {!loadingKids && !errorKids && (
-                    <div className={s.familyMembersByFamily}>
-                      {[...families]
-                        .sort((a, b) => a.id - b.id)
-                        .map((family) => {
-                          const kids = childrenByFamilyId[family.id] ?? [];
-                          const canEditFamily = family.role === 'owner' || family.role === 'parent';
-                          return (
-                            <Card key={family.id} title={family.name} className={s.familyMembersFamilyCard}>
-                              <div className={s.familyMembersKidsGrid}>
-                                {kids.map((child) => {
-                                  const age = calculateAge(child.date_of_birth);
-                                  const ageText = formatAge(age.years, age.months);
-                                  return (
-                                    <Card key={child.id} className={s.familyCard}>
-                                      <div className={s.familyContent}>
-                                        <div className={s.familyAvatar}>
-                                          <ChildAvatar
-                                            avatar={child.avatar}
-                                            gender={child.gender}
-                                            alt={`${child.name}'s avatar`}
-                                            className={s.familyAvatarImg}
-                                          />
-                                        </div>
-                                        <div className={s.familyInfo}>
-                                          <h2 className={s.familyName}>{child.name}</h2>
-                                          <div className={s.familyDetails}>
-                                            <span>{ageText}</span>
-                                            <span>•</span>
-                                            <span>{formatDate(child.date_of_birth)}</span>
-                                          </div>
-                                        </div>
-                                        {canEditFamily && (
-                                          <div className={`${s.familyActions} ${detailLayout.iconActions}`}>
-                                            <Link
-                                              to={`/children/${child.id}/edit`}
-                                              className={detailLayout.iconAction}
-                                              title={`Edit ${child.name}`}
-                                              aria-label={`Edit ${child.name}`}
-                                            >
-                                              <LuPencil aria-hidden />
-                                            </Link>
-                                            <button
-                                              type="button"
-                                              className={`${detailLayout.iconAction} ${detailLayout.iconActionDanger}`}
-                                              onClick={() => {
-                                                setDeleteConfirmChild(child);
-                                                setConfirmDeleteChildInput('');
-                                              }}
-                                              disabled={deletingChildId === child.id}
-                                              title={deletingChildId === child.id ? 'Deleting…' : `Delete ${child.name}`}
-                                              aria-label={deletingChildId === child.id ? `Deleting ${child.name}` : `Delete ${child.name}`}
-                                            >
-                                              <LuTrash2 aria-hidden />
-                                            </button>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </Card>
-                                  );
-                                })}
-
-                                {canEditFamily && (
-                                  <Link
-                                    to="/children/new"
-                                    state={{ familyId: family.id, fromOnboarding: onboarding?.isActive }}
-                                    className={s.familyAddLink}
-                                    data-onboarding={families.length > 0 && family.id === families[0].id ? 'add-child' : undefined}
-                                  >
-                                    <Card className={`${s.familyCard} ${s.familyAddCard}`}>
-                                      <div className={s.familyContent}>
-                                        <div className={s.familyAvatar}>
-                                          <div className={s.familyAddAvatar}>+</div>
-                                        </div>
-                                        <div className={s.familyInfo}>
-                                          <h2 className={s.familyName}>Add Child</h2>
-                                          <div className={s.familyDetails}>
-                                            <span>Add a child to {family.name}</span>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </Card>
-                                  </Link>
-                                )}
-                              </div>
-                            </Card>
-                          );
-                        })}
-
-                      <button
-                        type="button"
-                        onClick={() => setShowAddFamilyModal(true)}
-                        className={s.familyAddFamilyButton}
-                        data-onboarding="add-family"
-                      >
-                        <Card className={`${s.familyCard} ${s.familyAddCard}`}>
-                          <div className={s.familyContent}>
-                            <div className={s.familyAvatar}>
-                              <div className={s.familyAddAvatar}>+</div>
-                            </div>
-                            <div className={s.familyInfo}>
-                              <h2 className={s.familyName}>Add Family</h2>
-                              <div className={s.familyDetails}>
-                                <span>Create a new family</span>
-                              </div>
-                            </div>
-                          </div>
-                        </Card>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ),
-            },
-            {
-              id: 'management',
-              label: 'Management',
-              content: familyManagementContent,
-            },
-          ]}
+    <div className={pageLayout.pageContainer}>
+      {notification && (
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification(null)}
         />
-      </Card>
+      )}
 
+      <div className={layout.pageGrid}>
+        <Card className={layout.card}>
+          <div className={layout.cardGrid}>
+            <div className={layout.cardHeader}>
+              <h1 className={layout.title}>Family</h1>
+              <p className={familyLayout.subtitle}>
+                See who's in your family, invite others, and manage access.
+              </p>
+            </div>
+
+            <aside className={layout.sidebar} aria-label="Family sub-sections">
+              <button
+                type="button"
+                className={`${layout.sidebarItem} ${familySubTab === 'members' ? layout.active : ''}`}
+                onClick={() => setSubTab('members')}
+                aria-current={familySubTab === 'members' ? 'page' : undefined}
+                data-onboarding="family-members-tab"
+              >
+                <LuUsers className={layout.sidebarIcon} aria-hidden />
+                <span>Members</span>
+              </button>
+              <button
+                type="button"
+                className={`${layout.sidebarItem} ${familySubTab === 'management' ? layout.active : ''}`}
+                onClick={() => setSubTab('management')}
+                aria-current={familySubTab === 'management' ? 'page' : undefined}
+                data-onboarding="family-management-tab"
+              >
+                <LuSettings className={layout.sidebarIcon} aria-hidden />
+                <span>Management</span>
+              </button>
+            </aside>
+
+            <main className={layout.main}>
+              {familySubTab === 'members' ? membersContent : managementContent}
+            </main>
+          </div>
+        </Card>
+      </div>
+
+      {/* ---- Modals (ported verbatim from FamilyTab.tsx) ---- */}
       {leaveConfirmFamily && (
         <div
           className={modalStyles.overlay}
@@ -709,9 +846,12 @@ export default function FamilyTab({
             </div>
             <div className={modalStyles.body}>
               <p className={s.deleteFamilyAlert}>
-                🚨 You will lose access to <strong>{leaveConfirmFamily.name}</strong> and all of its data. You can only rejoin if someone invites you again.
+                🚨 You will lose access to <strong>{leaveConfirmFamily.name}</strong> and all of its
+                data. You can only rejoin if someone invites you again.
               </p>
-              <p className={s.deleteFamilyInstruction}>Are you sure you want to leave this family?</p>
+              <p className={s.deleteFamilyInstruction}>
+                Are you sure you want to leave this family?
+              </p>
             </div>
             <div className={modalStyles.footer}>
               <Button variant="secondary" onClick={() => setLeaveConfirmFamily(null)}>
@@ -763,7 +903,8 @@ export default function FamilyTab({
             </div>
             <div className={modalStyles.body}>
               <p className={s.deleteFamilyAlert}>
-                🚨 <strong>This action cannot be undone.</strong> All members will lose access to this family and its data.
+                🚨 <strong>This action cannot be undone.</strong> All members will lose access to
+                this family and its data.
               </p>
               <p className={s.deleteFamilyInstruction}>
                 Type <strong>delete {deleteConfirmFamily.name}</strong> below to confirm.
@@ -790,7 +931,10 @@ export default function FamilyTab({
               </Button>
               <Button
                 variant="danger"
-                disabled={confirmDeleteInput.trim() !== `delete ${deleteConfirmFamily.name}` || loading.familyDelete}
+                disabled={
+                  confirmDeleteInput.trim() !== `delete ${deleteConfirmFamily.name}` ||
+                  loading.familyDelete
+                }
                 onClick={() => {
                   handleDeleteFamily(deleteConfirmFamily.id);
                   setDeleteConfirmFamily(null);
@@ -835,7 +979,8 @@ export default function FamilyTab({
             </div>
             <div className={modalStyles.body}>
               <p className={s.deleteFamilyAlert}>
-                🚨 <strong>This action cannot be undone.</strong> All associated visits and data will be permanently deleted.
+                🚨 <strong>This action cannot be undone.</strong> All associated visits and data
+                will be permanently deleted.
               </p>
               <p className={s.deleteFamilyInstruction}>
                 Type <strong>delete {deleteConfirmChild.name}</strong> below to confirm.
@@ -862,7 +1007,10 @@ export default function FamilyTab({
               </Button>
               <Button
                 variant="danger"
-                disabled={confirmDeleteChildInput.trim() !== `delete ${deleteConfirmChild.name}` || deletingChildId === deleteConfirmChild.id}
+                disabled={
+                  confirmDeleteChildInput.trim() !== `delete ${deleteConfirmChild.name}` ||
+                  deletingChildId === deleteConfirmChild.id
+                }
                 onClick={() => handleDeleteChild(deleteConfirmChild)}
               >
                 {deletingChildId === deleteConfirmChild.id ? 'Deleting…' : 'Delete'}
@@ -952,6 +1100,6 @@ export default function FamilyTab({
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

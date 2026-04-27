@@ -1,0 +1,15 @@
+/* FamilyPage-specific styles. Layout/sidebar/main come from SettingsLayout.module.css
+ * so the Family page matches the Settings page exactly: left-rail on desktop,
+ * horizontal scrollable pill row at the top on mobile. */
+
+.subtitle {
+  margin: var(--spacing-xs) 0 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+@media (max-width: 767.98px) {
+  .subtitle {
+    display: none;
+  }
+}

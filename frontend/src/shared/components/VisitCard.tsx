@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { DentalToothIcon } from '@hugeicons/core-free-icons';
-import { LuPaperclip, LuActivity, LuHeart, LuPill, LuEye } from 'react-icons/lu';
+import { LuPaperclip, LuActivity, LuStethoscope, LuPill, LuEye } from 'react-icons/lu';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
 import type { Visit } from '../types/api';
 import { formatDate } from '../lib/date-utils';
@@ -32,7 +32,7 @@ function VisitCard({ visit, childName, childId, hasAttachments }: VisitCardProps
 
     const iconTypeClass = visit.visit_type === 'wellness' ? vi.iconWellness : visit.visit_type === 'sick' ? vi.iconSick : visit.visit_type === 'injury' ? vi.iconInjury : visit.visit_type === 'vision' ? vi.iconVision : visit.visit_type === 'dental' ? vi.iconDental : vi.iconWellness;
     const Icon = () => {
-        if (visit.visit_type === 'wellness') return <LuHeart className={vi.typeSvg} />;
+        if (visit.visit_type === 'wellness') return <LuStethoscope className={vi.typeSvg} />;
         if (visit.visit_type === 'sick') return <LuPill className={vi.typeSvg} />;
         if (visit.visit_type === 'injury') return <MdOutlinePersonalInjury className={`${vi.typeSvg} ${vi.typeSvgFilled}`} />;
         if (visit.visit_type === 'vision') return <LuEye className={vi.typeSvg} />;

@@ -2,7 +2,7 @@
 
 .pageLayout {
   display: flex;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-sm);
   align-items: flex-start;
 }
 
@@ -271,10 +271,24 @@ body:not([data-theme="dark"]) .sidebarAddVisitBtn:focus-visible {
 @media (max-width: 900px) {
   .pageLayout {
     flex-direction: column;
+    /* Outer pageLayout is align-items: flex-start which, on a column flex
+     * container, prevents children from stretching to the cross-axis (= full
+     * width). Force children to fill the row so .main + its timeline rows
+     * span the full body width. */
+    align-items: stretch;
   }
   .sidebar {
     position: relative;
     width: 100%;
     top: 0;
+  }
+}
+
+/* On phones, hide the desktop filter sidebar; ChildDetailPage tabs render
+ * a MobileFilterBar instead. AllVisitsView / AllIllnessesView / VaccineHistory
+ * already swap to dedicated mobile views before reaching this layout. */
+@media (max-width: 767.98px) {
+  .sidebar {
+    display: none;
   }
 }

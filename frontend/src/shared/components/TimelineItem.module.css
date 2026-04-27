@@ -240,3 +240,69 @@
   background: var(--color-primary);
   color: var(--color-text-inverse, #ffffff);
 }
+
+/* Single concise meta line (date) shown on mobile in place of the full
+ * badges group. Hidden on desktop where the badges row provides full info. */
+.mobileMeta {
+  display: none;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+/* ----- Mobile (<768px): collapse cards to icon + label + date + chevron ----- */
+@media (max-width: 767.98px) {
+  .item {
+    padding: var(--spacing-sm);
+    min-height: 56px;
+    gap: var(--spacing-sm);
+    /* The page-level Card uses --color-background-card; using the same colour
+     * here makes rows invisible against the Card. Switch to the elevated
+     * surface tone so each row reads as a distinct tappable tile. */
+    background: var(--color-surface);
+  }
+
+  /* Hide all the chip badges, attachment indicator, and child-name badge.
+   * The simplified meta line below provides the essential context. */
+  .badgesGroup,
+  .attachmentIndicator,
+  .childNameBadge {
+    display: none !important;
+  }
+
+  /* Show the simplified mobile meta line. Push it to the far right of the
+   * row so the visit label hugs the icon on the left and the date sits
+   * adjacent to the chevron on the right — fills the row instead of
+   * leaving dead space in the middle. */
+  .mobileMeta {
+    display: block;
+    margin-top: 0;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  /* .main is a row-flex container of [labelRow, mobileMeta]. Force it onto
+   * one line so margin-left:auto on .mobileMeta actually pushes it right. */
+  .main {
+    flex-wrap: nowrap;
+  }
+
+  /* Stack label + meta vertically on mobile. */
+  .labelRow {
+    flex-wrap: nowrap;
+  }
+
+  .labelCompact {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  /* Tighten chevron to a clean affordance. */
+  .arrowCompact {
+    font-size: var(--font-size-lg);
+    opacity: 0.5;
+  }
+}

@@ -23,6 +23,7 @@ const AddIllnessPage = lazy(() => import('./features/illnesses/pages/AddIllnessP
 const IllnessDetailPage = lazy(() => import('./features/illnesses/pages/IllnessDetailPage'));
 const EditIllnessPage = lazy(() => import('./features/illnesses/pages/EditIllnessPage'));
 const SettingsPage = lazy(() => import('./features/settings/pages/SettingsPage'));
+const FamilyPage = lazy(() => import('./features/family/pages/FamilyPage'));
 const AdminPage = lazy(() => import('./features/admin/pages/AdminPage'));
 const NotFoundPage = lazy(() => import('./app/errors/pages/NotFoundPage'));
 
@@ -63,16 +64,7 @@ function App() {
               <Route path="/illnesses/new" element={<AddIllnessPage />} />
               <Route path="/illnesses/:id" element={<IllnessDetailPage />} />
               <Route path="/illnesses/:id/edit" element={<EditIllnessPage />} />
-              <Route
-                path="/family"
-                element={
-                  <Navigate
-                    to="/settings"
-                    replace
-                    state={{ tab: 'family', familySubTab: 'members' }}
-                  />
-                }
-              />
+              <Route path="/family" element={<FamilyPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/admin/*" element={<AdminRoute><AdminPage /></AdminRoute>} />
               <Route path="*" element={<NotFoundPage />} />

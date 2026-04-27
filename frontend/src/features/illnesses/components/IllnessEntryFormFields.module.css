@@ -15,8 +15,10 @@
 }
 
 .row {
+  /* Severity selector needs full row width to render its 5-wide button grid
+   * comfortably; temperature alone is fine on the next row. */
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: var(--spacing-lg);
   align-items: start;
 }
