@@ -89,5 +89,5 @@ export function getNavigationAfterSave(
   if (fromLocation && fromLocation !== '/') {
     return fromLocation;
   }
-  return `/children/${childId}`;
+  return `/people/${childId}`;
 }

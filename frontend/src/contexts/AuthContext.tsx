@@ -12,6 +12,10 @@ export interface User {
   lastLoginAt?: string | null;
   isInstanceAdmin?: boolean;
   onboardingCompleted?: boolean;
+  /** True if the user has a `children` row with `user_id = users.id`. */
+  hasSelfChild?: boolean;
+  /** True once the user has either accepted or skipped the first-login self-record prompt. */
+  selfRecordPromptDismissed?: boolean;
 }
 
 interface AuthContextType {

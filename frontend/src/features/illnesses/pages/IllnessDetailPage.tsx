@@ -88,7 +88,7 @@ function IllnessDetailPage() {
       await illnessesApi.delete(parseInt(id!));
       setNotification({ message: 'Illness deleted successfully', type: 'success' });
       setTimeout(() => {
-        navigate(child ? `/children/${child.id}` : '/', { state: { tab: 'illnesses' } });
+        navigate(child ? `/people/${child.id}` : '/', { state: { tab: 'illnesses' } });
       }, 1000);
     } catch (err) {
       if (err instanceof ApiClientError) {
@@ -130,7 +130,7 @@ function IllnessDetailPage() {
         <div className={layoutStyles.detailBody}>
           {/* Header with Back button and Actions */}
           <div className={layoutStyles.detailHeader}>
-            <Link to={`/children/${illness.child_id}`} className={pageLayout.breadcrumb}>
+            <Link to={`/people/${illness.child_id}`} className={pageLayout.breadcrumb}>
               ← Back to {child.name}
             </Link>
             {canEdit && (

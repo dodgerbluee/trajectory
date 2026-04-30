@@ -2,13 +2,14 @@ import { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useHomeTabRequest } from '@/contexts/HomeTabRequestContext';
-import { useIsMobile } from '@shared/hooks';
+import { useIsMobile, useScrollRestoration } from '@shared/hooks';
 import { ThemeToggle, AboutDropdown, VersionFooter } from '@features/theme';
 import { IllnessNotification } from '@features/illnesses';
 import OnboardingOverlay from '@features/onboarding/components/OnboardingOverlay';
 import BottomTabBar from './BottomTabBar';
 import MoreMenuSheet from './MoreMenuSheet';
 import OfflineIndicator from '@shared/components/OfflineIndicator';
+import UpdateToast from '@shared/components/UpdateToast';
 import styles from './Layout.module.css';
 
 interface LayoutProps {
@@ -20,6 +21,7 @@ function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
   const homeTabRequest = useHomeTabRequest();
   const isMobile = useIsMobile();
+  useScrollRestoration();
 
   const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
@@ -30,6 +32,7 @@ function Layout({ children }: LayoutProps) {
   return (
     <div className={`${styles.container} ${isMobile ? styles.containerMobile : ''}`}>
       <OfflineIndicator />
+      <UpdateToast />
       <OnboardingOverlay />
       <header className={styles.header}>
         <div className={styles.headerContent}>

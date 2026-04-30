@@ -67,7 +67,8 @@
 .root :global(.form-textarea),
 .root :global(select.form-input) {
   padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--font-size-sm);
+  /* 16px floor on all viewports — anything smaller triggers iOS focus zoom. */
+  font-size: var(--font-size-base);
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
   color: var(--color-text-primary);

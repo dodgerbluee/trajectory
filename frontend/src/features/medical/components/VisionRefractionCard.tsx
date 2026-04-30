@@ -4,6 +4,7 @@
  */
 
 import { useId } from 'react';
+import { LuEye } from 'react-icons/lu';
 import mui from '@shared/styles/MeasurementsUI.module.css';
 
 export type EyeRefraction = {
@@ -51,9 +52,7 @@ export function VisionRefractionCard({
   return (
     <div className={mui.card} data-key="refraction" aria-labelledby="vision-refraction-heading">
       <div className={`${mui.cardHeader} ${hasValue ? mui.hasValue : ''}`}>
-        <span className={mui.cardIcon} aria-hidden>
-          👁
-        </span>
+        <LuEye className={mui.cardIcon} aria-hidden />
         <span className={mui.cardTitle} id="vision-refraction-heading">
           Refraction
         </span>
@@ -76,6 +75,7 @@ export function VisionRefractionCard({
                 readOnly={readOnly}
                 ariaLabel="OD sphere"
                 suffix="D"
+                mobileLabel="Sph (D)"
               />
               <RefractionNumberInput
                 value={actualValue.od.cylinder}
@@ -84,6 +84,7 @@ export function VisionRefractionCard({
                 readOnly={readOnly}
                 ariaLabel="OD cylinder"
                 suffix="D"
+                mobileLabel="Cyl (D)"
               />
               <RefractionNumberInput
                 value={actualValue.od.axis}
@@ -93,6 +94,7 @@ export function VisionRefractionCard({
                 step={1}
                 readOnly={readOnly}
                 ariaLabel="OD axis"
+                mobileLabel="Axis"
               />
             </div>
             <div className={mui.visionRefractionRow}>
@@ -104,6 +106,7 @@ export function VisionRefractionCard({
                 readOnly={readOnly}
                 ariaLabel="OS sphere"
                 suffix="D"
+                mobileLabel="Sph (D)"
               />
               <RefractionNumberInput
                 value={actualValue.os.cylinder}
@@ -112,6 +115,7 @@ export function VisionRefractionCard({
                 readOnly={readOnly}
                 ariaLabel="OS cylinder"
                 suffix="D"
+                mobileLabel="Cyl (D)"
               />
               <RefractionNumberInput
                 value={actualValue.os.axis}
@@ -121,6 +125,7 @@ export function VisionRefractionCard({
                 step={1}
                 readOnly={readOnly}
                 ariaLabel="OS axis"
+                mobileLabel="Axis"
               />
             </div>
           </div>
@@ -154,6 +159,8 @@ type RefractionNumberInputProps = {
   readOnly?: boolean;
   ariaLabel: string;
   suffix?: string;
+  /** Short label rendered above the input on mobile via CSS pseudo-element. */
+  mobileLabel?: string;
 };
 
 function RefractionNumberInput({
@@ -165,10 +172,11 @@ function RefractionNumberInput({
   readOnly,
   ariaLabel,
   suffix,
+  mobileLabel,
 }: RefractionNumberInputProps) {
   const id = useId();
   return (
-    <div className={mui.field}>
+    <div className={mui.field} data-mobile-label={mobileLabel}>
       <label htmlFor={id} className={mui.visuallyHidden}>
         {ariaLabel}
       </label>

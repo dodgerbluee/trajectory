@@ -30,6 +30,13 @@ interface MeasurementsInputProps {
   onBloodPressureChange: (value: string | null) => void;
   onHeartRateChange: (value: number | null) => void;
   disabled?: boolean;
+  /**
+   * 'child' (default) shows the full set including percentiles, ounces, and
+   * head circumference — the CDC growth-chart fields parents track.
+   * 'adult' hides those: adults aren't on pediatric growth charts, and a
+   * weight-in-ounces field on a 200 lb input feels out of place.
+   */
+  subjectType?: 'child' | 'adult';
 }
 
 interface MeasurementFieldWithSuffixProps {
@@ -124,7 +131,9 @@ function MeasurementsInput({
   onBloodPressureChange,
   onHeartRateChange,
   disabled = false,
+  subjectType = 'child',
 }: MeasurementsInputProps) {
+  const isAdult = subjectType === 'adult';
   type SectionKey = 'weight' | 'height' | 'vitals' | 'head' | 'bmi';
   const [visibleSections, setVisibleSections] = useState<Set<SectionKey>>(() => {
     const s = new Set<SectionKey>(['weight', 'height', 'vitals']);
@@ -197,7 +206,8 @@ function MeasurementsInput({
   if (!visibleSections.has('weight')) addable.push({ key: 'weight', title: 'Weight', icon: '⚖' });
   if (!visibleSections.has('height')) addable.push({ key: 'height', title: 'Height', icon: '📏' });
   if (!visibleSections.has('vitals')) addable.push({ key: 'vitals', title: 'Vitals', icon: '❤' });
-  if (!visibleSections.has('head')) addable.push({ key: 'head', title: 'Head Circumference', icon: '👤' });
+  // Head circumference is a CDC growth-chart field for kids; hide for adults.
+  if (!isAdult && !visibleSections.has('head')) addable.push({ key: 'head', title: 'Head Circumference', icon: '👤' });
   if (!visibleSections.has('bmi')) addable.push({ key: 'bmi', title: 'BMI', icon: '📊' });
 
   return (
@@ -219,28 +229,32 @@ function MeasurementsInput({
                 disabled={disabled}
                 helper="0–15 oz optional"
               />
-              <MeasurementFieldWithSuffix
-                label="Ounces"
-                value={weightOunces ?? ''}
-                onChange={onWeightOuncesChange}
-                suffix="oz"
-                min={0}
-                max={15}
-                step="1"
-                placeholder="—"
-                disabled={disabled}
-              />
-              <MeasurementFieldWithSuffix
-                label="Percentile"
-                value={weightPercentile ?? ''}
-                onChange={onWeightPercentileChange}
-                suffix="%ile"
-                min={0}
-                max={100}
-                step="0.1"
-                placeholder="—"
-                disabled={disabled}
-              />
+              {!isAdult && (
+                <MeasurementFieldWithSuffix
+                  label="Ounces"
+                  value={weightOunces ?? ''}
+                  onChange={onWeightOuncesChange}
+                  suffix="oz"
+                  min={0}
+                  max={15}
+                  step="1"
+                  placeholder="—"
+                  disabled={disabled}
+                />
+              )}
+              {!isAdult && (
+                <MeasurementFieldWithSuffix
+                  label="Percentile"
+                  value={weightPercentile ?? ''}
+                  onChange={onWeightPercentileChange}
+                  suffix="%ile"
+                  min={0}
+                  max={100}
+                  step="0.1"
+                  placeholder="—"
+                  disabled={disabled}
+                />
+              )}
             </div>
           )}
 
@@ -259,17 +273,19 @@ function MeasurementsInput({
                 placeholder="—"
                 disabled={disabled}
               />
-              <MeasurementFieldWithSuffix
-                label="Percentile"
-                value={heightPercentile ?? ''}
-                onChange={onHeightPercentileChange}
-                suffix="%ile"
-                min={0}
-                max={100}
-                step="0.1"
-                placeholder="—"
-                disabled={disabled}
-              />
+              {!isAdult && (
+                <MeasurementFieldWithSuffix
+                  label="Percentile"
+                  value={heightPercentile ?? ''}
+                  onChange={onHeightPercentileChange}
+                  suffix="%ile"
+                  min={0}
+                  max={100}
+                  step="0.1"
+                  placeholder="—"
+                  disabled={disabled}
+                />
+              )}
             </div>
           )}
 
@@ -302,7 +318,7 @@ function MeasurementsInput({
             </div>
           )}
 
-        {visibleSections.has('head') &&
+        {!isAdult && visibleSections.has('head') &&
           renderCard(
             'head',
             'Head Circumference',
@@ -346,17 +362,19 @@ function MeasurementsInput({
                 placeholder="—"
                 disabled={disabled}
               />
-              <MeasurementFieldWithSuffix
-                label="Percentile"
-                value={bmiPercentile ?? ''}
-                onChange={onBmiPercentileChange}
-                suffix="%ile"
-                min={0}
-                max={100}
-                step="0.1"
-                placeholder="—"
-                disabled={disabled}
-              />
+              {!isAdult && (
+                <MeasurementFieldWithSuffix
+                  label="Percentile"
+                  value={bmiPercentile ?? ''}
+                  onChange={onBmiPercentileChange}
+                  suffix="%ile"
+                  min={0}
+                  max={100}
+                  step="0.1"
+                  placeholder="—"
+                  disabled={disabled}
+                />
+              )}
             </div>
           )}
       </div>

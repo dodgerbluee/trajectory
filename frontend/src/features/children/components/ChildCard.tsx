@@ -15,7 +15,7 @@ export default function ChildCard({ child }: ChildCardProps) {
   const birthdateText = formatDate(child.date_of_birth);
 
   return (
-    <Link to={`/children/${child.id}`} className={styles.cardLink} data-onboarding="child-card">
+    <Link to={`/people/${child.id}`} className={styles.cardLink} data-onboarding="child-card">
       <Card className={styles.compact}>
         <div className={styles.avatar}>
           <ChildAvatar

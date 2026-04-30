@@ -54,14 +54,14 @@ function MemberRow({
         </div>
         {canChangeRole ? (
           <select
-            className={`${styles.roleSelect} form-input`}
+            className={styles.roleSelect}
             value={displayRole}
             onChange={handleRoleSelect}
             disabled={isSaving}
             aria-label={`Role for ${member.username}`}
           >
             <option value="parent">Parent</option>
-            <option value="read_only">Read only</option>
+            <option value="read_only">View only</option>
           </select>
         ) : (
           <RoleBadge role={member.role as FamilyRole} className={styles.badge} />

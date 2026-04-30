@@ -76,7 +76,7 @@ function AddChildPage() {
         if (fromOnboarding && onboarding) {
           onboarding.reportChildAdded(response.data.id);
         } else {
-          navigate(`/children/${response.data.id}`);
+          navigate(`/people/${response.data.id}`);
         }
       }, 1000);
     } catch (error) {

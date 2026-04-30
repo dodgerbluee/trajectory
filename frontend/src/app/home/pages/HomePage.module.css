@@ -6,6 +6,15 @@
   gap: var(--spacing-lg);
 }
 
+/* Loading skeletons stack vertically — matches the per-family list rhythm
+ * once data lands, no big layout shift. */
+.skeletonList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) 0;
+}
+
 .cardLink {
   text-decoration: none;
   color: inherit;

@@ -824,6 +824,39 @@ export const authApi = {
 };
 
 // ============================================================================
+// /api/me — endpoints scoped to the authenticated user's own profile state.
+// Used by the first-login self-record prompt.
+// ============================================================================
+
+export interface CreateSelfRecordInput {
+  name: string;
+  date_of_birth: string; // YYYY-MM-DD
+  gender: 'male' | 'female';
+}
+
+export const meApi = {
+  /**
+   * Create the authenticated user's self-child row. Sets the prompt-dismissed
+   * flag as a side effect. Returns the new child id.
+   */
+  async createSelfRecord(input: CreateSelfRecordInput): Promise<ApiResponse<{ childId: number }>> {
+    return request<{ childId: number }>('/api/me/self-record', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  /**
+   * Skip the self-record prompt. Idempotent.
+   */
+  async dismissSelfRecordPrompt(): Promise<ApiResponse<{ dismissed: boolean }>> {
+    return request<{ dismissed: boolean }>('/api/me/self-record/dismiss', {
+      method: 'POST',
+    });
+  },
+};
+
+// ============================================================================
 // User preferences (theme, date_format)
 // ============================================================================
 

@@ -6,7 +6,6 @@ import type { AuditHistoryEvent } from '@shared/types/api';
 /**
  * Hook to manage the full state of a visit detail page.
  * Handles loading visit, child, attachments, and audit history.
- * Provides notifications and reload capabilities.
  */
 export function useVisitDetail(visitId: number | undefined) {
   // Core data state

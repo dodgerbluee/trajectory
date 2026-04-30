@@ -12,10 +12,11 @@
  * normal tap toggles the filter as before.
  */
 
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Child } from '@shared/types/api';
 import { ChildAvatar } from '@features/children';
+import { sortChildrenWithAdultsLast } from '../lib/profile-order';
 import styles from './ChildChipRow.module.css';
 
 const LONG_PRESS_MS = 500;
@@ -33,7 +34,14 @@ function ChildChipRow({ childrenList, selectedId, onSelect }: ChildChipRowProps)
   const startRef = useRef<{ x: number; y: number } | null>(null);
   const longFiredRef = useRef(false);
 
-  if (childrenList.length === 0) return null;
+  // Adults (18+) sort to the end of the chip row so kid avatars take the
+  // visible left-edge real estate on first paint.
+  const orderedChildren = useMemo(
+    () => sortChildrenWithAdultsLast(childrenList),
+    [childrenList]
+  );
+
+  if (orderedChildren.length === 0) return null;
 
   const clearTimer = () => {
     if (timerRef.current != null) {
@@ -57,7 +65,7 @@ function ChildChipRow({ childrenList, selectedId, onSelect }: ChildChipRowProps)
       } catch {
         /* no-op */
       }
-      navigate(`/children/${childId}`);
+      navigate(`/people/${childId}`);
     }, LONG_PRESS_MS);
   };
 
@@ -74,11 +82,11 @@ function ChildChipRow({ childrenList, selectedId, onSelect }: ChildChipRowProps)
   return (
     <div className={styles.wrap}>
       <div
-        className={`${styles.row} ${childrenList.length > 3 ? styles.rowCentered : ''}`}
+        className={`${styles.row} ${orderedChildren.length > 3 ? styles.rowCentered : ''}`}
         role="tablist"
         aria-label="Filter by child"
       >
-        {childrenList.map((child) => {
+        {orderedChildren.map((child) => {
           const isActive = selectedId === child.id;
           const firstName = child.name?.split(' ')[0] || child.name;
           return (

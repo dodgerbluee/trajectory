@@ -18,7 +18,7 @@ import {
 import { parsePaginationParams } from '../middleware/query-parser.js';
 import { createResponse, createPaginatedResponse } from '../types/api.js';
 import { authenticate, type AuthRequest } from '../middleware/auth.js';
-import { getFamilyIdsForUser, getOrCreateDefaultFamilyForUser, canAccessChild, canEditFamily, canEditChild } from '../features/families/service/family-access.js';
+import { getFamilyIdsForUser, getOrCreateDefaultFamilyForUser, canAccessChild, canEditFamily, canEditChildIdentity, canDeleteChild } from '../features/families/service/family-access.js';
 import { measurementsRouter } from './measurements.js';
 import { medicalEventsRouter } from './medical-events.js';
 
@@ -167,8 +167,8 @@ childrenRouter.put('/:id', async (req: AuthRequest, res: Response, next: NextFun
     if (!(await canAccessChild(req.userId!, id))) {
       throw new NotFoundError('Child');
     }
-    if (!(await canEditChild(req.userId!, id))) {
-      throw new ForbiddenError('You do not have permission to edit this child.');
+    if (!(await canEditChildIdentity(req.userId!, id))) {
+      throw new ForbiddenError('You do not have permission to edit this person.');
     }
 
     // Build dynamic update query based on provided fields
@@ -259,8 +259,8 @@ childrenRouter.delete('/:id', async (req: AuthRequest, res: Response, next: Next
     if (!(await canAccessChild(req.userId!, id))) {
       throw new NotFoundError('Child');
     }
-    if (!(await canEditChild(req.userId!, id))) {
-      throw new ForbiddenError('You do not have permission to delete this child.');
+    if (!(await canDeleteChild(req.userId!, id))) {
+      throw new ForbiddenError('You do not have permission to delete this person.');
     }
 
     const result = await query(
@@ -292,6 +292,7 @@ function formatChildForResponse(row: ChildRow) {
   return {
     id: row.id,
     family_id: row.family_id,
+    user_id: row.user_id,
     name: row.name,
     date_of_birth: row.date_of_birth.toISOString().split('T')[0],
     gender: row.gender,

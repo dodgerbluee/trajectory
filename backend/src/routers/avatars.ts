@@ -11,7 +11,7 @@ import { randomUUID } from 'crypto';
 import { query } from '../db/connection.js';
 import { createResponse } from '../types/api.js';
 import { authenticate, type AuthRequest } from '../middleware/auth.js';
-import { canAccessChild, canEditChild } from '../features/families/service/family-access.js';
+import { canAccessChild, canEditChildIdentity } from '../features/families/service/family-access.js';
 import { ForbiddenError } from '../middleware/error-handler.js';
 import { verifyToken } from '../features/auth/service/auth.js';
 
@@ -100,9 +100,9 @@ router.post(
         });
         return;
       }
-      if (!(await canEditChild(req.userId!, childId))) {
+      if (!(await canEditChildIdentity(req.userId!, childId))) {
         if (req.file) await fs.unlink(req.file.path);
-        throw new ForbiddenError('You do not have permission to update this child\'s avatar.');
+        throw new ForbiddenError('You do not have permission to update this person\'s avatar.');
       }
 
       if (!req.file) {
@@ -340,8 +340,8 @@ router.delete(
         });
         return;
       }
-      if (!(await canEditChild(req.userId!, childId))) {
-        throw new ForbiddenError('You do not have permission to delete this child\'s avatar.');
+      if (!(await canEditChildIdentity(req.userId!, childId))) {
+        throw new ForbiddenError('You do not have permission to delete this person\'s avatar.');
       }
 
       const result = await query<{ avatar: string | null }>(

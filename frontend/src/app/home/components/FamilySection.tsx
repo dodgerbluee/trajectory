@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
+import { useMemo } from 'react';
 import type { Child, Family } from '@shared/types/api';
 import { calculateAge, formatAge, formatDate } from '@lib/date-utils';
 import Card from '@shared/components/Card';
 import { ChildAvatar } from '@features/children';
 import tl from '@shared/components/TimelineList.module.css';
+import { sortChildrenWithAdultsLast } from '../lib/profile-order';
 import styles from './FamilySection.module.css';
 
 interface FamilySectionProps {
@@ -13,6 +15,8 @@ interface FamilySectionProps {
 
 export default function FamilySection({ family, children }: FamilySectionProps) {
   const canEditFamily = family.role === 'owner' || family.role === 'parent';
+  // Adults (18+) sort to the end of the family grid so children stay primary.
+  const orderedChildren = useMemo(() => sortChildrenWithAdultsLast(children), [children]);
 
   return (
     <div className={styles.tabsContentBox}>
@@ -28,12 +32,12 @@ export default function FamilySection({ family, children }: FamilySectionProps) 
           </Card>
         ) : (
           <div className={styles.grid}>
-            {children.map((child) => {
+            {orderedChildren.map((child) => {
               const age = calculateAge(child.date_of_birth);
               const ageText = formatAge(age.years, age.months);
               const birthdateText = formatDate(child.date_of_birth);
               return (
-                <Link key={child.id} to={`/children/${child.id}`} className={styles.cardLink} data-onboarding="child-card">
+                <Link key={child.id} to={`/people/${child.id}`} className={styles.cardLink} data-onboarding="child-card">
                   <Card className={styles.compact}>
                     <div className={styles.avatar}>
                       <ChildAvatar

@@ -16,6 +16,7 @@ import { invitesRouter } from './routers/invites.js';
 import exportRouter from './routers/export.js';
 import { adminRouter } from './routers/admin.js';
 import { oauthAdminRouter } from './routers/oauth-admin.js';
+import { meRouter } from './routers/me.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { logRequest } from './middleware/error-logger.js';
 
@@ -50,7 +51,8 @@ export function createApp(): express.Application {
 
   app.use('/api/auth/oauth', oauthRouter);
   app.use('/api/auth', authRouter);
-  app.use('/api/users', usersRouter); 
+  app.use('/api/me', meRouter);
+  app.use('/api/users', usersRouter);
   app.use('/api/families', familiesRouter);
   app.use('/api/invites', invitesRouter); 
   app.use('/api/export', exportRouter);

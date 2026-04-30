@@ -385,10 +385,90 @@
   .cards {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  /* Hide the Sphere / Cylinder / Axis header row on mobile + tablet — the
+     per-input mobile labels (rendered via [data-mobile-label]) replace it. */
+  .visionRefractionRowHeader {
+    display: none;
+  }
 }
 
 @media (max-width: 500px) {
   .cards {
     grid-template-columns: 1fr;
+  }
+
+  /* Vision refraction: stop using the table-grid on mobile. Instead stack
+     each eye as its own block with a small label header row and a 3-col
+     input row beneath. This sidesteps the `display: contents` parent-grid
+     overflow problem entirely. */
+  .visionRefractionFields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--m-space-2);
+  }
+
+  .visionRefractionRowHeader {
+    display: none;
+  }
+
+  .visionRefractionRow {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: auto auto;
+    column-gap: var(--m-space-1);
+    row-gap: var(--m-space-1);
+    align-items: end;
+    background: var(--color-background-subtle, transparent);
+    border-radius: var(--radius-sm);
+  }
+
+  .visionRefractionRow .visionRefractionEyeLabel {
+    grid-column: 1 / -1;
+    padding: 0;
+    font-size: var(--font-size-sm-tight);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+
+  /* Per-cell label above each input on mobile (replaces the hidden header row). */
+  .visionRefractionRow .field {
+    min-width: 0;
+  }
+
+  /* Inject pseudo-labels via data attributes added in the JSX. */
+  .visionRefractionRow .field::before {
+    content: attr(data-mobile-label);
+    display: block;
+    font-size: 0.65rem;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+
+  /* Compact input padding + right-align numbers. */
+  .visionRefractionRow .input {
+    padding: var(--m-space-1);
+    font-size: var(--font-size-sm-tight);
+    text-align: center;
+    min-width: 0;
+    width: 100%;
+  }
+
+  /* "D" is shown inline in the per-cell mobile label; hide the suffix. */
+  .visionRefractionRow .suffix {
+    display: none;
+  }
+
+  /* Strip number-input spinners on mobile. */
+  .visionRefractionRow .input::-webkit-outer-spin-button,
+  .visionRefractionRow .input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .visionRefractionRow .input[type='number'] {
+    -moz-appearance: textfield;
   }
 }

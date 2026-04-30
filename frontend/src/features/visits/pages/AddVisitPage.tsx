@@ -185,10 +185,16 @@ function AddVisitPage() {
   /** Limited form when no date yet or future date and user hasn't chosen full form (no outcome sections). */
   const isLimitedForm = noDateYet || useShortenedForm;
 
+  /** Subject type derived from selected child's user_id (self-row vs kid). */
+  const selectedChild = children.find((c) => c.id === selectedChildId) ?? null;
+  const subjectType: 'child' | 'adult' =
+    selectedChild && selectedChild.user_id != null ? 'adult' : 'child';
+
   /** Must run unconditionally (before any early return) to satisfy Rules of Hooks. */
   const visitFormContext = useMemo(
     () => ({
       mode: 'add' as const,
+      subjectType,
       formData,
       setFormData,
       submitting,
@@ -218,6 +224,7 @@ function AddVisitPage() {
       children,
       selectedChildId,
       isLimitedForm,
+      subjectType,
     ]
   );
 
@@ -276,6 +283,7 @@ function AddVisitPage() {
           payload.illnesses = currentIllnesses;
         }
       }
+
       // Create the visit
       const response = await visitsApi.create(payload);
       const visitId = response.data.id;
@@ -319,19 +327,19 @@ function AddVisitPage() {
     return <LoadingSpinner message="Loading..." />;
   }
 
+  // Block when there are no children/people in the family at all.
   if (children.length === 0) {
     return (
       <div className={pageLayout.pageContainer}>
         <Card>
           <p className={pageLayout.emptyState}>
-            No children added yet. <Link to="/children/new">Add a child</Link> first to create visits.
+            No children added yet. <Link to="/people/new">Add a child</Link> first to create visits.
           </p>
         </Card>
       </div>
     );
   }
 
-  const selectedChild = children.find(c => c.id === selectedChildId);
   const childName = selectedChild?.name || 'Child';
 
   const handleCancel = () => {
@@ -340,9 +348,9 @@ function AddVisitPage() {
     } else if (originFrom) {
       navigate(originFrom);
     } else if (originFromChild && originChildId) {
-      navigate(`/children/${originChildId}`);
+      navigate(`/people/${originChildId}`);
     } else if (childIdFromUrl) {
-      navigate(`/children/${childIdFromUrl}`);
+      navigate(`/people/${childIdFromUrl}`);
     } else {
       navigate('/', { state: { tab: 'visits' } });
     }
@@ -363,7 +371,7 @@ function AddVisitPage() {
           <div className={`${formLayout.root} ${formLayout.hasDateBanner}`}>
             <div className={formLayout.backRow}>
               <Link
-                to={selectedChildId ? `/children/${selectedChildId}` : '/'}
+                to={selectedChildId ? `/people/${selectedChildId}` : '/'}
                 className={`${pageLayout.breadcrumb} ${formLayout.backLink}`}
               >
                 ← Back to {childName}

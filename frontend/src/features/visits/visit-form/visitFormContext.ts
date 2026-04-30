@@ -7,9 +7,17 @@
 import type { Child, CreateVisitInput, UpdateVisitInput, IllnessType, Visit, VisitAttachment } from '@shared/types/api';
 
 export type VisitFormMode = 'add' | 'edit';
+export type VisitSubjectType = 'child' | 'adult';
 
 export interface VisitFormContext {
   mode: VisitFormMode;
+  /**
+   * Whose visit is this — a child (default; uses CDC growth-chart fields) or
+   * the current adult user (skip percentiles + head circumference). The form
+   * sections branch on this to hide kid-specific affordances; the underlying
+   * field set is otherwise the same.
+   */
+  subjectType: VisitSubjectType;
   formData: CreateVisitInput | UpdateVisitInput;
   /** Pages pass their own setState; sections use functional updates (prev => ({ ...prev, ... })). */
   setFormData: React.Dispatch<React.SetStateAction<CreateVisitInput>> | React.Dispatch<React.SetStateAction<UpdateVisitInput>>;

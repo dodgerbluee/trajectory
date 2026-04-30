@@ -3,8 +3,8 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { DentalToothIcon } from '@hugeicons/core-free-icons';
 import { LuActivity, LuStethoscope, LuPill, LuEye } from 'react-icons/lu';
 import { MdOutlinePersonalInjury } from 'react-icons/md';
-import LoadingSpinner from '@shared/components/LoadingSpinner';
 import ErrorMessage from '@shared/components/ErrorMessage';
+import VisitCardSkeleton from './VisitCardSkeleton';
 import { useIsMobile } from '@shared/hooks';
 import visitsLayout from '@shared/styles/VisitsLayout.module.css';
 import { VisitFilterSidebar, VisitsTimelineView } from '.';
@@ -52,12 +52,26 @@ function DesktopAllVisitsView() {
     { label: 'Vision', value: stats.vision, icon: LuEye, color: 'purple', onClick: () => setFilterVisitType('vision'), active: filterVisitType === 'vision' },
   ], [stats, filterVisitType, setFilterVisitType]);
 
-  if (loading) {
-    return <LoadingSpinner message="Loading visits..." />;
-  }
-
   if (error) {
     return <ErrorMessage message={error} onRetry={reload} />;
+  }
+
+  if (loading) {
+    return (
+      <div className={visitsLayout.pageLayout}>
+        <VisitFilterSidebar
+          stats={sidebarStats}
+          childrenList={children}
+          selectedChildId={filterChildId}
+          onSelectChild={(id: number | undefined) => setFilterChildId(id)}
+        />
+        <div aria-busy="true" aria-label="Loading visits">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <VisitCardSkeleton key={i} />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -127,6 +127,7 @@ function LoginPage() {
               required
               autoComplete="username"
               autoFocus
+              enterKeyHint="next"
               disabled={loading}
               aria-describedby={errors.username ? 'username-error' : undefined}
             />
@@ -145,6 +146,7 @@ function LoginPage() {
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                   required
                   autoComplete="current-password"
+                  enterKeyHint="go"
                   disabled={loading}
                   aria-describedby={errors.password ? 'password-error' : undefined}
                 />

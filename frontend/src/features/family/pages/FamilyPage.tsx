@@ -34,6 +34,7 @@ import { ApiClientError, childrenApi, familiesApi } from '@lib/api-client';
 import type { Child, Family, FamilyInvite, FamilyMember } from '@shared/types/api';
 import { calculateAge, formatAge, formatDate } from '@lib/date-utils';
 import { ChildAvatar } from '@features/children';
+import { SelfRecordPromptModal } from '@features/children/components';
 import { useFamilyPermissions } from '@/contexts/FamilyPermissionsContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -52,7 +53,7 @@ function readSubTabFromUrl(search: string): FamilySubTab {
 }
 
 export default function FamilyPage() {
-  const { user } = useAuth();
+  const { user, checkAuth } = useAuth();
   const { refreshPermissions } = useFamilyPermissions();
   const onboarding = useOnboarding();
   const location = useLocation();
@@ -128,6 +129,12 @@ export default function FamilyPage() {
   const [confirmDeleteChildInput, setConfirmDeleteChildInput] = useState('');
 
   const [savingMemberRole, setSavingMemberRole] = useState<{ familyId: number; userId: number } | null>(null);
+
+  // "Add yourself" prompt state — separate from the auto-fired HomePage prompt.
+  // This one is opened on demand from the Members tab when the user already
+  // dismissed the first-login prompt but later wants to self-record.
+  const [showSelfRecordModal, setShowSelfRecordModal] = useState(false);
+  const showAddYourselfButton = user?.hasSelfChild === false;
 
   // Onboarding: arriving on /family advances go_settings_family → create_family.
   useEffect(() => {
@@ -451,6 +458,29 @@ export default function FamilyPage() {
       {errorKids && <ErrorMessage message={errorKids} onRetry={loadChildren} />}
       {!loadingKids && !errorKids && (
         <div className={s.familyMembersByFamily}>
+          {showAddYourselfButton && (
+            <button
+              type="button"
+              onClick={() => setShowSelfRecordModal(true)}
+              className={s.familyAddFamilyButton}
+              aria-label="Add yourself as a family member"
+            >
+              <Card className={`${s.familyCard} ${s.familyAddCard}`}>
+                <div className={s.familyContent}>
+                  <div className={s.familyAvatar}>
+                    <div className={s.familyAddAvatar}>+</div>
+                  </div>
+                  <div className={s.familyInfo}>
+                    <h2 className={s.familyName}>Add yourself</h2>
+                    <div className={s.familyDetails}>
+                      <span>Track your own health alongside your family</span>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </button>
+          )}
+
           {[...families]
             .sort((a, b) => a.id - b.id)
             .map((family) => {
@@ -484,7 +514,7 @@ export default function FamilyPage() {
                             {canEditFamily && (
                               <div className={`${s.familyActions} ${detailLayout.iconActions}`}>
                                 <Link
-                                  to={`/children/${child.id}/edit`}
+                                  to={`/people/${child.id}/edit`}
                                   className={detailLayout.iconAction}
                                   title={`Edit ${child.name}`}
                                   aria-label={`Edit ${child.name}`}
@@ -517,7 +547,7 @@ export default function FamilyPage() {
 
                     {canEditFamily && (
                       <Link
-                        to="/children/new"
+                        to="/people/new"
                         state={{ familyId: family.id, fromOnboarding: onboarding?.isActive }}
                         className={s.familyAddLink}
                         data-onboarding={
@@ -1099,6 +1129,23 @@ export default function FamilyPage() {
             </div>
           </div>
         </div>
+      )}
+      {showSelfRecordModal && (
+        <SelfRecordPromptModal
+          onResolved={(result) => {
+            setShowSelfRecordModal(false);
+            if (result.kind === 'created-avatar-failed') {
+              notify({
+                message: `Profile created, but photo upload failed: ${result.avatarError}. You can add a photo later.`,
+                type: 'error',
+              });
+            } else if (result.kind === 'created') {
+              notify({ message: 'Added to family', type: 'success' });
+            }
+            void checkAuth();
+            void loadChildren();
+          }}
+        />
       )}
     </div>
   );

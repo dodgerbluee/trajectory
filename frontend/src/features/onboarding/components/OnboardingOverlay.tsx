@@ -188,7 +188,7 @@ export default function OnboardingOverlay() {
   const isFamily = pathname === '/family';
   const isHome = pathname === '/';
   const isChildDetail = /^\/children\/\d+$/.test(pathname);
-  const isAddChild = pathname === '/children/new';
+  const isAddChild = pathname === '/people/new';
 
   const [spotlightSelector, setSpotlightSelector] = useState<string | null>(null);
   const [dropdownCheckTick, setDropdownCheckTick] = useState(0);

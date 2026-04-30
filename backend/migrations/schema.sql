@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS users (
     theme VARCHAR(20) DEFAULT 'system',
     date_format VARCHAR(20) DEFAULT 'MM/DD/YYYY',
     onboarding_completed BOOLEAN NOT NULL DEFAULT false,
+    self_record_prompt_dismissed BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     last_login_at TIMESTAMP,
@@ -62,9 +63,19 @@ CREATE INDEX IF NOT EXISTS idx_family_invites_token ON family_invites(token_hash
 CREATE INDEX IF NOT EXISTS idx_family_invites_expires ON family_invites(expires_at);
 
 -- Children (belong to a family)
+-- children represents both kids and the account holder themselves. When
+-- user_id is non-null the row is the self-record for that user (linked
+-- back to users.id). Adult-only features (e.g. privacy) can later branch
+-- on user_id IS NOT NULL.
+--
+-- ON DELETE CASCADE on user_id is intentional: deleting a user account
+-- purges that user's self-row and all linked medical history (visits,
+-- illnesses, measurements, attachments). Child rows (user_id IS NULL)
+-- belong to the family, not the deleting user, and are preserved.
 CREATE TABLE IF NOT EXISTS children (
     id SERIAL PRIMARY KEY,
     family_id INTEGER NOT NULL REFERENCES families(id) ON DELETE RESTRICT,
+    user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     date_of_birth DATE NOT NULL,
     gender VARCHAR(20) NOT NULL CHECK (gender IN ('male', 'female')),
@@ -79,6 +90,7 @@ CREATE TABLE IF NOT EXISTS children (
     CONSTRAINT check_birth_weight_ounces CHECK (birth_weight_ounces IS NULL OR (birth_weight_ounces >= 0 AND birth_weight_ounces < 16))
 );
 CREATE INDEX IF NOT EXISTS idx_children_family ON children(family_id);
+CREATE INDEX IF NOT EXISTS idx_children_user_id ON children(user_id) WHERE user_id IS NOT NULL;
 
 -- Measurements
 CREATE TABLE IF NOT EXISTS measurements (

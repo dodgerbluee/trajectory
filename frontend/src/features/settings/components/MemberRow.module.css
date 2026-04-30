@@ -58,11 +58,54 @@
   margin-left: auto;
 }
 
+/* Role chooser styled as a chip to match RoleBadge (Owner). Native <select>
+ * keeps OS-native picker UX on mobile (iOS wheel / Android dropdown) while
+ * the visual matches the Owner badge sitting beside it. */
 .roleSelect {
   flex-shrink: 0;
   margin-left: auto;
   width: auto;
-  min-width: 8.75rem;
+  min-width: 0;
+
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3em 1.7em 0.3em 0.6em;
+  font-family: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.4;
+  color: var(--color-text-primary);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M3 4.5L6 7.5L9 4.5'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.5em center;
+  background-size: 0.75em;
+
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.roleSelect:hover:not(:disabled) {
+  border-color: var(--color-primary);
+}
+
+.roleSelect:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.roleSelect:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+[data-theme="dark"] .roleSelect {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23a0a0a0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M3 4.5L6 7.5L9 4.5'/></svg>");
 }
 
 .actions {
@@ -80,7 +123,7 @@
   border-color: var(--color-danger);
 }
 
-/* ----- Mobile (<768px): stack member info above role/remove actions ----- */
+/* ----- Mobile (<768px): stack member info above remove action ----- */
 @media (max-width: 767.98px) {
   .row {
     flex-direction: column;
@@ -93,14 +136,15 @@
     width: 100%;
   }
 
+  /* Role chip stays inline next to the member info, matching the Owner badge.
+   * Bump vertical padding so the tap target gets closer to the 44px guideline
+   * without making the chip look chunky on desktop. */
   .roleSelect {
-    margin-left: 0;
-    width: 100%;
-    min-width: 0;
+    margin-left: auto;
+    padding-top: 0.45em;
+    padding-bottom: 0.45em;
   }
 
-  /* Keep the role badge (e.g. Owner) compact and right-aligned next to the
-   * member info on mobile; only the <select> needs the full-width treatment. */
   .badge {
     margin-left: auto;
     width: auto;

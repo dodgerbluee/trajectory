@@ -46,10 +46,12 @@ function VisitDetailPage() {
    * Handle exporting visit to Google Calendar
    */
   const handleExportToCalendar = () => {
-    if (!visit || !child) return;
+    if (!visit) return;
+    if (!child) return;
 
     const typeLabel = getVisitTypeLabel(visit.visit_type);
-    const title = getCalendarExportTitle(child.name, typeLabel);
+    const subjectName = child.name;
+    const title = getCalendarExportTitle(subjectName, typeLabel);
     const url = getGoogleCalendarAddEventUrl({
       title,
       date: visit.visit_date,
@@ -67,7 +69,10 @@ function VisitDetailPage() {
     return <ErrorMessage message={error} onRetry={() => visitDetail.loadVisitDetails()} />;
   }
 
-  if (!visit || !child) {
+  if (!visit) {
+    return <ErrorMessage message="Visit not found" />;
+  }
+  if (!child) {
     return <ErrorMessage message="Visit not found" />;
   }
 
@@ -88,7 +93,10 @@ function VisitDetailPage() {
         <div className={layoutStyles.detailBody}>
           {/* Header with Back button and Actions */}
           <div className={layoutStyles.detailHeader}>
-            <Link to={`/children/${visit.child_id}`} className={pageLayout.breadcrumb}>
+            <Link
+              to={`/people/${visit.child_id}`}
+              className={pageLayout.breadcrumb}
+            >
               ← Back to {child.name}
             </Link>
             <div className={styles.iconActions}>

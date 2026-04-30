@@ -136,7 +136,7 @@ export default function WelcomePage() {
   const handleAddChild = () => {
     const first = families[0];
     if (first) {
-      navigate('/children/new', {
+      navigate('/people/new', {
         state: { familyId: first.id, fromOnboarding: true },
         replace: false,
       });

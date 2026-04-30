@@ -35,7 +35,12 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { DocumentsTab, IllnessesTab, TrendsTab, VaccinesTab, VisitsTab } from './tabs';
 // replaced local mask icon with Lucide thermometer for illness
 
-function ChildDetailPage() {
+/**
+ * Detail page for a single person (child or adult self-record). The self-row
+ * is rendered identically to a kid row — the user_id linkage is the only
+ * thing that distinguishes them in the database.
+ */
+function PersonDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -740,7 +745,7 @@ function ChildDetailPage() {
         isOpen={showVisitTypeModal}
         onSelect={(visitType: VisitType) => {
           setShowVisitTypeModal(false);
-          navigate(`/children/${child.id}/visits/new?type=${visitType}`, {
+          navigate(`/people/${child.id}/visits/new?type=${visitType}`, {
             state: { from: `${location.pathname}${location.search}`, childId: child.id }
           });
         }}
@@ -847,4 +852,4 @@ function ChildDetailPage() {
   );
 }
 
-export default ChildDetailPage;
+export default PersonDetailPage;

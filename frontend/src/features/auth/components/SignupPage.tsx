@@ -146,6 +146,7 @@ function SignupPage() {
               required
               autoComplete="username"
               autoFocus
+              enterKeyHint="next"
               disabled={loading}
               aria-describedby={errors.username ? 'username-error' : undefined}
             />
@@ -157,6 +158,7 @@ function SignupPage() {
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
               error={errors.email}
               autoComplete="email"
+              enterKeyHint="next"
               disabled={loading}
               aria-describedby={errors.email ? 'email-error' : undefined}
             />
@@ -175,6 +177,7 @@ function SignupPage() {
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                   required
                   autoComplete="new-password"
+                  enterKeyHint="next"
                   disabled={loading}
                   aria-describedby={errors.password ? 'password-error' : undefined}
                 />
@@ -225,6 +228,7 @@ function SignupPage() {
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
                   required
                   autoComplete="new-password"
+                  enterKeyHint="go"
                   disabled={loading}
                   aria-describedby={errors.confirmPassword ? 'confirm-password-error' : undefined}
                 />

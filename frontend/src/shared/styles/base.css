@@ -104,12 +104,13 @@ select.form-input {
   min-height: 44px;
 }
 
-/* Mobile: larger input heights for easier tapping */
+/* Mobile: larger input heights for easier tapping. font-size stays 16px here
+ * (var(--font-size-base) = 1rem = 16px) on all viewports — anything smaller
+ * triggers iOS focus zoom regardless of media query. */
 @media (max-width: 640px) {
   input.form-input,
   textarea.form-input,
   select.form-input {
-    font-size: 16px;
     min-height: 48px;
   }
 }

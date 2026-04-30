@@ -21,6 +21,10 @@ export type Gender = 'male' | 'female';
 
 export interface Child extends BaseEntity {
   family_id: number;
+  // When non-null, this child row represents the user account itself
+  // (the "self" row). Adult-account features can later branch on
+  // user_id IS NOT NULL.
+  user_id: number | null;
   name: string;
   date_of_birth: Date;
   gender: Gender;
@@ -138,6 +142,7 @@ export interface UpdateMedicalEventInput {
 export interface ChildRow {
   id: number;
   family_id: number;
+  user_id: number | null;
   name: string;
   date_of_birth: Date;
   gender: Gender;
@@ -719,6 +724,7 @@ export function childRowToEntity(row: ChildRow): Child {
   return {
     id: row.id,
     family_id: row.family_id,
+    user_id: row.user_id,
     name: row.name,
     date_of_birth: row.date_of_birth,
     gender: row.gender,

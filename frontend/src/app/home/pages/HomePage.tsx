@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useHomeTabRequest } from '@/contexts/HomeTabRequestContext';
-import LoadingSpinner from '@shared/components/LoadingSpinner';
 import ErrorMessage from '@shared/components/ErrorMessage';
+import ChildCardSkeleton from '@features/children/components/ChildCardSkeleton';
+import { SelfRecordPromptModal } from '@features/children/components';
+import { useSelfRecordPrompt } from '@features/children/hooks';
+import Notification from '@shared/components/Notification';
 import Card from '@shared/components/Card';
 import Tabs from '@shared/components/Tabs';
 import { AllIllnessesView } from '@features/illnesses';
@@ -39,6 +42,10 @@ function HomePage() {
   const { families, loading: loadingFamilies, error: errorFamilies, reload: reloadFamilies } = useFamiliesData();
   const { upcomingVisits, loading: loadingUpcoming, reload: reloadUpcoming } = useUpcomingVisitsData();
 
+  const selfRecordPrompt = useSelfRecordPrompt({
+    onChildrenInvalidated: reloadChildren,
+  });
+
   const loading = loadingFamilies || loadingChildren;
   const error = errorFamilies || errorChildren;
 
@@ -68,7 +75,13 @@ function HomePage() {
 
   const familyContent = (
     <div className={styles.familyTab}>
-      {loading && <LoadingSpinner message="Loading family..." />}
+      {loading && (
+        <div className={styles.skeletonList} aria-busy="true" aria-label="Loading family">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <ChildCardSkeleton key={i} />
+          ))}
+        </div>
+      )}
       {error && <ErrorMessage message={error} onRetry={handleRetry} />}
       {!loading && !error && (
         isMobile ? (
@@ -203,6 +216,16 @@ function HomePage() {
           navigate(location.pathname + (location.search || ''), { state: currentState, replace: true });
         }}
       />
+      {selfRecordPrompt.shouldShow && (
+        <SelfRecordPromptModal onResolved={selfRecordPrompt.onResolved} />
+      )}
+      {selfRecordPrompt.notification && (
+        <Notification
+          message={selfRecordPrompt.notification.message}
+          type={selfRecordPrompt.notification.type}
+          onClose={selfRecordPrompt.clearNotification}
+        />
+      )}
     </div>
   );
 }

@@ -14,7 +14,7 @@ interface SelectOption {
 }
 
 interface InputFieldProps extends BaseFieldProps, InputHTMLAttributes<HTMLInputElement> {
-  type?: 'text' | 'date' | 'time' | 'number' | 'email' | 'password';
+  type?: 'text' | 'date' | 'time' | 'number' | 'email' | 'password' | 'search' | 'tel' | 'url';
   options?: never;
   list?: string;
 }
@@ -86,6 +86,17 @@ export function FormFieldGroup({
   );
 }
 
+// Default mobile keyboard hint by input type. Callers can still override
+// inputMode (e.g. inputMode="numeric" for integer-only fields). decimal is the
+// right default for measurements: weight, height, temperature, head circumference.
+const DEFAULT_INPUT_MODE: Record<string, InputHTMLAttributes<HTMLInputElement>['inputMode']> = {
+  number: 'decimal',
+  email: 'email',
+  tel: 'tel',
+  url: 'url',
+  search: 'search',
+};
+
 function FormField({ label, error, required, hint, type = 'text', ...props }: FormFieldProps) {
   const inputId = props.id || (label ? `field-${label.toLowerCase().replace(/\s+/g, '-')}` : `field-${Math.random().toString(36).substr(2, 9)}`);
   const inputClass = [styles.input, 'form-input', error && 'error'].filter(Boolean).join(' ');
@@ -120,6 +131,9 @@ function FormField({ label, error, required, hint, type = 'text', ...props }: Fo
           type={type}
           className={inputClass}
           {...(props as InputHTMLAttributes<HTMLInputElement>)}
+          inputMode={
+            (props as InputHTMLAttributes<HTMLInputElement>).inputMode ?? DEFAULT_INPUT_MODE[type]
+          }
         />
       )}
     </FormFieldGroup>

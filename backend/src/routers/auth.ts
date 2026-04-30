@@ -214,6 +214,8 @@ authRouter.post(
           username: userRow.username,
           onboardingCompleted: userRow.onboarding_completed ?? false,
           isInstanceAdmin: isFirstUser,
+          selfRecordPromptDismissed: false,
+          hasSelfChild: false,
         },
         accessToken,
         refreshToken,
@@ -301,7 +303,18 @@ authRouter.post(
       [user.id, tokenHash, req.get('user-agent') || null, req.ip]
     );
 
-    const userRow = user as UserRow & { is_instance_admin?: boolean; onboarding_completed?: boolean };
+    const userRow = user as UserRow & {
+      is_instance_admin?: boolean;
+      onboarding_completed?: boolean;
+      self_record_prompt_dismissed?: boolean;
+    };
+
+    const hasSelfChildResult = await query<{ exists: boolean }>(
+      'SELECT EXISTS (SELECT 1 FROM children WHERE user_id = $1) AS exists',
+      [user.id]
+    );
+    const hasSelfChild = hasSelfChildResult.rows[0]?.exists ?? false;
+
     res.json(
       createResponse({
         user: {
@@ -310,6 +323,8 @@ authRouter.post(
           username: user.username,
           onboardingCompleted: userRow.onboarding_completed ?? false,
           isInstanceAdmin: userRow.is_instance_admin ?? false,
+          selfRecordPromptDismissed: userRow.self_record_prompt_dismissed ?? false,
+          hasSelfChild,
           createdAt: user.created_at.toISOString(),
         },
         accessToken,
@@ -413,9 +428,18 @@ authRouter.get(
   authenticate,
   asyncHandler(async (req: AuthRequest, res: Response, _next: NextFunction) => {
     const userResult = await query<
-      UserRow & { is_instance_admin: boolean; onboarding_completed: boolean }
+      UserRow & {
+        is_instance_admin: boolean;
+        onboarding_completed: boolean;
+        self_record_prompt_dismissed: boolean;
+        has_self_child: boolean;
+      }
     >(
-      'SELECT id, email, username, email_verified, created_at, last_login_at, is_instance_admin, onboarding_completed FROM users WHERE id = $1',
+      `SELECT u.id, u.email, u.username, u.email_verified, u.created_at, u.last_login_at,
+              u.is_instance_admin, u.onboarding_completed, u.self_record_prompt_dismissed,
+              EXISTS (SELECT 1 FROM children c WHERE c.user_id = u.id) AS has_self_child
+         FROM users u
+        WHERE u.id = $1`,
       [req.userId]
     );
 
@@ -435,6 +459,8 @@ authRouter.get(
         lastLoginAt: user.last_login_at?.toISOString() || null,
         isInstanceAdmin: user.is_instance_admin,
         onboardingCompleted: user.onboarding_completed ?? false,
+        selfRecordPromptDismissed: user.self_record_prompt_dismissed ?? false,
+        hasSelfChild: user.has_self_child ?? false,
       })
     );
   })

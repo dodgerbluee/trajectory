@@ -202,7 +202,7 @@ export function AttachmentsSection({ context }: SectionContentPropsWithContext) 
 }
 
 export function MeasurementsSection({ context }: SectionContentPropsWithContext) {
-  const { formData, setFormData: _setFormData, submitting } = context;
+  const { formData, setFormData: _setFormData, submitting, subjectType } = context;
   const setFormData = _setFormData as React.Dispatch<React.SetStateAction<CreateVisitInput & UpdateVisitInput>>;
   const weightValue = 'weight_value' in formData ? formData.weight_value : null;
   const weightOunces = 'weight_ounces' in formData ? formData.weight_ounces : null;
@@ -240,6 +240,7 @@ export function MeasurementsSection({ context }: SectionContentPropsWithContext)
       onBloodPressureChange={(v) => setFormData((prev) => ({ ...prev, blood_pressure: v }))}
       onHeartRateChange={(v) => setFormData((prev) => ({ ...prev, heart_rate: v }))}
       disabled={submitting}
+      subjectType={subjectType}
     />
   );
 }
@@ -439,6 +440,7 @@ export function DentalSection({ context }: SectionContentPropsWithContext) {
               setFormData((prev) => ({ ...prev, cavities_found: n }));
             }}
               min="0"
+              inputMode="numeric"
               disabled={submitting}
             />
           </div>
@@ -454,6 +456,7 @@ export function DentalSection({ context }: SectionContentPropsWithContext) {
             }}
               min="0"
               max={cavitiesFound ?? undefined}
+              inputMode="numeric"
               disabled={submitting}
             />
           </div>

@@ -127,6 +127,7 @@ export type Gender = 'male' | 'female';
 export interface Child {
   id: number;
   family_id?: number; // present when backend supports multi-family; used for grouping
+  user_id: number | null; // non-null for self-rows (account holder's own person record)
   name: string;
   date_of_birth: string; // YYYY-MM-DD
   gender: Gender;
@@ -253,6 +254,13 @@ export type DentalProcedure = {
 export interface Visit {
   id: number;
   child_id: number;
+  /**
+   * Adult-personal owner. Kid visits have this null/absent; adult-personal
+   * visits have user_id set (and child_id is a phantom 0 for type-compat).
+   */
+  user_id?: number | null;
+  /** Per-row privacy override for adult-personal visits. Always false for kids. */
+  is_private?: boolean;
   visit_date: string;
   visit_time: string | null; // "HH:MM" optional
   visit_type: VisitType;
@@ -493,6 +501,10 @@ export interface MeasurementAttachment {
 export interface Illness {
   id: number;
   child_id: number;
+  /** Adult-personal owner; null for kid illnesses. */
+  user_id?: number | null;
+  /** Per-row privacy override for adult-personal illnesses. */
+  is_private?: boolean;
   illness_types: IllnessType[];
   start_date: string;
   end_date: string | null;
@@ -579,3 +591,4 @@ export interface AuditHistoryEvent {
   changes: Record<string, { before: unknown; after: unknown }>;
   summary: string | null;
 }
+

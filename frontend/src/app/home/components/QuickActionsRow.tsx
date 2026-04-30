@@ -21,7 +21,7 @@ function QuickActionsRow({ childId }: QuickActionsRowProps) {
   const goAddVisit = () => {
     // /visits/new → existing VisitTypeModal flow
     if (childId != null) {
-      navigate(`/children/${childId}/visits/new`);
+      navigate(`/people/${childId}/visits/new`);
     } else {
       navigate('/visits/new');
     }
@@ -33,7 +33,7 @@ function QuickActionsRow({ childId }: QuickActionsRowProps) {
     // No standalone measurement page exists; route to wellness visit creation
     // pre-typed (uses the wellness flow which captures vitals).
     if (childId != null) {
-      navigate(`/children/${childId}/visits/new?type=wellness`);
+      navigate(`/people/${childId}/visits/new?type=wellness`);
     } else {
       navigate('/visits/new?type=wellness');
     }
@@ -42,7 +42,7 @@ function QuickActionsRow({ childId }: QuickActionsRowProps) {
   const goAddDocument = () => {
     // Route to child detail Documents tab where attachments are managed.
     if (childId != null) {
-      navigate(`/children/${childId}`, { state: { tab: 'documents' } });
+      navigate(`/people/${childId}`, { state: { tab: 'documents' } });
     } else {
       navigate('/');
     }

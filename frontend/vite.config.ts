@@ -7,8 +7,9 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      // Auto-update silently on next nav (Phase 9 decision).
-      registerType: 'autoUpdate',
+      // Manual prompt: show an in-app "Refresh" toast when a new SW is waiting,
+      // so a silent swap can't drop a half-filled form. UpdateToast handles UX.
+      registerType: 'prompt',
       // We already have a manifest in public/; let the plugin own it instead
       // (avoid drift). The plugin will inject <link rel="manifest"> automatically.
       injectRegister: 'auto',
@@ -72,8 +73,9 @@ export default defineConfig({
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
         cleanupOutdatedCaches: true,
-        clientsClaim: true,
-        skipWaiting: true,
+        // clientsClaim/skipWaiting deliberately omitted: with prompt-mode
+        // registration, the new SW must wait for the user to confirm the
+        // refresh so in-progress work is preserved.
         runtimeCaching: [
           // Read-only API GETs for core entities — stale-while-revalidate
           // gives instant offline reads while refreshing in the background.

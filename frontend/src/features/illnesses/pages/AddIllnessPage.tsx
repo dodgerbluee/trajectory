@@ -106,7 +106,7 @@ function AddIllnessPage() {
         if (res.data?.id != null) {
           navigate(`/illnesses/${res.data.id}`, { state: state ?? undefined });
         } else if (state?.fromChild && state?.childId != null) {
-          navigate(`/children/${state.childId}`, { state: { tab: state.fromTab ?? 'illnesses' } });
+          navigate(`/people/${state.childId}`, { state: { tab: state.fromTab ?? 'illnesses' } });
         } else {
           navigate('/', { state: { tab: 'illnesses' } });
         }
@@ -130,7 +130,7 @@ function AddIllnessPage() {
     : [];
 
   const backHref = ((location.state as { fromChild?: boolean; childId?: number })?.fromChild && (location.state as { childId?: number }).childId)
-    ? `/children/${(location.state as { childId: number }).childId}`
+    ? `/people/${(location.state as { childId: number }).childId}`
     : '/';
   const backLabel = ((location.state as { fromChild?: boolean })?.fromChild)
     ? (children.find(c => c.id === (location.state as { childId?: number })?.childId)?.name || 'Child')
@@ -155,7 +155,7 @@ function AddIllnessPage() {
   const handleCancel = () => {
     const state = location.state as { fromChild?: boolean; childId?: number; fromTab?: string } | null;
     if (state?.fromChild && state?.childId != null) {
-      navigate(`/children/${state.childId}`, { state: { tab: state.fromTab ?? 'illnesses' } });
+      navigate(`/people/${state.childId}`, { state: { tab: state.fromTab ?? 'illnesses' } });
     } else {
       navigate('/', { state: { tab: 'illnesses' } });
     }

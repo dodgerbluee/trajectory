@@ -102,7 +102,7 @@ function EditChildPage() {
       }
 
       setNotification({ message: 'Child updated successfully!', type: 'success' });
-      setTimeout(() => navigate(`/children/${id}`), 1000);
+      setTimeout(() => navigate(`/people/${id}`), 1000);
     } catch (error) {
       if (error instanceof ApiClientError) {
         setNotification({ message: error.message, type: 'error' });
@@ -130,7 +130,7 @@ function EditChildPage() {
       <Card>
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={detailLayout.detailHeader}>
-            <Link to={`/children/${id}`} className={pageLayout.breadcrumb}>
+            <Link to={`/people/${id}`} className={pageLayout.breadcrumb}>
               ← Back to {child.name}
             </Link>
             <div className={detailLayout.iconActions}>
@@ -144,7 +144,7 @@ function EditChildPage() {
                 <LuCheck aria-hidden />
               </button>
               <Link
-                to={`/children/${id}`}
+                to={`/people/${id}`}
                 className={detailLayout.iconAction}
                 title="Cancel"
                 aria-label="Cancel"

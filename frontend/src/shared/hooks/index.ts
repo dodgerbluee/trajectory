@@ -8,3 +8,4 @@ export {
   usePrefersReducedMotion,
 } from './useMediaQuery';
 export { useOnlineStatus } from './useOnlineStatus';
+export { useScrollRestoration } from './useScrollRestoration';

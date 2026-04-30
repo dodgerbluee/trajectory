@@ -127,6 +127,10 @@ function EditVisitPage() {
     });
   };
 
+  // Subject detection (also computed below for the form context); the loader
+  // needs this before render-time subjectType resolves so it can pick the
+  // right API.
+
   useEffect(() => {
     if (id) {
       loadData(forceFullForm);
@@ -142,11 +146,10 @@ function EditVisitPage() {
       const visitData = visitResponse.data;
       const childResponse = await childrenApi.getById(visitData.child_id);
       const childData = childResponse.data;
-      
+
       setVisit(visitData);
       setChild(childData);
-      
-      // Load attachments
+
       await loadAttachments(parseInt(id));
       
       // Populate form with existing visit data
@@ -272,9 +275,15 @@ function EditVisitPage() {
     );
   }, [visit, useLimitedForm]);
 
+  // Subject: derived from visit row's user_id; adult self-rows are still
+  // children rows in the DB, just with user_id linkage.
+  const subjectType: 'child' | 'adult' =
+    visit && (visit as { user_id?: number | null }).user_id != null ? 'adult' : 'child';
+
   const visitFormContext = useMemo(
     () => ({
       mode: 'edit' as const,
+      subjectType,
       formData,
       setFormData,
       submitting,
@@ -308,6 +317,7 @@ function EditVisitPage() {
       attachments,
       loadingAttachments,
       useLimitedForm,
+      subjectType,
     ]
   );
 
@@ -319,7 +329,7 @@ function EditVisitPage() {
     setDeleting(true);
     try {
       await visitsApi.delete(visit.id);
-      navigate(`/children/${visit.child_id}`);
+      navigate(`/people/${visit.child_id}`);
     } catch (err) {
       const message = err instanceof ApiClientError ? err.message : 'Failed to delete visit';
       setNotification({ message, type: 'error' });
@@ -406,7 +416,7 @@ function EditVisitPage() {
           <div className={formLayout.root}>
             <div className={formLayout.backRow}>
               <Link
-                to={`/children/${visit.child_id}`}
+                to={`/people/${visit.child_id}`}
                 className={`${pageLayout.breadcrumb} ${formLayout.backLink}`}
               >
                 ← Back to {child.name}

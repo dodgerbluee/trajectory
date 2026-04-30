@@ -109,7 +109,7 @@ function VisitCard({ visit, childName, childId, hasAttachments }: VisitCardProps
                                 <span className={t.labelCompact}>{label}</span>
                                 <div className={t.badgesGroup}>
                                     {childName && (
-                                        <Link to={childId ? `/children/${childId}` : '#'} className={t.childNameBadge} onClick={(e) => { if (!childId) e.preventDefault(); else e.stopPropagation(); }}>
+                                        <Link to={childId ? `/people/${childId}` : '#'} className={t.childNameBadge} onClick={(e) => { if (!childId) e.preventDefault(); else e.stopPropagation(); }}>
                                             {childName}
                                         </Link>
                                     )}
