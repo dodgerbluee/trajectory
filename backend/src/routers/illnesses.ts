@@ -1,6 +1,6 @@
 /**
  * Illness Routes - Standalone illness tracking
- * All endpoints require auth; data is scoped to the user's family (children they can access).
+ * All endpoints require auth; data is scoped to the user's family (people they can access).
  */
 
 import { Router, Response, NextFunction } from 'express';
@@ -15,7 +15,7 @@ import { validateDate, validateOptionalDate, validateOptionalString, validateNum
 import { buildFieldDiff, auditChangesSummary } from '../features/shared/service/field-diff.js';
 import { recordAuditEvent } from '../features/shared/service/audit.js';
 import { authenticate, type AuthRequest } from '../middleware/auth.js';
-import { getAccessibleChildIds, canAccessChild, canEditChild } from '../features/families/service/family-access.js';
+import { getAccessiblePersonIds, canAccessPerson, canEditPerson } from '../features/families/service/family-access.js';
 
 const router = Router();
 router.use(authenticate);
@@ -58,12 +58,12 @@ function validateIllnessTypesArray(value: unknown): IllnessType[] {
 
 router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const accessibleChildIds = await getAccessibleChildIds(req.userId!);
-    if (accessibleChildIds.length === 0) {
+    const accessiblePersonIds = await getAccessiblePersonIds(req.userId!);
+    if (accessiblePersonIds.length === 0) {
       return res.json(createResponse([]));
     }
 
-    const childId = req.query.child_id ? parseInt(req.query.child_id as string) : undefined;
+    const personId = req.query.person_id ? parseInt(req.query.person_id as string) : undefined;
     const illnessType = req.query.illness_type as IllnessType | undefined;
     const startDate = req.query.start_date as string | undefined;
     const endDate = req.query.end_date as string | undefined;
@@ -71,20 +71,20 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
     const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
 
     let queryText = 'SELECT i.* FROM illnesses i';
-    const queryParams: unknown[] = [accessibleChildIds];
+    const queryParams: unknown[] = [accessiblePersonIds];
     let paramCount = 2;
     if (illnessType) {
       queryText += ' INNER JOIN illness_illness_types it ON it.illness_id = i.id AND it.illness_type = $' + paramCount++;
       queryParams.push(illnessType);
     }
-    queryText += ' WHERE i.child_id = ANY($1::int[])';
+    queryText += ' WHERE i.person_id = ANY($1::int[])';
 
-    if (childId) {
-      if (!accessibleChildIds.includes(childId)) {
+    if (personId) {
+      if (!accessiblePersonIds.includes(personId)) {
         return res.json(createResponse([]));
       }
-      queryText += ` AND i.child_id = $${paramCount++}`;
-      queryParams.push(childId);
+      queryText += ` AND i.person_id = $${paramCount++}`;
+      queryParams.push(personId);
     }
 
     if (startDate) {
@@ -232,7 +232,7 @@ router.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
       throw new NotFoundError('Illness');
     }
     const row = result.rows[0];
-    if (!(await canAccessChild(req.userId!, row.child_id))) {
+    if (!(await canAccessPerson(req.userId!, row.person_id))) {
       throw new NotFoundError('Illness');
     }
     const typesResult = await query<{ illness_type: IllnessType }>(
@@ -253,17 +253,17 @@ router.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
 
 router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const childId = parseInt(req.body.child_id);
-    if (!(await canAccessChild(req.userId!, childId))) {
-      throw new NotFoundError('Child');
+    const personId = parseInt(req.body.person_id);
+    if (!(await canAccessPerson(req.userId!, personId))) {
+      throw new NotFoundError('Person');
     }
-    if (!(await canEditChild(req.userId!, childId))) {
-      throw new ForbiddenError('You do not have permission to add illnesses for this child.');
+    if (!(await canEditPerson(req.userId!, personId))) {
+      throw new ForbiddenError('You do not have permission to add illnesses for this person.');
     }
 
     const illnessTypes = validateIllnessTypesArray(req.body.illness_types);
     const input: CreateIllnessInput = {
-      child_id: childId,
+      person_id: personId,
       illness_types: illnessTypes,
       start_date: validateDate(req.body.start_date, 'start_date'),
       end_date: validateOptionalDate(req.body.end_date, 'end_date'),
@@ -278,13 +278,13 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
       notes: validateOptionalString(req.body.notes),
     };
 
-    // Validate child exists
-    const childCheck = await query<{ id: number }>(
-      'SELECT id FROM children WHERE id = $1',
-      [input.child_id]
+    // Validate person exists
+    const personCheck = await query<{ id: number }>(
+      'SELECT id FROM people WHERE id = $1',
+      [input.person_id]
     );
-    if (childCheck.rows.length === 0) {
-      throw new NotFoundError('Child');
+    if (personCheck.rows.length === 0) {
+      throw new NotFoundError('Person');
     }
 
     // Validate visit exists if provided
@@ -305,11 +305,11 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
 
     const result = await query<IllnessRow>(
       `INSERT INTO illnesses (
-        child_id, start_date, end_date, symptoms, temperature, severity, visit_id, notes
+        person_id, start_date, end_date, symptoms, temperature, severity, visit_id, notes
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *`,
       [
-        input.child_id,
+        input.person_id,
         input.start_date,
         input.end_date,
         input.symptoms,
@@ -354,7 +354,7 @@ router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
     }
 
     const existingRow = existing.rows[0];
-    if (!(await canAccessChild(req.userId!, existingRow.child_id))) {
+    if (!(await canAccessPerson(req.userId!, existingRow.person_id))) {
       throw new NotFoundError('Illness');
     }
     const existingTypesRes = await query<{ illness_type: IllnessType }>(
@@ -523,7 +523,7 @@ router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
     const changes = buildFieldDiff(
       existingIllness as unknown as Record<string, unknown>,
       input as unknown as Record<string, unknown>,
-      { excludeKeys: ['child_id'] }
+      { excludeKeys: ['person_id'] }
     );
     if (Object.keys(changes).length > 0) {
       await recordAuditEvent({
@@ -552,14 +552,14 @@ router.delete('/:id', async (req: AuthRequest, res: Response, next: NextFunction
       throw new BadRequestError('Invalid illness ID');
     }
 
-    const existing = await query<{ child_id: number }>('SELECT child_id FROM illnesses WHERE id = $1', [id]);
+    const existing = await query<{ person_id: number }>('SELECT person_id FROM illnesses WHERE id = $1', [id]);
     if (existing.rows.length === 0) {
       throw new NotFoundError('Illness');
     }
-    if (!(await canAccessChild(req.userId!, existing.rows[0].child_id))) {
+    if (!(await canAccessPerson(req.userId!, existing.rows[0].person_id))) {
       throw new NotFoundError('Illness');
     }
-    if (!(await canEditChild(req.userId!, existing.rows[0].child_id))) {
+    if (!(await canEditPerson(req.userId!, existing.rows[0].person_id))) {
       throw new ForbiddenError('You do not have permission to delete this illness.');
     }
 
@@ -576,26 +576,26 @@ router.delete('/:id', async (req: AuthRequest, res: Response, next: NextFunction
 
 router.get('/metrics/heatmap', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const accessibleChildIds = await getAccessibleChildIds(req.userId!);
-    if (accessibleChildIds.length === 0) {
+    const accessiblePersonIds = await getAccessiblePersonIds(req.userId!);
+    if (accessiblePersonIds.length === 0) {
       return res.json(createResponse({ year: req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear(), days: [], totalDays: 0, maxCount: 0 }));
     }
 
     const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
-    const childId = req.query.child_id ? parseInt(req.query.child_id as string) : undefined;
+    const personId = req.query.person_id ? parseInt(req.query.person_id as string) : undefined;
 
     if (isNaN(year) || year < 2000 || year > 2100) {
       throw new BadRequestError('Invalid year');
     }
-    if (childId && !accessibleChildIds.includes(childId)) {
-      throw new BadRequestError('Invalid child_id');
+    if (personId && !accessiblePersonIds.includes(personId)) {
+      throw new BadRequestError('Invalid person_id');
     }
 
     const startOfYear = `${year}-01-01`;
     const endOfYear = `${year}-12-31`;
     const currentDate = new Date().toISOString().split('T')[0];
 
-    const queryText = childId
+    const queryText = personId
       ? `
         WITH date_series AS (
           SELECT generate_series(
@@ -607,17 +607,17 @@ router.get('/metrics/heatmap', async (req: AuthRequest, res: Response, next: Nex
         illness_days AS (
           SELECT 
             d.date,
-            i.child_id,
+            i.person_id,
             COALESCE(i.severity, 5) as severity -- Default to 5 if severity is null
           FROM date_series d
           INNER JOIN illnesses i ON i.start_date <= d.date
             AND (i.end_date IS NULL OR i.end_date >= d.date)
-            AND i.child_id = $4
+            AND i.person_id = $4
         )
         SELECT 
           date::text as date,
           MAX(severity) as severity_value,
-          ARRAY_AGG(DISTINCT child_id) as children
+          ARRAY_AGG(DISTINCT person_id) as children
         FROM illness_days
         GROUP BY date
         ORDER BY date
@@ -633,30 +633,30 @@ router.get('/metrics/heatmap', async (req: AuthRequest, res: Response, next: Nex
         illness_days AS (
           SELECT 
             d.date,
-            i.child_id
+            i.person_id
           FROM date_series d
           INNER JOIN illnesses i ON i.start_date <= d.date
             AND (i.end_date IS NULL OR i.end_date >= d.date)
-            AND i.child_id = ANY($4::int[])
+            AND i.person_id = ANY($4::int[])
         )
         SELECT 
           date::text as date,
-          COUNT(DISTINCT child_id) as count,
-          ARRAY_AGG(DISTINCT child_id) as children
+          COUNT(DISTINCT person_id) as count,
+          ARRAY_AGG(DISTINCT person_id) as children
         FROM illness_days
         GROUP BY date
         ORDER BY date
       `;
 
-    const params = childId 
-      ? [startOfYear, endOfYear, currentDate, childId]
-      : [startOfYear, endOfYear, currentDate, accessibleChildIds];
+    const params = personId 
+      ? [startOfYear, endOfYear, currentDate, personId]
+      : [startOfYear, endOfYear, currentDate, accessiblePersonIds];
 
-    // For single child: use severity (1-10) directly
-    // For all children: use whole number count
+    // For single person: use severity (1-10) directly
+    // For all people: use whole number count
     let days: HeatmapDay[];
     
-    if (childId) {
+    if (personId) {
       const result = await query<{ date: string; severity_value: string; children: number[] }>(queryText, params);
       days = result.rows.map(row => ({
         date: row.date,

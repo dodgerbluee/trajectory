@@ -139,7 +139,7 @@ function valuesEqual(a: unknown, b: unknown): boolean {
 }
 
 export interface BuildFieldDiffOptions {
-  /** Keys to skip (e.g. id, created_at, updated_at, child_id for visits) */
+  /** Keys to skip (e.g. id, created_at, updated_at, person_id for visits) */
   excludeKeys?: string[];
 }
 

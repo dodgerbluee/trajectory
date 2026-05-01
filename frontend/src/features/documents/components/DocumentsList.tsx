@@ -1,13 +1,13 @@
 /**
  * Documents List Component
- * Displays all visit attachments for a child with rename and delete functionality
+ * Displays all visit attachments for a person with rename and delete functionality
  */
 
 import { useState } from 'react';
 import { HiPencil, HiTrash, HiDownload } from 'react-icons/hi';
 import { LuFileText, LuImage } from 'react-icons/lu';
-import type { VisitAttachment, ChildAttachment, Visit } from '@shared/types/api';
-import { visitsApi, childrenApi, ApiClientError } from '@lib/api-client';
+import type { VisitAttachment, PersonAttachment, Visit } from '@shared/types/api';
+import { visitsApi, peopleApi, ApiClientError } from '@lib/api-client';
 import { useFamilyPermissions } from '@/contexts/FamilyPermissionsContext';
 // formatDate not needed here; document entries show visit type and title instead of date
 import LoadingSpinner from '@shared/components/LoadingSpinner';
@@ -23,11 +23,11 @@ interface DocumentWithVisit extends VisitAttachment {
   type: 'visit';
 }
 
-interface DocumentChildAttachment extends ChildAttachment {
-  type: 'child';
+interface DocumentPersonAttachment extends PersonAttachment {
+  type: 'person';
 }
 
-type Document = DocumentWithVisit | DocumentChildAttachment;
+type Document = DocumentWithVisit | DocumentPersonAttachment;
 
 interface DocumentsListProps {
   documents: Document[];
@@ -51,7 +51,7 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
     setEditValue('');
   };
 
-  const handleEditSave = async (id: number, docType: 'visit' | 'child') => {
+  const handleEditSave = async (id: number, docType: 'visit' | 'person') => {
     if (!editValue.trim()) {
       alert('Filename cannot be empty');
       return;
@@ -61,7 +61,7 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
       if (docType === 'visit') {
         await visitsApi.updateAttachment(id, editValue.trim());
       } else {
-        await childrenApi.updateAttachment(id, editValue.trim());
+        await peopleApi.updateAttachment(id, editValue.trim());
       }
       setEditingId(null);
       setEditValue('');
@@ -75,7 +75,7 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
     }
   };
 
-  const handleDelete = async (id: number, docType: 'visit' | 'child') => {
+  const handleDelete = async (id: number, docType: 'visit' | 'person') => {
     if (!window.confirm('Are you sure you want to delete this document?')) {
       return;
     }
@@ -85,7 +85,7 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
       if (docType === 'visit') {
         await visitsApi.deleteAttachment(id);
       } else {
-        await childrenApi.deleteAttachment(id);
+        await peopleApi.deleteAttachment(id);
       }
       onUpdate();
     } catch (error) {
@@ -112,17 +112,17 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
     return <LuFileText className={d.documentFileIcon} />;
   };
 
-  const handleClick = (attachmentId: number, docType: 'visit' | 'child') => {
+  const handleClick = (attachmentId: number, docType: 'visit' | 'person') => {
     const url = docType === 'visit'
       ? visitsApi.getAttachmentDownloadUrl(attachmentId)
-      : childrenApi.getAttachmentDownloadUrl(attachmentId);
+      : peopleApi.getAttachmentDownloadUrl(attachmentId);
     window.open(url, '_blank');
   };
 
-  const handleDownload = (attachmentId: number, filename: string, docType: 'visit' | 'child') => {
+  const handleDownload = (attachmentId: number, filename: string, docType: 'visit' | 'person') => {
     const url = docType === 'visit'
       ? visitsApi.getAttachmentDownloadUrl(attachmentId)
-      : childrenApi.getAttachmentDownloadUrl(attachmentId);
+      : peopleApi.getAttachmentDownloadUrl(attachmentId);
     const link = document.createElement('a');
     link.href = url;
     link.download = filename;
@@ -132,7 +132,7 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
   };
 
   const visitDocsCount = documents.filter(d => d.type === 'visit').length;
-  const childDocsCount = documents.filter(d => d.type === 'child').length;
+  const personDocsCount = documents.filter(d => d.type === 'person').length;
   const totalDocsCount = documents.length;
 
   if (documents.length === 0) {
@@ -151,7 +151,7 @@ function DocumentsList({ documents, onUpdate, showHeader = false }: DocumentsLis
         <DocumentsSummary
           total={totalDocsCount}
           visitDocuments={visitDocsCount}
-          childDocuments={childDocsCount}
+          personDocuments={personDocsCount}
         />
       )}
       {documents.map((doc) => (

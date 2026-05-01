@@ -125,7 +125,7 @@ export function getTomorrowDate(): string {
 }
 
 /**
- * Validate child form
+ * Validate person form
  */
 export function validateChildForm(data: {
   name: string;

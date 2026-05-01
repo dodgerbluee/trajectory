@@ -1,12 +1,12 @@
 /**
- * Family-based access: children belong to a family; only family members can see a child's data.
+ * Family-based access: people belong to a family; only family members can see a person's data.
  * For now: one family per user. Later: multiple users can be members of the same family.
  */
 
 import { query } from '../../../db/connection.js';
 
 /**
- * Return family IDs the user is a member of (for filtering children).
+ * Return family IDs the user is a member of (for filtering people).
  */
 export async function getFamilyIdsForUser(userId: number): Promise<number[]> {
   const result = await query<{ family_id: number }>(
@@ -17,20 +17,20 @@ export async function getFamilyIdsForUser(userId: number): Promise<number[]> {
 }
 
 /**
- * Return child IDs the user can access (for filtering visits, illnesses, etc.).
+ * Return person IDs the user can access (for filtering visits, illnesses, etc.).
  */
-export async function getAccessibleChildIds(userId: number): Promise<number[]> {
+export async function getAccessiblePersonIds(userId: number): Promise<number[]> {
   const familyIds = await getFamilyIdsForUser(userId);
   if (familyIds.length === 0) return [];
   const result = await query<{ id: number }>(
-    'SELECT id FROM children WHERE family_id = ANY($1::int[])',
+    'SELECT id FROM people WHERE family_id = ANY($1::int[])',
     [familyIds]
   );
   return result.rows.map((r) => r.id);
 }
 
 /**
- * Return the user's default family ID (e.g. for creating a new child).
+ * Return the user's default family ID (e.g. for creating a new person).
  * Creates a family and adds the user as owner if they have none.
  */
 export async function getOrCreateDefaultFamilyForUser(userId: number): Promise<number> {
@@ -53,14 +53,14 @@ export async function getOrCreateDefaultFamilyForUser(userId: number): Promise<n
 }
 
 /**
- * True if the user can access the child (is in the child's family).
+ * True if the user can access the person (is in the person's family).
  */
-export async function canAccessChild(userId: number, childId: number): Promise<boolean> {
+export async function canAccessPerson(userId: number, personId: number): Promise<boolean> {
   const result = await query<{ family_id: number }>(
-    `SELECT c.family_id FROM children c
-     INNER JOIN family_members fm ON fm.family_id = c.family_id
-     WHERE c.id = $1 AND fm.user_id = $2`,
-    [childId, userId]
+    `SELECT p.family_id FROM people p
+     INNER JOIN family_members fm ON fm.family_id = p.family_id
+     WHERE p.id = $1 AND fm.user_id = $2`,
+    [personId, userId]
   );
   return result.rows.length > 0;
 }
@@ -89,54 +89,54 @@ export async function canEditFamily(userId: number, familyId: number): Promise<b
 }
 
 /**
- * Family ID for a child, or null if child does not exist.
+ * Family ID for a person, or null if person does not exist.
  */
-export async function getFamilyIdForChild(childId: number): Promise<number | null> {
+export async function getFamilyIdForPerson(personId: number): Promise<number | null> {
   const result = await query<{ family_id: number }>(
-    'SELECT family_id FROM children WHERE id = $1',
-    [childId]
+    'SELECT family_id FROM people WHERE id = $1',
+    [personId]
   );
   return result.rows[0]?.family_id ?? null;
 }
 
 /**
- * Lookup helper: family + self-owner for a child row.
+ * Lookup helper: family + self-owner for a person row.
  */
-async function getChildAccessRow(
-  childId: number
+async function getPersonAccessRow(
+  personId: number
 ): Promise<{ family_id: number; user_id: number | null } | null> {
   const result = await query<{ family_id: number; user_id: number | null }>(
-    'SELECT family_id, user_id FROM children WHERE id = $1',
-    [childId]
+    'SELECT family_id, user_id FROM people WHERE id = $1',
+    [personId]
   );
   return result.rows[0] ?? null;
 }
 
 /**
- * True if the user can edit medical data on the child (visits, illnesses,
+ * True if the user can edit medical data on the person (visits, illnesses,
  * measurements, attachments, etc.).
  *
  * Policy: any owner/parent in the family can write medical data — including
  * for self-rows belonging to other adult family members. (See
- * canEditChildIdentity / canDeleteChild for the stricter checks that apply
+ * canEditPersonIdentity / canDeletePerson for the stricter checks that apply
  * to identity fields and deletion of self-rows.)
  */
-export async function canEditChild(userId: number, childId: number): Promise<boolean> {
-  const familyId = await getFamilyIdForChild(childId);
+export async function canEditPerson(userId: number, personId: number): Promise<boolean> {
+  const familyId = await getFamilyIdForPerson(personId);
   if (familyId == null) return false;
   return canEditFamily(userId, familyId);
 }
 
 /**
- * True if the user can edit identity fields on the child (name, date_of_birth,
+ * True if the user can edit identity fields on the person (name, date_of_birth,
  * gender, avatar, notes).
  *
- * Policy: for a self-row (children.user_id IS NOT NULL) only the owning user
- * may edit identity. For a child (user_id IS NULL) any family owner/parent
- * may edit identity, matching the legacy behavior.
+ * Policy: for a self-row (people.user_id IS NOT NULL) only the owning user
+ * may edit identity. For a non-self person (user_id IS NULL) any family
+ * owner/parent may edit identity, matching the legacy behavior.
  */
-export async function canEditChildIdentity(userId: number, childId: number): Promise<boolean> {
-  const row = await getChildAccessRow(childId);
+export async function canEditPersonIdentity(userId: number, personId: number): Promise<boolean> {
+  const row = await getPersonAccessRow(personId);
   if (row == null) return false;
   if (row.user_id != null) {
     return row.user_id === userId;
@@ -145,14 +145,15 @@ export async function canEditChildIdentity(userId: number, childId: number): Pro
 }
 
 /**
- * True if the user can delete the child row.
+ * True if the user can delete the person row.
  *
- * Policy: a self-row (children.user_id IS NOT NULL) may only be deleted by
+ * Policy: a self-row (people.user_id IS NOT NULL) may only be deleted by
  * the owning user — deleting it cascades all of that user's medical history.
- * A child row (user_id IS NULL) may be deleted by any family owner/parent.
+ * A non-self person row (user_id IS NULL) may be deleted by any family
+ * owner/parent.
  */
-export async function canDeleteChild(userId: number, childId: number): Promise<boolean> {
-  const row = await getChildAccessRow(childId);
+export async function canDeletePerson(userId: number, personId: number): Promise<boolean> {
+  const row = await getPersonAccessRow(personId);
   if (row == null) return false;
   if (row.user_id != null) {
     return row.user_id === userId;
@@ -173,9 +174,9 @@ export async function canExportData(userId: number): Promise<boolean> {
 }
 
 /**
- * Create a self-child row for a user: a children row with user_id pointing
- * back to the user. Returns the new child id, or null if the user already
- * has a self-row (race-safe via ON CONFLICT against the children_user_id_unique
+ * Create a self-record row for a user: a people row with user_id pointing
+ * back to the user. Returns the new person id, or null if the user already
+ * has a self-row (race-safe via ON CONFLICT against the people_user_id_unique
  * constraint). Callers should treat null as "already exists" and respond 409.
  *
  * Family selection mirrors getOrCreateDefaultFamilyForUser(): owner > new family.
@@ -183,7 +184,7 @@ export async function canExportData(userId: number): Promise<boolean> {
  * Called by the "do you want a profile for yourself?" prompt and by the
  * Family-page "Add yourself" entry.
  */
-export async function createSelfChildForUser(
+export async function createSelfRecordForUser(
   userId: number,
   fields: {
     name: string;
@@ -194,7 +195,7 @@ export async function createSelfChildForUser(
 ): Promise<number | null> {
   const familyId = await getOrCreateDefaultFamilyForUser(userId);
   const inserted = await query<{ id: number }>(
-    `INSERT INTO children (family_id, user_id, name, date_of_birth, gender, notes)
+    `INSERT INTO people (family_id, user_id, name, date_of_birth, gender, notes)
      VALUES ($1, $2, $3, $4, $5, $6)
      ON CONFLICT (user_id) DO NOTHING
      RETURNING id`,

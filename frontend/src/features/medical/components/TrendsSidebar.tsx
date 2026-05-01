@@ -1,31 +1,31 @@
 import { GoGraph } from 'react-icons/go';
 import { LuPill } from 'react-icons/lu';
-import { ChildSelector } from '@features/children';
+import { PersonSelector } from '@features/people';
 import { VisitStats } from '@features/visits';
-import type { Child } from '@shared/types/api';
+import type { Person } from '@shared/types/api';
 import layout from '@shared/styles/VisitsLayout.module.css';
 
 interface Props {
   activeTab: 'illness' | 'growth';
   onChangeTab: (tab: 'illness' | 'growth') => void;
-  childrenList: Child[];
-  selectedChildId?: number | undefined;
-  onSelectChild: (id?: number) => void;
-  /** When false, hide the Child Filter section (e.g. on child detail page where context is already one child). Default true. */
-  showChildFilter?: boolean;
-  /** When false, hide the Illness tab (e.g. child has no illness data). Default true. */
+  peopleList: Person[];
+  selectedPersonId?: number | undefined;
+  onSelectPerson: (id?: number) => void;
+  /** When false, hide the Person Filter section (e.g. on person detail page where context is already one person). Default true. */
+  showPersonFilter?: boolean;
+  /** When false, hide the Illness tab (e.g. person has no illness data). Default true. */
   showIllnessTab?: boolean;
-  /** When false, hide the Growth tab (e.g. child has no growth data). Default true. */
+  /** When false, hide the Growth tab (e.g. person has no growth data). Default true. */
   showGrowthTab?: boolean;
 }
 
 export default function TrendsSidebar({
   activeTab,
   onChangeTab,
-  childrenList,
-  selectedChildId,
-  onSelectChild,
-  showChildFilter = true,
+  peopleList,
+  selectedPersonId,
+  onSelectPerson,
+  showPersonFilter = true,
   showIllnessTab = true,
   showGrowthTab = true,
 }: Props) {
@@ -77,10 +77,10 @@ export default function TrendsSidebar({
           </div>
         </div>
 
-        {showChildFilter && (
+        {showPersonFilter && (
           <div className={layout.childSidebarSection}>
-            <h4 className={layout.sidebarSectionTitle}>Child Filter</h4>
-            <ChildSelector childrenList={childrenList} selectedChildId={selectedChildId} onSelect={onSelectChild} />
+            <h4 className={layout.sidebarSectionTitle}>Person Filter</h4>
+            <PersonSelector peopleList={peopleList} selectedPersonId={selectedPersonId} onSelect={onSelectPerson} />
           </div>
         )}
       </div>

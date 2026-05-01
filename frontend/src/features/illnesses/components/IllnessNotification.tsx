@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { illnessesApi, childrenApi, ApiClientError } from '@lib/api-client';
-import type { Illness, Child } from '@shared/types/api';
+import { illnessesApi, peopleApi, ApiClientError } from '@lib/api-client';
+import type { Illness, Person } from '@shared/types/api';
 import { HiBell, HiX } from 'react-icons/hi';
 import { formatDate } from '@lib/date-utils';
 import styles from './IllnessNotification.module.css';
 
 function IllnessNotification() {
   const [illnesses, setIllnesses] = useState<Illness[]>([]);
-  const [children, setChildren] = useState<Child[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -35,14 +35,14 @@ function IllnessNotification() {
   const loadOngoingIllnesses = async () => {
     try {
       setLoading(true);
-      const [illnessesResponse, childrenResponse] = await Promise.all([
+      const [illnessesResponse, peopleResponse] = await Promise.all([
         illnessesApi.getAll({ limit: 100 }),
-        childrenApi.getAll(),
+        peopleApi.getAll(),
       ]);
       // Filter for illnesses without end_date
       const ongoing = illnessesResponse.data.filter(illness => !illness.end_date);
       setIllnesses(ongoing);
-      setChildren(childrenResponse.data);
+      setPeople(peopleResponse.data);
     } catch (error) {
       if (error instanceof ApiClientError) {
         console.error('Failed to load ongoing illnesses:', error.message);
@@ -52,9 +52,9 @@ function IllnessNotification() {
     }
   };
 
-  const getChildName = (childId: number): string => {
-    const child = children.find(c => c.id === childId);
-    return child?.name || `Child #${childId}`;
+  const getPersonName = (personId: number): string => {
+    const person = people.find(c => c.id === personId);
+    return person?.name || `Person #${personId}`;
   };
 
   if (loading) {
@@ -102,7 +102,7 @@ function IllnessNotification() {
               >
                 <div className={styles.itemContent}>
                   <div className={styles.itemHeader}>
-                    <strong>{getChildName(illness.child_id)}</strong>
+                    <strong>{getPersonName(illness.person_id)}</strong>
                     <span className={styles.typeBadge}>{illness.illness_types?.join(', ') ?? ''}</span>
                   </div>
                   <div className={styles.itemDetails}>

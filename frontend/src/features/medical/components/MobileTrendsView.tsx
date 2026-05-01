@@ -4,7 +4,7 @@
  * Layout:
  *   ┌──────────────────────────────────────────┐
  *   │ Sticky header                            │
- *   │   Title                       [Child ▾]  │
+ *   │   Title                       [Person ▾]  │
  *   │   [ Illness | Growth ]   ← segmented     │
  *   ├──────────────────────────────────────────┤
  *   │ (illness) summary cards + heatmap + day  │
@@ -13,7 +13,7 @@
  *   │           single chart (~280px tall)     │
  *   └──────────────────────────────────────────┘
  *
- * - Child picker opens MobileSheet listing children + "All children".
+ * - Person picker opens MobileSheet listing people + "All people".
  * - Heatmap supports prev/next year buttons.
  * - PullToRefresh wraps the scroll area and reloads both data sources.
  *
@@ -28,7 +28,7 @@ import ErrorMessage from '@shared/components/ErrorMessage';
 import Card from '@shared/components/Card';
 import { MobileSheet } from '@shared/components/MobileSheet';
 import PullToRefresh from '@shared/components/PullToRefresh';
-import { ChildAvatar } from '@features/children';
+import { PersonAvatar } from '@features/people';
 import { formatDate } from '@lib/date-utils';
 import Heatmap from './Heatmap';
 import SingleMetricGrowthChart from './SingleMetricGrowthChart';
@@ -47,46 +47,46 @@ const METRIC_LABELS: Record<GrowthMetric, string> = {
 };
 
 interface MobileTrendsViewProps {
-  /** Optional preselected child (e.g. ChildDetailPage). When set, child filter is hidden. */
-  fixedChildId?: number;
-  /** Show "All children" option in the child picker (default true unless fixedChildId). */
-  allowAllChildren?: boolean;
+  /** Optional preselected person (e.g. PersonDetailPage). When set, person filter is hidden. */
+  fixedPersonId?: number;
+  /** Show "All people" option in the person picker (default true unless fixedPersonId). */
+  allowAllPeople?: boolean;
 }
 
-function MobileTrendsView({ fixedChildId, allowAllChildren }: MobileTrendsViewProps) {
+function MobileTrendsView({ fixedPersonId, allowAllPeople }: MobileTrendsViewProps) {
   const [activeTab, setActiveTab] = useState<TrendTab>('illness');
   const [year, setYear] = useState<number>(new Date().getFullYear());
-  const [selectedChildId, setSelectedChildId] = useState<number | undefined>(fixedChildId);
-  const [childSheetOpen, setChildSheetOpen] = useState(false);
+  const [selectedPersonId, setSelectedPersonId] = useState<number | undefined>(fixedPersonId);
+  const [personSheetOpen, setPersonSheetOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [metric, setMetric] = useState<GrowthMetric>('weight');
   const [mode, setMode] = useState<GrowthMode>('value');
 
-  const effectiveChildId = fixedChildId ?? selectedChildId;
-  const showChildPicker = !fixedChildId;
-  const showAllChildren = allowAllChildren !== false && !fixedChildId;
+  const effectivePersonId = fixedPersonId ?? selectedPersonId;
+  const showPersonPicker = !fixedPersonId;
+  const showAllPeople = allowAllPeople !== false && !fixedPersonId;
 
   const {
     heatmapData,
-    children,
+    people,
     loading: heatLoading,
     error: heatError,
     reload: reloadHeatmap,
-  } = useHeatmapData(year, effectiveChildId);
+  } = useHeatmapData(year, effectivePersonId);
 
   const {
     data: growthData,
     loading: growthLoading,
     error: growthError,
     reload: reloadGrowth,
-  } = useGrowthData(effectiveChildId);
+  } = useGrowthData(effectivePersonId);
 
   const handleRefresh = async () => {
     await Promise.all([reloadHeatmap(), reloadGrowth()]);
   };
 
-  const selectedChild = effectiveChildId
-    ? children.find((c) => c.id === effectiveChildId)
+  const selectedPerson = effectivePersonId
+    ? people.find((c) => c.id === effectivePersonId)
     : undefined;
 
   const selectedDayData =
@@ -100,22 +100,22 @@ function MobileTrendsView({ fixedChildId, allowAllChildren }: MobileTrendsViewPr
       <div className={styles.header}>
         <div className={styles.headerTopRow}>
           <h1 className={styles.title}>Trends</h1>
-          {showChildPicker && (
+          {showPersonPicker && (
             <button
               type="button"
               className={styles.childButton}
-              onClick={() => setChildSheetOpen(true)}
-              aria-label="Filter by child"
+              onClick={() => setPersonSheetOpen(true)}
+              aria-label="Filter by person"
             >
-              {selectedChild ? (
+              {selectedPerson ? (
                 <>
-                  <ChildAvatar
-                    avatar={selectedChild.avatar}
-                    gender={selectedChild.gender}
-                    alt={selectedChild.name}
+                  <PersonAvatar
+                    avatar={selectedPerson.avatar}
+                    gender={selectedPerson.gender}
+                    alt={selectedPerson.name}
                     className={styles.childButtonAvatar}
                   />
-                  <span className={styles.childButtonLabel}>{selectedChild.name}</span>
+                  <span className={styles.childButtonLabel}>{selectedPerson.name}</span>
                 </>
               ) : (
                 <>
@@ -161,8 +161,8 @@ function MobileTrendsView({ fixedChildId, allowAllChildren }: MobileTrendsViewPr
               error={heatError}
               reload={reloadHeatmap}
               heatmapData={heatmapData}
-              children={children}
-              effectiveChildId={effectiveChildId}
+              people={people}
+              effectivePersonId={effectivePersonId}
               year={year}
               onYearChange={setYear}
               selectedDate={selectedDate}
@@ -175,7 +175,7 @@ function MobileTrendsView({ fixedChildId, allowAllChildren }: MobileTrendsViewPr
               error={growthError}
               reload={reloadGrowth}
               data={growthData}
-              effectiveChildId={effectiveChildId}
+              effectivePersonId={effectivePersonId}
               metric={metric}
               onMetricChange={setMetric}
               mode={mode}
@@ -185,49 +185,49 @@ function MobileTrendsView({ fixedChildId, allowAllChildren }: MobileTrendsViewPr
         </div>
       </PullToRefresh>
 
-      {showChildPicker && (
+      {showPersonPicker && (
         <MobileSheet
-          isOpen={childSheetOpen}
-          onClose={() => setChildSheetOpen(false)}
-          title="Filter by child"
+          isOpen={personSheetOpen}
+          onClose={() => setPersonSheetOpen(false)}
+          title="Filter by person"
         >
           <div className={styles.childList}>
-            {showAllChildren && (
+            {showAllPeople && (
               <button
                 type="button"
                 className={`${styles.childListItem} ${
-                  effectiveChildId === undefined ? styles.childListItemActive : ''
+                  effectivePersonId === undefined ? styles.childListItemActive : ''
                 }`}
                 onClick={() => {
-                  setSelectedChildId(undefined);
-                  setChildSheetOpen(false);
+                  setSelectedPersonId(undefined);
+                  setPersonSheetOpen(false);
                 }}
               >
                 <span className={styles.childListAvatarFallback}>
                   <LuUsers aria-hidden />
                 </span>
-                <span>All children</span>
+                <span>All people</span>
               </button>
             )}
-            {children.map((child) => (
+            {people.map((person) => (
               <button
-                key={child.id}
+                key={person.id}
                 type="button"
                 className={`${styles.childListItem} ${
-                  effectiveChildId === child.id ? styles.childListItemActive : ''
+                  effectivePersonId === person.id ? styles.childListItemActive : ''
                 }`}
                 onClick={() => {
-                  setSelectedChildId(child.id);
-                  setChildSheetOpen(false);
+                  setSelectedPersonId(person.id);
+                  setPersonSheetOpen(false);
                 }}
               >
-                <ChildAvatar
-                  avatar={child.avatar}
-                  gender={child.gender}
-                  alt={child.name}
+                <PersonAvatar
+                  avatar={person.avatar}
+                  gender={person.gender}
+                  alt={person.name}
                   className={styles.childListAvatar}
                 />
-                <span>{child.name}</span>
+                <span>{person.name}</span>
               </button>
             ))}
           </div>
@@ -244,8 +244,8 @@ interface IllnessTabBodyProps {
   error: string | null;
   reload: () => Promise<void> | void;
   heatmapData: ReturnType<typeof useHeatmapData>['heatmapData'];
-  children: ReturnType<typeof useHeatmapData>['children'];
-  effectiveChildId?: number;
+  people: ReturnType<typeof useHeatmapData>['people'];
+  effectivePersonId?: number;
   year: number;
   onYearChange: (y: number) => void;
   selectedDate: string | null;
@@ -262,8 +262,8 @@ function IllnessTabBody({
   error,
   reload,
   heatmapData,
-  children,
-  effectiveChildId,
+  people,
+  effectivePersonId,
   year,
   onYearChange,
   selectedDate,
@@ -274,7 +274,7 @@ function IllnessTabBody({
   if (error) return <ErrorMessage message={error} onRetry={reload} />;
   if (!heatmapData) return <ErrorMessage message="No data available" />;
 
-  const totalSickDays = effectiveChildId
+  const totalSickDays = effectivePersonId
     ? heatmapData.days.filter((d) => d.count > 0).length
     : heatmapData.days.reduce((sum, day) => sum + Math.round(day.count), 0);
   const uniqueDaysWithIllness = heatmapData.days.filter((d) => d.count > 0).length;
@@ -294,7 +294,7 @@ function IllnessTabBody({
         <Card className={styles.statCard}>
           <div className={styles.statValue}>{totalSickDays}</div>
           <div className={styles.statLabel}>
-            {effectiveChildId ? 'Sick Days' : 'Total Sick Days'}
+            {effectivePersonId ? 'Sick Days' : 'Total Sick Days'}
           </div>
         </Card>
         {maxDay.count > 0 && (
@@ -334,8 +334,8 @@ function IllnessTabBody({
           <Heatmap
             data={heatmapData}
             onDayClick={(d) => onSelectDate(d)}
-            isSingleChild={effectiveChildId !== undefined}
-            totalChildren={effectiveChildId ? undefined : children.length}
+            isSinglePerson={effectivePersonId !== undefined}
+            totalPeople={effectivePersonId ? undefined : people.length}
           />
         </div>
       </Card>
@@ -343,20 +343,20 @@ function IllnessTabBody({
       {selectedDate && selectedDayData && (
         <Card title={`Details for ${formatDate(selectedDate)}`}>
           <div className={styles.dayDetails}>
-            {effectiveChildId ? (
+            {effectivePersonId ? (
               <p>
                 <strong>Severity:</strong> {Math.round(selectedDayData.count)}/10
               </p>
             ) : (
               <>
                 <p>
-                  <strong>Children Sick:</strong> {Math.round(selectedDayData.count)}
+                  <strong>People Sick:</strong> {Math.round(selectedDayData.count)}
                 </p>
                 {selectedDayData.children.length > 0 && (
                   <ul className={styles.childList}>
-                    {selectedDayData.children.map((childId: number) => {
-                      const child = children.find((c) => c.id === childId);
-                      return <li key={childId}>{child?.name || `Child #${childId}`}</li>;
+                    {selectedDayData.children.map((personId: number) => {
+                      const person = people.find((c) => c.id === personId);
+                      return <li key={personId}>{person?.name || `Person #${personId}`}</li>;
                     })}
                   </ul>
                 )}
@@ -376,7 +376,7 @@ interface GrowthTabBodyProps {
   error: string | null;
   reload: () => Promise<void> | void;
   data: ReturnType<typeof useGrowthData>['data'];
-  effectiveChildId?: number;
+  effectivePersonId?: number;
   metric: GrowthMetric;
   onMetricChange: (m: GrowthMetric) => void;
   mode: GrowthMode;
@@ -388,7 +388,7 @@ function GrowthTabBody({
   error,
   reload,
   data,
-  effectiveChildId,
+  effectivePersonId,
   metric,
   onMetricChange,
   mode,
@@ -397,7 +397,7 @@ function GrowthTabBody({
   if (loading) return <LoadingSpinner message="Loading growth data..." />;
   if (error) return <ErrorMessage message={error} onRetry={reload} />;
 
-  const isMultiChild = !effectiveChildId && data.length > 0;
+  const isMultiPerson = !effectivePersonId && data.length > 0;
   const metrics: GrowthMetric[] = ['weight', 'height', 'head_circumference', 'bmi'];
 
   return (
@@ -452,8 +452,8 @@ function GrowthTabBody({
             data={data}
             metric={metric}
             mode={mode}
-            isMultiChild={isMultiChild}
-            filterChildId={effectiveChildId}
+            isMultiPerson={isMultiPerson}
+            filterPersonId={effectivePersonId}
           />
         </div>
       </Card>

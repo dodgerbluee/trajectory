@@ -2,10 +2,10 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { HiPlus } from 'react-icons/hi';
 import type { IconType } from 'react-icons';
 import { VisitStats } from '@features/visits';
-import { ChildSelector } from '@features/children';
+import { PersonSelector } from '@features/people';
 import Button from '@shared/components/Button';
 import { useFamilyPermissions } from '../../../contexts/FamilyPermissionsContext';
-import type { Child } from '@shared/types/api';
+import type { Person } from '@shared/types/api';
 import layout from '@shared/styles/VisitsLayout.module.css';
 
 interface Stat {
@@ -19,15 +19,15 @@ interface Stat {
 
 interface Props {
     stats: Stat[];
-    childrenList: Child[];
-    selectedChildId?: number | undefined;
-    onSelectChild: (id?: number) => void;
-    hideChildFilter?: boolean;
+    peopleList: Person[];
+    selectedPersonId?: number | undefined;
+    onSelectPerson: (id?: number) => void;
+    hidePersonFilter?: boolean;
     /** When set, Add Visit opens this modal on the current page instead of navigating away. */
     onAddVisitClick?: () => void;
 }
 
-export default function VisitFilterSidebar({ stats, childrenList, selectedChildId, onSelectChild, hideChildFilter = false, onAddVisitClick }: Props) {
+export default function VisitFilterSidebar({ stats, peopleList, selectedPersonId, onSelectPerson, hidePersonFilter = false, onAddVisitClick }: Props) {
     const location = useLocation();
     const { canEdit } = useFamilyPermissions();
     const isHome = location.pathname === '/';
@@ -46,10 +46,10 @@ export default function VisitFilterSidebar({ stats, childrenList, selectedChildI
                     <VisitStats stats={stats} vertical />
                 </nav>
 
-                {!hideChildFilter && (
+                {!hidePersonFilter && (
                     <div className={layout.childSidebarSection}>
-                        <h4 className={layout.sidebarSectionTitle}>Child Filter</h4>
-                        <ChildSelector childrenList={childrenList} selectedChildId={selectedChildId} onSelect={onSelectChild} />
+                        <h4 className={layout.sidebarSectionTitle}>Person Filter</h4>
+                        <PersonSelector peopleList={peopleList} selectedPersonId={selectedPersonId} onSelect={onSelectPerson} />
 
                         {canEdit && (
                         <div className={layout.sidebarAction} style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -64,7 +64,7 @@ export default function VisitFilterSidebar({ stats, childrenList, selectedChildI
                     </div>
                 )}
 
-                {hideChildFilter && canEdit && (
+                {hidePersonFilter && canEdit && (
                     <div className={layout.sidebarAction} style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
                         <AddVisitButton
                             fromPath={fromPath}

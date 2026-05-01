@@ -1,16 +1,16 @@
 import { useEffect, useState, useCallback } from 'react';
-import { illnessesApi, childrenApi, ApiClientError } from '@lib/api-client';
-import type { HeatmapData, Child } from '@shared/types/api';
+import { illnessesApi, peopleApi, ApiClientError } from '@lib/api-client';
+import type { HeatmapData, Person } from '@shared/types/api';
 
 /**
- * Fetches the illness heatmap for a given year + optional child filter, plus
- * the children list used to render summary avatars and day-detail cards.
+ * Fetches the illness heatmap for a given year + optional person filter, plus
+ * the people list used to render summary avatars and day-detail cards.
  *
- * Returns `{ heatmapData, children, loading, error, reload }`.
+ * Returns `{ heatmapData, people, loading, error, reload }`.
  */
-export function useHeatmapData(year: number, childId?: number) {
+export function useHeatmapData(year: number, personId?: number) {
   const [heatmapData, setHeatmapData] = useState<HeatmapData | null>(null);
-  const [children, setChildren] = useState<Child[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,12 +18,12 @@ export function useHeatmapData(year: number, childId?: number) {
     try {
       setLoading(true);
       setError(null);
-      const [heatmapResponse, childrenResponse] = await Promise.all([
-        illnessesApi.getHeatmapData({ year, child_id: childId }),
-        childrenApi.getAll(),
+      const [heatmapResponse, peopleResponse] = await Promise.all([
+        illnessesApi.getHeatmapData({ year, person_id: personId }),
+        peopleApi.getAll(),
       ]);
       setHeatmapData(heatmapResponse.data);
-      setChildren(childrenResponse.data);
+      setPeople(peopleResponse.data);
     } catch (err) {
       if (err instanceof ApiClientError) {
         setError(err.message);
@@ -33,11 +33,11 @@ export function useHeatmapData(year: number, childId?: number) {
     } finally {
       setLoading(false);
     }
-  }, [year, childId]);
+  }, [year, personId]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  return { heatmapData, children, loading, error, reload: load };
+  return { heatmapData, people, loading, error, reload: load };
 }

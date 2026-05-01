@@ -103,7 +103,7 @@
 /* Compact icon-only action buttons (top-right of detail/edit pages).
    36×36 round, ghost by default; primary fill (Save) and danger-on-hover
    (Delete) variants. Used by EditVisitPage, EditIllnessPage,
-   IllnessDetailPage, EditChildPage so the look stays consistent. */
+   IllnessDetailPage, EditPersonPage so the look stays consistent. */
 .iconActions {
   display: inline-flex;
   align-items: center;

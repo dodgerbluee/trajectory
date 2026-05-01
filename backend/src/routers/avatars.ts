@@ -1,5 +1,5 @@
 /**
- * Child Avatar Routes
+ * Person Avatar Routes
  * Handles avatar uploads and management. All endpoints require auth; avatars are scoped to the user's family.
  */
 
@@ -11,7 +11,7 @@ import { randomUUID } from 'crypto';
 import { query } from '../db/connection.js';
 import { createResponse } from '../types/api.js';
 import { authenticate, type AuthRequest } from '../middleware/auth.js';
-import { canAccessChild, canEditChildIdentity } from '../features/families/service/family-access.js';
+import { canAccessPerson, canEditPersonIdentity } from '../features/families/service/family-access.js';
 import { ForbiddenError } from '../middleware/error-handler.js';
 import { verifyToken } from '../features/auth/service/auth.js';
 
@@ -68,39 +68,39 @@ const upload = multer({
 });
 
 // ============================================================================
-// Upload avatar for child
+// Upload avatar for person
 // ============================================================================
 
 router.post(
-  '/children/:childId/avatar',
+  '/people/:personId/avatar',
   authenticate,
   upload.single('avatar'),
   async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const childId = parseInt(req.params.childId);
+      const personId = parseInt(req.params.personId);
 
-      if (isNaN(childId)) {
+      if (isNaN(personId)) {
         res.status(400).json({
           error: {
-            message: 'Invalid child ID',
+            message: 'Invalid person ID',
             type: 'ValidationError',
             statusCode: 400,
           },
         });
         return;
       }
-      if (!(await canAccessChild(req.userId!, childId))) {
+      if (!(await canAccessPerson(req.userId!, personId))) {
         if (req.file) await fs.unlink(req.file.path);
         res.status(404).json({
           error: {
-            message: 'Child not found',
+            message: 'Person not found',
             type: 'NotFoundError',
             statusCode: 404,
           },
         });
         return;
       }
-      if (!(await canEditChildIdentity(req.userId!, childId))) {
+      if (!(await canEditPersonIdentity(req.userId!, personId))) {
         if (req.file) await fs.unlink(req.file.path);
         throw new ForbiddenError('You do not have permission to update this person\'s avatar.');
       }
@@ -116,17 +116,17 @@ router.post(
         return;
       }
 
-      const childCheck = await query<{ avatar: string | null }>(
-        'SELECT avatar FROM children WHERE id = $1',
-        [childId]
+      const personCheck = await query<{ avatar: string | null }>(
+        'SELECT avatar FROM people WHERE id = $1',
+        [personId]
       );
 
-      if (childCheck.rows.length === 0) {
+      if (personCheck.rows.length === 0) {
         // Delete uploaded file
         await fs.unlink(req.file.path);
         res.status(404).json({
           error: {
-            message: 'Child not found',
+            message: 'Person not found',
             type: 'NotFoundError',
             statusCode: 404,
           },
@@ -134,12 +134,12 @@ router.post(
         return;
       }
 
-      const oldAvatar = childCheck.rows[0]?.avatar ?? null;
+      const oldAvatar = personCheck.rows[0]?.avatar ?? null;
 
-      // Update child with new avatar
+      // Update person with new avatar
       await query(
-        'UPDATE children SET avatar = $1, updated_at = NOW() WHERE id = $2',
-        [req.file.filename, childId]
+        'UPDATE people SET avatar = $1, updated_at = NOW() WHERE id = $2',
+        [req.file.filename, personId]
       );
 
       // Delete old avatar file if it exists
@@ -267,11 +267,11 @@ avatarFilesRouter.get(
         return;
       }
 
-      const childWithAvatar = await query<{ id: number }>(
-        'SELECT id FROM children WHERE avatar = $1',
+      const personWithAvatar = await query<{ id: number }>(
+        'SELECT id FROM people WHERE avatar = $1',
         [filename]
       );
-      if (childWithAvatar.rows.length === 0 || !(await canAccessChild(authReq.userId!, childWithAvatar.rows[0].id))) {
+      if (personWithAvatar.rows.length === 0 || !(await canAccessPerson(authReq.userId!, personWithAvatar.rows[0].id))) {
         res.status(404).json({
           error: { message: 'Avatar not found', type: 'NotFoundError', statusCode: 404 },
         });
@@ -314,45 +314,45 @@ avatarFilesRouter.get(
 // ============================================================================
 
 router.delete(
-  '/children/:childId/avatar',
+  '/people/:personId/avatar',
   authenticate,
   async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const childId = parseInt(req.params.childId);
+      const personId = parseInt(req.params.personId);
 
-      if (isNaN(childId)) {
+      if (isNaN(personId)) {
         res.status(400).json({
           error: {
-            message: 'Invalid child ID',
+            message: 'Invalid person ID',
             type: 'ValidationError',
             statusCode: 400,
           },
         });
         return;
       }
-      if (!(await canAccessChild(req.userId!, childId))) {
+      if (!(await canAccessPerson(req.userId!, personId))) {
         res.status(404).json({
           error: {
-            message: 'Child not found',
+            message: 'Person not found',
             type: 'NotFoundError',
             statusCode: 404,
           },
         });
         return;
       }
-      if (!(await canEditChildIdentity(req.userId!, childId))) {
+      if (!(await canEditPersonIdentity(req.userId!, personId))) {
         throw new ForbiddenError('You do not have permission to delete this person\'s avatar.');
       }
 
       const result = await query<{ avatar: string | null }>(
-        'SELECT avatar FROM children WHERE id = $1',
-        [childId]
+        'SELECT avatar FROM people WHERE id = $1',
+        [personId]
       );
 
       if (result.rows.length === 0) {
         res.status(404).json({
           error: {
-            message: 'Child not found',
+            message: 'Person not found',
             type: 'NotFoundError',
             statusCode: 404,
           },
@@ -364,8 +364,8 @@ router.delete(
 
       // Remove avatar from database
       await query(
-        'UPDATE children SET avatar = NULL, updated_at = NOW() WHERE id = $1',
-        [childId]
+        'UPDATE people SET avatar = NULL, updated_at = NOW() WHERE id = $1',
+        [personId]
       );
 
       // Delete file from disk

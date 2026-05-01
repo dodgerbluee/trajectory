@@ -14,15 +14,15 @@ export interface BaseEntity {
 }
 
 // ============================================================================
-// Children
+// People
 // ============================================================================
 
 export type Gender = 'male' | 'female';
 
-export interface Child extends BaseEntity {
+export interface Person extends BaseEntity {
   family_id: number;
-  // When non-null, this child row represents the user account itself
-  // (the "self" row). Adult-account features can later branch on
+  // When non-null, this person row represents the user account itself
+  // (the "self" row). Adult-account features can branch on
   // user_id IS NOT NULL.
   user_id: number | null;
   name: string;
@@ -36,7 +36,7 @@ export interface Child extends BaseEntity {
   birth_height: number | null;
 }
 
-export interface CreateChildInput {
+export interface CreatePersonInput {
   name: string;
   date_of_birth: string; // ISO date string from API
   gender: Gender;
@@ -48,7 +48,7 @@ export interface CreateChildInput {
   birth_height?: number | null;
 }
 
-export interface UpdateChildInput {
+export interface UpdatePersonInput {
   name?: string;
   date_of_birth?: string; // ISO date string from API
   gender?: Gender | null;
@@ -64,7 +64,7 @@ export interface UpdateChildInput {
 // ============================================================================
 
 export interface Measurement extends BaseEntity {
-  child_id: number;
+  person_id: number;
   measurement_date: Date;
   label: string | null;
   weight_value: number | null;
@@ -77,7 +77,7 @@ export interface Measurement extends BaseEntity {
 }
 
 export interface CreateMeasurementInput {
-  child_id: number;
+  person_id: number;
   measurement_date: string; // ISO date string from API
   label?: string | null;
   weight_value?: number | null;
@@ -108,7 +108,7 @@ export interface UpdateMeasurementInput {
 export type EventType = 'doctor_visit' | 'illness';
 
 export interface MedicalEvent extends BaseEntity {
-  child_id: number;
+  person_id: number;
   event_type: EventType;
   start_date: Date;
   end_date: Date | null;
@@ -116,7 +116,7 @@ export interface MedicalEvent extends BaseEntity {
 }
 
 export interface CreateMedicalEventInput {
-  child_id: number;
+  person_id: number;
   event_type: EventType;
   start_date: string; // ISO date string from API
   end_date?: string | null; // ISO date string from API
@@ -139,7 +139,7 @@ export interface UpdateMedicalEventInput {
  * Date fields come back as Date objects from node-postgres
  * Numeric/decimal fields come back as strings and need parsing
  */
-export interface ChildRow {
+export interface PersonRow {
   id: number;
   family_id: number;
   user_id: number | null;
@@ -158,7 +158,7 @@ export interface ChildRow {
 
 export interface MeasurementRow {
   id: number;
-  child_id: number;
+  person_id: number;
   measurement_date: Date;
   label: string | null;
   weight_value: string | null; // Decimal comes as string
@@ -174,7 +174,7 @@ export interface MeasurementRow {
 
 export interface MedicalEventRow {
   id: number;
-  child_id: number;
+  person_id: number;
   event_type: EventType;
   start_date: Date;
   end_date: Date | null;
@@ -211,7 +211,7 @@ export interface Prescription {
 
 export interface Visit {
   id: number;
-  child_id: number;
+  person_id: number;
   visit_date: string; // ISO date string
   visit_time: string | null; // "HH:MM" (optional appointment time)
   visit_type: VisitType;
@@ -290,7 +290,7 @@ export interface Visit {
 }
 
 export interface CreateVisitInput {
-  child_id: number;
+  person_id: number;
   visit_date: string;
   visit_time?: string | null; // "HH:MM"
   visit_type: VisitType;
@@ -420,7 +420,7 @@ export interface UpdateVisitInput {
 
 export interface VisitRow {
   id: number;
-  child_id: number;
+  person_id: number;
   visit_date: Date;
   visit_time: string | null; // pg returns "HH:MM:SS"
   visit_type: VisitType;
@@ -514,7 +514,7 @@ export function visitRowToVisit(row: VisitRow): Visit {
 
   return {
     id: row.id,
-    child_id: row.child_id,
+    person_id: row.person_id,
     visit_date: row.visit_date.toISOString().split('T')[0],
     visit_time: visitTime,
     visit_type: row.visit_type,
@@ -663,11 +663,11 @@ export interface VisitAttachmentRow {
 }
 
 // ============================================================================
-// Child Attachments
+// Person Attachments
 // ============================================================================
 
-export interface ChildAttachment extends BaseEntity {
-  child_id: number;
+export interface PersonAttachment extends BaseEntity {
+  person_id: number;
   document_type: string;
   original_filename: string;
   stored_filename: string;
@@ -675,9 +675,9 @@ export interface ChildAttachment extends BaseEntity {
   file_size: number;
 }
 
-export interface ChildAttachmentRow {
+export interface PersonAttachmentRow {
   id: number;
-  child_id: number;
+  person_id: number;
   document_type: string;
   original_filename: string;
   stored_filename: string;
@@ -696,7 +696,7 @@ export interface ChildAttachmentRow {
 export function measurementRowToEntity(row: MeasurementRow): Measurement {
   return {
     id: row.id,
-    child_id: row.child_id,
+    person_id: row.person_id,
     measurement_date: row.measurement_date,
     label: row.label,
     weight_value: row.weight_value ? parseFloat(row.weight_value) : null,
@@ -712,9 +712,9 @@ export function measurementRowToEntity(row: MeasurementRow): Measurement {
 }
 
 /**
- * Child rows don't need conversion, but keep for consistency
+ * Person rows don't need conversion, but keep for consistency
  */
-export function childRowToEntity(row: ChildRow): Child {
+export function personRowToEntity(row: PersonRow): Person {
   const parseDecimal = (val: string | null): number | null => {
     if (val === null || val === undefined) return null;
     const parsed = typeof val === 'string' ? parseFloat(val) : val;
@@ -752,7 +752,7 @@ export function medicalEventRowToEntity(row: MedicalEventRow): MedicalEvent {
 
 export interface Illness {
   id: number;
-  child_id: number;
+  person_id: number;
   illness_types: IllnessType[];
   start_date: string; // ISO date string
   end_date: string | null;
@@ -766,7 +766,7 @@ export interface Illness {
 }
 
 export interface CreateIllnessInput {
-  child_id: number;
+  person_id: number;
   illness_types: IllnessType[];
   start_date: string;
   end_date?: string | null;
@@ -790,7 +790,7 @@ export interface UpdateIllnessInput {
 
 export interface IllnessRow {
   id: number;
-  child_id: number;
+  person_id: number;
   start_date: Date;
   end_date: Date | null;
   symptoms: string | null;
@@ -808,7 +808,7 @@ export interface IllnessRow {
 export function illnessRowToIllness(row: IllnessRow, illnessTypes: IllnessType[]): Illness {
   return {
     id: row.id,
-    child_id: row.child_id,
+    person_id: row.person_id,
     illness_types: illnessTypes,
     start_date: row.start_date.toISOString().split('T')[0],
     end_date: row.end_date ? row.end_date.toISOString().split('T')[0] : null,
@@ -828,7 +828,7 @@ export function illnessRowToIllness(row: IllnessRow, illnessTypes: IllnessType[]
 
 export interface HeatmapDay {
   date: string; // YYYY-MM-DD
-  count: number; // Number of children sick on this day
+  count: number; // Number of people sick on this day
   children: number[]; // Array of child_ids who were sick
 }
 
@@ -836,5 +836,5 @@ export interface HeatmapData {
   year: number;
   days: HeatmapDay[];
   totalDays: number;
-  maxCount: number; // Maximum children sick on any single day
+  maxCount: number; // Maximum people sick on any single day
 }

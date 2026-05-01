@@ -1,8 +1,8 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { LuCheck, LuX } from 'react-icons/lu';
-import { illnessesApi, childrenApi, visitsApi, ApiClientError } from '@lib/api-client';
-import type { Child, UpdateIllnessInput, IllnessType, Illness } from '@shared/types/api';
+import { illnessesApi, peopleApi, visitsApi, ApiClientError } from '@lib/api-client';
+import type { Person, UpdateIllnessInput, IllnessType, Illness } from '@shared/types/api';
 import { getTodayDate } from '@lib/validation';
 import Card from '@shared/components/Card';
 import FormField from '@shared/components/FormField';
@@ -20,8 +20,8 @@ function EditIllnessPage() {
   const navigate = useNavigate();
 
   const [illness, setIllness] = useState<Illness | null>(null);
-  const [children, setChildren] = useState<Child[]>([]);
-  const [visits, setVisits] = useState<{ id: number; visit_date: string; child_id: number }[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
+  const [visits, setVisits] = useState<{ id: number; visit_date: string; person_id: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -38,15 +38,15 @@ function EditIllnessPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [illnessResponse, childrenResponse, visitsResponse] = await Promise.all([
+      const [illnessResponse, peopleResponse, visitsResponse] = await Promise.all([
         illnessesApi.getById(parseInt(id!)),
-        childrenApi.getAll(),
+        peopleApi.getAll(),
         visitsApi.getAll({ visit_type: 'sick', limit: 100 }),
       ]);
 
       const fetchedIllness = illnessResponse.data;
       setIllness(fetchedIllness);
-      setChildren(childrenResponse.data);
+      setPeople(peopleResponse.data);
       setVisits(visitsResponse.data);
 
       setFormData({
@@ -115,8 +115,8 @@ function EditIllnessPage() {
     );
   }
 
-  const child = children.find(c => c.id === illness.child_id);
-  const childVisits = visits.filter(v => v.child_id === illness.child_id);
+  const person = people.find(c => c.id === illness.person_id);
+  const personVisits = visits.filter(v => v.person_id === illness.person_id);
 
   const illnessEntryValue = {
     symptoms: formData.symptoms !== undefined ? formData.symptoms : illness.symptoms,
@@ -176,12 +176,12 @@ function EditIllnessPage() {
               </div>
             </div>
 
-            <h2 className={layoutStyles.headerTitle}>Edit Illness{child ? ` — ${child.name}` : ''}</h2>
+            <h2 className={layoutStyles.headerTitle}>Edit Illness{person ? ` — ${person.name}` : ''}</h2>
 
             <SectionWrapper sectionId="illness" label="Illness" removable={false} isLast>
                 <div className={styles.formField}>
-                  <label className={styles.formLabel}>Child</label>
-                  <div className={styles.formReadonly}>{child?.name ?? `Child #${illness.child_id}`}</div>
+                  <label className={styles.formLabel}>Person</label>
+                  <div className={styles.formReadonly}>{person?.name ?? `Person #${illness.person_id}`}</div>
                 </div>
 
                 <IllnessEntryFormFields
@@ -197,7 +197,7 @@ function EditIllnessPage() {
                   minEndDate={formData.start_date ?? illness.start_date}
                 />
 
-                {childVisits.length > 0 && (
+                {personVisits.length > 0 && (
                   <FormField
                     label="Link to Visit (optional)"
                     type="select"
@@ -206,7 +206,7 @@ function EditIllnessPage() {
                     disabled={submitting}
                     options={[
                       { value: '', label: 'No visit link' },
-                      ...childVisits.map(visit => ({
+                      ...personVisits.map(visit => ({
                         value: visit.id.toString(),
                         label: `Visit on ${visit.visit_date}`,
                       })),

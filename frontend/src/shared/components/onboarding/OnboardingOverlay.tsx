@@ -187,7 +187,7 @@ export default function OnboardingOverlay() {
   const pathname = location.pathname;
   const isFamily = pathname === '/family';
   const isHome = pathname === '/';
-  const isChildDetail = /^\/children\/\d+$/.test(pathname);
+  const isPersonDetail = /^\/people\/\d+$/.test(pathname);
   const isAddChild = pathname === '/people/new';
 
   const [spotlightSelector, setSpotlightSelector] = useState<string | null>(null);
@@ -225,7 +225,7 @@ export default function OnboardingOverlay() {
       setSpotlightSelector('[data-onboarding="child-card"]');
     } else if (
       (onboarding.step === 'feature_visits' || onboarding.step === 'feature_illness' || onboarding.step === 'feature_metrics') &&
-      isChildDetail
+      isPersonDetail
     ) {
       /* Spotlight the tab we're asking them to click (Illness when on Visits step, Metrics when on Illness step) */
       const tabId =
@@ -238,7 +238,7 @@ export default function OnboardingOverlay() {
     } else {
       setSpotlightSelector(null);
     }
-  }, [onboarding?.isActive, onboarding?.step, isHome, isFamily, isChildDetail, dropdownCheckTick, createFamilyModalTick]);
+  }, [onboarding?.isActive, onboarding?.step, isHome, isFamily, isPersonDetail, dropdownCheckTick, createFamilyModalTick]);
 
   /* When Create family modal is spotlighted, add body class so CSS can highlight the Create button */
   useEffect(() => {
@@ -427,7 +427,7 @@ export default function OnboardingOverlay() {
     }
 
     if (step === 'feature_visits') {
-      if (!isChildDetail) {
+      if (!isPersonDetail) {
         return (
           <div className={`${styles.promptFloating} ${styles.promptFloatingBottom}`}>
             <Card className={styles.promptCard}>
@@ -462,7 +462,7 @@ export default function OnboardingOverlay() {
     }
 
     if (step === 'feature_illness') {
-      if (!isChildDetail) {
+      if (!isPersonDetail) {
         return (
           <div className={`${styles.promptFloating} ${styles.promptFloatingBottom}`}>
             <Card className={styles.promptCard}>
@@ -497,7 +497,7 @@ export default function OnboardingOverlay() {
     }
 
     if (step === 'feature_metrics') {
-      if (!isChildDetail) {
+      if (!isPersonDetail) {
         return (
           <div className={`${styles.promptFloating} ${styles.promptFloatingBottom}`}>
             <Card className={styles.promptCard}>
@@ -541,7 +541,7 @@ export default function OnboardingOverlay() {
     }
 
     if (step === 'wrap_up') {
-      if (!isChildDetail) {
+      if (!isPersonDetail) {
         return (
           <div className={`${styles.promptFloating} ${styles.promptFloatingBottom}`}>
             <Card className={styles.promptCard}>
@@ -591,10 +591,10 @@ export default function OnboardingOverlay() {
   })();
 
   /* On Add Child page we show only a bottom prompt; don't block the form so the user can fill it in */
-  const skipBlockingOnAddChildPage = step === 'add_child' && isAddChild;
+  const skipBlockingOnAddPersonPage = step === 'add_child' && isAddChild;
   const portal = (
     <div className={styles.layer} aria-live="polite" role="region" aria-label="Guided setup">
-      {content && !skipBlockingOnAddChildPage && <BlockingMask targetRect={spotlightRect} padding={8} />}
+      {content && !skipBlockingOnAddPersonPage && <BlockingMask targetRect={spotlightRect} padding={8} />}
       {content}
       {content && step !== 'welcome_home' && step !== 'wrap_up' && (
         <div className={styles.progressBar} aria-label={`Step ${stepIndex + 1} of ${totalSteps}`}>

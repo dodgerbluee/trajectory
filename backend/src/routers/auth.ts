@@ -215,7 +215,7 @@ authRouter.post(
           onboardingCompleted: userRow.onboarding_completed ?? false,
           isInstanceAdmin: isFirstUser,
           selfRecordPromptDismissed: false,
-          hasSelfChild: false,
+          hasSelfRecord: false,
         },
         accessToken,
         refreshToken,
@@ -309,11 +309,11 @@ authRouter.post(
       self_record_prompt_dismissed?: boolean;
     };
 
-    const hasSelfChildResult = await query<{ exists: boolean }>(
-      'SELECT EXISTS (SELECT 1 FROM children WHERE user_id = $1) AS exists',
+    const hasSelfRecordResult = await query<{ exists: boolean }>(
+      'SELECT EXISTS (SELECT 1 FROM people WHERE user_id = $1) AS exists',
       [user.id]
     );
-    const hasSelfChild = hasSelfChildResult.rows[0]?.exists ?? false;
+    const hasSelfRecord = hasSelfRecordResult.rows[0]?.exists ?? false;
 
     res.json(
       createResponse({
@@ -324,7 +324,7 @@ authRouter.post(
           onboardingCompleted: userRow.onboarding_completed ?? false,
           isInstanceAdmin: userRow.is_instance_admin ?? false,
           selfRecordPromptDismissed: userRow.self_record_prompt_dismissed ?? false,
-          hasSelfChild,
+          hasSelfRecord,
           createdAt: user.created_at.toISOString(),
         },
         accessToken,
@@ -432,12 +432,12 @@ authRouter.get(
         is_instance_admin: boolean;
         onboarding_completed: boolean;
         self_record_prompt_dismissed: boolean;
-        has_self_child: boolean;
+        has_self_record: boolean;
       }
     >(
       `SELECT u.id, u.email, u.username, u.email_verified, u.created_at, u.last_login_at,
               u.is_instance_admin, u.onboarding_completed, u.self_record_prompt_dismissed,
-              EXISTS (SELECT 1 FROM children c WHERE c.user_id = u.id) AS has_self_child
+              EXISTS (SELECT 1 FROM people c WHERE c.user_id = u.id) AS has_self_record
          FROM users u
         WHERE u.id = $1`,
       [req.userId]
@@ -460,7 +460,7 @@ authRouter.get(
         isInstanceAdmin: user.is_instance_admin,
         onboardingCompleted: user.onboarding_completed ?? false,
         selfRecordPromptDismissed: user.self_record_prompt_dismissed ?? false,
-        hasSelfChild: user.has_self_child ?? false,
+        hasSelfRecord: user.has_self_record ?? false,
       })
     );
   })

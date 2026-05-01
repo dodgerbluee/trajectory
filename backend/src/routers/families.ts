@@ -123,7 +123,7 @@ familiesRouter.patch(
 
 /**
  * DELETE /api/families/:id
- * Delete the family. Owner only. Fails if the family has any children.
+ * Delete the family. Owner only. Fails if the family has any people.
  */
 familiesRouter.delete(
   '/:id',
@@ -135,13 +135,13 @@ familiesRouter.delete(
         throw new ForbiddenError('Only the family owner can delete the family.');
       }
 
-      const childCount = await query<{ count: string }>(
-        'SELECT COUNT(*)::text AS count FROM children WHERE family_id = $1',
+      const personCount = await query<{ count: string }>(
+        'SELECT COUNT(*)::text AS count FROM people WHERE family_id = $1',
         [familyId]
       );
-      if (parseInt(childCount.rows[0].count, 10) > 0) {
+      if (parseInt(personCount.rows[0].count, 10) > 0) {
         throw new BadRequestError(
-          'Cannot delete a family that has children. Remove or transfer the children first.'
+          'Cannot delete a family that has people. Remove or transfer the people first.'
         );
       }
 

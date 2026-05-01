@@ -25,13 +25,13 @@ function DesktopAllIllnessesView() {
   const {
     allIllnesses,
     illnesses,
-    children,
+    people,
     loading,
     error,
-    filterChildId,
+    filterPersonId,
     filterIllnessType,
     filterIllnessStatus,
-    setFilterChildId,
+    setFilterPersonId,
     setFilterIllnessType,
     setFilterIllnessStatus,
     currentPage,
@@ -60,16 +60,16 @@ function DesktopAllIllnessesView() {
           { label: 'Ongoing', value: statsSource.filter(i => !i.end_date).length, icon: LuActivity, color: 'red', onClick: () => { setFilterIllnessStatus('ongoing'); setFilterIllnessType(undefined); }, active: filterIllnessStatus === 'ongoing' },
           { label: 'Ended', value: statsSource.filter(i => !!i.end_date).length, icon: LuActivity, color: 'emerald', onClick: () => { setFilterIllnessStatus('ended'); setFilterIllnessType(undefined); }, active: filterIllnessStatus === 'ended' },
         ]}
-        childrenList={children}
-        selectedChildId={filterChildId}
-        onSelectChild={(id) => setFilterChildId(id)}
+        peopleList={people}
+        selectedPersonId={filterPersonId}
+        onSelectPerson={(id) => setFilterPersonId(id)}
       />
 
       <main className={visitsLayout.main}>
         <IllnessesTimeline
           illnesses={illnesses}
-          children={children}
-          showChildName={true}
+          people={people}
+          showPersonName={true}
           currentPage={currentPage}
           itemsPerPage={itemsPerPage}
           totalItems={totalFilteredIllnesses}

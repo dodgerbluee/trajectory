@@ -1,0 +1,855 @@
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
+import { LuCamera, LuEye, LuStethoscope, LuThermometer } from 'react-icons/lu';
+import { peopleApi, visitsApi, illnessesApi, ApiClientError } from '@lib/api-client';
+import type { Person, Visit, VisitType, Illness, VisitAttachment, PersonAttachment } from '@shared/types/api';
+import { calculateAge, formatAge, formatDate, isFutureVisit } from '@lib/date-utils';
+import LoadingSpinner from '@shared/components/LoadingSpinner';
+import ErrorMessage from '@shared/components/ErrorMessage';
+import Card from '@shared/components/Card';
+import Button from '@shared/components/Button';
+import Notification from '@shared/components/Notification';
+import { VisitTypeModal } from '@features/visits';
+import modalStyles from '@shared/components/Modal.module.css';
+import cd from './PersonDetailPage.module.css';
+import pageLayout from '@shared/styles/page-layout.module.css';
+import vi from '@shared/styles/VisitIcons.module.css';
+import { PersonAvatar } from '@features/people/components';
+import Tabs from '@shared/components/Tabs';
+import { type DocumentTypeFilter } from '@features/documents/components/DocumentsSidebar';
+import Cropper, { type Area } from 'react-easy-crop';
+import cropStyles from '@shared/components/ImageCropUpload.module.css';
+import {
+  isHeic,
+  prepareImageSource,
+  releaseImageSource,
+  cropToFile,
+  type PreparedImageSource,
+} from '@lib/image-crop';
+import { MdOutlinePersonalInjury } from 'react-icons/md';
+import { LuPill } from 'react-icons/lu';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { DentalToothIcon } from '@hugeicons/core-free-icons';
+import { useFamilyPermissions } from '@/contexts/FamilyPermissionsContext';
+import { useOnboarding } from '@/contexts/OnboardingContext';
+import { DocumentsTab, IllnessesTab, TrendsTab, VaccinesTab, VisitsTab } from './tabs';
+// replaced local mask icon with Lucide thermometer for illness
+
+/**
+ * Detail page for a single person (person or adult self-record). The self-row
+ * is rendered identically to a kid row — the user_id linkage is the only
+ * thing that distinguishes them in the database.
+ */
+function PersonDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [person, setPerson] = useState<Person | null>(null);
+  const [visits, setVisits] = useState<Visit[]>([]);
+  const [illnesses, setIllnesses] = useState<Illness[]>([]);
+  const [lastWellnessVisit, setLastWellnessVisit] = useState<Visit | null>(null);
+  const [lastSickVisit, setLastSickVisit] = useState<Visit | null>(null);
+  const [lastVisionVisit, setLastVisionVisit] = useState<Visit | null>(null);
+  const [lastDentalVisit, setLastDentalVisit] = useState<Visit | null>(null);
+  const [lastInjuryVisit, setLastInjuryVisit] = useState<Visit | null>(null);
+  const [lastIllness, setLastIllness] = useState<Illness | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showVisitTypeModal, setShowVisitTypeModal] = useState(false);
+  const [visitTypeFilter, setVisitTypeFilter] = useState<'all' | 'wellness' | 'sick' | 'injury' | 'vision' | 'dental'>('all');
+  const [filterIllnessStatus, setFilterIllnessStatus] = useState<'ongoing' | 'ended' | undefined>(undefined);
+  const [visitsCurrentPage, setVisitsCurrentPage] = useState(0);
+  const [visitsItemsPerPage, setVisitsItemsPerPage] = useState(20);
+  const [illnessesCurrentPage, setIllnessesCurrentPage] = useState(0);
+  const [illnessesItemsPerPage, setIllnessesItemsPerPage] = useState(20);
+  const [metricsActiveTab, setMetricsActiveTab] = useState<'illness' | 'growth'>('illness');
+  const [metricsYear, setMetricsYear] = useState<number>(new Date().getFullYear());
+  const [activeTab, setActiveTab] = useState<'visits' | 'illnesses' | 'metrics' | 'documents' | 'vaccines'>('visits');
+  const [documents, setDocuments] = useState<Array<(VisitAttachment & { visit: Visit; type: 'visit' }) | (PersonAttachment & { type: 'person' })>>([]);
+  const [documentTypeFilter, setDocumentTypeFilter] = useState<DocumentTypeFilter>('all');
+  const [loadingDocuments, setLoadingDocuments] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  // Avatar editor: tap the hero avatar → OS file picker → cropper modal opens
+  // with the chosen file. "Save" crops + uploads in one step. No staging.
+  const avatarFileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarEditorOpen, setAvatarEditorOpen] = useState(false);
+  const [avatarSource, setAvatarSource] = useState<PreparedImageSource | null>(null);
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const [avatarLoadingMessage, setAvatarLoadingMessage] = useState('Loading photo…');
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [avatarCrop, setAvatarCrop] = useState({ x: 0, y: 0 });
+  const [avatarZoom, setAvatarZoom] = useState(1);
+  const [avatarCroppedAreaPixels, setAvatarCroppedAreaPixels] = useState<Area | null>(null);
+  const { canEdit } = useFamilyPermissions();
+  const onboarding = useOnboarding();
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: 'success' | 'error';
+  } | null>(null);
+  // Track which visits have attachments (visit ID set)
+  const [visitsWithAttachments, setVisitsWithAttachments] = useState<Set<number>>(new Set());
+
+  // Guard against the ghost click that fires when a long-press on the home
+  // person-chip navigates here while the user's finger is still down — the
+  // pointerup lands on the avatar button below and would otherwise open the
+  // avatar editor immediately. Ignore avatar clicks for a short window after
+  // mount; the user can still tap deliberately a moment later.
+  const avatarReadyAtRef = useRef<number>(Date.now() + 500);
+
+  const loadChild = useCallback(async () => {
+    if (!id) {
+      setError('Invalid person ID');
+      setLoading(false);
+      return;
+    }
+
+    const personId = parseInt(id);
+    if (isNaN(personId)) {
+      setError('Invalid person ID');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      const [personResponse, allVisitsResponse, wellnessVisitsResponse, sickVisitsResponse, visionVisitsResponse, dentalVisitsResponse, illnessesResponse] = await Promise.all([
+        peopleApi.getById(personId),
+        visitsApi.getAll({ person_id: personId }),
+        visitsApi.getAll({ person_id: personId, visit_type: 'wellness' }),
+        visitsApi.getAll({ person_id: personId, visit_type: 'sick' }),
+        visitsApi.getAll({ person_id: personId, visit_type: 'vision' }),
+        visitsApi.getAll({ person_id: personId, visit_type: 'dental' }),
+        illnessesApi.getAll({ person_id: personId }),
+      ]);
+
+      setPerson(personResponse.data);
+      setVisits(allVisitsResponse.data);
+      setIllnesses(illnessesResponse.data);
+      // Derive last injury visit from all visits (only on or before today)
+      const sortedAll = [...allVisitsResponse.data].sort((a, b) => new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime());
+      const pastOrTodayVisits = sortedAll.filter(v => !isFutureVisit(v));
+      const lastInjury = pastOrTodayVisits.find(v => v.visit_type === 'injury') || null;
+      setLastInjuryVisit(lastInjury);
+      // Derive last illness (use the latest illness that has an end_date)
+      const endedIllnesses = illnessesResponse.data.filter(i => i.end_date).sort((a, b) => new Date(b.end_date!).getTime() - new Date(a.end_date!).getTime());
+      const lastEndedIllness = endedIllnesses.length > 0 ? endedIllnesses[0] : null;
+      setLastIllness(lastEndedIllness);
+      // Determine which visits have attachments so the timeline can show an indicator.
+      // The list endpoint already returns has_attachments per visit (computed via EXISTS),
+      // so we no longer need a per-visit network probe.
+      const visitIdsWithAttachments = new Set<number>();
+      for (const v of allVisitsResponse.data) {
+        if (v.has_attachments) visitIdsWithAttachments.add(v.id);
+      }
+      setVisitsWithAttachments(visitIdsWithAttachments);
+
+      // Get most recent wellness/sick/vision/dental visit (only on or before today; visits sorted by date DESC)
+      const lastPastWellness = wellnessVisitsResponse.data.find(v => !isFutureVisit(v)) ?? null;
+      const lastPastSick = sickVisitsResponse.data.find(v => !isFutureVisit(v)) ?? null;
+      const lastPastVision = visionVisitsResponse.data.find(v => !isFutureVisit(v)) ?? null;
+      const lastPastDental = dentalVisitsResponse.data.find(v => !isFutureVisit(v)) ?? null;
+      setLastWellnessVisit(lastPastWellness);
+      setLastSickVisit(lastPastSick);
+      setLastVisionVisit(lastPastVision);
+      setLastDentalVisit(lastPastDental);
+    } catch (err) {
+      if (err instanceof ApiClientError) {
+        setError(err.message);
+      } else {
+        setError('Failed to load person');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    loadChild();
+  }, [loadChild]);
+
+  // Onboarding: when user lands on person detail from "click your person", advance to feature tour
+  useEffect(() => {
+    if (onboarding?.isActive && onboarding.step === 'return_home_click_child') {
+      onboarding.advance();
+    }
+  }, [onboarding?.isActive, onboarding?.step, onboarding]);
+
+  // When navigating back from Add Illness (or similar), open the requested tab
+  const stateTab = (location.state as { tab?: 'visits' | 'illnesses' | 'metrics' | 'documents' | 'vaccines' } | null)?.tab;
+  useEffect(() => {
+    if (stateTab != null) {
+      setActiveTab(stateTab);
+    }
+  }, [stateTab]);
+
+  // Growth data: any visit with weight/height/head/bmi. Illness data: any illness record.
+  const hasGrowthData = useMemo(
+    () =>
+      visits.some(
+        (v) =>
+          (v as Visit).weight_value != null ||
+          (v as Visit).height_value != null ||
+          (v as Visit).head_circumference_value != null ||
+          (v as Visit).bmi_value != null
+      ),
+    [visits]
+  );
+  const hasIllnessData = useMemo(() => illnesses.length > 0, [illnesses]);
+
+  // When only one metrics sub-tab is available, select it
+  useEffect(() => {
+    if (!hasGrowthData) setMetricsActiveTab('illness');
+    else if (!hasIllnessData) setMetricsActiveTab('growth');
+  }, [hasGrowthData, hasIllnessData]);
+
+  const loadDocuments = useCallback(async () => {
+    if (!id) return;
+
+    const personId = parseInt(id);
+    if (isNaN(personId)) return;
+
+    try {
+      setLoadingDocuments(true);
+      // Get all visits for the person
+      const visitsResponse = await visitsApi.getAll({ person_id: personId });
+      const allVisits = visitsResponse.data;
+
+      // Get attachments for each visit
+      const visitDocumentsPromises = allVisits.map(async (visit) => {
+        try {
+          const attachmentsResponse = await visitsApi.getAttachments(visit.id);
+          return attachmentsResponse.data.map(attachment => ({
+            ...attachment,
+            visit,
+            type: 'visit' as const,
+          }));
+        } catch (error) {
+          console.error(`Failed to load attachments for visit ${visit.id}:`, error);
+          return [];
+        }
+      });
+
+      // Get person attachments (vaccine reports, etc.)
+      const personAttachmentsResponse = await peopleApi.getAttachments(personId);
+      const personDocuments = personAttachmentsResponse.data.map(attachment => ({
+        ...attachment,
+        type: 'person' as const,
+      }));
+
+      const visitDocumentsArrays = await Promise.all(visitDocumentsPromises);
+      const allVisitDocuments = visitDocumentsArrays.flat();
+
+      // Combine and sort by date (newest first) for documents tab
+      const allDocuments = [...allVisitDocuments, ...personDocuments];
+      allDocuments.sort((a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      setDocuments(allDocuments);
+    } catch (error) {
+      console.error('Failed to load documents:', error);
+    } finally {
+      setLoadingDocuments(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    if (activeTab === 'documents') {
+      loadDocuments();
+    }
+  }, [activeTab, loadDocuments]);
+
+  // Filter visits that have vaccines for the vaccine history tab
+  const visitsWithVaccines = useMemo(() => {
+    return visits.filter(visit =>
+      visit.vaccines_administered && visit.vaccines_administered.length > 0
+    );
+  }, [visits]);
+
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Always reset the input so picking the same file twice still triggers change
+    if (avatarFileInputRef.current) avatarFileInputRef.current.value = '';
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setNotification({ message: 'Image must be less than 10MB', type: 'error' });
+      return;
+    }
+    if (!file.type.startsWith('image/') && !/\.(heic|heif)$/i.test(file.name)) {
+      setNotification({ message: 'Please select an image file', type: 'error' });
+      return;
+    }
+
+    setAvatarError(null);
+    setAvatarLoadingMessage(isHeic(file) ? 'Converting HEIC photo…' : 'Loading photo…');
+    setAvatarLoading(true);
+    setAvatarEditorOpen(true);
+    setAvatarSource(null);
+    setAvatarCrop({ x: 0, y: 0 });
+    setAvatarZoom(1);
+    setAvatarCroppedAreaPixels(null);
+
+    try {
+      const prepared = await prepareImageSource(file);
+      console.info('[PersonDetailPage] avatar prepared', {
+        file: { name: file.name, type: file.type, size: file.size },
+        decoded: { width: prepared.width, height: prepared.height },
+      });
+      setAvatarSource(prepared);
+    } catch (err) {
+      console.error('[PersonDetailPage] avatar prepareImageSource failed', err, {
+        file: { name: file.name, type: file.type, size: file.size },
+      });
+      setAvatarError(err instanceof Error ? err.message : 'Unknown error preparing image');
+    } finally {
+      setAvatarLoading(false);
+    }
+  };
+
+  const handleAvatarCropComplete = useCallback((_area: Area, areaPixels: Area) => {
+    setAvatarCroppedAreaPixels(areaPixels);
+  }, []);
+
+  const closeAvatarEditor = () => {
+    if (uploadingAvatar) return;
+    setAvatarEditorOpen(false);
+    releaseImageSource(avatarSource);
+    setAvatarSource(null);
+    setAvatarError(null);
+    setAvatarLoading(false);
+    setAvatarCroppedAreaPixels(null);
+  };
+
+  const handleAvatarSave = async () => {
+    if (!person || !avatarSource || !avatarCroppedAreaPixels) return;
+    try {
+      setUploadingAvatar(true);
+      const file = await cropToFile(avatarSource, avatarCroppedAreaPixels);
+      await peopleApi.uploadAvatar(person.id, file);
+      setAvatarEditorOpen(false);
+      releaseImageSource(avatarSource);
+      setAvatarSource(null);
+      setAvatarCroppedAreaPixels(null);
+      setNotification({ message: 'Avatar updated successfully!', type: 'success' });
+      await loadChild();
+    } catch (error) {
+      if (error instanceof ApiClientError) {
+        setNotification({ message: error.message, type: 'error' });
+      } else {
+        setNotification({ message: 'Failed to update avatar', type: 'error' });
+      }
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  // When loading person data, also fetch attachments for each visit to determine
+  // which visits have attachments so the visits timeline can show an indicator.
+  // This runs as part of `loadChild` (below) and is kept here as a safety fallback
+  // in case documents are loaded separately.
+
+  // Soonest future visit per type (for Last/Next strip)
+  const nextByType = useMemo(() => {
+    const future = visits.filter(isFutureVisit).sort((a, b) => new Date(a.visit_date).getTime() - new Date(b.visit_date).getTime());
+    const byType: Record<string, { date: string; href: string }> = {};
+    for (const v of future) {
+      if (!byType[v.visit_type]) {
+        byType[v.visit_type] = { date: v.visit_date, href: `/visits/${v.id}` };
+      }
+    }
+    return byType;
+  }, [visits]);
+
+  // One card per visit type when that type has last and/or next; each card shows Last and/or Next (only render when data exists)
+  const overviewVisitCards = useMemo(() => {
+    const lastByType: Record<string, { date: string; href: string }> = {};
+    if (lastWellnessVisit) lastByType['wellness'] = { date: lastWellnessVisit.visit_date, href: `/visits/${lastWellnessVisit.id}` };
+    if (lastSickVisit) lastByType['sick'] = { date: lastSickVisit.visit_date, href: `/visits/${lastSickVisit.id}` };
+    if (lastVisionVisit) lastByType['vision'] = { date: lastVisionVisit.visit_date, href: `/visits/${lastVisionVisit.id}` };
+    if (lastDentalVisit) lastByType['dental'] = { date: lastDentalVisit.visit_date, href: `/visits/${lastDentalVisit.id}` };
+    if (lastInjuryVisit) lastByType['injury'] = { date: lastInjuryVisit.visit_date, href: `/visits/${lastInjuryVisit.id}` };
+    if (lastIllness) lastByType['illness'] = { date: lastIllness.end_date || lastIllness.start_date, href: `/illnesses/${lastIllness.id}` };
+    type Card = { key: string; visitType: Visit['visit_type'] | 'illness'; last?: { date: string; href: string }; next?: { date: string; href: string } };
+    const visitTypes: Visit['visit_type'][] = ['wellness', 'sick', 'injury', 'vision', 'dental'];
+    const cards: Card[] = [];
+    for (const t of visitTypes) {
+      const last = lastByType[t];
+      const next = nextByType[t];
+      if (last || next) cards.push({ key: t, visitType: t, last, next });
+    }
+    if (lastByType['illness']) {
+      cards.push({ key: 'illness', visitType: 'illness', last: lastByType['illness'], next: undefined });
+    }
+    return cards;
+  }, [lastWellnessVisit, lastSickVisit, lastVisionVisit, lastDentalVisit, lastInjuryVisit, lastIllness, nextByType]);
+
+  // Filter visits - MUST be called before early returns (Rules of Hooks)
+  const visitItems = useMemo(() => {
+    type VisitItem = {
+      id: string;
+      date: string;
+      data: Visit;
+    };
+
+    const items: VisitItem[] = [];
+
+    // Add visits with visit type filter
+    visits.forEach(visit => {
+      if (visitTypeFilter === 'all' || visit.visit_type === visitTypeFilter) {
+        items.push({
+          id: `visit-${visit.id}`,
+          date: visit.visit_date,
+          data: visit,
+        });
+      }
+    });
+
+    // Sort by date (most recent first)
+    items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    return items;
+  }, [visits, visitTypeFilter]);
+
+  // Filter illnesses by status - MUST be called before early returns (Rules of Hooks)
+  const illnessItems = useMemo(() => {
+    type IllnessItem = {
+      id: string;
+      date: string;
+      data: Illness;
+    };
+
+    let list = illnesses;
+    if (filterIllnessStatus === 'ongoing') {
+      list = illnesses.filter((i) => !i.end_date);
+    } else if (filterIllnessStatus === 'ended') {
+      list = illnesses.filter((i) => !!i.end_date);
+    }
+
+    const items: IllnessItem[] = list.map((illness) => ({
+      id: `illness-${illness.id}`,
+      date: illness.start_date,
+      data: illness,
+    }));
+
+    // Sort by date (most recent first)
+    items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    return items;
+  }, [illnesses, filterIllnessStatus]);
+
+  useEffect(() => {
+    setVisitsCurrentPage(0);
+  }, [visitTypeFilter, visits]);
+
+  useEffect(() => {
+    setIllnessesCurrentPage(0);
+  }, [filterIllnessStatus, illnesses]);
+
+  const visibleVisitItems = useMemo(() => {
+    const startIdx = visitsCurrentPage * visitsItemsPerPage;
+    return visitItems.slice(startIdx, startIdx + visitsItemsPerPage);
+  }, [visitItems, visitsCurrentPage, visitsItemsPerPage]);
+
+  const visibleIllnessItems = useMemo(() => {
+    const startIdx = illnessesCurrentPage * illnessesItemsPerPage;
+    return illnessItems.slice(startIdx, startIdx + illnessesItemsPerPage);
+  }, [illnessItems, illnessesCurrentPage, illnessesItemsPerPage]);
+
+  const filteredDocuments = useMemo(() => {
+    if (documentTypeFilter === 'visit') return documents.filter((d) => d.type === 'visit');
+    if (documentTypeFilter === 'vaccine') return documents.filter((d) => d.type === 'person');
+    return documents;
+  }, [documents, documentTypeFilter]);
+  const visitDocsCount = documents.filter((d) => d.type === 'visit').length;
+  const vaccineDocsCount = documents.filter((d) => d.type === 'person').length;
+
+  // Early returns AFTER all hooks
+  if (loading) {
+    return <LoadingSpinner message="Loading person details..." />;
+  }
+
+  if (error) {
+    return <ErrorMessage message={error} onRetry={loadChild} />;
+  }
+
+  if (!person) {
+    return <ErrorMessage message="Person not found" onRetry={loadChild} />;
+  }
+
+  const age = calculateAge(person.date_of_birth);
+
+  return (
+    <div className={pageLayout.pageContainer}>
+      {notification && (
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification(null)}
+        />
+      )}
+
+      {/* Unified Overview and Tabs Section */}
+      <Card className={cd.pageCard}>
+        <div className={cd.childDetailBody}>
+          {/* Overview Section - without header title */}
+          <div className={cd.childDetailSection}>
+            <Link to="/" className={`${pageLayout.breadcrumb} ${pageLayout.childDetailSectionBreadcrumb}`}>← Back to People</Link>
+            <div className={cd.overviewHeader}>
+              <div className={cd.overviewMain}>
+                <div className={cd.overviewAvatar}>
+                  {canEdit ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (Date.now() < avatarReadyAtRef.current) return;
+                        avatarFileInputRef.current?.click();
+                      }}
+                      className={cd.overviewAvatarButton}
+                      title="Change photo"
+                      aria-label={person.avatar ? 'Change photo' : 'Add photo'}
+                    >
+                      <PersonAvatar
+                        avatar={person.avatar}
+                        gender={person.gender}
+                        alt={`${person.name}'s avatar`}
+                        className={cd.overviewAvatarImg}
+                      />
+                      <div className={cd.overviewAvatarOverlay} aria-hidden="true">
+                        <LuCamera />
+                        <span className={cd.overviewAvatarOverlayText}>
+                          {person.avatar ? 'Change' : 'Add photo'}
+                        </span>
+                      </div>
+                    </button>
+                  ) : (
+                    <div className={cd.overviewAvatarStatic}>
+                      <PersonAvatar
+                        avatar={person.avatar}
+                        gender={person.gender}
+                        alt={`${person.name}'s avatar`}
+                        className={cd.overviewAvatarImg}
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className={cd.overviewInfo}>
+                  <h1 className={cd.overviewName}>{person.name}</h1>
+                  <div className={cd.overviewDetails}>
+                    <div className={cd.overviewDetailItem}>
+                      <span className={cd.overviewDetailLabel}>Age:</span>
+                      <span className={cd.overviewDetailValue}>
+                        {formatAge(age.years, age.months)}
+                      </span>
+                    </div>
+                    <div className={cd.overviewDetailItem}>
+                      <span className={cd.overviewDetailLabel}>Date of Birth:</span>
+                      <span className={cd.overviewDetailValue}>{formatDate(person.date_of_birth)}</span>
+                    </div>
+                    {person.due_date && (
+                      <div className={cd.overviewDetailItem}>
+                        <span className={cd.overviewDetailLabel}>Due Date:</span>
+                        <span className={cd.overviewDetailValue}>{formatDate(person.due_date)}</span>
+                      </div>
+                    )}
+                    {(person.birth_weight || person.birth_weight_ounces) && (
+                      <div className={cd.overviewDetailItem}>
+                        <span className={cd.overviewDetailLabel}>Birth Weight:</span>
+                        <span className={cd.overviewDetailValue}>
+                          {person.birth_weight ? `${person.birth_weight} lbs` : ''}
+                          {person.birth_weight && person.birth_weight_ounces ? ' ' : ''}
+                          {person.birth_weight_ounces ? `${person.birth_weight_ounces} oz` : ''}
+                        </span>
+                      </div>
+                    )}
+                    {person.birth_height && (
+                      <div className={cd.overviewDetailItem}>
+                        <span className={cd.overviewDetailLabel}>Birth Height:</span>
+                        <span className={cd.overviewDetailValue}>{person.birth_height}"</span>
+                      </div>
+                    )}
+                    {person.notes && (
+                      <div className={cd.overviewDetailItem}>
+                        <span className={cd.overviewDetailLabel}>Notes:</span>
+                        <span className={cd.overviewDetailValue}>{person.notes}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Last & Next: only show section when at least one type has a last or next visit; use "Last:" / "Next:" when both exist */}
+            {overviewVisitCards.length > 0 && (
+              <div className={cd.overviewVisitsStrip}>
+                {overviewVisitCards.map((card) => {
+                  const typeLabel = card.visitType === 'illness' ? 'Illness' : card.visitType === 'wellness' ? 'Wellness' : card.visitType === 'sick' ? 'Sick' : card.visitType === 'injury' ? 'Injury' : card.visitType === 'vision' ? 'Vision' : card.visitType === 'dental' ? 'Dental' : 'Visit';
+                  const iconTypeClass = card.visitType === 'wellness' ? vi.iconWellness : card.visitType === 'sick' ? vi.iconSick : card.visitType === 'injury' ? vi.iconInjury : card.visitType === 'vision' ? vi.iconVision : card.visitType === 'dental' ? vi.iconDental : card.visitType === 'illness' ? vi.iconIllness : vi.iconWellness;
+                  return (
+                    <div key={card.key} className={cd.overviewLastVisit}>
+                      <div className={`${vi.iconOutline} ${iconTypeClass}`} aria-hidden>
+                        {card.visitType === 'wellness' && <LuStethoscope className={vi.typeSvg} />}
+                        {card.visitType === 'sick' && <LuPill className={vi.typeSvg} />}
+                        {card.visitType === 'injury' && <MdOutlinePersonalInjury className={`${vi.typeSvg} ${vi.typeSvgFilled}`} />}
+                        {card.visitType === 'vision' && <LuEye className={vi.typeSvg} />}
+                        {card.visitType === 'dental' && <HugeiconsIcon icon={DentalToothIcon} className={vi.typeSvg} size={24} color="currentColor" />}
+                        {card.visitType === 'illness' && <LuThermometer className={vi.typeSvg} />}
+                      </div>
+                      <div className={cd.overviewVisitInfo}>
+                        {card.last && (
+                          <Link
+                            to={card.last.href}
+                            className={card.next ? cd.overviewVisitRow : `${cd.overviewVisitRow} ${cd.overviewVisitRowStacked}`}
+                          >
+                            <span className={`${cd.overviewVisitLabel} ${cd.overviewVisitLabelLong}`}>{card.next ? 'Last:' : card.visitType === 'illness' ? 'Last Illness:' : `Last ${typeLabel} Visit:`}</span>
+                            <span className={`${cd.overviewVisitLabel} ${cd.overviewVisitLabelShort}`} aria-hidden="true">Last:</span>
+                            <span className={cd.overviewVisitDate}>{formatDate(card.last.date)}</span>
+                          </Link>
+                        )}
+                        {card.next && (
+                          <Link
+                            to={card.next.href}
+                            className={card.last ? cd.overviewVisitRow : `${cd.overviewVisitRow} ${cd.overviewVisitRowStacked}`}
+                          >
+                            <span className={`${cd.overviewVisitLabel} ${cd.overviewVisitLabelLong}`}>{card.last ? 'Next:' : `Next ${typeLabel} Visit:`}</span>
+                            <span className={`${cd.overviewVisitLabel} ${cd.overviewVisitLabelShort}`} aria-hidden="true">Next:</span>
+                            <span className={cd.overviewVisitDate}>{formatDate(card.next.date)}</span>
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Tabs Section */}
+          <div className={cd.childDetailSection}>
+            {(() => {
+              const tabsArray: Array<{ id: string; label: string; content: React.ReactNode }> = [];
+
+              tabsArray.push({
+                id: 'visits',
+                label: 'Visits',
+                content: (
+                  <VisitsTab
+                    visits={visits}
+                    visibleVisits={visibleVisitItems.map((item) => item.data)}
+                    visitsWithAttachments={visitsWithAttachments}
+                    visitTypeFilter={visitTypeFilter}
+                    onChangeVisitTypeFilter={setVisitTypeFilter}
+                    onAddVisitClick={() => setShowVisitTypeModal(true)}
+                    currentPage={visitsCurrentPage}
+                    itemsPerPage={visitsItemsPerPage}
+                    totalItems={visitItems.length}
+                    onPageChange={setVisitsCurrentPage}
+                    onItemsPerPageChange={setVisitsItemsPerPage}
+                  />
+                ),
+              });
+
+              tabsArray.push({
+                id: 'illnesses',
+                label: 'Illness',
+                content: (
+                  <IllnessesTab
+                    personId={person.id}
+                    illnesses={illnesses}
+                    visibleIllnesses={visibleIllnessItems.map((item) => item.data)}
+                    filterIllnessStatus={filterIllnessStatus}
+                    onChangeFilterIllnessStatus={setFilterIllnessStatus}
+                    currentPage={illnessesCurrentPage}
+                    itemsPerPage={illnessesItemsPerPage}
+                    totalItems={illnessItems.length}
+                    onPageChange={setIllnessesCurrentPage}
+                    onItemsPerPageChange={setIllnessesItemsPerPage}
+                  />
+                ),
+              });
+
+              tabsArray.push({
+                id: 'documents',
+                label: 'Documents',
+                content: (
+                  <DocumentsTab
+                    loading={loadingDocuments}
+                    documents={documents}
+                    visitDocsCount={visitDocsCount}
+                    vaccineDocsCount={vaccineDocsCount}
+                    documentTypeFilter={documentTypeFilter}
+                    onChangeDocumentTypeFilter={setDocumentTypeFilter}
+                    filteredDocuments={filteredDocuments}
+                    onUpdate={loadDocuments}
+                  />
+                ),
+              });
+
+              // Only include the Vaccines tab when there are visits with vaccines
+              if (visitsWithVaccines.length > 0) {
+                tabsArray.push({
+                  id: 'vaccines',
+                  label: 'Vaccines',
+                  content: (
+                    <VaccinesTab
+                      visitsWithVaccines={visitsWithVaccines}
+                      personId={parseInt(id!)}
+                      onUploadSuccess={loadDocuments}
+                    />
+                  ),
+                });
+              }
+
+              // Always include the Metrics tab (even if no data yet)
+              tabsArray.push({
+                id: 'metrics',
+                label: 'Trends',
+                content: (
+                  <TrendsTab
+                    person={person}
+                    metricsActiveTab={metricsActiveTab}
+                    onChangeMetricsActiveTab={setMetricsActiveTab}
+                    metricsYear={metricsYear}
+                    onChangeMetricsYear={setMetricsYear}
+                  />
+                ),
+              });
+
+              const handleTabChange = (tabId: string) => {
+                const typedTabId = tabId as 'visits' | 'illnesses' | 'metrics' | 'documents' | 'vaccines';
+                if (onboarding?.isActive) {
+                  if (onboarding.step === 'feature_visits' && typedTabId === 'illnesses') {
+                    onboarding.advance();
+                  } else if (onboarding.step === 'feature_illness' && typedTabId === 'metrics') {
+                    onboarding.advance();
+                  }
+                }
+                setActiveTab(typedTabId);
+              };
+
+              return (
+                <Tabs
+                  activeTab={activeTab}
+                  onTabChange={handleTabChange}
+                  tabs={tabsArray}
+                  getTabButtonProps={(tabId) => ({ 'data-onboarding-tab': tabId })}
+                />
+              );
+            })()}
+          </div>
+        </div>
+      </Card>
+
+      <VisitTypeModal
+        isOpen={showVisitTypeModal}
+        onSelect={(visitType: VisitType) => {
+          setShowVisitTypeModal(false);
+          navigate(`/people/${person.id}/visits/new?type=${visitType}`, {
+            state: { from: `${location.pathname}${location.search}`, personId: person.id }
+          });
+        }}
+        onClose={() => setShowVisitTypeModal(false)}
+      />
+
+      {/* Hidden file input — driven by the hero avatar button above */}
+      {canEdit && (
+        <input
+          ref={avatarFileInputRef}
+          type="file"
+          accept="image/*,.heic,.heif"
+          onChange={handleAvatarFileChange}
+          style={{ display: 'none' }}
+          aria-hidden="true"
+          tabIndex={-1}
+        />
+      )}
+
+      {/* Avatar Cropper Modal — opens after a file is picked */}
+      {avatarEditorOpen && (
+        <div className={modalStyles.overlay} onClick={closeAvatarEditor}>
+          <div
+            className={`${modalStyles.content} ${modalStyles.contentLarge}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={modalStyles.header}>
+              <h2>Adjust Your Avatar</h2>
+              <button
+                type="button"
+                onClick={closeAvatarEditor}
+                className={modalStyles.close}
+                disabled={uploadingAvatar}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            <div className={modalStyles.body}>
+              <div className={cropStyles.cropperArea}>
+                {avatarLoading && (
+                  <div className={cropStyles.cropperLoading} role="status" aria-live="polite">
+                    <span className={cropStyles.cropperSpinner} aria-hidden="true" />
+                    {avatarLoadingMessage}
+                  </div>
+                )}
+                {!avatarLoading && avatarError && (
+                  <div className={cropStyles.cropperError} role="alert">
+                    {avatarError}
+                  </div>
+                )}
+                {!avatarLoading && !avatarError && avatarSource && (
+                  <Cropper
+                    image={avatarSource.url}
+                    crop={avatarCrop}
+                    zoom={avatarZoom}
+                    aspect={1}
+                    cropShape="round"
+                    showGrid={false}
+                    onCropChange={setAvatarCrop}
+                    onZoomChange={setAvatarZoom}
+                    onCropComplete={handleAvatarCropComplete}
+                  />
+                )}
+              </div>
+              <div className={cropStyles.cropperControls}>
+                <div className={cropStyles.zoomControl}>
+                  <label htmlFor="person-avatar-zoom">Zoom</label>
+                  <input
+                    id="person-avatar-zoom"
+                    type="range"
+                    min={1}
+                    max={3}
+                    step={0.1}
+                    value={avatarZoom}
+                    onChange={(e) => setAvatarZoom(Number(e.target.value))}
+                    className={cropStyles.zoomSlider}
+                    disabled={!avatarSource || avatarLoading || !!avatarError}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className={modalStyles.footer}>
+              <Button variant="secondary" onClick={closeAvatarEditor} disabled={uploadingAvatar}>
+                {avatarError ? 'Close' : 'Cancel'}
+              </Button>
+              <Button
+                onClick={handleAvatarSave}
+                disabled={
+                  uploadingAvatar ||
+                  !avatarSource ||
+                  !avatarCroppedAreaPixels ||
+                  avatarLoading ||
+                  !!avatarError
+                }
+              >
+                {uploadingAvatar ? 'Uploading…' : 'Save Avatar'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default PersonDetailPage;

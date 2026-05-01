@@ -1,15 +1,15 @@
 import { useState, useMemo, useEffect } from 'react';
 import type { IllnessType } from '@shared/types/api';
 import { useIllnessesData } from './useIllnessesData';
-import { useChildrenData } from '@features/children/hooks';
+import { usePeopleData } from '@features/people/hooks';
 
 export function useIllnesses() {
   const DEFAULT_ITEMS_PER_PAGE = 20;
   
   const { illnesses: allIllnesses, loading: loadingIllnesses, error: errorIllnesses, reload: reloadIllnesses } = useIllnessesData();
-  const { children, loading: loadingChildren, error: errorChildren, reload: reloadChildren } = useChildrenData();
+  const { people, loading: loadingPeople, error: errorPeople, reload: reloadPeople } = usePeopleData();
   
-  const [filterChildId, setFilterChildId] = useState<number | undefined>(undefined);
+  const [filterPersonId, setFilterPersonId] = useState<number | undefined>(undefined);
   const [filterIllnessType, setFilterIllnessType] = useState<IllnessType | undefined>(undefined);
   const [filterIllnessStatus, setFilterIllnessStatus] = useState<'ongoing' | 'ended' | undefined>(undefined);
   const [currentPage, setCurrentPage] = useState(0);
@@ -17,8 +17,8 @@ export function useIllnesses() {
 
   const filteredIllnesses = useMemo(() => {
     let result = allIllnesses;
-    if (filterChildId) {
-      result = result.filter(i => i.child_id === filterChildId);
+    if (filterPersonId) {
+      result = result.filter(i => i.person_id === filterPersonId);
     }
     if (filterIllnessType) {
       result = result.filter(i => i.illness_types?.includes(filterIllnessType));
@@ -29,11 +29,11 @@ export function useIllnesses() {
       result = result.filter(i => !!i.end_date);
     }
     return result;
-  }, [allIllnesses, filterChildId, filterIllnessType, filterIllnessStatus]);
+  }, [allIllnesses, filterPersonId, filterIllnessType, filterIllnessStatus]);
 
   useEffect(() => {
     setCurrentPage(0);
-  }, [filterChildId, filterIllnessType, filterIllnessStatus]);
+  }, [filterPersonId, filterIllnessType, filterIllnessStatus]);
 
   const illnesses = useMemo(() => {
     const startIdx = currentPage * itemsPerPage;
@@ -43,13 +43,13 @@ export function useIllnesses() {
   return {
     allIllnesses,
     illnesses,
-    children,
-    loading: loadingIllnesses || loadingChildren,
-    error: errorIllnesses || errorChildren,
-    filterChildId,
+    people,
+    loading: loadingIllnesses || loadingPeople,
+    error: errorIllnesses || errorPeople,
+    filterPersonId,
     filterIllnessType,
     filterIllnessStatus,
-    setFilterChildId,
+    setFilterPersonId,
     setFilterIllnessType,
     setFilterIllnessStatus,
     currentPage,
@@ -59,7 +59,7 @@ export function useIllnesses() {
     totalFilteredIllnesses: filteredIllnesses.length,
     reload: async () => {
       setCurrentPage(0);
-      await Promise.all([reloadIllnesses(), reloadChildren()]);
+      await Promise.all([reloadIllnesses(), reloadPeople()]);
     },
   };
 }

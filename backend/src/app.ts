@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
-import { childrenRouter } from './routers/children.js';
+import { peopleRouter } from './routers/people.js';
 import { measurementsRouter } from './routers/measurements.js';
 import { medicalEventsRouter } from './routers/medical-events.js';
 import attachmentsRouter from './routers/attachments.js';
@@ -58,7 +58,7 @@ export function createApp(): express.Application {
   app.use('/api/export', exportRouter);
   app.use('/api/admin/oauth-providers', oauthAdminRouter);
   app.use('/api/admin', adminRouter);
-  app.use('/api/children', childrenRouter);
+  app.use('/api/people', peopleRouter);
   app.use('/api/visits', visitsRouter); 
   app.use('/api/illnesses', illnessesRouter); 
   app.use('/api/measurements', measurementsRouter);

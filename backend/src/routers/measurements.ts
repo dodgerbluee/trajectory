@@ -8,7 +8,7 @@ import { query } from '../db/connection.js';
 import type { MeasurementRow, CreateMeasurementInput } from '../types/database.js';
 import { NotFoundError, ForbiddenError } from '../middleware/error-handler.js';
 import type { AuthRequest } from '../middleware/auth.js';
-import { canEditChild } from '../features/families/service/family-access.js';
+import { canEditPerson } from '../features/families/service/family-access.js';
 import {
   validateDate,
   validateOptionalString,
@@ -28,19 +28,19 @@ import { createResponse, createPaginatedResponse } from '../types/api.js';
 export const measurementsRouter = express.Router({ mergeParams: true });
 
 /**
- * GET /api/children/:childId/measurements
- * Get all measurements for a child with pagination and date filtering
+ * GET /api/people/:personId/measurements
+ * Get all measurements for a person with pagination and date filtering
  * Query params: page, limit, start_date, end_date
  */
 measurementsRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const childId = validatePositiveInteger(req.params.childId, 'childId');
+    const personId = validatePositiveInteger(req.params.personId, 'personId');
     const pagination = parsePaginationParams(req.query);
     const dateRange = parseDateRange(req.query);
 
     // Build WHERE clause
-    const conditions = ['child_id = $1'];
-    const values: unknown[] = [childId];
+    const conditions = ['person_id = $1'];
+    const values: unknown[] = [personId];
     let paramIndex = 2;
 
     const dateFilter = buildDateRangeFilter(dateRange, 'measurement_date', paramIndex);
@@ -71,7 +71,7 @@ measurementsRouter.get('/', async (req: Request, res: Response, next: NextFuncti
     const measurements = result.rows.map(formatMeasurementForResponse);
 
     res.json(createPaginatedResponse(measurements, total, pagination, {
-      child_id: childId,
+      person_id: personId,
       ...dateRange,
     }));
   } catch (error) {
@@ -103,18 +103,18 @@ measurementsRouter.get('/:id', async (req: Request, res: Response, next: NextFun
 });
 
 /**
- * POST /api/children/:childId/measurements
+ * POST /api/people/:personId/measurements
  * Create a new measurement
  */
 measurementsRouter.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const childId = validatePositiveInteger(req.params.childId, 'childId');
-    if (!(await canEditChild((req as AuthRequest).userId!, childId))) {
-      throw new ForbiddenError('You do not have permission to add measurements for this child.');
+    const personId = validatePositiveInteger(req.params.personId, 'personId');
+    if (!(await canEditPerson((req as AuthRequest).userId!, personId))) {
+      throw new ForbiddenError('You do not have permission to add measurements for this person.');
     }
 
     const input: CreateMeasurementInput = {
-      child_id: childId,
+      person_id: personId,
       measurement_date: validateDate(req.body.measurement_date, 'measurement_date'),
       label: validateOptionalString(req.body.label),
       weight_value: validateOptionalNumber(req.body.weight_value, 'weight_value', 0),
@@ -142,7 +142,7 @@ measurementsRouter.post('/', async (req: Request, res: Response, next: NextFunct
 
     const result = await query<MeasurementRow>(
       `INSERT INTO measurements (
-        child_id, measurement_date, label,
+        person_id, measurement_date, label,
         weight_value, weight_ounces, weight_percentile,
         height_value, height_percentile,
         head_circumference_value, head_circumference_percentile
@@ -150,7 +150,7 @@ measurementsRouter.post('/', async (req: Request, res: Response, next: NextFunct
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *`,
       [
-        input.child_id,
+        input.person_id,
         input.measurement_date,
         input.label,
         input.weight_value,
@@ -176,14 +176,14 @@ measurementsRouter.post('/', async (req: Request, res: Response, next: NextFunct
 measurementsRouter.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = validatePositiveInteger(req.params.id, 'id');
-    const existing = await query<{ child_id: number }>(
-      'SELECT child_id FROM measurements WHERE id = $1',
+    const existing = await query<{ person_id: number }>(
+      'SELECT person_id FROM measurements WHERE id = $1',
       [id]
     );
     if (existing.rows.length === 0) {
       throw new NotFoundError('Measurement');
     }
-    if (!(await canEditChild((req as AuthRequest).userId!, existing.rows[0].child_id))) {
+    if (!(await canEditPerson((req as AuthRequest).userId!, existing.rows[0].person_id))) {
       throw new ForbiddenError('You do not have permission to edit this measurement.');
     }
 
@@ -272,14 +272,14 @@ measurementsRouter.put('/:id', async (req: Request, res: Response, next: NextFun
 measurementsRouter.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = validatePositiveInteger(req.params.id, 'id');
-    const existing = await query<{ child_id: number }>(
-      'SELECT child_id FROM measurements WHERE id = $1',
+    const existing = await query<{ person_id: number }>(
+      'SELECT person_id FROM measurements WHERE id = $1',
       [id]
     );
     if (existing.rows.length === 0) {
       throw new NotFoundError('Measurement');
     }
-    if (!(await canEditChild((req as AuthRequest).userId!, existing.rows[0].child_id))) {
+    if (!(await canEditPerson((req as AuthRequest).userId!, existing.rows[0].person_id))) {
       throw new ForbiddenError('You do not have permission to delete this measurement.');
     }
 
@@ -305,7 +305,7 @@ measurementsRouter.delete('/:id', async (req: Request, res: Response, next: Next
 function formatMeasurementForResponse(row: MeasurementRow) {
   return {
     id: row.id,
-    child_id: row.child_id,
+    person_id: row.person_id,
     measurement_date: row.measurement_date.toISOString().split('T')[0],
     label: row.label,
     weight_value: row.weight_value ? parseFloat(row.weight_value) : null,

@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import Button from '../Button';
 
 describe('Button', () => {
-  it('renders children and default variant', () => {
+  it('renders people and default variant', () => {
     render(<Button>Save</Button>);
 
     const button = screen.getByRole('button', { name: 'Save' });

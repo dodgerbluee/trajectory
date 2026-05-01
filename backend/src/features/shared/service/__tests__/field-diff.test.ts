@@ -336,11 +336,11 @@ describe('buildFieldDiff', () => {
 
   describe('Custom excludeKeys', () => {
     it('excludes custom keys', () => {
-      const current = { visit_date: '2026-01-15', child_id: 1 };
-      const payload = { visit_date: '2026-01-16', child_id: 2 };
+      const current = { visit_date: '2026-01-15', person_id: 1 };
+      const payload = { visit_date: '2026-01-16', person_id: 2 };
 
-      const diff = buildFieldDiff(current, payload, { excludeKeys: ['child_id'] });
-      expect(diff.child_id).toBeUndefined();
+      const diff = buildFieldDiff(current, payload, { excludeKeys: ['person_id'] });
+      expect(diff.person_id).toBeUndefined();
       expect(diff.visit_date).toBeDefined();
     });
   });

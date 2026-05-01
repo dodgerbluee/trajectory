@@ -10,14 +10,14 @@ import styles from './Heatmap.module.css';
 interface HeatmapProps {
   data: HeatmapData;
   onDayClick?: (date: string) => void;
-  isSingleChild?: boolean; // If true, don't show numbers and use severity for color
-  totalChildren?: number; // Total number of children (for max calculation when viewing all children)
+  isSinglePerson?: boolean; // If true, don't show numbers and use severity for color
+  totalPeople?: number; // Total number of people (for max calculation when viewing all people)
 }
 
 interface DayCell {
   date: string;
   count: number;
-  children: number[];
+  people: number[];
   week: number;
   dayOfWeek: number;
 }
@@ -71,11 +71,11 @@ function getColorIntensity(count: number, maxCount: number): string {
   }
 }
 
-function Heatmap({ data, onDayClick, isSingleChild = false, totalChildren }: HeatmapProps) {
+function Heatmap({ data, onDayClick, isSinglePerson = false, totalPeople }: HeatmapProps) {
   // Calculate the max value for color scaling
-  // For single child: max is always 10 (severity scale)
-  // For all children: max is total number of children (or fallback to maxCount if totalChildren not provided)
-  const maxForColor = isSingleChild ? 10 : ((totalChildren ?? data.maxCount) || 1);
+  // For single person: max is always 10 (severity scale)
+  // For all people: max is total number of people (or fallback to maxCount if totalPeople not provided)
+  const maxForColor = isSinglePerson ? 10 : ((totalPeople ?? data.maxCount) || 1);
   // Create a map of date -> day data for quick lookup
   const dayMap = useMemo(() => {
     const map = new Map<string, HeatmapDay>();
@@ -124,7 +124,7 @@ function Heatmap({ data, onDayClick, isSingleChild = false, totalChildren }: Hea
         weekDays.push({
           date: '',
           count: 0,
-          children: [],
+          people: [],
           week: weekIndex,
           dayOfWeek,
         });
@@ -153,7 +153,7 @@ function Heatmap({ data, onDayClick, isSingleChild = false, totalChildren }: Hea
         weeksArray[weekIndex][dayOfWeek] = {
           date: isInRange ? dateStr : '', // Empty date for padding days
           count: isInRange ? (dayData?.count || 0) : 0,
-          children: isInRange ? (dayData?.children || []) : [],
+          people: isInRange ? (dayData?.children || []) : [],
           week: weekIndex,
           dayOfWeek,
         };
@@ -209,7 +209,7 @@ function Heatmap({ data, onDayClick, isSingleChild = false, totalChildren }: Hea
                 
                 // Use the calculated maxForColor for consistent color scaling
                 const color = getColorIntensity(day.count, maxForColor);
-                const tooltipText = isSingleChild
+                const tooltipText = isSinglePerson
                   ? `${day.date}: Severity ${Math.round(day.count)}/10`
                   : `${day.date}: ${Math.round(day.count)} ${Math.round(day.count) === 1 ? 'child' : 'children'} sick`;
                 

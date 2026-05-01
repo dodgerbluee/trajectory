@@ -7,12 +7,12 @@ import { query } from '../../db/connection.js';
 import { createResponse } from '../../types/api.js';
 import { BadRequestError } from '../../middleware/error-handler.js';
 import { type AuthRequest } from '../../middleware/auth.js';
-import { getAccessibleChildIds } from '../../features/families/service/family-access.js';
+import { getAccessiblePersonIds } from '../../features/families/service/family-access.js';
 
 type GrowthRow = {
   visit_id: number;
   visit_date: Date;
-  child_id: number;
+  person_id: number;
   weight_value: string | null;
   weight_percentile: string | null;
   height_value: string | null;
@@ -21,7 +21,7 @@ type GrowthRow = {
   head_circumference_percentile: string | null;
   bmi_value: string | null;
   bmi_percentile: string | null;
-  child_name: string;
+  person_name: string;
   date_of_birth: Date;
   gender: string;
   birth_weight: string | null;
@@ -41,8 +41,8 @@ type GrowthPoint = {
   head_circumference_percentile: number | null;
   bmi_value: number | null;
   bmi_percentile: number | null;
-  child_id: number;
-  child_name: string;
+  person_id: number;
+  person_name: string;
   gender: string;
 };
 
@@ -57,27 +57,27 @@ function parseDecimal(val: unknown): number | null {
 
 export async function handleGetGrowthData(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const accessibleChildIds = await getAccessibleChildIds(req.userId!);
-    if (accessibleChildIds.length === 0) {
+    const accessiblePersonIds = await getAccessiblePersonIds(req.userId!);
+    if (accessiblePersonIds.length === 0) {
       return res.json(createResponse([]));
     }
 
-    const childId = req.query.child_id ? parseInt(req.query.child_id as string) : undefined;
+    const personId = req.query.person_id ? parseInt(req.query.person_id as string) : undefined;
     const startDate = req.query.start_date as string | undefined;
     const endDate = req.query.end_date as string | undefined;
 
-    if (childId && isNaN(childId)) {
-      throw new BadRequestError('Invalid child_id');
+    if (personId && isNaN(personId)) {
+      throw new BadRequestError('Invalid person_id');
     }
-    if (childId && !accessibleChildIds.includes(childId)) {
-      throw new BadRequestError('Invalid child_id');
+    if (personId && !accessiblePersonIds.includes(personId)) {
+      throw new BadRequestError('Invalid person_id');
     }
 
     let queryText = `
       SELECT 
         v.id as visit_id,
         v.visit_date,
-        v.child_id,
+        v.person_id,
         v.weight_value,
         v.weight_percentile,
         v.height_value,
@@ -86,15 +86,15 @@ export async function handleGetGrowthData(req: AuthRequest, res: Response, next:
         v.head_circumference_percentile,
         v.bmi_value,
         v.bmi_percentile,
-        c.name as child_name,
+        c.name as person_name,
         c.date_of_birth,
         c.gender,
         c.birth_weight,
         c.birth_height
       FROM visits v
-      INNER JOIN children c ON v.child_id = c.id
+      INNER JOIN people c ON v.person_id = c.id
       WHERE v.visit_type = 'wellness'
-        AND v.child_id = ANY($1::int[])
+        AND v.person_id = ANY($1::int[])
         AND (
           v.weight_value IS NOT NULL 
           OR v.height_value IS NOT NULL 
@@ -103,12 +103,12 @@ export async function handleGetGrowthData(req: AuthRequest, res: Response, next:
         )
     `;
 
-    const queryParams: unknown[] = [accessibleChildIds];
+    const queryParams: unknown[] = [accessiblePersonIds];
     let paramIndex = 2;
 
-    if (childId) {
-      queryText += ` AND v.child_id = $${paramIndex}`;
-      queryParams.push(childId);
+    if (personId) {
+      queryText += ` AND v.person_id = $${paramIndex}`;
+      queryParams.push(personId);
       paramIndex++;
     }
 
@@ -128,30 +128,30 @@ export async function handleGetGrowthData(req: AuthRequest, res: Response, next:
 
     const result = await query<GrowthRow>(queryText, queryParams);
 
-    // Get unique children to add birth data points
-    const childBirthData = new Map<number, { birth_weight: string | null; birth_height: string | null; date_of_birth: Date; child_name: string; gender: string }>();
+    // Get unique people to add birth data points
+    const personBirthData = new Map<number, { birth_weight: string | null; birth_height: string | null; date_of_birth: Date; person_name: string; gender: string }>();
     
     result.rows.forEach((row) => {
-      if (!childBirthData.has(row.child_id)) {
-        childBirthData.set(row.child_id, {
+      if (!personBirthData.has(row.person_id)) {
+        personBirthData.set(row.person_id, {
           birth_weight: row.birth_weight,
           birth_height: row.birth_height,
           date_of_birth: row.date_of_birth,
-          child_name: row.child_name,
+          person_name: row.person_name,
           gender: row.gender,
         });
       }
     });
 
-    // Add birth data points (age 0) for children with birth measurements
+    // Add birth data points (age 0) for people with birth measurements
     const birthDataPoints: GrowthPoint[] = [];
-    childBirthData.forEach((birthData, cid) => {
+    personBirthData.forEach((birthData, cid) => {
       const birthWeight = parseDecimal(birthData.birth_weight);
       const birthHeight = parseDecimal(birthData.birth_height);
       
       if (birthWeight !== null || birthHeight !== null) {
-        // Only include if we're showing this child (filtered by childId) or all children
-        const shouldInclude = !childId || result.rows.some((r) => r.child_id === childId);
+        // Only include if we're showing this person (filtered by personId) or all people
+        const shouldInclude = !personId || result.rows.some((r) => r.person_id === personId);
         if (shouldInclude) {
           birthDataPoints.push({
             visit_id: null, // No visit for birth
@@ -166,8 +166,8 @@ export async function handleGetGrowthData(req: AuthRequest, res: Response, next:
             head_circumference_percentile: null,
             bmi_value: null,
             bmi_percentile: null,
-            child_id: cid,
-            child_name: birthData.child_name,
+            person_id: cid,
+            person_name: birthData.person_name,
             gender: birthData.gender,
           });
         }
@@ -232,17 +232,17 @@ export async function handleGetGrowthData(req: AuthRequest, res: Response, next:
         head_circumference_percentile: parseDecimal(row.head_circumference_percentile),
         bmi_value: bmiValue,
         bmi_percentile: parseDecimal(row.bmi_percentile),
-        child_id: row.child_id,
-        child_name: row.child_name,
+        person_id: row.person_id,
+        person_name: row.person_name,
         gender: row.gender,
       };
     });
 
-    // Combine birth data points with visit data points, sorted by child_id then age_months
+    // Combine birth data points with visit data points, sorted by person_id then age_months
     const allGrowthData = [...birthDataPoints, ...growthData].sort((a, b) => {
-      // Sort by child_id first, then by age_months
-      if (a.child_id !== b.child_id) {
-        return a.child_id - b.child_id;
+      // Sort by person_id first, then by age_months
+      if (a.person_id !== b.person_id) {
+        return a.person_id - b.person_id;
       }
       return a.age_months - b.age_months;
     });

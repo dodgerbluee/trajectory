@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { LuPencil, LuTrash2 } from 'react-icons/lu';
-import { illnessesApi, childrenApi, visitsApi, ApiClientError } from '@lib/api-client';
-import type { Illness, Child, Visit } from '@shared/types/api';
+import { illnessesApi, peopleApi, visitsApi, ApiClientError } from '@lib/api-client';
+import type { Illness, Person, Visit } from '@shared/types/api';
 import { formatDate } from '@lib/date-utils';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
 import ErrorMessage from '@shared/components/ErrorMessage';
@@ -32,7 +32,7 @@ function IllnessDetailPage() {
   const { canEdit } = useFamilyPermissions();
 
   const [illness, setIllness] = useState<Illness | null>(null);
-  const [child, setChild] = useState<Child | null>(null);
+  const [person, setPerson] = useState<Person | null>(null);
   const [linkedVisit, setLinkedVisit] = useState<Visit | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,8 +54,8 @@ function IllnessDetailPage() {
       const fetched = illnessResponse.data;
       setIllness(fetched);
 
-      const childResponse = await childrenApi.getById(fetched.child_id);
-      setChild(childResponse.data);
+      const personResponse = await peopleApi.getById(fetched.person_id);
+      setPerson(personResponse.data);
 
       if (fetched.visit_id) {
         try {
@@ -88,7 +88,7 @@ function IllnessDetailPage() {
       await illnessesApi.delete(parseInt(id!));
       setNotification({ message: 'Illness deleted successfully', type: 'success' });
       setTimeout(() => {
-        navigate(child ? `/people/${child.id}` : '/', { state: { tab: 'illnesses' } });
+        navigate(person ? `/people/${person.id}` : '/', { state: { tab: 'illnesses' } });
       }, 1000);
     } catch (err) {
       if (err instanceof ApiClientError) {
@@ -108,7 +108,7 @@ function IllnessDetailPage() {
     return <ErrorMessage message={error} onRetry={loadIllness} />;
   }
 
-  if (!illness || !child) {
+  if (!illness || !person) {
     return <ErrorMessage message="Illness not found" />;
   }
 
@@ -130,14 +130,14 @@ function IllnessDetailPage() {
         <div className={layoutStyles.detailBody}>
           {/* Header with Back button and Actions */}
           <div className={layoutStyles.detailHeader}>
-            <Link to={`/people/${illness.child_id}`} className={pageLayout.breadcrumb}>
-              ← Back to {child.name}
+            <Link to={`/people/${illness.person_id}`} className={pageLayout.breadcrumb}>
+              ← Back to {person.name}
             </Link>
             {canEdit && (
             <div className={layoutStyles.iconActions}>
               <Link
                 to={`/illnesses/${illness.id}/edit`}
-                state={{ childId: illness.child_id, fromChild: true }}
+                state={{ personId: illness.person_id, fromChild: true }}
                 className={layoutStyles.iconAction}
                 title="Edit illness"
                 aria-label="Edit illness"
@@ -168,8 +168,8 @@ function IllnessDetailPage() {
           <div className={styles.tabContent}>
             <div className={styles.infoStacked}>
               <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>Child:</span>
-                <span className={styles.infoValue}>{child.name}</span>
+                <span className={styles.infoLabel}>Person:</span>
+                <span className={styles.infoValue}>{person.name}</span>
               </div>
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>Illness types:</span>

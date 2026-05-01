@@ -1,5 +1,5 @@
 /**
- * MobileFilterBar – mobile-only filter UI used inside ChildDetailPage tabs
+ * MobileFilterBar – mobile-only filter UI used inside PersonDetailPage tabs
  * (Visits, Illness, Documents). Hidden on desktop via CSS.
  *
  * Renders a single "Filter" button with an active count badge, plus an

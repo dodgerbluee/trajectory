@@ -1,0 +1,308 @@
+/**
+ * People routes
+ * All endpoints require auth; data is scoped to the user's family (people they can access).
+ */
+
+import express from 'express';
+import type { Response, NextFunction } from 'express';
+import { query } from '../db/connection.js';
+import type { PersonRow, CreatePersonInput, Gender } from '../types/database.js';
+import { NotFoundError, ValidationError, ForbiddenError } from '../middleware/error-handler.js';
+import {
+  validateRequired,
+  validateOptionalString,
+  validateDate,
+  validateOptionalNumber,
+  validatePositiveInteger,
+} from '../middleware/validation.js';
+import { parsePaginationParams } from '../middleware/query-parser.js';
+import { createResponse, createPaginatedResponse } from '../types/api.js';
+import { authenticate, type AuthRequest } from '../middleware/auth.js';
+import { getFamilyIdsForUser, getOrCreateDefaultFamilyForUser, canAccessPerson, canEditFamily, canEditPersonIdentity, canDeletePerson } from '../features/families/service/family-access.js';
+import { measurementsRouter } from './measurements.js';
+import { medicalEventsRouter } from './medical-events.js';
+
+export const peopleRouter = express.Router();
+
+peopleRouter.use(authenticate);
+
+async function requirePersonAccess(req: AuthRequest, _res: Response, next: NextFunction): Promise<void> {
+  try {
+    const personId = validatePositiveInteger(req.params.personId, 'personId');
+    if (!(await canAccessPerson(req.userId!, personId))) {
+      next(new NotFoundError('Person'));
+      return;
+    }
+    next();
+  } catch (e) {
+    next(e);
+  }
+}
+
+peopleRouter.use('/:personId/measurements', requirePersonAccess, measurementsRouter);
+peopleRouter.use('/:personId/medical-events', requirePersonAccess, medicalEventsRouter);
+
+/**
+ * GET /api/people
+ * Get people the user can access (their family's people), with pagination.
+ */
+peopleRouter.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.userId!;
+    const familyIds = await getFamilyIdsForUser(userId);
+    const pagination = parsePaginationParams(req.query);
+
+    if (familyIds.length === 0) {
+      return res.json(createPaginatedResponse([], 0, pagination));
+    }
+
+    const countResult = await query<{ count: string }>(
+      'SELECT COUNT(*) as count FROM people WHERE family_id = ANY($1::int[])',
+      [familyIds]
+    );
+    const total = parseInt(countResult.rows[0].count);
+
+    const result = await query<PersonRow>(
+      'SELECT * FROM people WHERE family_id = ANY($1::int[]) ORDER BY name ASC LIMIT $2 OFFSET $3',
+      [familyIds, pagination.limit, pagination.offset]
+    );
+
+    const people = result.rows.map(formatPersonForResponse);
+    return res.json(createPaginatedResponse(people, total, pagination));
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/**
+ * GET /api/people/:id
+ * Get a single person by ID (only if user can access).
+ */
+peopleRouter.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const id = validatePositiveInteger(req.params.id, 'id');
+    if (!(await canAccessPerson(req.userId!, id))) {
+      throw new NotFoundError('Person');
+    }
+
+    const result = await query<PersonRow>(
+      'SELECT * FROM people WHERE id = $1',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      throw new NotFoundError('Person');
+    }
+
+    res.json(createResponse(formatPersonForResponse(result.rows[0])));
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/people
+ * Create a new person. Optional body.family_id: create in that family (user must be owner/parent).
+ * If omitted, uses default (first owner) family.
+ */
+peopleRouter.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const gender = validateRequired(req.body.gender, 'gender') as Gender;
+    if (!['male', 'female'].includes(gender)) {
+      throw new ValidationError('gender must be male or female');
+    }
+
+    let familyId: number;
+    if (req.body.family_id !== undefined && req.body.family_id !== null) {
+      const requestedFamilyId = validatePositiveInteger(req.body.family_id, 'family_id');
+      if (!(await canEditFamily(req.userId!, requestedFamilyId))) {
+        throw new ForbiddenError('You do not have permission to add people to this family.');
+      }
+      familyId = requestedFamilyId;
+    } else {
+      familyId = await getOrCreateDefaultFamilyForUser(req.userId!);
+      if (!(await canEditFamily(req.userId!, familyId))) {
+        throw new ForbiddenError('You do not have permission to add people to this family.');
+      }
+    }
+
+    const input: CreatePersonInput = {
+      name: validateRequired(req.body.name, 'name'),
+      date_of_birth: validateDate(req.body.date_of_birth, 'date_of_birth'),
+      gender: gender,
+      avatar: validateOptionalString(req.body.avatar),
+      notes: validateOptionalString(req.body.notes),
+      due_date: req.body.due_date ? validateDate(req.body.due_date, 'due_date') : null,
+      birth_weight: req.body.birth_weight !== undefined && req.body.birth_weight !== null
+        ? parseFloat(req.body.birth_weight)
+        : null,
+      birth_weight_ounces: req.body.birth_weight_ounces !== undefined && req.body.birth_weight_ounces !== null
+        ? validateOptionalNumber(req.body.birth_weight_ounces, 'birth_weight_ounces', 0, 15)
+        : null,
+      birth_height: req.body.birth_height !== undefined && req.body.birth_height !== null
+        ? parseFloat(req.body.birth_height)
+        : null,
+    };
+
+    const result = await query<PersonRow>(
+      `INSERT INTO people (family_id, name, date_of_birth, gender, avatar, notes, due_date, birth_weight, birth_weight_ounces, birth_height)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING *`,
+      [familyId, input.name, input.date_of_birth, input.gender, input.avatar, input.notes, input.due_date, input.birth_weight, input.birth_weight_ounces, input.birth_height]
+    );
+
+    res.status(201).json(createResponse(formatPersonForResponse(result.rows[0])));
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * PUT /api/people/:id
+ * Update a person (only if user can access).
+ */
+peopleRouter.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const id = validatePositiveInteger(req.params.id, 'id');
+    if (!(await canAccessPerson(req.userId!, id))) {
+      throw new NotFoundError('Person');
+    }
+    if (!(await canEditPersonIdentity(req.userId!, id))) {
+      throw new ForbiddenError('You do not have permission to edit this person.');
+    }
+
+    // Build dynamic update query based on provided fields
+    const updates: string[] = [];
+    const values: unknown[] = [];
+    let paramCount = 1;
+
+    if (req.body.name !== undefined) {
+      updates.push(`name = $${paramCount++}`);
+      values.push(validateRequired(req.body.name, 'name'));
+    }
+
+    if (req.body.date_of_birth !== undefined) {
+      updates.push(`date_of_birth = $${paramCount++}`);
+      values.push(validateDate(req.body.date_of_birth, 'date_of_birth'));
+    }
+
+    if (req.body.gender !== undefined) {
+      const gender = validateOptionalString(req.body.gender) as Gender | null;
+      if (gender && !['male', 'female'].includes(gender)) {
+        throw new ValidationError('gender must be male or female');
+      }
+      updates.push(`gender = $${paramCount++}`);
+      values.push(gender);
+    }
+
+    if (req.body.avatar !== undefined) {
+      updates.push(`avatar = $${paramCount++}`);
+      values.push(validateOptionalString(req.body.avatar));
+    }
+
+    if (req.body.notes !== undefined) {
+      updates.push(`notes = $${paramCount++}`);
+      values.push(validateOptionalString(req.body.notes));
+    }
+
+    if (req.body.due_date !== undefined) {
+      updates.push(`due_date = $${paramCount++}`);
+      values.push(req.body.due_date ? validateDate(req.body.due_date, 'due_date') : null);
+    }
+
+    if (req.body.birth_weight !== undefined) {
+      updates.push(`birth_weight = $${paramCount++}`);
+      values.push(validateOptionalNumber(req.body.birth_weight, 'birth_weight', 0));
+    }
+
+    if (req.body.birth_weight_ounces !== undefined) {
+      updates.push(`birth_weight_ounces = $${paramCount++}`);
+      values.push(validateOptionalNumber(req.body.birth_weight_ounces, 'birth_weight_ounces', 0, 15));
+    }
+
+    if (req.body.birth_height !== undefined) {
+      updates.push(`birth_height = $${paramCount++}`);
+      values.push(validateOptionalNumber(req.body.birth_height, 'birth_height', 0));
+    }
+
+    if (updates.length === 0) {
+      throw new ValidationError('No fields to update');
+    }
+
+    values.push(id);
+
+    const result = await query<PersonRow>(
+      `UPDATE people
+       SET ${updates.join(', ')}
+       WHERE id = $${paramCount}
+       RETURNING *`,
+      values
+    );
+
+    if (result.rows.length === 0) {
+      throw new NotFoundError('Person');
+    }
+
+    res.json(createResponse(formatPersonForResponse(result.rows[0])));
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * DELETE /api/people/:id
+ * Delete a person (only if user can access and has edit permission).
+ */
+peopleRouter.delete('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const id = validatePositiveInteger(req.params.id, 'id');
+    if (!(await canAccessPerson(req.userId!, id))) {
+      throw new NotFoundError('Person');
+    }
+    if (!(await canDeletePerson(req.userId!, id))) {
+      throw new ForbiddenError('You do not have permission to delete this person.');
+    }
+
+    const result = await query(
+      'DELETE FROM people WHERE id = $1 RETURNING id',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      throw new NotFoundError('Person');
+    }
+
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * Format person row for API response
+ * Converts dates to ISO strings
+ */
+function formatPersonForResponse(row: PersonRow) {
+  const parseDecimal = (val: string | null): number | null => {
+    if (val === null || val === undefined) return null;
+    const parsed = typeof val === 'string' ? parseFloat(val) : val;
+    return isNaN(parsed) ? null : parsed;
+  };
+
+  return {
+    id: row.id,
+    family_id: row.family_id,
+    user_id: row.user_id,
+    name: row.name,
+    date_of_birth: row.date_of_birth.toISOString().split('T')[0],
+    gender: row.gender,
+    avatar: row.avatar,
+    notes: row.notes,
+    due_date: row.due_date ? row.due_date.toISOString().split('T')[0] : null,
+    birth_weight: parseDecimal(row.birth_weight),
+    birth_weight_ounces: row.birth_weight_ounces,
+    birth_height: parseDecimal(row.birth_height),
+    created_at: row.created_at.toISOString(),
+    updated_at: row.updated_at.toISOString(),
+  };
+}

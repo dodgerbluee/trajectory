@@ -1,22 +1,22 @@
 import { Link } from 'react-router-dom';
-import type { Child, Visit } from '@shared/types/api';
+import type { Person, Visit } from '@shared/types/api';
 import { formatDate, isFutureDate } from '@lib/date-utils';
 import { getVisitTypeIcon, getVisitTypeLabel } from '@shared/lib/visit-icons';
 import styles from './UpcomingVisitsSection.module.css';
 
 interface UpcomingVisitsSectionProps {
-  upcomingByChild: Array<{ child: Child; visits: Visit[] }>;
+  upcomingByPerson: Array<{ person: Person; visits: Visit[] }>;
 }
 
-export default function UpcomingVisitsSection({ upcomingByChild }: UpcomingVisitsSectionProps) {
+export default function UpcomingVisitsSection({ upcomingByPerson }: UpcomingVisitsSectionProps) {
   return (
     <div className={styles.tabsContentBox}>
       <section className={styles.upcomingSection} aria-labelledby="home-upcoming-heading">
         <h2 id="home-upcoming-heading" className={styles.upcomingTitle}>Upcoming Visits</h2>
-        <div className={styles.upcomingByChild}>
-          {upcomingByChild.map(({ child, visits }) => (
-            <div key={child.id} className={styles.upcomingChildRow}>
-              <span className={styles.upcomingChildLabel}>{child.name}</span>
+        <div className={styles.upcomingByPerson}>
+          {upcomingByPerson.map(({ person, visits }) => (
+            <div key={person.id} className={styles.upcomingChildRow}>
+              <span className={styles.upcomingChildLabel}>{person.name}</span>
               <div className={styles.upcomingChips} role="list">
                 {visits.map((v) => {
                   const isOverdue = !isFutureDate(v.visit_date);

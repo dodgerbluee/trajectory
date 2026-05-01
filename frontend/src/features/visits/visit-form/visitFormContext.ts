@@ -4,7 +4,7 @@
  * branch on visit type for "which section to show"—only for display hints (e.g. showTitle).
  */
 
-import type { Child, CreateVisitInput, UpdateVisitInput, IllnessType, Visit, VisitAttachment } from '@shared/types/api';
+import type { Person, CreateVisitInput, UpdateVisitInput, IllnessType, Visit, VisitAttachment } from '@shared/types/api';
 
 export type VisitFormMode = 'add' | 'edit';
 export type VisitSubjectType = 'child' | 'adult';
@@ -12,7 +12,7 @@ export type VisitSubjectType = 'child' | 'adult';
 export interface VisitFormContext {
   mode: VisitFormMode;
   /**
-   * Whose visit is this — a child (default; uses CDC growth-chart fields) or
+   * Whose visit is this — a person (default; uses CDC growth-chart fields) or
    * the current adult user (skip percentiles + head circumference). The form
    * sections branch on this to hide kid-specific affordances; the underlying
    * field set is otherwise the same.
@@ -33,9 +33,9 @@ export interface VisitFormContext {
   handleRemoveFile: (index: number) => void;
   handleFileUpload: (files: File | File[]) => void | Promise<void>;
   /** Add only */
-  children?: Child[];
-  selectedChildId?: number | null;
-  setSelectedChildId?: React.Dispatch<React.SetStateAction<number | null>>;
+  people?: Person[];
+  selectedPersonId?: number | null;
+  setSelectedPersonId?: React.Dispatch<React.SetStateAction<number | null>>;
   /** Edit only */
   visit?: Visit;
   visitId?: number;

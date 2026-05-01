@@ -2,7 +2,7 @@
  * MobileIllnessesView – mobile-first layout for the all-illnesses list.
  *
  * - Sticky header with title + filter button (count badge = active filters).
- * - Filter button opens a MobileSheet with child + illness-type + status pickers.
+ * - Filter button opens a MobileSheet with person + illness-type + status pickers.
  * - Day-grouped, swipe-friendly tap rows (one per illness) instead of a card list.
  * - Infinite scroll (IntersectionObserver) replaces pagination on mobile.
  * - Pull-to-refresh wraps the list and reloads via `useIllnesses().reload`.
@@ -17,9 +17,9 @@ import LoadingSpinner from '@shared/components/LoadingSpinner';
 import ErrorMessage from '@shared/components/ErrorMessage';
 import { MobileSheet } from '@shared/components/MobileSheet';
 import PullToRefresh from '@shared/components/PullToRefresh';
-import { ChildAvatar } from '@features/children';
+import { PersonAvatar } from '@features/people';
 import { useIllnesses } from '../hooks';
-import type { Child, Illness, IllnessType } from '@shared/types/api';
+import type { Person, Illness, IllnessType } from '@shared/types/api';
 import { formatDate } from '@lib/date-utils';
 import styles from './MobileIllnessesView.module.css';
 
@@ -51,13 +51,13 @@ function illnessTypesDisplay(types: IllnessType[] | null | undefined): string {
 function MobileIllnessesView() {
   const {
     allIllnesses,
-    children,
+    people,
     loading,
     error,
-    filterChildId,
+    filterPersonId,
     filterIllnessType,
     filterIllnessStatus,
-    setFilterChildId,
+    setFilterPersonId,
     setFilterIllnessType,
     setFilterIllnessStatus,
     reload,
@@ -67,28 +67,28 @@ function MobileIllnessesView() {
   const [pageCount, setPageCount] = useState(1);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const childById = useMemo(() => {
-    const map = new Map<number, Child>();
-    for (const c of children) map.set(c.id, c);
+  const personById = useMemo(() => {
+    const map = new Map<number, Person>();
+    for (const c of people) map.set(c.id, c);
     return map;
-  }, [children]);
+  }, [people]);
 
   // Apply filters here (separate from the hook's pagination so we control infinite scroll).
   const filtered = useMemo(() => {
     let result = allIllnesses;
-    if (filterChildId != null) result = result.filter((i) => i.child_id === filterChildId);
+    if (filterPersonId != null) result = result.filter((i) => i.person_id === filterPersonId);
     if (filterIllnessType) result = result.filter((i) => i.illness_types?.includes(filterIllnessType));
     if (filterIllnessStatus === 'ongoing') result = result.filter((i) => !i.end_date);
     else if (filterIllnessStatus === 'ended') result = result.filter((i) => !!i.end_date);
     return [...result].sort(
       (a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime(),
     );
-  }, [allIllnesses, filterChildId, filterIllnessType, filterIllnessStatus]);
+  }, [allIllnesses, filterPersonId, filterIllnessType, filterIllnessStatus]);
 
   // Reset paging when the filter changes.
   useEffect(() => {
     setPageCount(1);
-  }, [filterChildId, filterIllnessType, filterIllnessStatus]);
+  }, [filterPersonId, filterIllnessType, filterIllnessStatus]);
 
   const visible = useMemo(() => filtered.slice(0, pageCount * PAGE_SIZE), [filtered, pageCount]);
   const hasMore = visible.length < filtered.length;
@@ -126,7 +126,7 @@ function MobileIllnessesView() {
   }, [visible]);
 
   const activeFilterCount =
-    (filterChildId != null ? 1 : 0) +
+    (filterPersonId != null ? 1 : 0) +
     (filterIllnessType ? 1 : 0) +
     (filterIllnessStatus ? 1 : 0);
 
@@ -160,13 +160,13 @@ function MobileIllnessesView() {
 
       {activeFilterCount > 0 && (
         <div className={styles.activeChips}>
-          {filterChildId != null && (
+          {filterPersonId != null && (
             <button
               type="button"
               className={styles.chip}
-              onClick={() => setFilterChildId(undefined)}
+              onClick={() => setFilterPersonId(undefined)}
             >
-              {childById.get(filterChildId)?.name ?? 'Child'}
+              {personById.get(filterPersonId)?.name ?? 'Person'}
               <LuX aria-hidden="true" />
             </button>
           )}
@@ -205,16 +205,16 @@ function MobileIllnessesView() {
                 <h2 className={styles.dayHeader}>{formatDate(group.date)}</h2>
                 <ul className={styles.dayList}>
                   {group.illnesses.map((i) => {
-                    const child = childById.get(i.child_id);
+                    const person = personById.get(i.person_id);
                     const ongoing = !i.end_date;
                     return (
                       <li key={i.id}>
                         <Link to={`/illnesses/${i.id}`} className={styles.row}>
                           <span className={styles.avatar} aria-hidden="true">
-                            {child ? (
-                              <ChildAvatar
-                                avatar={child.avatar}
-                                gender={child.gender}
+                            {person ? (
+                              <PersonAvatar
+                                avatar={person.avatar}
+                                gender={person.gender}
                                 alt=""
                                 className={styles.avatarImg}
                               />
@@ -230,7 +230,7 @@ function MobileIllnessesView() {
                               </span>
                             </span>
                             <span className={styles.meta}>
-                              {child?.name ?? `Child #${i.child_id}`}
+                              {person?.name ?? `Person #${i.person_id}`}
                               {i.severity ? ` · ${i.severity}/10` : ''}
                               {i.temperature ? ' · Fever' : ''}
                               {i.end_date ? ` · Ended ${formatDate(i.end_date)}` : ''}
@@ -264,21 +264,21 @@ function MobileIllnessesView() {
       >
         <div className={styles.sheetBody}>
           <section className={styles.sheetSection}>
-            <h3 className={styles.sheetSectionTitle}>Child</h3>
+            <h3 className={styles.sheetSectionTitle}>Person</h3>
             <div className={styles.sheetChips}>
               <button
                 type="button"
-                className={`${styles.sheetChip} ${filterChildId == null ? styles.sheetChipActive : ''}`}
-                onClick={() => setFilterChildId(undefined)}
+                className={`${styles.sheetChip} ${filterPersonId == null ? styles.sheetChipActive : ''}`}
+                onClick={() => setFilterPersonId(undefined)}
               >
-                All children
+                All people
               </button>
-              {children.map((c) => (
+              {people.map((c) => (
                 <button
                   key={c.id}
                   type="button"
-                  className={`${styles.sheetChip} ${filterChildId === c.id ? styles.sheetChipActive : ''}`}
-                  onClick={() => setFilterChildId(c.id)}
+                  className={`${styles.sheetChip} ${filterPersonId === c.id ? styles.sheetChipActive : ''}`}
+                  onClick={() => setFilterPersonId(c.id)}
                 >
                   {c.name}
                 </button>
@@ -342,7 +342,7 @@ function MobileIllnessesView() {
               className={styles.sheetClear}
               disabled={activeFilterCount === 0}
               onClick={() => {
-                setFilterChildId(undefined);
+                setFilterPersonId(undefined);
                 setFilterIllnessType(undefined);
                 setFilterIllnessStatus(undefined);
               }}

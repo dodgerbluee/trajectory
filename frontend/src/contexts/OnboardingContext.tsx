@@ -117,8 +117,8 @@ export interface OnboardingContextType {
   complete: () => Promise<void>;
   /** Call when user has created a family (Settings > Add Family > Create) */
   reportFamilyCreated: () => void;
-  /** Call when user has added a child (Add Child page submit). Advances and navigates to Home. */
-  reportChildAdded: (childId: number) => void;
+  /** Call when user has added a person (Add Person page submit). Advances and navigates to Home. */
+  reportPersonAdded: (personId: number) => void;
   /** Call when user is on Settings with Family tab visible (so overlay can advance go_settings_family → create_family) */
   reportOnSettingsFamilyTab: () => void;
   /** Step index 0..N for progress display */
@@ -211,8 +211,8 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     advance('add_child');
   }, [advance]);
 
-  const reportChildAdded = useCallback(
-    (_childId: number) => {
+  const reportPersonAdded = useCallback(
+    (_personId: number) => {
       advance('return_home_click_child');
       navigate('/', { replace: true, state: { tab: 'family' } });
     },
@@ -240,7 +240,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       skip,
       complete,
       reportFamilyCreated,
-      reportChildAdded,
+      reportPersonAdded,
       reportOnSettingsFamilyTab,
       stepIndex,
       totalSteps,
@@ -253,7 +253,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       skip,
       complete,
       reportFamilyCreated,
-      reportChildAdded,
+      reportPersonAdded,
       reportOnSettingsFamilyTab,
       stepIndex,
       totalSteps,

@@ -1,8 +1,8 @@
 import { useState, FormEvent, useEffect, useMemo, useCallback, type Dispatch, type SetStateAction } from 'react';
 import { Link, useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { LuCheck, LuX, LuTrash2 } from 'react-icons/lu';
-import { visitsApi, childrenApi, ApiClientError } from '@lib/api-client';
-import type { Child, UpdateVisitInput, IllnessType, Visit, VisitAttachment } from '@shared/types/api';
+import { visitsApi, peopleApi, ApiClientError } from '@lib/api-client';
+import type { Person, UpdateVisitInput, IllnessType, Visit, VisitAttachment } from '@shared/types/api';
 import { getTodayDate } from '@lib/validation';
 import { isFutureVisit, isFutureDate } from '@lib/date-utils';
 import { visitHasOutcomeData } from '@lib/visit-utils';
@@ -33,7 +33,7 @@ function EditVisitPage() {
   const [userChoseFullForm, setUserChoseFullForm] = useState(false);
   const forceFullForm = searchParams.get('full') === '1' || (location.state as { editAsFullVisit?: boolean } | null)?.editAsFullVisit === true || userChoseFullForm;
 
-  const [child, setChild] = useState<Child | null>(null);
+  const [person, setPerson] = useState<Person | null>(null);
   const [visit, setVisit] = useState<Visit | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -144,11 +144,11 @@ function EditVisitPage() {
       setLoading(true);
       const visitResponse = await visitsApi.getById(parseInt(id));
       const visitData = visitResponse.data;
-      const childResponse = await childrenApi.getById(visitData.child_id);
-      const childData = childResponse.data;
+      const personResponse = await peopleApi.getById(visitData.person_id);
+      const personData = personResponse.data;
 
       setVisit(visitData);
-      setChild(childData);
+      setPerson(personData);
 
       await loadAttachments(parseInt(id));
       
@@ -205,7 +205,7 @@ function EditVisitPage() {
       setSelectedIllnesses(loadedIllnesses);
       
       // Load recent data for autocomplete
-      const visitsResponse = await visitsApi.getAll({ child_id: visitData.child_id });
+      const visitsResponse = await visitsApi.getAll({ person_id: visitData.person_id });
       const locations = [...new Set(visitsResponse.data.map(v => v.location).filter(Boolean))] as string[];
       const doctors = [...new Set(visitsResponse.data.map(v => v.doctor_name).filter(Boolean))] as string[];
       setRecentLocations(locations);
@@ -276,7 +276,7 @@ function EditVisitPage() {
   }, [visit, useLimitedForm]);
 
   // Subject: derived from visit row's user_id; adult self-rows are still
-  // children rows in the DB, just with user_id linkage.
+  // people rows in the DB, just with user_id linkage.
   const subjectType: 'child' | 'adult' =
     visit && (visit as { user_id?: number | null }).user_id != null ? 'adult' : 'child';
 
@@ -329,7 +329,7 @@ function EditVisitPage() {
     setDeleting(true);
     try {
       await visitsApi.delete(visit.id);
-      navigate(`/people/${visit.child_id}`);
+      navigate(`/people/${visit.person_id}`);
     } catch (err) {
       const message = err instanceof ApiClientError ? err.message : 'Failed to delete visit';
       setNotification({ message, type: 'error' });
@@ -397,7 +397,7 @@ function EditVisitPage() {
     return <LoadingSpinner message="Loading visit..." />;
   }
 
-  if (!child || !visit) {
+  if (!person || !visit) {
     return <div>Visit not found</div>;
   }
 
@@ -416,10 +416,10 @@ function EditVisitPage() {
           <div className={formLayout.root}>
             <div className={formLayout.backRow}>
               <Link
-                to={`/people/${visit.child_id}`}
+                to={`/people/${visit.person_id}`}
                 className={`${pageLayout.breadcrumb} ${formLayout.backLink}`}
               >
-                ← Back to {child.name}
+                ← Back to {person.name}
               </Link>
               <div className={layoutStyles.iconActions}>
                 <button

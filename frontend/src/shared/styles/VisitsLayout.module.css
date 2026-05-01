@@ -1,4 +1,4 @@
-/* Visits page layout: sidebar + main. Shared by HomePage, ChildDetailPage, AllVisitsView, AllIllnessesView, VaccineHistory, and all *Sidebar components. */
+/* Visits page layout: sidebar + main. Shared by HomePage, PersonDetailPage, AllVisitsView, AllIllnessesView, VaccineHistory, and all *Sidebar components. */
 
 .pageLayout {
   display: flex;
@@ -65,7 +65,7 @@
   margin-bottom: var(--spacing-sm);
 }
 
-/* Child selector (ChildSelector.tsx) */
+/* Child selector (PersonSelector.tsx) */
 .childSelector {
   display: flex;
   flex-direction: column;
@@ -284,7 +284,7 @@ body:not([data-theme="dark"]) .sidebarAddVisitBtn:focus-visible {
   }
 }
 
-/* On phones, hide the desktop filter sidebar; ChildDetailPage tabs render
+/* On phones, hide the desktop filter sidebar; PersonDetailPage tabs render
  * a MobileFilterBar instead. AllVisitsView / AllIllnessesView / VaccineHistory
  * already swap to dedicated mobile views before reaching this layout. */
 @media (max-width: 767.98px) {

@@ -1,7 +1,7 @@
 import { useState, FormEvent, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { illnessesApi, childrenApi, visitsApi, ApiClientError } from '@lib/api-client';
-import type { Child, CreateIllnessInput, IllnessType } from '@shared/types/api';
+import { illnessesApi, peopleApi, visitsApi, ApiClientError } from '@lib/api-client';
+import type { Person, CreateIllnessInput, IllnessType } from '@shared/types/api';
 import { getTodayDate } from '@lib/validation';
 import Card from '@shared/components/Card';
 import FormField from '@shared/components/FormField';
@@ -18,18 +18,18 @@ function AddIllnessPage() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
 
-  const [children, setChildren] = useState<Child[]>([]);
-  const [visits, setVisits] = useState<{ id: number; visit_date: string; child_id: number }[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
+  const [visits, setVisits] = useState<{ id: number; visit_date: string; person_id: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  const childIdFromUrl = searchParams.get('child_id');
-  const initialChildId = childIdFromUrl ? parseInt(childIdFromUrl) : 0;
+  const personIdFromUrl = searchParams.get('person_id');
+  const initialChildId = personIdFromUrl ? parseInt(personIdFromUrl) : 0;
 
   type AddIllnessFormData = Omit<CreateIllnessInput, 'illness_types'> & { illness_types: IllnessType[] };
   const [formData, setFormData] = useState<AddIllnessFormData>({
-    child_id: initialChildId,
+    person_id: initialChildId,
     illness_types: [],
     start_date: getTodayDate(),
     end_date: null,
@@ -50,13 +50,13 @@ function AddIllnessPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [childrenResponse, visitsResponse] = await Promise.all([
-        childrenApi.getAll(),
+      const [peopleResponse, visitsResponse] = await Promise.all([
+        peopleApi.getAll(),
         initialChildId
-          ? visitsApi.getAll({ child_id: initialChildId, visit_type: 'sick', limit: 100 })
+          ? visitsApi.getAll({ person_id: initialChildId, visit_type: 'sick', limit: 100 })
           : visitsApi.getAll({ visit_type: 'sick', limit: 100 }),
       ]);
-      setChildren(childrenResponse.data);
+      setPeople(peopleResponse.data);
       setVisits(visitsResponse.data);
     } catch (error) {
       if (error instanceof ApiClientError) {
@@ -70,8 +70,8 @@ function AddIllnessPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!formData.child_id) {
-      setNotification({ message: 'Please select a child', type: 'error' });
+    if (!formData.person_id) {
+      setNotification({ message: 'Please select a person', type: 'error' });
       return;
     }
 
@@ -90,7 +90,7 @@ function AddIllnessPage() {
 
     try {
       const res = await illnessesApi.create({
-        child_id: formData.child_id,
+        person_id: formData.person_id,
         illness_types: illnessTypes,
         start_date: formData.start_date,
         end_date: formData.end_date ?? undefined,
@@ -102,11 +102,11 @@ function AddIllnessPage() {
       });
       setNotification({ message: 'Illness added successfully!', type: 'success' });
       setTimeout(() => {
-        const state = location.state as { fromChild?: boolean; childId?: number; fromTab?: string } | null;
+        const state = location.state as { fromChild?: boolean; personId?: number; fromTab?: string } | null;
         if (res.data?.id != null) {
           navigate(`/illnesses/${res.data.id}`, { state: state ?? undefined });
-        } else if (state?.fromChild && state?.childId != null) {
-          navigate(`/people/${state.childId}`, { state: { tab: state.fromTab ?? 'illnesses' } });
+        } else if (state?.fromChild && state?.personId != null) {
+          navigate(`/people/${state.personId}`, { state: { tab: state.fromTab ?? 'illnesses' } });
         } else {
           navigate('/', { state: { tab: 'illnesses' } });
         }
@@ -125,15 +125,15 @@ function AddIllnessPage() {
     return <LoadingSpinner message="Loading..." />;
   }
 
-  const childVisits = formData.child_id
-    ? visits.filter(v => v.child_id === formData.child_id)
+  const personVisits = formData.person_id
+    ? visits.filter(v => v.person_id === formData.person_id)
     : [];
 
-  const backHref = ((location.state as { fromChild?: boolean; childId?: number })?.fromChild && (location.state as { childId?: number }).childId)
-    ? `/people/${(location.state as { childId: number }).childId}`
+  const backHref = ((location.state as { fromChild?: boolean; personId?: number })?.fromChild && (location.state as { personId?: number }).personId)
+    ? `/people/${(location.state as { personId: number }).personId}`
     : '/';
   const backLabel = ((location.state as { fromChild?: boolean })?.fromChild)
-    ? (children.find(c => c.id === (location.state as { childId?: number })?.childId)?.name || 'Child')
+    ? (people.find(c => c.id === (location.state as { personId?: number })?.personId)?.name || 'Person')
     : 'Illnesses';
 
   const illnessEntryValue = {
@@ -153,9 +153,9 @@ function AddIllnessPage() {
   };
 
   const handleCancel = () => {
-    const state = location.state as { fromChild?: boolean; childId?: number; fromTab?: string } | null;
-    if (state?.fromChild && state?.childId != null) {
-      navigate(`/people/${state.childId}`, { state: { tab: state.fromTab ?? 'illnesses' } });
+    const state = location.state as { fromChild?: boolean; personId?: number; fromTab?: string } | null;
+    if (state?.fromChild && state?.personId != null) {
+      navigate(`/people/${state.personId}`, { state: { tab: state.fromTab ?? 'illnesses' } });
     } else {
       navigate('/', { state: { tab: 'illnesses' } });
     }
@@ -198,15 +198,15 @@ function AddIllnessPage() {
             <SectionWrapper sectionId="illness" label="Illness" removable={false} isLast>
                 {!initialChildId && (
                   <FormField
-                    label="Child"
+                    label="Person"
                     type="select"
-                    value={formData.child_id ? formData.child_id.toString() : ''}
-                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, child_id: parseInt(e.target.value) })}
+                    value={formData.person_id ? formData.person_id.toString() : ''}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, person_id: parseInt(e.target.value) })}
                     required
                     disabled={submitting}
                     options={[
-                      { value: '', label: 'Select a child...' },
-                      ...children.map(child => ({ value: child.id.toString(), label: child.name })),
+                      { value: '', label: 'Select a person...' },
+                      ...people.map(person => ({ value: person.id.toString(), label: person.name })),
                     ]}
                   />
                 )}
@@ -225,7 +225,7 @@ function AddIllnessPage() {
                   minEndDate={formData.start_date ?? undefined}
                 />
 
-                {childVisits.length > 0 && (
+                {personVisits.length > 0 && (
                   <FormField
                     label="Link to Visit (optional)"
                     type="select"
@@ -234,7 +234,7 @@ function AddIllnessPage() {
                     disabled={submitting}
                     options={[
                       { value: '', label: 'No visit link' },
-                      ...childVisits.map(visit => ({
+                      ...personVisits.map(visit => ({
                         value: visit.id.toString(),
                         label: `Visit on ${visit.visit_date}`,
                       })),

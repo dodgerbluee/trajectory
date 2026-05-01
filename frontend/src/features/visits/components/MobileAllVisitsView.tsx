@@ -2,7 +2,7 @@
  * MobileAllVisitsView – mobile-first layout for the all-visits list.
  *
  * - Sticky header with title + filter button (count badge = active filters).
- * - Filter button opens a MobileSheet with child + visit-type pickers.
+ * - Filter button opens a MobileSheet with person + visit-type pickers.
  * - Day-grouped, swipe-friendly tap rows (one per visit) instead of a card list.
  * - Infinite scroll (IntersectionObserver) replaces pagination on mobile.
  * - Pull-to-refresh wraps the list and reloads via `useAllVisits().reload`.
@@ -14,9 +14,9 @@ import LoadingSpinner from '@shared/components/LoadingSpinner';
 import ErrorMessage from '@shared/components/ErrorMessage';
 import { MobileSheet } from '@shared/components/MobileSheet';
 import PullToRefresh from '@shared/components/PullToRefresh';
-import { ChildAvatar } from '@features/children';
+import { PersonAvatar } from '@features/people';
 import { useAllVisits } from '../hooks';
-import type { Child, Visit, VisitType } from '@shared/types/api';
+import type { Person, Visit, VisitType } from '@shared/types/api';
 import { formatDate, formatTime, isFutureDate } from '@lib/date-utils';
 import { getVisitTypeIcon, getVisitTypeLabel } from '@shared/lib/visit-icons';
 import { LuFilter, LuX } from 'react-icons/lu';
@@ -28,12 +28,12 @@ const PAGE_SIZE = 20;
 function MobileAllVisitsView() {
   const {
     allVisits,
-    children,
+    people,
     loading,
     error,
-    filterChildId,
+    filterPersonId,
     filterVisitType,
-    setFilterChildId,
+    setFilterPersonId,
     setFilterVisitType,
     reload,
   } = useAllVisits();
@@ -42,26 +42,26 @@ function MobileAllVisitsView() {
   const [pageCount, setPageCount] = useState(1);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const childById = useMemo(() => {
-    const map = new Map<number, Child>();
-    for (const c of children) map.set(c.id, c);
+  const personById = useMemo(() => {
+    const map = new Map<number, Person>();
+    for (const c of people) map.set(c.id, c);
     return map;
-  }, [children]);
+  }, [people]);
 
   // Apply filters here (separate from the hook's pagination so we control infinite scroll).
   const filtered = useMemo(() => {
     let result = allVisits;
-    if (filterChildId != null) result = result.filter((v) => v.child_id === filterChildId);
+    if (filterPersonId != null) result = result.filter((v) => v.person_id === filterPersonId);
     if (filterVisitType) result = result.filter((v) => v.visit_type === filterVisitType);
     return [...result].sort(
       (a, b) => new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime(),
     );
-  }, [allVisits, filterChildId, filterVisitType]);
+  }, [allVisits, filterPersonId, filterVisitType]);
 
   // Reset paging when the filter changes.
   useEffect(() => {
     setPageCount(1);
-  }, [filterChildId, filterVisitType]);
+  }, [filterPersonId, filterVisitType]);
 
   const visible = useMemo(() => filtered.slice(0, pageCount * PAGE_SIZE), [filtered, pageCount]);
   const hasMore = visible.length < filtered.length;
@@ -99,7 +99,7 @@ function MobileAllVisitsView() {
   }, [visible]);
 
   const activeFilterCount =
-    (filterChildId != null ? 1 : 0) + (filterVisitType ? 1 : 0);
+    (filterPersonId != null ? 1 : 0) + (filterVisitType ? 1 : 0);
 
   if (loading && allVisits.length === 0) {
     return <LoadingSpinner message="Loading visits..." />;
@@ -131,13 +131,13 @@ function MobileAllVisitsView() {
 
       {activeFilterCount > 0 && (
         <div className={styles.activeChips}>
-          {filterChildId != null && (
+          {filterPersonId != null && (
             <button
               type="button"
               className={styles.chip}
-              onClick={() => setFilterChildId(undefined)}
+              onClick={() => setFilterPersonId(undefined)}
             >
-              {childById.get(filterChildId)?.name ?? 'Child'}
+              {personById.get(filterPersonId)?.name ?? 'Person'}
               <LuX aria-hidden="true" />
             </button>
           )}
@@ -166,16 +166,16 @@ function MobileAllVisitsView() {
                 <h2 className={styles.dayHeader}>{formatDate(group.date)}</h2>
                 <ul className={styles.dayList}>
                   {group.visits.map((v) => {
-                    const child = childById.get(v.child_id);
+                    const person = personById.get(v.person_id);
                     const overdue = !isFutureDate(v.visit_date);
                     return (
                       <li key={v.id}>
                         <Link to={`/visits/${v.id}`} className={styles.row}>
                           <span className={styles.avatar} aria-hidden="true">
-                            {child ? (
-                              <ChildAvatar
-                                avatar={child.avatar}
-                                gender={child.gender}
+                            {person ? (
+                              <PersonAvatar
+                                avatar={person.avatar}
+                                gender={person.gender}
                                 alt=""
                                 className={styles.avatarImg}
                               />
@@ -194,7 +194,7 @@ function MobileAllVisitsView() {
                               )}
                             </span>
                             <span className={styles.meta}>
-                              {child?.name ?? `Child #${v.child_id}`}
+                              {person?.name ?? `Person #${v.person_id}`}
                               {v.visit_time ? ` · ${formatTime(v.visit_time)}` : ''}
                               {v.doctor_name ? ` · ${v.doctor_name}` : ''}
                             </span>
@@ -226,21 +226,21 @@ function MobileAllVisitsView() {
       >
         <div className={styles.sheetBody}>
           <section className={styles.sheetSection}>
-            <h3 className={styles.sheetSectionTitle}>Child</h3>
+            <h3 className={styles.sheetSectionTitle}>Person</h3>
             <div className={styles.sheetChips}>
               <button
                 type="button"
-                className={`${styles.sheetChip} ${filterChildId == null ? styles.sheetChipActive : ''}`}
-                onClick={() => setFilterChildId(undefined)}
+                className={`${styles.sheetChip} ${filterPersonId == null ? styles.sheetChipActive : ''}`}
+                onClick={() => setFilterPersonId(undefined)}
               >
-                All children
+                All people
               </button>
-              {children.map((c) => (
+              {people.map((c) => (
                 <button
                   key={c.id}
                   type="button"
-                  className={`${styles.sheetChip} ${filterChildId === c.id ? styles.sheetChipActive : ''}`}
-                  onClick={() => setFilterChildId(c.id)}
+                  className={`${styles.sheetChip} ${filterPersonId === c.id ? styles.sheetChipActive : ''}`}
+                  onClick={() => setFilterPersonId(c.id)}
                 >
                   {c.name}
                 </button>
@@ -278,7 +278,7 @@ function MobileAllVisitsView() {
               className={styles.sheetClear}
               disabled={activeFilterCount === 0}
               onClick={() => {
-                setFilterChildId(undefined);
+                setFilterPersonId(undefined);
                 setFilterVisitType(undefined);
               }}
             >

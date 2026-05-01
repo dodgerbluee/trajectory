@@ -202,24 +202,24 @@ usersRouter.get('/:id', async (req: AuthRequest, res: Response, next: NextFuncti
     let totalIllnesses = 0;
     if (familyIds.length > 0) {
       const kidsResult = await query<{ count: string }>(
-        'SELECT COUNT(*)::text as count FROM children WHERE family_id = ANY($1::int[])',
+        'SELECT COUNT(*)::text as count FROM people WHERE family_id = ANY($1::int[])',
         [familyIds]
       );
       totalKids = parseInt(kidsResult.rows[0]?.count ?? '0', 10);
-      const childIdsResult = await query<{ id: number }>(
-        'SELECT id FROM children WHERE family_id = ANY($1::int[])',
+      const personIdsResult = await query<{ id: number }>(
+        'SELECT id FROM people WHERE family_id = ANY($1::int[])',
         [familyIds]
       );
-      const childIds = childIdsResult.rows.map((r) => r.id);
-      if (childIds.length > 0) {
+      const personIds = personIdsResult.rows.map((r) => r.id);
+      if (personIds.length > 0) {
         const visitsResult = await query<{ count: string }>(
-          'SELECT COUNT(*)::text as count FROM visits WHERE child_id = ANY($1::int[])',
-          [childIds]
+          'SELECT COUNT(*)::text as count FROM visits WHERE person_id = ANY($1::int[])',
+          [personIds]
         );
         totalVisits = parseInt(visitsResult.rows[0]?.count ?? '0', 10);
         const illResult = await query<{ count: string }>(
-          'SELECT COUNT(*)::text as count FROM illnesses WHERE child_id = ANY($1::int[])',
-          [childIds]
+          'SELECT COUNT(*)::text as count FROM illnesses WHERE person_id = ANY($1::int[])',
+          [personIds]
         );
         totalIllnesses = parseInt(illResult.rows[0]?.count ?? '0', 10);
       }

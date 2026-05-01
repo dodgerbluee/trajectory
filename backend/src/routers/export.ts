@@ -9,7 +9,7 @@ import path from 'path';
 
 import { query } from '../db/connection.js';
 import { authenticate, type AuthRequest } from '../middleware/auth.js';
-import { getAccessibleChildIds, canExportData } from '../features/families/service/family-access.js';
+import { getAccessiblePersonIds, canExportData } from '../features/families/service/family-access.js';
 import { ForbiddenError } from '../middleware/error-handler.js';
 
 const router = Router();
@@ -23,7 +23,7 @@ interface ExportRow {
 }
 
 /** Attachment row from any attachment table; all have stored_filename on disk. */
-type AttachmentWithSource = ExportRow & { stored_filename: string; _source: 'visit' | 'measurement' | 'child' };
+type AttachmentWithSource = ExportRow & { stored_filename: string; _source: 'visit' | 'measurement' | 'person' };
 
 /**
  * GET /api/export
@@ -36,26 +36,26 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!allowed) {
       throw new ForbiddenError('Only parents and owners can export data. Read-only members cannot export.');
     }
-    const childIds = await getAccessibleChildIds(userId);
-    if (childIds.length === 0) {
+    const personIds = await getAccessiblePersonIds(userId);
+    if (personIds.length === 0) {
       const date = new Date().toISOString().slice(0, 10);
       res.setHeader('Content-Type', 'application/zip');
       res.setHeader('Content-Disposition', `attachment; filename="trajectory-export-${date}.zip"`);
       const arch = archiver('zip', { zlib: { level: 6 } });
       arch.on('error', (err: Error) => next(err));
       arch.pipe(res);
-      arch.append(JSON.stringify({ exported_at: new Date().toISOString(), children: [], visits: [], illnesses: [], measurements: [], medical_events: [], attachments: [] }, null, 2), { name: 'data.json' });
+      arch.append(JSON.stringify({ exported_at: new Date().toISOString(), people: [], visits: [], illnesses: [], measurements: [], medical_events: [], attachments: [] }, null, 2), { name: 'data.json' });
       arch.append('<!DOCTYPE html><html><body><h1>Trajectory export</h1><p>No data.</p></body></html>', { name: 'export.html' });
       await arch.finalize();
       return;
     }
 
-    const [childrenRes, visitsRes, illnessesRes, measurementsRes, eventsRes] = await Promise.all([
-      query<ExportRow>('SELECT * FROM children WHERE id = ANY($1::int[]) ORDER BY name', [childIds]),
-      query<ExportRow>('SELECT * FROM visits WHERE child_id = ANY($1::int[]) ORDER BY visit_date DESC', [childIds]),
-      query<ExportRow>('SELECT * FROM illnesses WHERE child_id = ANY($1::int[]) ORDER BY start_date DESC', [childIds]),
-      query<ExportRow>('SELECT * FROM measurements WHERE child_id = ANY($1::int[]) ORDER BY measurement_date DESC', [childIds]),
-      query<ExportRow>('SELECT * FROM medical_events WHERE child_id = ANY($1::int[]) ORDER BY start_date DESC', [childIds]),
+    const [peopleRes, visitsRes, illnessesRes, measurementsRes, eventsRes] = await Promise.all([
+      query<ExportRow>('SELECT * FROM people WHERE id = ANY($1::int[]) ORDER BY name', [personIds]),
+      query<ExportRow>('SELECT * FROM visits WHERE person_id = ANY($1::int[]) ORDER BY visit_date DESC', [personIds]),
+      query<ExportRow>('SELECT * FROM illnesses WHERE person_id = ANY($1::int[]) ORDER BY start_date DESC', [personIds]),
+      query<ExportRow>('SELECT * FROM measurements WHERE person_id = ANY($1::int[]) ORDER BY measurement_date DESC', [personIds]),
+      query<ExportRow>('SELECT * FROM medical_events WHERE person_id = ANY($1::int[]) ORDER BY start_date DESC', [personIds]),
     ]);
     const illnessIds = illnessesRes.rows.map((r) => r.id as number);
     const illnessTypesRes = illnessIds.length > 0
@@ -72,25 +72,25 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
     const visitIds = visitsRes.rows.map((r) => r.id as number);
     const measurementIds = measurementsRes.rows.map((r) => r.id as number);
 
-    const [visitAttachments, measAttachments, childAttachments] = await Promise.all([
+    const [visitAttachments, measAttachments, personAttachmentsRows] = await Promise.all([
       visitIds.length > 0
         ? query<ExportRow>('SELECT * FROM visit_attachments WHERE visit_id = ANY($1::int[])', [visitIds])
         : Promise.resolve({ rows: [] as ExportRow[] }),
       measurementIds.length > 0
         ? query<ExportRow>('SELECT * FROM measurement_attachments WHERE measurement_id = ANY($1::int[])', [measurementIds])
         : Promise.resolve({ rows: [] as ExportRow[] }),
-      query<ExportRow>('SELECT * FROM child_attachments WHERE child_id = ANY($1::int[])', [childIds]),
+      query<ExportRow>('SELECT * FROM person_attachments WHERE person_id = ANY($1::int[])', [personIds]),
     ]);
 
     const attachments: AttachmentWithSource[] = [
       ...visitAttachments.rows.map((r) => ({ ...r, _source: 'visit' as const })) as AttachmentWithSource[],
       ...measAttachments.rows.map((r) => ({ ...r, _source: 'measurement' as const })) as AttachmentWithSource[],
-      ...childAttachments.rows.map((r) => ({ ...r, _source: 'child' as const })) as AttachmentWithSource[],
+      ...personAttachmentsRows.rows.map((r) => ({ ...r, _source: 'person' as const })) as AttachmentWithSource[],
     ];
 
     const data = {
       exported_at: new Date().toISOString(),
-      children: childrenRes.rows,
+      people: peopleRes.rows,
       visits: visitsRes.rows,
       illnesses: illnessesForExport,
       measurements: measurementsRes.rows,
@@ -123,8 +123,8 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
       }
     }
 
-    for (const child of childrenRes.rows) {
-      const avatar = child.avatar as string | null;
+    for (const person of peopleRes.rows) {
+      const avatar = person.avatar as string | null;
       if (avatar) {
         try {
           const fullPath = path.join(AVATAR_DIR, avatar);
@@ -142,20 +142,20 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   }
 });
 
-function buildExportHtml(data: { children: ExportRow[]; visits: ExportRow[]; illnesses: ExportRow[]; exported_at: string }): string {
+function buildExportHtml(data: { people: ExportRow[]; visits: ExportRow[]; illnesses: ExportRow[]; exported_at: string }): string {
   const esc = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const rows = (arr: ExportRow[], keys: string[]) =>
     arr.map((r) => '<tr>' + keys.map((k) => `<td>${esc(r[k])}</td>`).join('') + '</tr>').join('');
 
   let body = `<h1>Trajectory export</h1><p>Exported at ${esc(data.exported_at)}</p>`;
-  body += `<h2>Children (${data.children.length})</h2><table border="1"><tr><th>id</th><th>name</th><th>date_of_birth</th><th>gender</th></tr>`;
-  body += rows(data.children, ['id', 'name', 'date_of_birth', 'gender']);
+  body += `<h2>People (${data.people.length})</h2><table border="1"><tr><th>id</th><th>name</th><th>date_of_birth</th><th>gender</th></tr>`;
+  body += rows(data.people, ['id', 'name', 'date_of_birth', 'gender']);
   body += '</table>';
-  body += `<h2>Visits (${data.visits.length})</h2><table border="1"><tr><th>id</th><th>child_id</th><th>visit_date</th><th>visit_type</th><th>notes</th></tr>`;
-  body += rows(data.visits, ['id', 'child_id', 'visit_date', 'visit_type', 'notes']);
+  body += `<h2>Visits (${data.visits.length})</h2><table border="1"><tr><th>id</th><th>person_id</th><th>visit_date</th><th>visit_type</th><th>notes</th></tr>`;
+  body += rows(data.visits, ['id', 'person_id', 'visit_date', 'visit_type', 'notes']);
   body += '</table>';
-  body += `<h2>Illnesses (${data.illnesses.length})</h2><table border="1"><tr><th>id</th><th>child_id</th><th>illness_types</th><th>start_date</th><th>notes</th></tr>`;
-  body += rows(data.illnesses, ['id', 'child_id', 'illness_types', 'start_date', 'notes']);
+  body += `<h2>Illnesses (${data.illnesses.length})</h2><table border="1"><tr><th>id</th><th>person_id</th><th>illness_types</th><th>start_date</th><th>notes</th></tr>`;
+  body += rows(data.illnesses, ['id', 'person_id', 'illness_types', 'start_date', 'notes']);
   body += '</table>';
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Trajectory export</title></head><body>${body}</body></html>`;
 }

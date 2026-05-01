@@ -6,9 +6,9 @@
 import type {
   ApiResponse,
   ApiError,
-  Child,
-  CreateChildInput,
-  UpdateChildInput,
+  Person,
+  CreatePersonInput,
+  UpdatePersonInput,
   Measurement,
   CreateMeasurementInput,
   UpdateMeasurementInput,
@@ -19,7 +19,7 @@ import type {
   UpdateVisitInput,
   VisitType,
   VisitAttachment,
-  ChildAttachment,
+  PersonAttachment,
   Illness,
   CreateIllnessInput,
   UpdateIllnessInput,
@@ -197,56 +197,56 @@ async function request<T>(
 }
 
 // ============================================================================
-// Children API
+// People API
 // ============================================================================
 
-export const childrenApi = {
+export const peopleApi = {
   /**
-   * Get all children with pagination
+   * Get all people with pagination
    */
-  async getAll(params?: PaginationParams): Promise<ApiResponse<Child[]>> {
+  async getAll(params?: PaginationParams): Promise<ApiResponse<Person[]>> {
     const queryString = buildQueryString(params || {});
-    return request<Child[]>(`/api/children${queryString}`);
+    return request<Person[]>(`/api/people${queryString}`);
   },
 
   /**
-   * Get a single child by ID
+   * Get a single person by ID
    */
-  async getById(id: number): Promise<ApiResponse<Child>> {
-    return request<Child>(`/api/children/${id}`);
+  async getById(id: number): Promise<ApiResponse<Person>> {
+    return request<Person>(`/api/people/${id}`);
   },
 
   /**
-   * Create a new child
+   * Create a new person
    */
-  async create(input: CreateChildInput): Promise<ApiResponse<Child>> {
-    return request<Child>('/api/children', {
+  async create(input: CreatePersonInput): Promise<ApiResponse<Person>> {
+    return request<Person>('/api/people', {
       method: 'POST',
       body: JSON.stringify(input),
     });
   },
 
   /**
-   * Update a child
+   * Update a person
    */
-  async update(id: number, input: UpdateChildInput): Promise<ApiResponse<Child>> {
-    return request<Child>(`/api/children/${id}`, {
+  async update(id: number, input: UpdatePersonInput): Promise<ApiResponse<Person>> {
+    return request<Person>(`/api/people/${id}`, {
       method: 'PUT',
       body: JSON.stringify(input),
     });
   },
 
   /**
-   * Delete a child
+   * Delete a person
    */
   async delete(id: number): Promise<void> {
-    await request<void>(`/api/children/${id}`, { method: 'DELETE' });
+    await request<void>(`/api/people/${id}`, { method: 'DELETE' });
   },
 
   /**
-   * Upload avatar for child
+   * Upload avatar for person
    */
-  async uploadAvatar(childId: number, file: File): Promise<ApiResponse<{ avatar: string }>> {
+  async uploadAvatar(personId: number, file: File): Promise<ApiResponse<{ avatar: string }>> {
     const formData = new FormData();
     formData.append('avatar', file);
 
@@ -257,7 +257,7 @@ export const childrenApi = {
     }
 
     const response = await fetch(
-      `${API_BASE_URL}/api/children/${childId}/avatar`,
+      `${API_BASE_URL}/api/people/${personId}/avatar`,
       {
         method: 'POST',
         headers,
@@ -279,7 +279,7 @@ export const childrenApi = {
   },
 
   /**
-   * Get avatar URL for child (with token in query for img src).
+   * Get avatar URL for person (with token in query for img src).
    * Prefer fetchAvatarBlobUrl() for reliable loading across accounts.
    */
   getAvatarUrl(avatar: string): string {
@@ -315,20 +315,20 @@ export const childrenApi = {
   },
 
   /**
-   * Delete avatar for child
+   * Delete avatar for person
    */
-  async deleteAvatar(childId: number): Promise<void> {
-    await request<void>(`/api/children/${childId}/avatar`, { method: 'DELETE' });
+  async deleteAvatar(personId: number): Promise<void> {
+    await request<void>(`/api/people/${personId}/avatar`, { method: 'DELETE' });
   },
 
   /**
-   * Upload a child attachment (e.g., vaccine report)
+   * Upload a person attachment (e.g., vaccine report)
    */
   async uploadAttachment(
-    childId: number,
+    personId: number,
     file: File,
     documentType: string = 'vaccine_report'
-  ): Promise<ApiResponse<ChildAttachment>> {
+  ): Promise<ApiResponse<PersonAttachment>> {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('document_type', documentType);
@@ -340,7 +340,7 @@ export const childrenApi = {
       headers['Authorization'] = `Bearer ${accessToken}`;
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/children/${childId}/attachments`, {
+    const response = await fetch(`${API_BASE_URL}/api/people/${personId}/attachments`, {
       method: 'POST',
       headers,
       body: formData,
@@ -354,7 +354,7 @@ export const childrenApi = {
           const retryHeaders: Record<string, string> = {
             'Authorization': `Bearer ${newToken}`,
           };
-          const retryResponse = await fetch(`${API_BASE_URL}/api/children/${childId}/attachments`, {
+          const retryResponse = await fetch(`${API_BASE_URL}/api/people/${personId}/attachments`, {
             method: 'POST',
             headers: retryHeaders,
             body: formData,
@@ -389,14 +389,14 @@ export const childrenApi = {
   },
 
   /**
-   * Get all attachments for a child
+   * Get all attachments for a person
    */
-  async getAttachments(childId: number): Promise<ApiResponse<ChildAttachment[]>> {
-    return request<ChildAttachment[]>(`/api/children/${childId}/attachments`);
+  async getAttachments(personId: number): Promise<ApiResponse<PersonAttachment[]>> {
+    return request<PersonAttachment[]>(`/api/people/${personId}/attachments`);
   },
 
   /**
-   * Get download URL for a child attachment (with token in query for img src/download).
+   * Get download URL for a person attachment (with token in query for img src/download).
    */
   getAttachmentDownloadUrl(attachmentId: number): string {
     const base = `${API_BASE_URL}/api/attachments/${attachmentId}`;
@@ -405,7 +405,7 @@ export const childrenApi = {
   },
 
   /**
-   * Delete a child attachment
+   * Delete a person attachment
    */
   async deleteAttachment(attachmentId: number): Promise<void> {
     await request<void>(`/api/attachments/${attachmentId}`, {
@@ -430,14 +430,14 @@ export const childrenApi = {
 
 export const measurementsApi = {
   /**
-   * Get all measurements for a child with pagination and filtering
+   * Get all measurements for a person with pagination and filtering
    */
   async getByChild(
-    childId: number,
+    personId: number,
     params?: PaginationParams & DateRangeParams
   ): Promise<ApiResponse<Measurement[]>> {
     const queryString = buildQueryString(params || {});
-    return request<Measurement[]>(`/api/children/${childId}/measurements${queryString}`);
+    return request<Measurement[]>(`/api/people/${personId}/measurements${queryString}`);
   },
 
   /**
@@ -451,10 +451,10 @@ export const measurementsApi = {
    * Create a new measurement
    */
   async create(
-    childId: number,
+    personId: number,
     input: CreateMeasurementInput
   ): Promise<ApiResponse<Measurement>> {
-    return request<Measurement>(`/api/children/${childId}/measurements`, {
+    return request<Measurement>(`/api/people/${personId}/measurements`, {
       method: 'POST',
       body: JSON.stringify(input),
     });
@@ -491,7 +491,7 @@ export const visitsApi = {
    * future_only: true returns only visits with visit_date > today, ordered soonest first.
    */
   async getAll(params?: {
-    child_id?: number;
+    person_id?: number;
     visit_type?: VisitType;
     future_only?: boolean;
     limit?: number;
@@ -646,7 +646,7 @@ export const visitsApi = {
    * Get growth data for charts (age-based)
    */
   async getGrowthData(params?: {
-    child_id?: number;
+    person_id?: number;
     start_date?: string;
     end_date?: string;
   }): Promise<ApiResponse<GrowthDataPoint[]>> {
@@ -664,7 +664,7 @@ export const illnessesApi = {
    * Get all illnesses with filtering
    */
   async getAll(params?: {
-    child_id?: number;
+    person_id?: number;
     illness_type?: IllnessType;
     start_date?: string;
     end_date?: string;
@@ -716,7 +716,7 @@ export const illnessesApi = {
    */
   async getHeatmapData(params?: {
     year?: number;
-    child_id?: number;
+    person_id?: number;
   }): Promise<ApiResponse<HeatmapData>> {
     const queryString = buildQueryString(params || {});
     return request<HeatmapData>(`/api/illnesses/metrics/heatmap${queryString}`);
@@ -836,11 +836,11 @@ export interface CreateSelfRecordInput {
 
 export const meApi = {
   /**
-   * Create the authenticated user's self-child row. Sets the prompt-dismissed
-   * flag as a side effect. Returns the new child id.
+   * Create the authenticated user's self-person row. Sets the prompt-dismissed
+   * flag as a side effect. Returns the new person id.
    */
-  async createSelfRecord(input: CreateSelfRecordInput): Promise<ApiResponse<{ childId: number }>> {
-    return request<{ childId: number }>('/api/me/self-record', {
+  async createSelfRecord(input: CreateSelfRecordInput): Promise<ApiResponse<{ personId: number }>> {
+    return request<{ personId: number }>('/api/me/self-record', {
       method: 'POST',
       body: JSON.stringify(input),
     });

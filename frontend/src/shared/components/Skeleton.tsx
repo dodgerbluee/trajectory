@@ -14,7 +14,7 @@ interface SkeletonProps {
 
 /**
  * Generic shimmer placeholder used to compose feature-specific loading states
- * (ChildCardSkeleton, VisitCardSkeleton, etc). Replaces spinners — telegraphs
+ * (PersonCardSkeleton, VisitCardSkeleton, etc). Replaces spinners — telegraphs
  * "your content is materializing here" instead of "this page is broken until
  * I tell you otherwise."
  *

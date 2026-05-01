@@ -6,7 +6,7 @@ import type { CreateVisitInput } from '@shared/types/api';
  */
 export function createEmptyVisitForm(visitType: 'wellness' | 'sick' | 'injury' | 'vision' | 'dental' = 'wellness'): CreateVisitInput {
   return {
-    child_id: 0,
+    person_id: 0,
     visit_date: '',
     visit_time: null,
     visit_type: visitType,
@@ -62,9 +62,9 @@ export function createEmptyVisitForm(visitType: 'wellness' | 'sick' | 'injury' |
  * Validates that a visit has been properly filled out.
  * Returns error message if invalid, null if valid.
  */
-export function validateVisitForm(visit: CreateVisitInput, childId: number): string | null {
-  if (!childId) {
-    return 'Please select a child';
+export function validateVisitForm(visit: CreateVisitInput, personId: number): string | null {
+  if (!personId) {
+    return 'Please select a person';
   }
 
   if (!visit.visit_date) {
@@ -84,10 +84,10 @@ export function validateVisitForm(visit: CreateVisitInput, childId: number): str
  */
 export function getNavigationAfterSave(
   fromLocation: string | null,
-  childId: number
+  personId: number
 ): string {
   if (fromLocation && fromLocation !== '/') {
     return fromLocation;
   }
-  return `/people/${childId}`;
+  return `/people/${personId}`;
 }

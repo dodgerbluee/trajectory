@@ -38,7 +38,7 @@ export interface PaginationMeta {
  * Filter metadata
  */
 export interface FilterMeta {
-  child_id?: number;
+  person_id?: number;
   start_date?: string;
   end_date?: string;
 }

@@ -1,22 +1,22 @@
 import { Link } from 'react-router-dom';
 import { useMemo } from 'react';
-import type { Child, Family } from '@shared/types/api';
+import type { Person, Family } from '@shared/types/api';
 import { calculateAge, formatAge, formatDate } from '@lib/date-utils';
 import Card from '@shared/components/Card';
-import { ChildAvatar } from '@features/children';
+import { PersonAvatar } from '@features/people';
 import tl from '@shared/components/TimelineList.module.css';
-import { sortChildrenWithAdultsLast } from '../lib/profile-order';
+import { sortPeopleWithAdultsLast } from '../lib/profile-order';
 import styles from './FamilySection.module.css';
 
 interface FamilySectionProps {
   family: Family;
-  children: Child[];
+  people: Person[];
 }
 
-export default function FamilySection({ family, children }: FamilySectionProps) {
+export default function FamilySection({ family, people }: FamilySectionProps) {
   const canEditFamily = family.role === 'owner' || family.role === 'parent';
-  // Adults (18+) sort to the end of the family grid so children stay primary.
-  const orderedChildren = useMemo(() => sortChildrenWithAdultsLast(children), [children]);
+  // Adults (18+) sort to the end of the family grid so people stay primary.
+  const orderedPeople = useMemo(() => sortPeopleWithAdultsLast(people), [people]);
 
   return (
     <div className={styles.tabsContentBox}>
@@ -24,32 +24,32 @@ export default function FamilySection({ family, children }: FamilySectionProps) 
         <h2 id={`home-family-heading-${family.id}`} className={styles.familyTabTitle}>
           {family.name}
         </h2>
-        {children.length === 0 && !canEditFamily ? (
-          <p className={tl.empty}>No children in this family.</p>
-        ) : children.length === 0 ? (
+        {people.length === 0 && !canEditFamily ? (
+          <p className={tl.empty}>No people in this family.</p>
+        ) : people.length === 0 ? (
           <Card>
-            <p className={tl.empty}>No children yet.</p>
+            <p className={tl.empty}>No people yet.</p>
           </Card>
         ) : (
           <div className={styles.grid}>
-            {orderedChildren.map((child) => {
-              const age = calculateAge(child.date_of_birth);
+            {orderedPeople.map((person) => {
+              const age = calculateAge(person.date_of_birth);
               const ageText = formatAge(age.years, age.months);
-              const birthdateText = formatDate(child.date_of_birth);
+              const birthdateText = formatDate(person.date_of_birth);
               return (
-                <Link key={child.id} to={`/people/${child.id}`} className={styles.cardLink} data-onboarding="child-card">
+                <Link key={person.id} to={`/people/${person.id}`} className={styles.cardLink} data-onboarding="child-card">
                   <Card className={styles.compact}>
                     <div className={styles.avatar}>
-                      <ChildAvatar
-                        avatar={child.avatar}
-                        gender={child.gender}
-                        alt={`${child.name}'s avatar`}
+                      <PersonAvatar
+                        avatar={person.avatar}
+                        gender={person.gender}
+                        alt={`${person.name}'s avatar`}
                         className={styles.avatarLarge}
                       />
                     </div>
                     <div className={styles.content}>
                       <div className={styles.header}>
-                        <h2 className={styles.name}>{child.name}</h2>
+                        <h2 className={styles.name}>{person.name}</h2>
                       </div>
                       <div className={styles.details}>
                         <div className={styles.detailItem}>

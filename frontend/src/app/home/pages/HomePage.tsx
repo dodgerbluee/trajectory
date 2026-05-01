@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useHomeTabRequest } from '@/contexts/HomeTabRequestContext';
 import ErrorMessage from '@shared/components/ErrorMessage';
-import ChildCardSkeleton from '@features/children/components/ChildCardSkeleton';
-import { SelfRecordPromptModal } from '@features/children/components';
-import { useSelfRecordPrompt } from '@features/children/hooks';
+import PersonCardSkeleton from '@features/people/components/PersonCardSkeleton';
+import { SelfRecordPromptModal } from '@features/people/components';
+import { useSelfRecordPrompt } from '@features/people/hooks';
 import Notification from '@shared/components/Notification';
 import Card from '@shared/components/Card';
 import Tabs from '@shared/components/Tabs';
@@ -16,7 +16,7 @@ import type { VisitType } from '@shared/types/api';
 import { FamilyTabView, MobileHomeFeed } from '../components';
 import { useFamiliesData } from '../hooks/useFamiliesData';
 import { useUpcomingVisitsData } from '../hooks/useUpcomingVisitsData';
-import { useChildrenData } from '@features/children/hooks';
+import { usePeopleData } from '@features/people/hooks';
 import { useIsMobile } from '@shared/hooks';
 import styles from './HomePage.module.css';
 import pageLayout from '@shared/styles/page-layout.module.css';
@@ -38,7 +38,7 @@ function HomePage() {
   const [metricsFilterChildId, setMetricsFilterChildId] = useState<number | undefined>(undefined);
 
   // Use the new data-loading hooks (data fetching separated from rendering)
-  const { children, loading: loadingChildren, error: errorChildren, reload: reloadChildren } = useChildrenData();
+  const { people, loading: loadingChildren, error: errorChildren, reload: reloadChildren } = usePeopleData();
   const { families, loading: loadingFamilies, error: errorFamilies, reload: reloadFamilies } = useFamiliesData();
   const { upcomingVisits, loading: loadingUpcoming, reload: reloadUpcoming } = useUpcomingVisitsData();
 
@@ -78,7 +78,7 @@ function HomePage() {
       {loading && (
         <div className={styles.skeletonList} aria-busy="true" aria-label="Loading family">
           {Array.from({ length: 3 }).map((_, i) => (
-            <ChildCardSkeleton key={i} />
+            <PersonCardSkeleton key={i} />
           ))}
         </div>
       )}
@@ -86,7 +86,7 @@ function HomePage() {
       {!loading && !error && (
         isMobile ? (
           <MobileHomeFeed
-            children={children}
+            people={people}
             families={families}
             upcomingVisits={upcomingVisits}
             loading={loadingFamilies || loadingChildren}
@@ -96,7 +96,7 @@ function HomePage() {
           />
         ) : (
           <FamilyTabView
-            children={children}
+            people={people}
             families={families}
             upcomingVisits={upcomingVisits}
             loading={loadingFamilies || loadingChildren}
@@ -135,9 +135,9 @@ function HomePage() {
           <TrendsSidebar
             activeTab={metricsActiveTab}
             onChangeTab={(t) => setMetricsActiveTab(t)}
-            childrenList={children}
-            selectedChildId={metricsFilterChildId}
-            onSelectChild={(id) => setMetricsFilterChildId(id)}
+            peopleList={people}
+            selectedPersonId={metricsFilterChildId}
+            onSelectPerson={(id) => setMetricsFilterChildId(id)}
             showIllnessTab={true}
             showGrowthTab={true}
           />
@@ -148,8 +148,8 @@ function HomePage() {
               onActiveTabChange={(t) => setMetricsActiveTab(t)}
               selectedYear={metricsYear}
               onSelectedYearChange={(y) => setMetricsYear(y)}
-              filterChildId={metricsFilterChildId}
-              onFilterChildChange={(id) => setMetricsFilterChildId(id)}
+              filterPersonId={metricsFilterChildId}
+              onFilterPersonChange={(id) => setMetricsFilterChildId(id)}
             />
           </main>
         </div>

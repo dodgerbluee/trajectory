@@ -1,50 +1,50 @@
 /**
  * UpcomingVisitsCarousel – full-width vertical list of upcoming visits for the
  * mobile home feed. (Name kept for import stability; layout is no longer a
- * carousel.) Scopes to a single child if `filterChildId` is set.
+ * carousel.) Scopes to a single person if `filterPersonId` is set.
  *
  * Each row spans the full available width and renders on a single visual line:
- *   [date block]  Child Name · Type        Past due / date  ›
+ *   [date block]  Person Name · Type        Past due / date  ›
  *
- * Putting the visit type to the right of the child name keeps each row to a
+ * Putting the visit type to the right of the person name keeps each row to a
  * single line and reclaims the vertical space the previous swipe cards used.
  */
 
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import type { Child, Visit } from '@shared/types/api';
+import type { Person, Visit } from '@shared/types/api';
 import { formatDate, isFutureDate } from '@lib/date-utils';
 import { getVisitTypeIcon, getVisitTypeLabel } from '@shared/lib/visit-icons';
 import styles from './UpcomingVisitsCarousel.module.css';
 
 interface UpcomingVisitsCarouselProps {
   upcomingVisits: Visit[];
-  childrenList: Child[];
-  filterChildId: number | null;
+  peopleList: Person[];
+  filterPersonId: number | null;
   loading?: boolean;
 }
 
 function UpcomingVisitsCarousel({
   upcomingVisits,
-  childrenList,
-  filterChildId,
+  peopleList,
+  filterPersonId,
   loading,
 }: UpcomingVisitsCarouselProps) {
-  const childById = useMemo(() => {
-    const map = new Map<number, Child>();
-    for (const c of childrenList) map.set(c.id, c);
+  const personById = useMemo(() => {
+    const map = new Map<number, Person>();
+    for (const c of peopleList) map.set(c.id, c);
     return map;
-  }, [childrenList]);
+  }, [peopleList]);
 
   const visits = useMemo(() => {
     const filtered =
-      filterChildId == null
+      filterPersonId == null
         ? upcomingVisits
-        : upcomingVisits.filter((v) => v.child_id === filterChildId);
+        : upcomingVisits.filter((v) => v.person_id === filterPersonId);
     return [...filtered].sort(
       (a, b) => new Date(a.visit_date).getTime() - new Date(b.visit_date).getTime(),
     );
-  }, [upcomingVisits, filterChildId]);
+  }, [upcomingVisits, filterPersonId]);
 
   if (loading) {
     return (
@@ -74,7 +74,7 @@ function UpcomingVisitsCarousel({
       </h2>
       <ul className={styles.list} role="list">
         {visits.map((v) => {
-          const child = childById.get(v.child_id);
+          const person = personById.get(v.person_id);
           const overdue = !isFutureDate(v.visit_date);
           const date = new Date(v.visit_date);
           const day = date.toLocaleDateString(undefined, { day: 'numeric' });
@@ -91,8 +91,8 @@ function UpcomingVisitsCarousel({
                 </div>
                 <div className={styles.body}>
                   <div className={styles.titleRow}>
-                    <span className={styles.childName}>
-                      {child?.name ?? 'Child'}
+                    <span className={styles.personName}>
+                      {person?.name ?? 'Person'}
                     </span>
                     <span className={styles.typeChip}>
                       <span className={styles.icon} aria-hidden="true">

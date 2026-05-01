@@ -82,7 +82,7 @@ export default defineConfig({
           {
             urlPattern: ({ url, request }) =>
               request.method === 'GET' &&
-              /^\/api\/(children|visits|illnesses|measurements|families)(\/|\?|$)/.test(
+              /^\/api\/(people|visits|illnesses|measurements|families)(\/|\?|$)/.test(
                 url.pathname,
               ),
             handler: 'StaleWhileRevalidate',

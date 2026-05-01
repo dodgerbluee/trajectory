@@ -114,14 +114,14 @@ async function clearMockData() {
     await client.query('DELETE FROM audit_events');
     await client.query('DELETE FROM visit_attachments');
     await client.query('DELETE FROM measurement_attachments');
-    await client.query('DELETE FROM child_attachments');
+    await client.query('DELETE FROM person_attachments');
     await client.query('DELETE FROM illness_illness_types');
     await client.query('DELETE FROM illnesses');
     await client.query('DELETE FROM visit_illnesses');
     await client.query('DELETE FROM visits');
     await client.query('DELETE FROM measurements');
     await client.query('DELETE FROM medical_events');
-    await client.query('DELETE FROM children');
+    await client.query('DELETE FROM people');
     await client.query('DELETE FROM family_invites');
     await client.query('DELETE FROM family_members');
     await client.query('DELETE FROM families');
@@ -199,7 +199,7 @@ async function createChildren(familyId: number): Promise<ChildData[]> {
 
   for (const child of children) {
     const result = await pool.query(`
-      INSERT INTO children (family_id, name, gender, date_of_birth, birth_weight, birth_weight_ounces, birth_height)
+      INSERT INTO people (family_id, name, gender, date_of_birth, birth_weight, birth_weight_ounces, birth_height)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id
     `, [familyId, child.name, child.gender, child.date_of_birth, child.birth_weight, child.birth_weight_ounces, child.birth_height]);
@@ -259,7 +259,7 @@ async function createWellnessVisits(children: ChildData[]) {
 
       await pool.query(`
         INSERT INTO visits (
-          child_id, visit_date, visit_type, title, location, doctor_name,
+          person_id, visit_date, visit_type, title, location, doctor_name,
           weight_value, weight_percentile, height_value, height_percentile,
           head_circumference_value, head_circumference_percentile,
           vaccines_administered, notes
@@ -296,7 +296,7 @@ async function createVisionVisits(children: ChildData[]) {
       const needsGlasses = examAge >= 6 && Math.random() > 0.7;
 
       await pool.query(`
-        INSERT INTO visits (child_id, visit_date, visit_type, location, doctor_name, vision_prescription, needs_glasses, ordered_glasses, notes)
+        INSERT INTO visits (person_id, visit_date, visit_type, location, doctor_name, vision_prescription, needs_glasses, ordered_glasses, notes)
         VALUES ($1, $2, 'vision', $3, $4, $5, $6, $7, $8)
       `, [
         child.id, examDate.toISOString().split('T')[0], 'Vision Care Center', 'Dr. Johnson',
@@ -329,7 +329,7 @@ async function createDentalVisits(children: ChildData[]) {
       const cavitiesFound = Math.random() > 0.8 ? Math.floor(Math.random() * 2) + 1 : 0;
 
       await pool.query(`
-        INSERT INTO visits (child_id, visit_date, visit_type, location, doctor_name, dental_procedure_type, cleaning_type, cavities_found, cavities_filled, xrays_taken, fluoride_treatment, sealants_applied, notes)
+        INSERT INTO visits (person_id, visit_date, visit_type, location, doctor_name, dental_procedure_type, cleaning_type, cavities_found, cavities_filled, xrays_taken, fluoride_treatment, sealants_applied, notes)
         VALUES ($1, $2, 'dental', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       `, [
         child.id, visitDate.toISOString().split('T')[0], 'Happy Smiles Dentistry', 'Dr. Lee',
@@ -363,7 +363,7 @@ async function createSickVisits(children: ChildData[]) {
       const temp = hasFever ? randomInRange(100.4, 103.5) : null;
 
       const result = await pool.query(`
-        INSERT INTO visits (child_id, visit_date, visit_type, location, doctor_name, symptoms, temperature, illness_start_date, notes)
+        INSERT INTO visits (person_id, visit_date, visit_type, location, doctor_name, symptoms, temperature, illness_start_date, notes)
         VALUES ($1, $2, 'sick', $3, $4, $5, $6, $7, $8)
         RETURNING id
       `, [
@@ -401,7 +401,7 @@ async function createIllnesses(children: ChildData[]) {
       const hasFever = Math.random() > 0.4;
 
       const result = await pool.query(`
-        INSERT INTO illnesses (child_id, start_date, end_date, symptoms, temperature, severity, notes)
+        INSERT INTO illnesses (person_id, start_date, end_date, symptoms, temperature, severity, notes)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING id
       `, [
@@ -446,7 +446,7 @@ async function createMeasurements(children: ChildData[]) {
       const headCirc = monthAge < 36 ? 35 + (monthAge * 0.3) + randomInRange(-0.1, 0.1) : null;
 
       await pool.query(`
-        INSERT INTO measurements (child_id, measurement_date, label, weight_value, weight_percentile, height_value, height_percentile, head_circumference_value, head_circumference_percentile)
+        INSERT INTO measurements (person_id, measurement_date, label, weight_value, weight_percentile, height_value, height_percentile, head_circumference_value, head_circumference_percentile)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       `, [
         child.id, measureDate.toISOString().split('T')[0], `${monthAge} month`,

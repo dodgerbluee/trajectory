@@ -1,6 +1,6 @@
 /**
  * Welcome / Onboarding flow for new users.
- * Four steps: Welcome → Name your family → Add first child (optional) → You're all set.
+ * Four steps: Welcome → Name your family → Add first person (optional) → You're all set.
  */
 
 import { useState, useEffect } from 'react';
@@ -221,9 +221,9 @@ export default function WelcomePage() {
 
             {step === 3 && (
               <div className={w.step} data-step="3">
-                <h2 className={w.stepTitle}>Add your first child</h2>
+                <h2 className={w.stepTitle}>Add your first person</h2>
                 <p className={w.stepCopy}>
-                  You can add a child now or do it later from the Family tab or Settings.
+                  You can add a person now or do it later from the Family tab or Settings.
                 </p>
                 <div className={w.featureList}>
                   <div className={w.featureItem}>
@@ -242,7 +242,7 @@ export default function WelcomePage() {
                   </Button>
                   <Button variant="primary" size="lg" onClick={handleAddChild}>
                     <LuBaby className={w.btnIcon} aria-hidden />
-                    Add a child
+                    Add a person
                   </Button>
                 </div>
               </div>

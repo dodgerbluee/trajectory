@@ -20,20 +20,20 @@ interface SingleMetricGrowthChartProps {
   data: GrowthDataPoint[];
   metric: 'weight' | 'height' | 'head_circumference' | 'bmi';
   mode: 'value' | 'percentile';
-  isMultiChild: boolean;
-  filterChildId?: number;
+  isMultiPerson: boolean;
+  filterPersonId?: number;
 }
 
 function SingleMetricGrowthChart({
   data,
   metric,
   mode,
-  isMultiChild,
-  filterChildId,
+  isMultiPerson,
+  filterPersonId,
 }: SingleMetricGrowthChartProps) {
-  // Filter data by child_id if a single child is selected
-  const filteredData = filterChildId 
-    ? data.filter(d => d.child_id === filterChildId)
+  // Filter data by person_id if a single person is selected
+  const filteredData = filterPersonId 
+    ? data.filter(d => d.person_id === filterPersonId)
     : data;
 
   if (filteredData.length === 0) {
@@ -45,7 +45,7 @@ function SingleMetricGrowthChart({
     );
   }
 
-  // Deduplicate by visit_id and child_id + age_months
+  // Deduplicate by visit_id and person_id + age_months
   const uniqueData = filteredData.reduce((acc, point) => {
     const existing = acc.find(p => p.visit_id === point.visit_id);
     if (!existing) {
@@ -54,21 +54,21 @@ function SingleMetricGrowthChart({
     return acc;
   }, [] as GrowthDataPoint[]);
 
-  // For each child, if they have multiple visits at the same age_months, keep only the most recent one
-  const childAgeMap = new Map<string, GrowthDataPoint>();
+  // For each person, if they have multiple visits at the same age_months, keep only the most recent one
+  const personAgeMap = new Map<string, GrowthDataPoint>();
   uniqueData.forEach(point => {
-    const key = `${point.child_id}_${point.age_months}`;
-    const existing = childAgeMap.get(key);
+    const key = `${point.person_id}_${point.age_months}`;
+    const existing = personAgeMap.get(key);
     if (!existing || new Date(point.visit_date) > new Date(existing.visit_date)) {
-      childAgeMap.set(key, point);
+      personAgeMap.set(key, point);
     }
   });
-  const deduplicatedData = Array.from(childAgeMap.values());
+  const deduplicatedData = Array.from(personAgeMap.values());
   const sortedData = deduplicatedData.sort((a, b) => a.age_months - b.age_months);
 
 
-  // Color palette for multi-child
-  const childColors = [
+  // Color palette for multi-person
+  const personColors = [
     '#3b82f6', // blue
     '#10b981', // green
     '#f59e0b', // amber
@@ -141,7 +141,7 @@ function SingleMetricGrowthChart({
       
       // Special validation for BMI: filter out unreasonable values
       if (metric === 'bmi') {
-        // BMI for children should typically be between 10-30, but allow 5-50 as reasonable range
+        // BMI for people should typically be between 10-30, but allow 5-50 as reasonable range
         if (numValue < 5 || numValue > 50) return false;
       }
       
@@ -164,18 +164,18 @@ function SingleMetricGrowthChart({
     );
   }
   
-  // Get unique children for multi-child view (from dataWithValues, not sortedData)
-  const uniqueChildren = isMultiChild
-    ? Array.from(new Set(dataWithValues.map(d => d.child_id)))
+  // Get unique people for multi-person view (from dataWithValues, not sortedData)
+  const uniquePeople = isMultiPerson
+    ? Array.from(new Set(dataWithValues.map(d => d.person_id)))
         .map(id => {
-          const point = dataWithValues.find(d => d.child_id === id);
-          return point ? { id, name: point.child_name } : null;
+          const point = dataWithValues.find(d => d.person_id === id);
+          return point ? { id, name: point.person_name } : null;
         })
         .filter((c): c is { id: number; name: string } => c !== null)
     : [];
 
-  // Transform data for multi-child view
-  const transformedChartData = isMultiChild
+  // Transform data for multi-person view
+  const transformedChartData = isMultiPerson
     ? (() => {
         // Group data by age_months
         const groupedByAge = new Map<number, GrowthDataPoint[]>();
@@ -187,7 +187,7 @@ function SingleMetricGrowthChart({
           groupedByAge.get(age)!.push(point);
         });
 
-        // Create one row per age_months with all children's data
+        // Create one row per age_months with all people's data
         return Array.from(groupedByAge.entries())
           .sort(([ageA], [ageB]) => ageA - ageB)
           .map(([ageMonths, points]) => {
@@ -195,10 +195,10 @@ function SingleMetricGrowthChart({
               age_months: ageMonths,
             };
 
-            // For each child, find their data point at this age and populate the keys
-            uniqueChildren.forEach(child => {
-              const childPoint = points.find(p => p.child_id === child.id);
-              const rawValue = childPoint?.[dataKey as keyof GrowthDataPoint];
+            // For each person, find their data point at this age and populate the keys
+            uniquePeople.forEach(person => {
+              const personPoint = points.find(p => p.person_id === person.id);
+              const rawValue = personPoint?.[dataKey as keyof GrowthDataPoint];
               // Ensure value is a number, not a string
               let value: number | null = null;
               if (rawValue !== null && rawValue !== undefined) {
@@ -216,7 +216,7 @@ function SingleMetricGrowthChart({
                   }
                 }
               }
-              transformed[`${dataKey}_${child.id}`] = value;
+              transformed[`${dataKey}_${person.id}`] = value;
             });
 
             return transformed;
@@ -226,10 +226,10 @@ function SingleMetricGrowthChart({
 
   // Calculate Y-axis domain
   const yAxisValues: number[] = [];
-  if (isMultiChild) {
-    uniqueChildren.forEach(child => {
+  if (isMultiPerson) {
+    uniquePeople.forEach(person => {
       transformedChartData.forEach((point: GrowthDataPoint | Record<string, number | null>) => {
-        const key = `${dataKey}_${child.id}`;
+        const key = `${dataKey}_${person.id}`;
         const rawValue = (point as Record<string, unknown>)[key];
         if (rawValue !== null && rawValue !== undefined) {
           const numValue = typeof rawValue === 'number' ? rawValue : parseFloat(String(rawValue));
@@ -363,7 +363,7 @@ function SingleMetricGrowthChart({
               const point = transformedChartData.find((d: GrowthDataPoint | Record<string, number | null>) => d.age_months === ageMonths);
               if (!point) return `Age: ${formatAgeLabel(ageMonths)}`;
               
-              if (isMultiChild) {
+              if (isMultiPerson) {
                 return (
                   <div>
                     <div>Age: {formatAgeLabel(ageMonths)}</div>
@@ -387,18 +387,18 @@ function SingleMetricGrowthChart({
           <Legend wrapperStyle={{ paddingTop: '20px' }} />
           
           {/* Lines */}
-          {isMultiChild ? (
-            uniqueChildren.map((child, idx) => {
-              const childDataKey = `${dataKey}_${child.id}`;
+          {isMultiPerson ? (
+            uniquePeople.map((person, idx) => {
+              const personDataKey = `${dataKey}_${person.id}`;
               return (
                 <Line
-                  key={`${metric}-${mode}-${child.id}`}
+                  key={`${metric}-${mode}-${person.id}`}
                   type="monotone"
-                  dataKey={childDataKey}
-                  stroke={childColors[idx % childColors.length]}
+                  dataKey={personDataKey}
+                  stroke={personColors[idx % personColors.length]}
                   strokeWidth={2}
                   dot={{ r: 4 }}
-                  name={child.name}
+                  name={person.name}
                   connectNulls={true}
                 />
               );

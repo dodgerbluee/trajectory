@@ -29,7 +29,7 @@ export interface SectionContentPropsWithContext {
 }
 
 export function VisitInformationSection({ context }: SectionContentPropsWithContext) {
-  const { formData, setFormData: _setFormData, submitting, showTitle, recentLocations, recentDoctors, getTodayDate, children, selectedChildId, setSelectedChildId } = context;
+  const { formData, setFormData: _setFormData, submitting, showTitle, recentLocations, recentDoctors, getTodayDate, people, selectedPersonId, setSelectedPersonId } = context;
   const setFormData = _setFormData as React.Dispatch<React.SetStateAction<CreateVisitInput & UpdateVisitInput>>;
   // Add mode: no date restriction (user can pick any date; form expands to full or limited based on date).
   // Edit mode: allow future if form's date is already future, else max today.
@@ -38,13 +38,13 @@ export function VisitInformationSection({ context }: SectionContentPropsWithCont
   const futureDateConstraint = context.mode === 'add' ? {} : allowFutureDate ? {} : { max: getTodayDate() };
   return (
     <div className={sectionStyles.root}>
-      {context.mode === 'add' && children && children.length > 0 && setSelectedChildId && (
+      {context.mode === 'add' && people && people.length > 0 && setSelectedPersonId && (
         <FormField
-          label="Child"
+          label="Person"
           type="select"
-          value={selectedChildId?.toString() || ''}
-          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedChildId(parseInt(e.target.value) || null)}
-          options={children.map((c) => ({ value: c.id.toString(), label: c.name }))}
+          value={selectedPersonId?.toString() || ''}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedPersonId(parseInt(e.target.value) || null)}
+          options={people.map((c) => ({ value: c.id.toString(), label: c.name }))}
           required
           disabled={submitting}
         />

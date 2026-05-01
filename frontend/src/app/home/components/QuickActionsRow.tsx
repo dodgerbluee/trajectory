@@ -3,7 +3,7 @@
  * for the most common in-the-moment actions.
  *
  * Selecting an action navigates with optional state to scope to the active
- * child (so the destination page can prefill).
+ * person (so the destination page can prefill).
  */
 
 import { useNavigate } from 'react-router-dom';
@@ -11,17 +11,17 @@ import { LuStethoscope, LuThermometer, LuRuler, LuPaperclip } from 'react-icons/
 import styles from './QuickActionsRow.module.css';
 
 interface QuickActionsRowProps {
-  /** When set, deep-links scope to this child where supported. */
-  childId: number | null;
+  /** When set, deep-links scope to this person where supported. */
+  personId: number | null;
 }
 
-function QuickActionsRow({ childId }: QuickActionsRowProps) {
+function QuickActionsRow({ personId }: QuickActionsRowProps) {
   const navigate = useNavigate();
 
   const goAddVisit = () => {
     // /visits/new → existing VisitTypeModal flow
-    if (childId != null) {
-      navigate(`/people/${childId}/visits/new`);
+    if (personId != null) {
+      navigate(`/people/${personId}/visits/new`);
     } else {
       navigate('/visits/new');
     }
@@ -32,17 +32,17 @@ function QuickActionsRow({ childId }: QuickActionsRowProps) {
   const goAddMeasurement = () => {
     // No standalone measurement page exists; route to wellness visit creation
     // pre-typed (uses the wellness flow which captures vitals).
-    if (childId != null) {
-      navigate(`/people/${childId}/visits/new?type=wellness`);
+    if (personId != null) {
+      navigate(`/people/${personId}/visits/new?type=wellness`);
     } else {
       navigate('/visits/new?type=wellness');
     }
   };
 
   const goAddDocument = () => {
-    // Route to child detail Documents tab where attachments are managed.
-    if (childId != null) {
-      navigate(`/people/${childId}`, { state: { tab: 'documents' } });
+    // Route to person detail Documents tab where attachments are managed.
+    if (personId != null) {
+      navigate(`/people/${personId}`, { state: { tab: 'documents' } });
     } else {
       navigate('/');
     }

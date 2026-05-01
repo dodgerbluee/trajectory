@@ -1,16 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
-import { visitsApi, childrenApi, ApiClientError } from '@lib/api-client';
-import type { Visit, Child, VisitAttachment } from '@shared/types/api';
+import { visitsApi, peopleApi, ApiClientError } from '@lib/api-client';
+import type { Visit, Person, VisitAttachment } from '@shared/types/api';
 import type { AuditHistoryEvent } from '@shared/types/api';
 
 /**
  * Hook to manage the full state of a visit detail page.
- * Handles loading visit, child, attachments, and audit history.
+ * Handles loading visit, person, attachments, and audit history.
  */
 export function useVisitDetail(visitId: number | undefined) {
   // Core data state
   const [visit, setVisit] = useState<Visit | null>(null);
-  const [child, setChild] = useState<Child | null>(null);
+  const [person, setPerson] = useState<Person | null>(null);
   const [attachments, setAttachments] = useState<VisitAttachment[]>([]);
   const [history, setHistory] = useState<AuditHistoryEvent[]>([]);
 
@@ -28,7 +28,7 @@ export function useVisitDetail(visitId: number | undefined) {
   } | null>(null);
 
   /**
-   * Load visit details, child info, attachments, and history
+   * Load visit details, person info, attachments, and history
    */
   const loadVisitDetails = useCallback(async () => {
     if (!visitId) return;
@@ -37,14 +37,14 @@ export function useVisitDetail(visitId: number | undefined) {
       setLoading(true);
       setError(null);
 
-      // Load visit first to get child ID
+      // Load visit first to get person ID
       const visitResponse = await visitsApi.getById(visitId);
       const visitData = visitResponse.data;
       setVisit(visitData);
 
-      // Then load child data
-      const childResponse = await childrenApi.getById(visitData.child_id);
-      setChild(childResponse.data);
+      // Then load person data
+      const personResponse = await peopleApi.getById(visitData.person_id);
+      setPerson(personResponse.data);
 
       // Load attachments and history in parallel
       await Promise.all([
@@ -143,7 +143,7 @@ export function useVisitDetail(visitId: number | undefined) {
   return {
     // Data
     visit,
-    child,
+    person,
     attachments,
     history,
     // Loading states

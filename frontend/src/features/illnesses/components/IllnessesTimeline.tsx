@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from 'react';
-import type { Illness, Child } from '@shared/types/api';
+import type { Illness, Person } from '@shared/types/api';
 import TimelineItem from '@shared/components/TimelineItem';
 import Card from '@shared/components/Card';
 import tl from '@shared/components/TimelineList.module.css';
@@ -7,8 +7,8 @@ import PaginationControls from '@shared/components/PaginationControls';
 
 interface IllnessesTimelineProps {
   illnesses: Illness[];
-  children?: Child[];
-  showChildName?: boolean;
+  people?: Person[];
+  showPersonName?: boolean;
   emptyMessage?: string;
   currentPage?: number;
   itemsPerPage?: number;
@@ -21,12 +21,12 @@ interface IllnessesTimelineProps {
 
 /**
  * Reusable component for rendering a timeline of illnesses.
- * Used by AllIllnessesView and ChildDetailPage.
+ * Used by AllIllnessesView and PersonDetailPage.
  */
 export default function IllnessesTimeline({
   illnesses,
-  children = [],
-  showChildName = true,
+  people = [],
+  showPersonName = true,
   emptyMessage = 'No illnesses recorded yet. Click "Add Illness" to get started.',
   currentPage = 0,
   itemsPerPage = 20,
@@ -35,11 +35,11 @@ export default function IllnessesTimeline({
   onItemsPerPageChange,
   flat = false,
 }: IllnessesTimelineProps) {
-  const childMap = useMemo(() => {
-    const map = new Map<number, Child>();
-    children.forEach(child => map.set(child.id, child));
+  const personMap = useMemo(() => {
+    const map = new Map<number, Person>();
+    people.forEach(person => map.set(person.id, person));
     return map;
-  }, [children]);
+  }, [people]);
 
   const sortedIllnesses = useMemo(() => {
     return [...illnesses].sort((a, b) => {
@@ -66,14 +66,14 @@ export default function IllnessesTimeline({
       <Frame>
         <div className={tl.list}>
           {sortedIllnesses.map((illness) => {
-            const child = childMap.get(illness.child_id);
+            const person = personMap.get(illness.person_id);
             return (
               <TimelineItem
                 key={illness.id}
                 type="illness"
                 data={illness}
-                childName={showChildName ? (child?.name || `Child #${illness.child_id}`) : undefined}
-                childId={showChildName ? illness.child_id : undefined}
+                personName={showPersonName ? (person?.name || `Person #${illness.person_id}`) : undefined}
+                personId={showPersonName ? illness.person_id : undefined}
               />
             );
           })}

@@ -86,7 +86,7 @@ describe('FormField', () => {
 });
 
 describe('FormFieldGroup', () => {
-  it('renders custom children with label and hint', () => {
+  it('renders custom people with label and hint', () => {
     render(
       <FormFieldGroup label="Gender" hint="Required">
         <div>Custom control</div>

@@ -24,13 +24,13 @@ jest.mock('../../middleware/auth.js', () => {
 });
 
 import { query } from '../../db/connection.js';
-import { canAccessChild, getFamilyIdsForUser, getAccessibleChildIds } from '../../features/families/service/family-access.js';
+import { canAccessPerson, getFamilyIdsForUser, getAccessiblePersonIds } from '../../features/families/service/family-access.js';
 import { createApp } from '../../app.js';
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
-const mockCanAccessChild = canAccessChild as jest.MockedFunction<typeof canAccessChild>;
+const mockCanAccessPerson = canAccessPerson as jest.MockedFunction<typeof canAccessPerson>;
 const mockGetFamilyIdsForUser = getFamilyIdsForUser as jest.MockedFunction<typeof getFamilyIdsForUser>;
-const mockGetAccessibleChildIds = getAccessibleChildIds as jest.MockedFunction<typeof getAccessibleChildIds>;
+const mockGetAccessiblePersonIds = getAccessiblePersonIds as jest.MockedFunction<typeof getAccessiblePersonIds>;
 
 describe('Authorization: user A cannot access user B\'s resources', () => {
   let app: ReturnType<typeof createApp>;
@@ -39,29 +39,29 @@ describe('Authorization: user A cannot access user B\'s resources', () => {
     jest.clearAllMocks();
     app = createApp();
     mockGetFamilyIdsForUser.mockResolvedValue([]);
-    mockGetAccessibleChildIds.mockResolvedValue([]);
+    mockGetAccessiblePersonIds.mockResolvedValue([]);
   });
 
-  describe('GET /api/children/:id', () => {
-    it('returns 404 when user cannot access child', async () => {
-      mockCanAccessChild.mockResolvedValue(false);
+  describe('GET /api/people/:id', () => {
+    it('returns 404 when user cannot access person', async () => {
+      mockCanAccessPerson.mockResolvedValue(false);
 
       const res = await request(app)
-        .get('/api/children/999')
+        .get('/api/people/999')
         .set('X-Test-User-Id', '1')
         .expect(404);
 
-      expect(mockCanAccessChild).toHaveBeenCalledWith(1, 999);
+      expect(mockCanAccessPerson).toHaveBeenCalledWith(1, 999);
       expect(res.body.error?.message).toMatch(/not found|child/i);
     });
 
-    it('returns 200 when user can access child', async () => {
-      mockCanAccessChild.mockResolvedValue(true);
+    it('returns 200 when user can access person', async () => {
+      mockCanAccessPerson.mockResolvedValue(true);
       mockQuery.mockResolvedValueOnce({
         rows: [{
           id: 1,
           family_id: 1,
-          name: 'Test Child',
+          name: 'Test Person',
           date_of_birth: new Date('2020-01-01'),
           gender: 'male',
           avatar: null,
@@ -76,74 +76,74 @@ describe('Authorization: user A cannot access user B\'s resources', () => {
       } as never);
 
       const res = await request(app)
-        .get('/api/children/1')
+        .get('/api/people/1')
         .set('X-Test-User-Id', '1')
         .expect(200);
 
-      expect(mockCanAccessChild).toHaveBeenCalledWith(1, 1);
-      expect(res.body.data?.name).toBe('Test Child');
+      expect(mockCanAccessPerson).toHaveBeenCalledWith(1, 1);
+      expect(res.body.data?.name).toBe('Test Person');
     });
   });
 
   describe('GET /api/visits/:id', () => {
-    it('returns 404 when user cannot access visit (child belongs to another family)', async () => {
+    it('returns 404 when user cannot access visit (person belongs to another family)', async () => {
       const now = new Date();
       mockQuery.mockResolvedValueOnce({
-        rows: [{ id: 100, child_id: 999, visit_date: now, visit_type: 'wellness', created_at: now, updated_at: now }],
+        rows: [{ id: 100, person_id: 999, visit_date: now, visit_type: 'wellness', created_at: now, updated_at: now }],
       } as never);
-      mockCanAccessChild.mockResolvedValue(false);
+      mockCanAccessPerson.mockResolvedValue(false);
 
       const res = await request(app)
         .get('/api/visits/100')
         .set('X-Test-User-Id', '1')
         .expect(404);
 
-      expect(mockCanAccessChild).toHaveBeenCalledWith(1, 999);
+      expect(mockCanAccessPerson).toHaveBeenCalledWith(1, 999);
       expect(res.body.error?.message).toMatch(/not found|visit/i);
     });
   });
 
   describe('GET /api/illnesses/:id', () => {
-    it('returns 404 when user cannot access illness (child belongs to another family)', async () => {
+    it('returns 404 when user cannot access illness (person belongs to another family)', async () => {
       mockQuery.mockResolvedValueOnce({
-        rows: [{ id: 50, child_id: 999, start_date: new Date(), updated_at: new Date() }],
+        rows: [{ id: 50, person_id: 999, start_date: new Date(), updated_at: new Date() }],
       } as never);
-      mockCanAccessChild.mockResolvedValue(false);
+      mockCanAccessPerson.mockResolvedValue(false);
 
       const res = await request(app)
         .get('/api/illnesses/50')
         .set('X-Test-User-Id', '1')
         .expect(404);
 
-      expect(mockCanAccessChild).toHaveBeenCalledWith(1, 999);
+      expect(mockCanAccessPerson).toHaveBeenCalledWith(1, 999);
       expect(res.body.error?.message).toMatch(/not found|illness/i);
     });
   });
 
-  describe('PUT /api/children/:id', () => {
-    it('returns 404 when user cannot access child', async () => {
-      mockCanAccessChild.mockResolvedValue(false);
+  describe('PUT /api/people/:id', () => {
+    it('returns 404 when user cannot access person', async () => {
+      mockCanAccessPerson.mockResolvedValue(false);
 
       await request(app)
-        .put('/api/children/999')
+        .put('/api/people/999')
         .set('X-Test-User-Id', '1')
         .send({ name: 'Hacked', date_of_birth: '2020-01-01', gender: 'male' })
         .expect(404);
 
-      expect(mockCanAccessChild).toHaveBeenCalledWith(1, 999);
+      expect(mockCanAccessPerson).toHaveBeenCalledWith(1, 999);
     });
   });
 
-  describe('DELETE /api/children/:id', () => {
-    it('returns 404 when user cannot access child', async () => {
-      mockCanAccessChild.mockResolvedValue(false);
+  describe('DELETE /api/people/:id', () => {
+    it('returns 404 when user cannot access person', async () => {
+      mockCanAccessPerson.mockResolvedValue(false);
 
       await request(app)
-        .delete('/api/children/999')
+        .delete('/api/people/999')
         .set('X-Test-User-Id', '1')
         .expect(404);
 
-      expect(mockCanAccessChild).toHaveBeenCalledWith(1, 999);
+      expect(mockCanAccessPerson).toHaveBeenCalledWith(1, 999);
     });
   });
 });

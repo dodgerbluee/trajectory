@@ -27,7 +27,7 @@ export interface PaginationMeta {
 }
 
 export interface FilterMeta {
-  child_id?: number;
+  person_id?: number;
   start_date?: string;
   end_date?: string;
 }
@@ -124,7 +124,7 @@ export interface AdminLogsResponse {
 
 export type Gender = 'male' | 'female';
 
-export interface Child {
+export interface Person {
   id: number;
   family_id?: number; // present when backend supports multi-family; used for grouping
   user_id: number | null; // non-null for self-rows (account holder's own person record)
@@ -141,7 +141,7 @@ export interface Child {
   updated_at: string;
 }
 
-export interface CreateChildInput {
+export interface CreatePersonInput {
   family_id?: number;
   name: string;
   date_of_birth: string;
@@ -154,7 +154,7 @@ export interface CreateChildInput {
   birth_height?: number | null;
 }
 
-export interface UpdateChildInput {
+export interface UpdatePersonInput {
   name?: string;
   date_of_birth?: string;
   gender?: Gender;
@@ -168,7 +168,7 @@ export interface UpdateChildInput {
 
 export interface Measurement {
   id: number;
-  child_id: number;
+  person_id: number;
   measurement_date: string; // YYYY-MM-DD
   label: string | null;
   weight_value: number | null;
@@ -253,10 +253,10 @@ export type DentalProcedure = {
 
 export interface Visit {
   id: number;
-  child_id: number;
+  person_id: number;
   /**
    * Adult-personal owner. Kid visits have this null/absent; adult-personal
-   * visits have user_id set (and child_id is a phantom 0 for type-compat).
+   * visits have user_id set (and person_id is a phantom 0 for type-compat).
    */
   user_id?: number | null;
   /** Per-row privacy override for adult-personal visits. Always false for kids. */
@@ -327,7 +327,7 @@ export interface Visit {
 }
 
 export interface CreateVisitInput {
-  child_id: number;
+  person_id: number;
   visit_date: string;
   visit_time?: string | null; // "HH:MM"
   visit_type: VisitType;
@@ -455,9 +455,9 @@ export interface VisitAttachment {
   created_at: string;
 }
 
-export interface ChildAttachment {
+export interface PersonAttachment {
   id: number;
-  child_id: number;
+  person_id: number;
   document_type: string;
   original_filename: string;
   stored_filename: string;
@@ -500,7 +500,7 @@ export interface MeasurementAttachment {
 
 export interface Illness {
   id: number;
-  child_id: number;
+  person_id: number;
   /** Adult-personal owner; null for kid illnesses. */
   user_id?: number | null;
   /** Per-row privacy override for adult-personal illnesses. */
@@ -518,7 +518,7 @@ export interface Illness {
 }
 
 export interface CreateIllnessInput {
-  child_id: number;
+  person_id: number;
   illness_types: IllnessType[];
   start_date: string;
   end_date?: string | null;
@@ -546,7 +546,7 @@ export interface UpdateIllnessInput {
 
 export interface HeatmapDay {
   date: string; // YYYY-MM-DD
-  count: number; // Number of children sick on this day
+  count: number; // Number of people sick on this day
   children: number[]; // Array of child_ids who were sick
 }
 
@@ -554,7 +554,7 @@ export interface HeatmapData {
   year: number;
   days: HeatmapDay[];
   totalDays: number;
-  maxCount: number; // Maximum children sick on any single day
+  maxCount: number; // Maximum people sick on any single day
 }
 
 export interface GrowthDataPoint {
@@ -570,8 +570,8 @@ export interface GrowthDataPoint {
   head_circumference_percentile: number | null;
   bmi_value: number | null;
   bmi_percentile: number | null;
-  child_id: number;
-  child_name: string;
+  person_id: number;
+  person_name: string;
   gender: Gender;
 }
 

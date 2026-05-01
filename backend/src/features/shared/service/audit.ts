@@ -5,7 +5,7 @@
 import { query } from '../../../db/connection.js';
 import type { AuditChanges } from './field-diff.js';
 import { auditChangesSummary } from './field-diff.js';
-import { canAccessChild } from '../../families/service/family-access.js';
+import { canAccessPerson } from '../../families/service/family-access.js';
 
 export type AuditEntityType = 'visit' | 'illness';
 
@@ -24,7 +24,7 @@ export interface RecordAuditEventParams {
 /**
  * Check if user has permission to view audit history for an entity.
  * Users can only view history for entities they can access (visits/illnesses
- * for children in their family).
+ * for people in their family).
  */
 export async function canViewAuditHistory(
   entityType: AuditEntityType,
@@ -34,21 +34,21 @@ export async function canViewAuditHistory(
   if (!userId) return false;
 
   if (entityType === 'visit') {
-    const result = await query<{ child_id: number }>(
-      `SELECT child_id FROM visits WHERE id = $1`,
+    const result = await query<{ person_id: number }>(
+      `SELECT person_id FROM visits WHERE id = $1`,
       [entityId]
     );
     if (result.rows.length === 0) return false;
-    return canAccessChild(userId, result.rows[0].child_id);
+    return canAccessPerson(userId, result.rows[0].person_id);
   }
 
   if (entityType === 'illness') {
-    const result = await query<{ child_id: number }>(
-      `SELECT child_id FROM illnesses WHERE id = $1`,
+    const result = await query<{ person_id: number }>(
+      `SELECT person_id FROM illnesses WHERE id = $1`,
       [entityId]
     );
     if (result.rows.length === 0) return false;
-    return canAccessChild(userId, result.rows[0].child_id);
+    return canAccessPerson(userId, result.rows[0].person_id);
   }
 
   return false;

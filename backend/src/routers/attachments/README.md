@@ -13,8 +13,8 @@
 - POST /visits/:vid/attachments - Upload visit attachment (lines 662-874)
 - GET /visits/:vid/attachments - List visit attachments (lines 879-933)
 - PUT /attachments/:id - Update attachment metadata (lines 938-1014)
-- POST /children/:child_id/attachments - Upload child attachment (lines 1019-1211)
-- GET /children/:child_id/attachments - List/download child attachments (lines 1212-1263)
+- POST /people/:person_id/attachments - Upload person attachment (lines 1019-1211)
+- GET /people/:person_id/attachments - List/download person attachments (lines 1212-1263)
 
 ## Functionality
 
@@ -26,7 +26,7 @@
 ### Three Attachment Types
 1. **Measurement Attachments** - Photos/files for growth measurements
 2. **Visit Attachments** - Documents from doctor visits
-3. **Child Attachments** - General child files (photos, documents)
+3. **Person Attachments** - General person files (photos, documents)
 
 ### Collision Detection
 - `checkStoredFilenameExists()` - Check if filename already in DB
@@ -35,7 +35,7 @@
 - Retry logic with timestamps to handle race conditions
 
 ### Security
-- Authorization checks via `canAccessChild()` and `canEditChild()`
+- Authorization checks via `canAccessPerson()` and `canEditPerson()`
 - File download with proper headers
 - Audit logging for deletions
 
@@ -49,14 +49,14 @@ routers/attachments/
 ├── handlers/
 │   ├── measurements.ts   # Measurement attachment CRUD
 │   ├── visits.ts         # Visit attachment CRUD
-│   ├── children.ts       # Child attachment CRUD
+│   ├── people.ts         # Person attachment CRUD
 │   └── shared.ts         # Update metadata endpoint
 └── README.md             # This file
 ```
 
 ## Why It's Large
 
-1. **Three separate resource types** - measurements, visits, children (each with upload/list/download/delete)
+1. **Three separate resource types** - measurements, visits, people (each with upload/list/download/delete)
 2. **Collision detection logic** - Complex retry and verification system
 3. **Multer configuration** - File upload middleware with validation
 4. **Duplicate code patterns** - Similar CRUD operations repeated for each resource type
@@ -71,9 +71,9 @@ routers/attachments/
 
 ## Files to Create (Future)
 
-- `utils.ts` - getChildIdForAttachment, collision detection, verification
+- `utils.ts` - getPersonIdForAttachment, collision detection, verification
 - `multer-config.ts` - Storage, filename generation, filters
 - `measurements.ts` - 4 endpoints for measurement attachments
-- `visits.ts` - 2 endpoints for visit attachments  
-- `children.ts` - 2 endpoints for child attachments
+- `visits.ts` - 2 endpoints for visit attachments
+- `people.ts` - 2 endpoints for person attachments
 - `shared.ts` - Update attachment metadata (works across all types)

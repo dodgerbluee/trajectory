@@ -84,7 +84,7 @@ describe('PUT /api/visits/:id - Audit on update', () => {
       const diff = buildFieldDiff(
         currentVisit as unknown as Record<string, unknown>,
         payload,
-        { excludeKeys: ['child_id'] }
+        { excludeKeys: ['person_id'] }
       );
 
       expect(diff).toEqual({
@@ -116,7 +116,7 @@ describe('PUT /api/visits/:id - Audit on update', () => {
       const diff = buildFieldDiff(
         currentVisit as unknown as Record<string, unknown>,
         payload,
-        { excludeKeys: ['child_id'] }
+        { excludeKeys: ['person_id'] }
       );
 
       expect(Object.keys(diff)).toHaveLength(3);
@@ -144,7 +144,7 @@ describe('PUT /api/visits/:id - Audit on update', () => {
       const diff = buildFieldDiff(
         currentVisit as unknown as Record<string, unknown>,
         payload,
-        { excludeKeys: ['child_id'] }
+        { excludeKeys: ['person_id'] }
       );
 
       expect(Object.keys(diff)).toEqual(['visit_date']);
@@ -161,7 +161,7 @@ describe('PUT /api/visits/:id - Audit on update', () => {
       const diff = buildFieldDiff(
         currentVisit as unknown as Record<string, unknown>,
         payload,
-        { excludeKeys: ['child_id'] }
+        { excludeKeys: ['person_id'] }
       );
 
       expect(diff.doctor_name).toEqual({
@@ -177,7 +177,7 @@ describe('PUT /api/visits/:id - Audit on update', () => {
       const diff = buildFieldDiff(
         currentVisit as unknown as Record<string, unknown>,
         payload,
-        { excludeKeys: ['child_id'] }
+        { excludeKeys: ['person_id'] }
       );
 
       expect(diff.notes).toEqual({

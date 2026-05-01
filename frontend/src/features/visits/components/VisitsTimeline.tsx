@@ -1,5 +1,5 @@
 import { useMemo, memo, type ReactNode } from 'react';
-import type { Visit, Child } from '@shared/types/api';
+import type { Visit, Person } from '@shared/types/api';
 import TimelineItem from '@shared/components/TimelineItem';
 import Card from '@shared/components/Card';
 import tl from '@shared/components/TimelineList.module.css';
@@ -7,9 +7,9 @@ import PaginationControls from '@shared/components/PaginationControls';
 
 interface VisitsTimelineProps {
   visits: Visit[];
-  children?: Child[];
+  people?: Person[];
   visitsWithAttachments?: Set<number>;
-  showChildName?: boolean;
+  showPersonName?: boolean;
   emptyMessage?: string;
   currentPage?: number;
   itemsPerPage?: number;
@@ -17,21 +17,21 @@ interface VisitsTimelineProps {
   onPageChange?: (page: number) => void;
   onItemsPerPageChange?: (items: number) => void;
   /** When true, render the list without an outer Card wrapper.
-   * Used inside ChildDetailPage where the page-level Card already provides
+   * Used inside PersonDetailPage where the page-level Card already provides
    * the body frame and an inner Card creates double-bordering / wasted padding. */
   flat?: boolean;
 }
 
 /**
  * Reusable component for rendering a timeline of visits.
- * Used by AllVisitsView and ChildDetailPage.
+ * Used by AllVisitsView and PersonDetailPage.
  * Memoized to prevent unnecessary re-renders.
  */
 function VisitsTimeline({
   visits,
-  children = [],
+  people = [],
   visitsWithAttachments = new Set(),
-  showChildName = true,
+  showPersonName = true,
   emptyMessage = 'No visits recorded yet. Click "Add Visit" to get started.',
   currentPage = 0,
   itemsPerPage = 20,
@@ -40,11 +40,11 @@ function VisitsTimeline({
   onItemsPerPageChange,
   flat = false,
 }: VisitsTimelineProps) {
-  const childMap = useMemo(() => {
-    const map = new Map<number, Child>();
-    children.forEach(child => map.set(child.id, child));
+  const personMap = useMemo(() => {
+    const map = new Map<number, Person>();
+    people.forEach(person => map.set(person.id, person));
     return map;
-  }, [children]);
+  }, [people]);
 
   const sortedVisits = useMemo(() => {
     return [...visits].sort((a, b) => {
@@ -71,14 +71,14 @@ function VisitsTimeline({
       <Frame>
         <div className={tl.list}>
           {sortedVisits.map((visit) => {
-            const child = childMap.get(visit.child_id);
+            const person = personMap.get(visit.person_id);
             return (
               <TimelineItem
                 key={visit.id}
                 type="visit"
                 data={visit}
-                childName={showChildName ? (child?.name || `Child #${visit.child_id}`) : undefined}
-                childId={showChildName ? visit.child_id : undefined}
+                personName={showPersonName ? (person?.name || `Person #${visit.person_id}`) : undefined}
+                personId={showPersonName ? visit.person_id : undefined}
                 hasAttachments={visitsWithAttachments.has(visit.id)}
               />
             );

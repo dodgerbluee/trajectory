@@ -13,7 +13,7 @@ import type { VisitRow, CreateVisitInput, VisitType, IllnessType } from '../type
 import { visitRowToVisit as convertVisitRow } from '../types/database.js';
 import { buildFieldDiff, auditChangesSummary } from '../features/shared/service/field-diff.js';
 import { recordAuditEvent } from '../features/shared/service/audit.js';
-import { getAccessibleChildIds, canAccessChild, canEditChild } from '../features/families/service/family-access.js';
+import { getAccessiblePersonIds, canAccessPerson, canEditPerson } from '../features/families/service/family-access.js';
 
 const router = Router();
 router.use(authenticate);
@@ -253,27 +253,27 @@ function validateVisionRefraction(value: unknown): VisionRefractionInput | null 
 
 router.get('/growth-data', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const accessibleChildIds = await getAccessibleChildIds(req.userId!);
-    if (accessibleChildIds.length === 0) {
+    const accessiblePersonIds = await getAccessiblePersonIds(req.userId!);
+    if (accessiblePersonIds.length === 0) {
       return res.json(createResponse([]));
     }
 
-    const childId = req.query.child_id ? parseInt(req.query.child_id as string) : undefined;
+    const personId = req.query.person_id ? parseInt(req.query.person_id as string) : undefined;
     const startDate = req.query.start_date as string | undefined;
     const endDate = req.query.end_date as string | undefined;
 
-    if (childId && isNaN(childId)) {
-      throw new BadRequestError('Invalid child_id');
+    if (personId && isNaN(personId)) {
+      throw new BadRequestError('Invalid person_id');
     }
-    if (childId && !accessibleChildIds.includes(childId)) {
-      throw new BadRequestError('Invalid child_id');
+    if (personId && !accessiblePersonIds.includes(personId)) {
+      throw new BadRequestError('Invalid person_id');
     }
 
     let queryText = `
       SELECT 
         v.id as visit_id,
         v.visit_date,
-        v.child_id,
+        v.person_id,
         v.weight_value,
         v.weight_percentile,
         v.height_value,
@@ -282,15 +282,15 @@ router.get('/growth-data', async (req: AuthRequest, res: Response, next: NextFun
         v.head_circumference_percentile,
         v.bmi_value,
         v.bmi_percentile,
-        c.name as child_name,
+        c.name as person_name,
         c.date_of_birth,
         c.gender,
         c.birth_weight,
         c.birth_height
       FROM visits v
-      INNER JOIN children c ON v.child_id = c.id
+      INNER JOIN people c ON v.person_id = c.id
       WHERE v.visit_type = 'wellness'
-        AND v.child_id = ANY($1::int[])
+        AND v.person_id = ANY($1::int[])
         AND (
           v.weight_value IS NOT NULL 
           OR v.height_value IS NOT NULL 
@@ -299,12 +299,12 @@ router.get('/growth-data', async (req: AuthRequest, res: Response, next: NextFun
         )
     `;
 
-    const queryParams: unknown[] = [accessibleChildIds];
+    const queryParams: unknown[] = [accessiblePersonIds];
     let paramIndex = 2;
 
-    if (childId) {
-      queryText += ` AND v.child_id = $${paramIndex}`;
-      queryParams.push(childId);
+    if (personId) {
+      queryText += ` AND v.person_id = $${paramIndex}`;
+      queryParams.push(personId);
       paramIndex++;
     }
 
@@ -325,7 +325,7 @@ router.get('/growth-data', async (req: AuthRequest, res: Response, next: NextFun
     type GrowthRow = {
       visit_id: number;
       visit_date: Date;
-      child_id: number;
+      person_id: number;
       weight_value: string | null;
       weight_percentile: string | null;
       height_value: string | null;
@@ -334,7 +334,7 @@ router.get('/growth-data', async (req: AuthRequest, res: Response, next: NextFun
       head_circumference_percentile: string | null;
       bmi_value: string | null;
       bmi_percentile: string | null;
-      child_name: string;
+      person_name: string;
       date_of_birth: Date;
       gender: string;
       birth_weight: string | null;
@@ -353,22 +353,22 @@ router.get('/growth-data', async (req: AuthRequest, res: Response, next: NextFun
       return Number.isNaN(parsed) ? null : parsed;
     };
 
-    // Get unique children to add birth data points
-    const childBirthData = new Map<number, { birth_weight: string | null; birth_height: string | null; date_of_birth: Date; child_name: string; gender: string }>();
+    // Get unique people to add birth data points
+    const personBirthData = new Map<number, { birth_weight: string | null; birth_height: string | null; date_of_birth: Date; person_name: string; gender: string }>();
     
     result.rows.forEach((row) => {
-      if (!childBirthData.has(row.child_id)) {
-        childBirthData.set(row.child_id, {
+      if (!personBirthData.has(row.person_id)) {
+        personBirthData.set(row.person_id, {
           birth_weight: row.birth_weight,
           birth_height: row.birth_height,
           date_of_birth: row.date_of_birth,
-          child_name: row.child_name,
+          person_name: row.person_name,
           gender: row.gender,
         });
       }
     });
 
-    // Add birth data points (age 0) for children with birth measurements
+    // Add birth data points (age 0) for people with birth measurements
     type GrowthPoint = {
       visit_id: number | null;
       visit_date: string;
@@ -382,19 +382,19 @@ router.get('/growth-data', async (req: AuthRequest, res: Response, next: NextFun
       head_circumference_percentile: number | null;
       bmi_value: number | null;
       bmi_percentile: number | null;
-      child_id: number;
-      child_name: string;
+      person_id: number;
+      person_name: string;
       gender: string;
     };
 
     const birthDataPoints: GrowthPoint[] = [];
-    childBirthData.forEach((birthData, childId) => {
+    personBirthData.forEach((birthData, personId) => {
       const birthWeight = parseDecimal(birthData.birth_weight);
       const birthHeight = parseDecimal(birthData.birth_height);
       
       if (birthWeight !== null || birthHeight !== null) {
-        // Only include if we're showing this child (filtered by childId) or all children
-        const shouldInclude = !childId || result.rows.some((r) => r.child_id === childId);
+        // Only include if we're showing this person (filtered by personId) or all people
+        const shouldInclude = !personId || result.rows.some((r) => r.person_id === personId);
         if (shouldInclude) {
           birthDataPoints.push({
             visit_id: null, // No visit for birth
@@ -409,8 +409,8 @@ router.get('/growth-data', async (req: AuthRequest, res: Response, next: NextFun
             head_circumference_percentile: null,
             bmi_value: null,
             bmi_percentile: null,
-            child_id: childId,
-            child_name: birthData.child_name,
+            person_id: personId,
+            person_name: birthData.person_name,
             gender: birthData.gender,
           });
         }
@@ -475,17 +475,17 @@ router.get('/growth-data', async (req: AuthRequest, res: Response, next: NextFun
         head_circumference_percentile: parseDecimal(row.head_circumference_percentile),
         bmi_value: bmiValue,
         bmi_percentile: parseDecimal(row.bmi_percentile),
-        child_id: row.child_id,
-        child_name: row.child_name,
+        person_id: row.person_id,
+        person_name: row.person_name,
         gender: row.gender,
       };
     });
 
-    // Combine birth data points with visit data points, sorted by child_id then age_months
+    // Combine birth data points with visit data points, sorted by person_id then age_months
     const allGrowthData = [...birthDataPoints, ...growthData].sort((a, b) => {
-      // Sort by child_id first, then by age_months
-      if (a.child_id !== b.child_id) {
-        return a.child_id - b.child_id;
+      // Sort by person_id first, then by age_months
+      if (a.person_id !== b.person_id) {
+        return a.person_id - b.person_id;
       }
       return a.age_months - b.age_months;
     });
@@ -498,27 +498,27 @@ router.get('/growth-data', async (req: AuthRequest, res: Response, next: NextFun
 
 router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const accessibleChildIds = await getAccessibleChildIds(req.userId!);
-    if (accessibleChildIds.length === 0) {
+    const accessiblePersonIds = await getAccessiblePersonIds(req.userId!);
+    if (accessiblePersonIds.length === 0) {
       return res.json(createResponse([]));
     }
 
-    const childId = req.query.child_id ? parseInt(req.query.child_id as string) : undefined;
+    const personId = req.query.person_id ? parseInt(req.query.person_id as string) : undefined;
     const visitType = req.query.visit_type as VisitType | undefined;
     const futureOnly = req.query.future_only === 'true';
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
     const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
 
-    let queryText = `SELECT v.*, EXISTS(SELECT 1 FROM visit_attachments va WHERE va.visit_id = v.id) AS has_attachments FROM visits v WHERE v.child_id = ANY($1::int[])`;
-    const queryParams: unknown[] = [accessibleChildIds];
+    let queryText = `SELECT v.*, EXISTS(SELECT 1 FROM visit_attachments va WHERE va.visit_id = v.id) AS has_attachments FROM visits v WHERE v.person_id = ANY($1::int[])`;
+    const queryParams: unknown[] = [accessiblePersonIds];
     let paramCount = 2;
 
-    if (childId) {
-      if (!accessibleChildIds.includes(childId)) {
+    if (personId) {
+      if (!accessiblePersonIds.includes(personId)) {
         return res.json(createResponse([]));
       }
-      queryText += ` AND v.child_id = $${paramCount++}`;
-      queryParams.push(childId);
+      queryText += ` AND v.person_id = $${paramCount++}`;
+      queryParams.push(personId);
     }
 
     if (visitType) {
@@ -584,7 +584,7 @@ router.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
     }
 
     const visit = convertVisitRow(result.rows[0]);
-    if (!(await canAccessChild(req.userId!, visit.child_id))) {
+    if (!(await canAccessPerson(req.userId!, visit.person_id))) {
       throw new NotFoundError('Visit');
     }
 
@@ -612,19 +612,19 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
       console.log('[POST /api/visits] Request body: present (redacted in production)');
     }
 
-    const childId = parseInt(req.body.child_id);
-    console.log('[POST /api/visits] Parsed childId:', childId);
+    const personId = parseInt(req.body.person_id);
+    console.log('[POST /api/visits] Parsed personId:', personId);
 
-    if (!(await canAccessChild(req.userId!, childId))) {
-      console.log('[POST /api/visits] User cannot access child:', childId);
-      throw new NotFoundError('Child');
+    if (!(await canAccessPerson(req.userId!, personId))) {
+      console.log('[POST /api/visits] User cannot access person:', personId);
+      throw new NotFoundError('Person');
     }
-    if (!(await canEditChild(req.userId!, childId))) {
-      console.log('[POST /api/visits] User cannot edit child:', childId);
-      throw new ForbiddenError('You do not have permission to add visits for this child.');
+    if (!(await canEditPerson(req.userId!, personId))) {
+      console.log('[POST /api/visits] User cannot edit person:', personId);
+      throw new ForbiddenError('You do not have permission to add visits for this person.');
     }
     const input: CreateVisitInput = {
-      child_id: childId,
+      person_id: personId,
       visit_date: validateDate(req.body.visit_date, 'visit_date'),
       visit_time: validateOptionalTime(req.body.visit_time),
       visit_type: validateVisitType(req.body.visit_type),
@@ -713,7 +713,7 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
     try {
       result = await query<VisitRow>(
         `INSERT INTO visits (
-          child_id, visit_date, visit_time, visit_type, location, doctor_name, title,
+          person_id, visit_date, visit_time, visit_type, location, doctor_name, title,
           weight_value, weight_ounces, weight_percentile,
           height_value, height_percentile,
           head_circumference_value, head_circumference_percentile,
@@ -739,7 +739,7 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
           $39, $40, $41, $42
         ) RETURNING *`,
         [
-          input.child_id, input.visit_date, input.visit_time, input.visit_type, input.location, input.doctor_name, input.title,
+          input.person_id, input.visit_date, input.visit_time, input.visit_type, input.location, input.doctor_name, input.title,
           input.weight_value, input.weight_ounces, input.weight_percentile,
           input.height_value, input.height_percentile,
           input.head_circumference_value, input.head_circumference_percentile,
@@ -800,11 +800,11 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
           : null;
         const illResult = await query<{ id: number }>(
           `INSERT INTO illnesses (
-            child_id, start_date, end_date, symptoms, temperature, severity, visit_id, notes
+            person_id, start_date, end_date, symptoms, temperature, severity, visit_id, notes
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
           RETURNING id`,
           [
-            input.child_id,
+            input.person_id,
             illnessStartDate,
             input.end_date,
             input.symptoms,
@@ -851,10 +851,10 @@ router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
       throw new NotFoundError('Visit');
     }
     const currentRow = currentResult.rows[0];
-    if (!(await canAccessChild(req.userId!, currentRow.child_id))) {
+    if (!(await canAccessPerson(req.userId!, currentRow.person_id))) {
       throw new NotFoundError('Visit');
     }
-    if (!(await canEditChild(req.userId!, currentRow.child_id))) {
+    if (!(await canEditPerson(req.userId!, currentRow.person_id))) {
       throw new ForbiddenError('You do not have permission to edit this visit.');
     }
     const currentVisit = convertVisitRow(currentRow);
@@ -1245,7 +1245,7 @@ router.put('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
     const changes = buildFieldDiff(
       currentVisit as unknown as Record<string, unknown>,
       payload,
-      { excludeKeys: ['child_id'] }
+      { excludeKeys: ['person_id'] }
     );
     if (Object.keys(changes).length > 0) {
       await recordAuditEvent({
@@ -1365,14 +1365,14 @@ router.delete('/:id', async (req: AuthRequest, res: Response, next: NextFunction
       throw new BadRequestError('Invalid visit ID');
     }
 
-    const existing = await query<{ child_id: number }>('SELECT child_id FROM visits WHERE id = $1', [id]);
+    const existing = await query<{ person_id: number }>('SELECT person_id FROM visits WHERE id = $1', [id]);
     if (existing.rows.length === 0) {
       throw new NotFoundError('Visit');
     }
-    if (!(await canAccessChild(req.userId!, existing.rows[0].child_id))) {
+    if (!(await canAccessPerson(req.userId!, existing.rows[0].person_id))) {
       throw new NotFoundError('Visit');
     }
-    if (!(await canEditChild(req.userId!, existing.rows[0].child_id))) {
+    if (!(await canEditPerson(req.userId!, existing.rows[0].person_id))) {
       throw new ForbiddenError('You do not have permission to delete this visit.');
     }
 

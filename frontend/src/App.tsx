@@ -1,34 +1,23 @@
 import { Suspense, lazy } from 'react';
-import { Routes, Route, Navigate, Outlet, useLocation, useParams } from 'react-router-dom';
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { Layout } from './app/components';
 import ErrorBoundary from './shared/components/ErrorBoundary';
 import LoadingSpinner from './shared/components/LoadingSpinner';
 import { ProtectedRoute, AdminRoute } from './features/auth';
 
 /**
- * Legacy /children/:id and /children/:id/edit URLs — preserved as redirects to
- * /people/:id so old bookmarks and copy-pasted links keep working through the
- * rename. Drop after a full release cycle once analytics show the legacy routes
- * are quiet.
+ * Lazy-load all route components — each becomes its own chunk.
+ * Import directly from page files (not feature barrels) so lazy chunks stay tight.
  */
-function LegacyChildToPerson({ edit = false }: { edit?: boolean }) {
-  const { id } = useParams<{ id: string }>();
-  const location = useLocation();
-  const target = `/people/${id ?? ''}${edit ? '/edit' : ''}${location.search}${location.hash}`;
-  return <Navigate to={target} replace />;
-}
-
-// Lazy-load all route components — each becomes its own chunk.
-// Import directly from page files (not feature barrels) so lazy chunks stay tight.
 const LoginPage = lazy(() => import('./features/auth/components/LoginPage'));
 const SignupPage = lazy(() => import('./features/auth/components/SignupPage'));
 const InvitePage = lazy(() => import('./features/auth/components/InvitePage'));
 const OAuthCallbackPage = lazy(() => import('./features/auth/components/OAuthCallbackPage'));
 const WelcomePage = lazy(() => import('./features/onboarding/pages/WelcomePage'));
 const HomePage = lazy(() => import('./app/home/pages/HomePage'));
-const AddChildPage = lazy(() => import('./features/children/pages/AddChildPage'));
-const PersonDetailPage = lazy(() => import('./features/children/pages/PersonDetailPage'));
-const EditChildPage = lazy(() => import('./features/children/pages/EditChildPage'));
+const AddPersonPage = lazy(() => import('./features/people/pages/AddPersonPage'));
+const PersonDetailPage = lazy(() => import('./features/people/pages/PersonDetailPage'));
+const EditPersonPage = lazy(() => import('./features/people/pages/EditPersonPage'));
 const AddVisitPage = lazy(() => import('./features/visits/pages/AddVisitPage'));
 const VisitDetailPage = lazy(() => import('./features/visits/pages/VisitDetailPage'));
 const EditVisitPage = lazy(() => import('./features/visits/pages/EditVisitPage'));
@@ -66,15 +55,11 @@ function App() {
 
             <Route element={<LayoutRoute />}>
               <Route path="/" element={<HomePage />} />
-              <Route path="/people/new" element={<AddChildPage />} />
+              <Route path="/people/new" element={<AddPersonPage />} />
               <Route path="/people/:id" element={<PersonDetailPage />} />
-              <Route path="/people/:id/edit" element={<EditChildPage />} />
+              <Route path="/people/:id/edit" element={<EditPersonPage />} />
               <Route path="/visits/new" element={<AddVisitPage />} />
-              <Route path="/people/:childId/visits/new" element={<AddVisitPage />} />
-              {/* Legacy /children/* aliases — keep so old links/bookmarks still resolve. */}
-              <Route path="/children/new" element={<Navigate to="/people/new" replace />} />
-              <Route path="/children/:id" element={<LegacyChildToPerson />} />
-              <Route path="/children/:id/edit" element={<LegacyChildToPerson edit />} />
+              <Route path="/people/:personId/visits/new" element={<AddVisitPage />} />
               <Route path="/visits/:id" element={<VisitDetailPage />} />
               <Route path="/visits/:id/edit" element={<EditVisitPage />} />
               <Route path="/illnesses" element={<HomePage />} />

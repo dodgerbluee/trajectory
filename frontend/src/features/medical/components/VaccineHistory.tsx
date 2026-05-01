@@ -1,9 +1,9 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { HiPencil, HiTrash, HiDownload } from 'react-icons/hi';
-import type { Visit, ChildAttachment } from '@shared/types/api';
+import type { Visit, PersonAttachment } from '@shared/types/api';
 import { formatDate } from '@lib/date-utils';
-import { childrenApi, ApiClientError } from '@lib/api-client';
+import { peopleApi, ApiClientError } from '@lib/api-client';
 import FileUpload from '@shared/components/FileUpload';
 import { useFamilyPermissions } from '@/contexts/FamilyPermissionsContext';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
@@ -14,7 +14,7 @@ import visitsLayout from '@shared/styles/VisitsLayout.module.css';
 
 interface VaccineHistoryProps {
   visits: Visit[];
-  childId: number;
+  personId: number;
   onUploadSuccess?: () => void;
 }
 
@@ -27,10 +27,10 @@ interface VaccineRecord {
   }>;
 }
 
-function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProps) {
+function VaccineHistory({ visits, personId, onUploadSuccess }: VaccineHistoryProps) {
   const { canEdit } = useFamilyPermissions();
   const [uploading, setUploading] = useState(false);
-  const [vaccineReports, setVaccineReports] = useState<ChildAttachment[]>([]);
+  const [vaccineReports, setVaccineReports] = useState<PersonAttachment[]>([]);
   const [loadingReports, setLoadingReports] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValue, setEditValue] = useState<string>('');
@@ -38,12 +38,12 @@ function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProp
 
   useEffect(() => {
     loadVaccineReports();
-  }, [childId]);
+  }, [personId]);
 
   const loadVaccineReports = async () => {
     try {
       setLoadingReports(true);
-      const response = await childrenApi.getAttachments(childId);
+      const response = await peopleApi.getAttachments(personId);
       // Filter only vaccine_report documents
       const reports = response.data.filter(att => att.document_type === 'vaccine_report');
       setVaccineReports(reports);
@@ -57,7 +57,7 @@ function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProp
   const handleFileUpload = async (file: File) => {
     try {
       setUploading(true);
-      await childrenApi.uploadAttachment(childId, file, 'vaccine_report');
+      await peopleApi.uploadAttachment(personId, file, 'vaccine_report');
       await loadVaccineReports(); // Reload reports after upload
       if (onUploadSuccess) {
         onUploadSuccess();
@@ -74,7 +74,7 @@ function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProp
     }
   };
 
-  const handleEditStart = (doc: ChildAttachment) => {
+  const handleEditStart = (doc: PersonAttachment) => {
     setEditingId(doc.id);
     setEditValue(doc.original_filename);
   };
@@ -91,7 +91,7 @@ function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProp
     }
 
     try {
-      await childrenApi.updateAttachment(id, editValue.trim());
+      await peopleApi.updateAttachment(id, editValue.trim());
       setEditingId(null);
       setEditValue('');
       await loadVaccineReports();
@@ -111,7 +111,7 @@ function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProp
 
     try {
       setDeletingId(id);
-      await childrenApi.deleteAttachment(id);
+      await peopleApi.deleteAttachment(id);
       await loadVaccineReports();
       if (onUploadSuccess) {
         onUploadSuccess(); // Refresh documents tab too
@@ -141,11 +141,11 @@ function VaccineHistory({ visits, childId, onUploadSuccess }: VaccineHistoryProp
   };
 
   const handleClick = (attachmentId: number) => {
-    window.open(childrenApi.getAttachmentDownloadUrl(attachmentId), '_blank');
+    window.open(peopleApi.getAttachmentDownloadUrl(attachmentId), '_blank');
   };
 
   const handleDownload = (attachmentId: number, filename: string) => {
-    const url = childrenApi.getAttachmentDownloadUrl(attachmentId);
+    const url = peopleApi.getAttachmentDownloadUrl(attachmentId);
     const link = document.createElement('a');
     link.href = url;
     link.download = filename;

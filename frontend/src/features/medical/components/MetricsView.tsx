@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChildAvatar } from '@features/children';
+import { PersonAvatar } from '@features/people';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
 import ErrorMessage from '@shared/components/ErrorMessage';
 import Card from '@shared/components/Card';
@@ -16,28 +16,28 @@ interface MetricsViewProps {
   onActiveTabChange?: (tab: 'illness' | 'growth') => void;
   selectedYear?: number;
   onSelectedYearChange?: (year: number) => void;
-  filterChildId?: number | undefined;
-  onFilterChildChange?: (id?: number) => void;
+  filterPersonId?: number | undefined;
+  onFilterPersonChange?: (id?: number) => void;
 }
 
 function MetricsView({
   activeTab: activeTabProp,
   selectedYear: selectedYearProp,
   onSelectedYearChange,
-  filterChildId: filterChildIdProp,
+  filterPersonId: filterPersonIdProp,
 }: MetricsViewProps) {
   const [internalYear] = useState(new Date().getFullYear());
-  const [internalFilterChildId] = useState<number | undefined>(undefined);
+  const [internalFilterPersonId] = useState<number | undefined>(undefined);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [internalActiveTab] = useState<'illness' | 'growth'>('illness');
 
   const selectedYear = selectedYearProp ?? internalYear;
-  const filterChildId = filterChildIdProp ?? internalFilterChildId;
+  const filterPersonId = filterPersonIdProp ?? internalFilterPersonId;
   const activeTab = activeTabProp ?? internalActiveTab;
 
-  const { heatmapData, children, loading, error, reload } = useHeatmapData(
+  const { heatmapData, people, loading, error, reload } = useHeatmapData(
     selectedYear,
-    filterChildId,
+    filterPersonId,
   );
 
   const handleDayClick = (date: string) => {
@@ -66,9 +66,9 @@ function MetricsView({
     ? heatmapData.days.find(d => d.date === selectedDate)
     : null;
 
-  // For single child: count days with illness (severity > 0)
-  // For all children: sum up all sick days
-  const totalSickDays = filterChildId
+  // For single person: count days with illness (severity > 0)
+  // For all people: sum up all sick days
+  const totalSickDays = filterPersonId
     ? heatmapData.days.filter(d => d.count > 0).length
     : heatmapData.days.reduce((sum, day) => sum + Math.round(day.count), 0);
   const uniqueDaysWithIllness = heatmapData.days.filter(d => d.count > 0).length;
@@ -85,35 +85,35 @@ function MetricsView({
         <div className={styles.summary}>
         <Card className={`${styles.summaryCard} ${styles.summaryCardAvatars}`}>
           <div className={styles.summaryAvatars}>
-            {filterChildId ? (
+            {filterPersonId ? (
               (() => {
-                const child = children.find((c) => c.id === filterChildId);
-                if (!child) return null;
+                const person = people.find((c) => c.id === filterPersonId);
+                if (!person) return null;
                 return (
-                  <ChildAvatar
-                    avatar={child.avatar}
-                    gender={child.gender}
-                    alt={child.name}
+                  <PersonAvatar
+                    avatar={person.avatar}
+                    gender={person.gender}
+                    alt={person.name}
                     className={styles.summaryAvatarSingle}
                   />
                 );
               })()
             ) : (
-              children.slice(0, 6).map((child) => (
-                <ChildAvatar
-                  key={child.id}
-                  avatar={child.avatar}
-                  gender={child.gender}
-                  alt={child.name}
+              people.slice(0, 6).map((person) => (
+                <PersonAvatar
+                  key={person.id}
+                  avatar={person.avatar}
+                  gender={person.gender}
+                  alt={person.name}
                   className={styles.summaryAvatarItem}
                 />
               ))
             )}
           </div>
           <div className={styles.summaryLabel}>
-            {filterChildId 
-              ? children.find(c => c.id === filterChildId)?.name || 'Child'
-              : 'All Children'}
+            {filterPersonId 
+              ? people.find(c => c.id === filterPersonId)?.name || 'Person'
+              : 'All People'}
           </div>
         </Card>
 
@@ -125,13 +125,13 @@ function MetricsView({
           <div className={styles.summaryValue}>{totalSickDays}</div>
           <div className={styles.summaryLabel}>Total Sick Days</div>
         </Card>
-        {!filterChildId && (
+        {!filterPersonId && (
           <Card className={styles.summaryCard}>
             <div className={styles.summaryValue}>{Math.round(heatmapData.maxCount)}</div>
-            <div className={styles.summaryLabel}>Max Sick Children/Day</div>
+            <div className={styles.summaryLabel}>Max Sick People/Day</div>
           </Card>
         )}
-        {filterChildId && (
+        {filterPersonId && (
           <Card className={styles.summaryCard}>
             <div className={styles.summaryValue}>{Math.round(heatmapData.maxCount)}</div>
             <div className={styles.summaryLabel}>Max Severity</div>
@@ -173,33 +173,33 @@ function MetricsView({
               </div>
             </div>
             <p className={styles.heatmapDescription}>
-              {filterChildId
+              {filterPersonId
                 ? 'Each square represents a day. Darker colors indicate higher illness severity (1-10). Click on a day to see details.'
-                : 'Each square represents a day. Darker colors indicate more children were sick on that day. Click on a day to see details.'}
+                : 'Each square represents a day. Darker colors indicate more people were sick on that day. Click on a day to see details.'}
             </p>
             <Heatmap 
               data={heatmapData} 
               onDayClick={handleDayClick}
-              isSingleChild={filterChildId !== undefined}
-              totalChildren={filterChildId ? undefined : children.length}
+              isSinglePerson={filterPersonId !== undefined}
+              totalPeople={filterPersonId ? undefined : people.length}
             />
           </Card>
 
           {selectedDate && selectedDayData && (
             <Card title={`Details for ${formatDate(selectedDate)}`}>
               <div className={styles.dayDetails}>
-                {filterChildId ? (
+                {filterPersonId ? (
                   <p><strong>Severity:</strong> {Math.round(selectedDayData.count)}/10</p>
                 ) : (
                   <>
-                    <p><strong>Children Sick:</strong> {Math.round(selectedDayData.count)}</p>
+                    <p><strong>People Sick:</strong> {Math.round(selectedDayData.count)}</p>
                     {selectedDayData.children.length > 0 && (
                       <div>
-                        <strong>Affected Children:</strong>
+                        <strong>Affected People:</strong>
                         <ul>
-                          {selectedDayData.children.map(childId => {
-                            const child = children.find(c => c.id === childId);
-                            return <li key={childId}>{child?.name || `Child #${childId}`}</li>;
+                          {selectedDayData.children.map((personId: number) => {
+                            const person = people.find(c => c.id === personId);
+                            return <li key={personId}>{person?.name || `Person #${personId}`}</li>;
                           })}
                         </ul>
                       </div>
@@ -211,7 +211,7 @@ function MetricsView({
           )}
         </>
       ) : (
-        <GrowthChartTab filterChildId={filterChildId} />
+        <GrowthChartTab filterPersonId={filterPersonId} />
       )}
     </>
   );

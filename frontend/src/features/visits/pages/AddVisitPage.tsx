@@ -1,7 +1,7 @@
 import { useState, FormEvent, useEffect, useMemo, useCallback, type Dispatch, type SetStateAction } from 'react';
 import { Link, useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { visitsApi, childrenApi, ApiClientError } from '@lib/api-client';
-import type { Child, CreateVisitInput, VisitType, IllnessType } from '@shared/types/api';
+import { visitsApi, peopleApi, ApiClientError } from '@lib/api-client';
+import type { Person, CreateVisitInput, VisitType, IllnessType } from '@shared/types/api';
 import { getTodayDate } from '@lib/validation';
 import { isFutureDate } from '@lib/date-utils';
 import Card from '@shared/components/Card';
@@ -25,13 +25,13 @@ interface VisitFormState {
 
 
 function AddVisitPage() {
-  const { childId: childIdFromUrl } = useParams<{ childId?: string }>();
+  const { personId: personIdFromUrl } = useParams<{ personId?: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
 
-  const [children, setChildren] = useState<Child[]>([]);
-  const [selectedChildId, setSelectedChildId] = useState<number | null>(null);
+  const [people, setPeople] = useState<Person[]>([]);
+  const [selectedPersonId, setSelectedPersonId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -109,7 +109,7 @@ function AddVisitPage() {
   };
 
   useEffect(() => {
-    loadChildren();
+    loadPeople();
     // Show modal if visit type not provided in URL
     if (!visitTypeFromUrl) {
       setShowVisitTypeModal(true);
@@ -117,41 +117,41 @@ function AddVisitPage() {
   }, [visitTypeFromUrl]);
 
   // Determine origin for back/cancel navigation
-  const fromState = (location.state || {}) as { from?: string; fromTab?: string; fromChild?: boolean; childId?: string | number; fromVisits?: boolean };
+  const fromState = (location.state || {}) as { from?: string; fromTab?: string; fromPerson?: boolean; personId?: string | number; fromVisits?: boolean };
   const originFrom = typeof fromState.from === 'string' ? fromState.from : null;
   const originFromTab = fromState.fromTab as string | undefined; // e.g. 'visits' when returning to home tab
-  const originFromChild = !!fromState.fromChild;
-  const originChildId = fromState.childId ? parseInt(String(fromState.childId)) : (childIdFromUrl ? parseInt(childIdFromUrl) : null);
+  const originFromPerson = !!fromState.fromPerson;
+  const originPersonId = fromState.personId ? parseInt(String(fromState.personId)) : (personIdFromUrl ? parseInt(personIdFromUrl) : null);
   const originFromVisits = !!fromState.fromVisits;
 
   useEffect(() => {
-    // Set initial child selection
-    if (children.length > 0 && selectedChildId === null) {
-      const initialChildId = childIdFromUrl
-        ? parseInt(childIdFromUrl)
-        : children[0].id;
+    // Set initial person selection
+    if (people.length > 0 && selectedPersonId === null) {
+      const initialPersonId = personIdFromUrl
+        ? parseInt(personIdFromUrl)
+        : people[0].id;
 
-      if (children.find(c => c.id === initialChildId)) {
-        setSelectedChildId(initialChildId);
-        setFormData(prev => ({ ...prev, child_id: initialChildId }));
-        loadRecentData(initialChildId);
+      if (people.find(c => c.id === initialPersonId)) {
+        setSelectedPersonId(initialPersonId);
+        setFormData(prev => ({ ...prev, person_id: initialPersonId }));
+        loadRecentData(initialPersonId);
       }
     }
-  }, [children, childIdFromUrl]);
+  }, [people, personIdFromUrl]);
 
   useEffect(() => {
-    // Update form data when selected child changes
-    if (selectedChildId) {
-      setFormData(prev => ({ ...prev, child_id: selectedChildId }));
-      loadRecentData(selectedChildId);
+    // Update form data when selected person changes
+    if (selectedPersonId) {
+      setFormData(prev => ({ ...prev, person_id: selectedPersonId }));
+      loadRecentData(selectedPersonId);
     }
-  }, [selectedChildId]);
+  }, [selectedPersonId]);
 
-  const loadChildren = async () => {
+  const loadPeople = async () => {
     try {
       setLoading(true);
-      const response = await childrenApi.getAll();
-      setChildren(response.data);
+      const response = await peopleApi.getAll();
+      setPeople(response.data);
     } catch (error) {
       if (error instanceof ApiClientError) {
         setNotification({ message: error.message, type: 'error' });
@@ -161,9 +161,9 @@ function AddVisitPage() {
     }
   };
 
-  const loadRecentData = async (childId: number) => {
+  const loadRecentData = async (personId: number) => {
     try {
-      const response = await visitsApi.getAll({ child_id: childId });
+      const response = await visitsApi.getAll({ person_id: personId });
       const locations = [...new Set(response.data.map(v => v.location).filter(Boolean))] as string[];
       const doctors = [...new Set(response.data.map(v => v.doctor_name).filter(Boolean))] as string[];
       setRecentLocations(locations);
@@ -185,10 +185,10 @@ function AddVisitPage() {
   /** Limited form when no date yet or future date and user hasn't chosen full form (no outcome sections). */
   const isLimitedForm = noDateYet || useShortenedForm;
 
-  /** Subject type derived from selected child's user_id (self-row vs kid). */
-  const selectedChild = children.find((c) => c.id === selectedChildId) ?? null;
+  /** Subject type derived from selected person's user_id (self-row vs kid). */
+  const selectedPerson = people.find((c) => c.id === selectedPersonId) ?? null;
   const subjectType: 'child' | 'adult' =
-    selectedChild && selectedChild.user_id != null ? 'adult' : 'child';
+    selectedPerson && selectedPerson.user_id != null ? 'adult' : 'child';
 
   /** Must run unconditionally (before any early return) to satisfy Rules of Hooks. */
   const visitFormContext = useMemo(
@@ -207,9 +207,9 @@ function AddVisitPage() {
       pendingFiles,
       handleRemoveFile,
       handleFileUpload,
-      children,
-      selectedChildId: selectedChildId ?? null,
-      setSelectedChildId,
+      people,
+      selectedPersonId: selectedPersonId ?? null,
+      setSelectedPersonId,
       isFutureVisit: isLimitedForm,
     }),
     [
@@ -221,8 +221,8 @@ function AddVisitPage() {
       selectedIllnesses,
       setSelectedIllnesses,
       pendingFiles,
-      children,
-      selectedChildId,
+      people,
+      selectedPersonId,
       isLimitedForm,
       subjectType,
     ]
@@ -266,7 +266,7 @@ function AddVisitPage() {
       if (useShortenedForm) {
         // Future appointment: only pre-appointment fields
         payload = {
-          child_id: currentVisit.child_id,
+          person_id: currentVisit.person_id,
           visit_date: currentVisit.visit_date,
           visit_time: currentVisit.visit_time ?? null,
           visit_type: currentVisit.visit_type,
@@ -327,30 +327,30 @@ function AddVisitPage() {
     return <LoadingSpinner message="Loading..." />;
   }
 
-  // Block when there are no children/people in the family at all.
-  if (children.length === 0) {
+  // Block when there are no people/people in the family at all.
+  if (people.length === 0) {
     return (
       <div className={pageLayout.pageContainer}>
         <Card>
           <p className={pageLayout.emptyState}>
-            No children added yet. <Link to="/people/new">Add a child</Link> first to create visits.
+            No people added yet. <Link to="/people/new">Add a person</Link> first to create visits.
           </p>
         </Card>
       </div>
     );
   }
 
-  const childName = selectedChild?.name || 'Child';
+  const personName = selectedPerson?.name || 'Person';
 
   const handleCancel = () => {
     if (originFromTab || originFromVisits) {
       navigate('/', { state: { tab: originFromTab || 'visits' } });
     } else if (originFrom) {
       navigate(originFrom);
-    } else if (originFromChild && originChildId) {
-      navigate(`/people/${originChildId}`);
-    } else if (childIdFromUrl) {
-      navigate(`/people/${childIdFromUrl}`);
+    } else if (originFromPerson && originPersonId) {
+      navigate(`/people/${originPersonId}`);
+    } else if (personIdFromUrl) {
+      navigate(`/people/${personIdFromUrl}`);
     } else {
       navigate('/', { state: { tab: 'visits' } });
     }
@@ -371,10 +371,10 @@ function AddVisitPage() {
           <div className={`${formLayout.root} ${formLayout.hasDateBanner}`}>
             <div className={formLayout.backRow}>
               <Link
-                to={selectedChildId ? `/people/${selectedChildId}` : '/'}
+                to={selectedPersonId ? `/people/${selectedPersonId}` : '/'}
                 className={`${pageLayout.breadcrumb} ${formLayout.backLink}`}
               >
-                ← Back to {childName}
+                ← Back to {personName}
               </Link>
               <div className={styles.visitDetailActions}>
                 <Button type="submit" disabled={submitting} size="sm">

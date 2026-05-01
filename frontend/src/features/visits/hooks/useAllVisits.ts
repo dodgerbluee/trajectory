@@ -1,34 +1,34 @@
 import { useEffect, useState, useMemo } from 'react';
 import type { VisitType } from '@shared/types/api';
 import { useVisitsData } from './useVisitsData';
-import { useChildrenData } from '@features/children/hooks';
+import { usePeopleData } from '@features/people/hooks';
 
 const DEFAULT_ITEMS_PER_PAGE = 20;
 
 export function useAllVisits() {
   const { allVisits, loading: loadingVisits, error: errorVisits, reload: reloadVisits } = useVisitsData();
-  const { children, loading: loadingChildren, error: errorChildren, reload: reloadChildren } = useChildrenData();
+  const { people, loading: loadingPeople, error: errorPeople, reload: reloadPeople } = usePeopleData();
 
-  const [filterChildId, setFilterChildId] = useState<number | undefined>(undefined);
+  const [filterPersonId, setFilterPersonId] = useState<number | undefined>(undefined);
   const [filterVisitType, setFilterVisitType] = useState<VisitType | undefined>(undefined);
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_ITEMS_PER_PAGE);
 
   const filteredVisits = useMemo(() => {
     let result = allVisits;
-    if (filterChildId) {
-      result = result.filter(v => v.child_id === filterChildId);
+    if (filterPersonId) {
+      result = result.filter(v => v.person_id === filterPersonId);
     }
     if (filterVisitType) {
       result = result.filter(v => v.visit_type === filterVisitType);
     }
     return result;
-  }, [allVisits, filterChildId, filterVisitType]);
+  }, [allVisits, filterPersonId, filterVisitType]);
 
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(0);
-  }, [filterChildId, filterVisitType]);
+  }, [filterPersonId, filterVisitType]);
 
   // Get only visible visits on current page
   const visibleVisits = useMemo(() => {
@@ -59,13 +59,13 @@ export function useAllVisits() {
   return {
     allVisits,
     visits: visibleVisits,
-    children,
-    loading: loadingVisits || loadingChildren,
+    people,
+    loading: loadingVisits || loadingPeople,
     loadingAttachments: false,
-    error: errorVisits || errorChildren,
-    filterChildId,
+    error: errorVisits || errorPeople,
+    filterPersonId,
     filterVisitType,
-    setFilterChildId,
+    setFilterPersonId,
     setFilterVisitType,
     visitsWithAttachments,
     stats,
@@ -76,7 +76,7 @@ export function useAllVisits() {
     totalFilteredVisits: filteredVisits.length,
     reload: async () => {
       setCurrentPage(0);
-      await Promise.all([reloadVisits(), reloadChildren()]);
+      await Promise.all([reloadVisits(), reloadPeople()]);
     },
   };
 }

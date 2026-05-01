@@ -30,11 +30,11 @@ import s from '@features/settings/pages/SettingsPage.module.css';
 import familyLayout from './FamilyPage.module.css';
 
 import { FamilyOverviewCard, MemberRow, InviteRow } from '@features/settings/components';
-import { ApiClientError, childrenApi, familiesApi } from '@lib/api-client';
-import type { Child, Family, FamilyInvite, FamilyMember } from '@shared/types/api';
+import { ApiClientError, peopleApi, familiesApi } from '@lib/api-client';
+import type { Person, Family, FamilyInvite, FamilyMember } from '@shared/types/api';
 import { calculateAge, formatAge, formatDate } from '@lib/date-utils';
-import { ChildAvatar } from '@features/children';
-import { SelfRecordPromptModal } from '@features/children/components';
+import { PersonAvatar } from '@features/people';
+import { SelfRecordPromptModal } from '@features/people/components';
 import { useFamilyPermissions } from '@/contexts/FamilyPermissionsContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -121,11 +121,11 @@ export default function FamilyPage() {
   const [newFamilyName, setNewFamilyName] = useState('');
   const [newFamilyNameError, setNewFamilyNameError] = useState<string | null>(null);
 
-  const [childrenList, setChildrenList] = useState<Child[]>([]);
+  const [peopleList, setChildrenList] = useState<Person[]>([]);
   const [loadingKids, setLoadingKids] = useState(false);
   const [errorKids, setErrorKids] = useState<string | null>(null);
   const [deletingChildId, setDeletingChildId] = useState<number | null>(null);
-  const [deleteConfirmChild, setDeleteConfirmChild] = useState<Child | null>(null);
+  const [deleteConfirmChild, setDeleteConfirmChild] = useState<Person | null>(null);
   const [confirmDeleteChildInput, setConfirmDeleteChildInput] = useState('');
 
   const [savingMemberRole, setSavingMemberRole] = useState<{ familyId: number; userId: number } | null>(null);
@@ -134,7 +134,7 @@ export default function FamilyPage() {
   // This one is opened on demand from the Members tab when the user already
   // dismissed the first-login prompt but later wants to self-record.
   const [showSelfRecordModal, setShowSelfRecordModal] = useState(false);
-  const showAddYourselfButton = user?.hasSelfChild === false;
+  const showAddYourselfButton = user?.hasSelfRecord === false;
 
   // Onboarding: arriving on /family advances go_settings_family → create_family.
   useEffect(() => {
@@ -173,10 +173,10 @@ export default function FamilyPage() {
     setLoadingKids(true);
     setErrorKids(null);
     try {
-      const res = await childrenApi.getAll();
+      const res = await peopleApi.getAll();
       setChildrenList(res.data);
     } catch (err) {
-      setErrorKids(err instanceof ApiClientError ? err.message : 'Failed to load children');
+      setErrorKids(err instanceof ApiClientError ? err.message : 'Failed to load people');
     } finally {
       setLoadingKids(false);
     }
@@ -250,17 +250,17 @@ export default function FamilyPage() {
     }
   };
 
-  const handleDeleteChild = async (child: Child) => {
-    setDeletingChildId(child.id);
+  const handleDeleteChild = async (person: Person) => {
+    setDeletingChildId(person.id);
     try {
-      await childrenApi.delete(child.id);
-      setChildrenList((prev) => prev.filter((c) => c.id !== child.id));
-      notify({ message: `${child.name} has been deleted`, type: 'success' });
+      await peopleApi.delete(person.id);
+      setChildrenList((prev) => prev.filter((c) => c.id !== person.id));
+      notify({ message: `${person.name} has been deleted`, type: 'success' });
       setDeleteConfirmChild(null);
       setConfirmDeleteChildInput('');
     } catch (err) {
       notify({
-        message: err instanceof ApiClientError ? err.message || 'Failed to delete child' : 'Failed to delete child',
+        message: err instanceof ApiClientError ? err.message || 'Failed to delete person' : 'Failed to delete person',
         type: 'error',
       });
     } finally {
@@ -268,10 +268,10 @@ export default function FamilyPage() {
     }
   };
 
-  const childrenByFamilyId = useMemo(() => {
-    const map: Record<number, Child[]> = {};
+  const peopleByFamilyId = useMemo(() => {
+    const map: Record<number, Person[]> = {};
     for (const f of families) map[f.id] = [];
-    for (const c of childrenList) {
+    for (const c of peopleList) {
       const fid = c.family_id ?? families[0]?.id;
       if (fid != null && map[fid]) map[fid].push(c);
     }
@@ -281,7 +281,7 @@ export default function FamilyPage() {
       );
     }
     return map;
-  }, [families, childrenList]);
+  }, [families, peopleList]);
 
   const handleCreateInvite = async (familyId: number) => {
     setLoading((l) => ({ ...l, invite: true }));
@@ -454,7 +454,7 @@ export default function FamilyPage() {
   // ---- Members sub-tab content ----
   const membersContent = (
     <div className={s.familyMembersTab}>
-      {loadingKids && <LoadingSpinner message="Loading children…" />}
+      {loadingKids && <LoadingSpinner message="Loading people…" />}
       {errorKids && <ErrorMessage message={errorKids} onRetry={loadChildren} />}
       {!loadingKids && !errorKids && (
         <div className={s.familyMembersByFamily}>
@@ -484,40 +484,40 @@ export default function FamilyPage() {
           {[...families]
             .sort((a, b) => a.id - b.id)
             .map((family) => {
-              const kids = childrenByFamilyId[family.id] ?? [];
+              const kids = peopleByFamilyId[family.id] ?? [];
               const canEditFamily = family.role === 'owner' || family.role === 'parent';
               return (
                 <Card key={family.id} title={family.name} className={s.familyMembersFamilyCard}>
                   <div className={s.familyMembersKidsGrid}>
-                    {kids.map((child) => {
-                      const age = calculateAge(child.date_of_birth);
+                    {kids.map((person) => {
+                      const age = calculateAge(person.date_of_birth);
                       const ageText = formatAge(age.years, age.months);
                       return (
-                        <Card key={child.id} className={s.familyCard}>
+                        <Card key={person.id} className={s.familyCard}>
                           <div className={s.familyContent}>
                             <div className={s.familyAvatar}>
-                              <ChildAvatar
-                                avatar={child.avatar}
-                                gender={child.gender}
-                                alt={`${child.name}'s avatar`}
+                              <PersonAvatar
+                                avatar={person.avatar}
+                                gender={person.gender}
+                                alt={`${person.name}'s avatar`}
                                 className={s.familyAvatarImg}
                               />
                             </div>
                             <div className={s.familyInfo}>
-                              <h2 className={s.familyName}>{child.name}</h2>
+                              <h2 className={s.familyName}>{person.name}</h2>
                               <div className={s.familyDetails}>
                                 <span>{ageText}</span>
                                 <span>•</span>
-                                <span>{formatDate(child.date_of_birth)}</span>
+                                <span>{formatDate(person.date_of_birth)}</span>
                               </div>
                             </div>
                             {canEditFamily && (
                               <div className={`${s.familyActions} ${detailLayout.iconActions}`}>
                                 <Link
-                                  to={`/people/${child.id}/edit`}
+                                  to={`/people/${person.id}/edit`}
                                   className={detailLayout.iconAction}
-                                  title={`Edit ${child.name}`}
-                                  aria-label={`Edit ${child.name}`}
+                                  title={`Edit ${person.name}`}
+                                  aria-label={`Edit ${person.name}`}
                                 >
                                   <LuPencil aria-hidden />
                                 </Link>
@@ -525,15 +525,15 @@ export default function FamilyPage() {
                                   type="button"
                                   className={`${detailLayout.iconAction} ${detailLayout.iconActionDanger}`}
                                   onClick={() => {
-                                    setDeleteConfirmChild(child);
+                                    setDeleteConfirmChild(person);
                                     setConfirmDeleteChildInput('');
                                   }}
-                                  disabled={deletingChildId === child.id}
-                                  title={deletingChildId === child.id ? 'Deleting…' : `Delete ${child.name}`}
+                                  disabled={deletingChildId === person.id}
+                                  title={deletingChildId === person.id ? 'Deleting…' : `Delete ${person.name}`}
                                   aria-label={
-                                    deletingChildId === child.id
-                                      ? `Deleting ${child.name}`
-                                      : `Delete ${child.name}`
+                                    deletingChildId === person.id
+                                      ? `Deleting ${person.name}`
+                                      : `Delete ${person.name}`
                                   }
                                 >
                                   <LuTrash2 aria-hidden />
@@ -560,9 +560,9 @@ export default function FamilyPage() {
                               <div className={s.familyAddAvatar}>+</div>
                             </div>
                             <div className={s.familyInfo}>
-                              <h2 className={s.familyName}>Add Child</h2>
+                              <h2 className={s.familyName}>Add Person</h2>
                               <div className={s.familyDetails}>
-                                <span>Add a child to {family.name}</span>
+                                <span>Add a person to {family.name}</span>
                               </div>
                             </div>
                           </div>
@@ -983,7 +983,7 @@ export default function FamilyPage() {
           className={modalStyles.overlay}
           role="dialog"
           aria-modal="true"
-          aria-labelledby="delete-child-modal-title"
+          aria-labelledby="delete-person-modal-title"
           onClick={() => {
             setDeleteConfirmChild(null);
             setConfirmDeleteChildInput('');
@@ -994,7 +994,7 @@ export default function FamilyPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className={modalStyles.header}>
-              <h2 id="delete-child-modal-title">⚠️ Delete {deleteConfirmChild.name}</h2>
+              <h2 id="delete-person-modal-title">⚠️ Delete {deleteConfirmChild.name}</h2>
               <button
                 type="button"
                 className={modalStyles.close}

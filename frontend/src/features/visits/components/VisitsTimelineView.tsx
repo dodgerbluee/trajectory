@@ -1,14 +1,14 @@
 import { memo } from 'react';
-import type { Child, Visit } from '@shared/types/api';
+import type { Person, Visit } from '@shared/types/api';
 import visitsLayout from '@shared/styles/VisitsLayout.module.css';
 import VisitsTimeline from './VisitsTimeline';
 import PaginationControls from '@shared/components/PaginationControls';
 
 interface VisitsTimelineViewProps {
   visits: Visit[];
-  children: Child[];
+  people: Person[];
   visitsWithAttachments: Set<number>;
-  showChildName?: boolean;
+  showPersonName?: boolean;
   currentPage?: number;
   itemsPerPage?: number;
   totalItems?: number;
@@ -18,9 +18,9 @@ interface VisitsTimelineViewProps {
 
 function VisitsTimelineView({
   visits,
-  children,
+  people,
   visitsWithAttachments,
-  showChildName = true,
+  showPersonName = true,
   currentPage = 0,
   itemsPerPage = 20,
   totalItems = 0,
@@ -32,9 +32,9 @@ function VisitsTimelineView({
       <div className={visitsLayout.mainContent}>
         <VisitsTimeline
           visits={visits}
-          children={children}
+          people={people}
           visitsWithAttachments={visitsWithAttachments}
-          showChildName={showChildName}
+          showPersonName={showPersonName}
         />
       </div>
       {totalItems > 0 && onPageChange && onItemsPerPageChange && (

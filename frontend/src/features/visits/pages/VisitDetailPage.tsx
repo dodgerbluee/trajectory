@@ -30,7 +30,7 @@ function VisitDetailPage() {
 
   // Use the new hook that handles all visit detail data and state
   const visitDetail = useVisitDetail(id ? parseInt(id) : undefined);
-  const { visit, child, attachments, history, loading, error, notification, deleteAttachment, setNotification } = visitDetail;
+  const { visit, person, attachments, history, loading, error, notification, deleteAttachment, setNotification } = visitDetail;
 
   // UI state (local to this component)
   const [activeTab, setActiveTab] = useState<'visit' | 'history' | 'attachments'>('visit');
@@ -47,10 +47,10 @@ function VisitDetailPage() {
    */
   const handleExportToCalendar = () => {
     if (!visit) return;
-    if (!child) return;
+    if (!person) return;
 
     const typeLabel = getVisitTypeLabel(visit.visit_type);
-    const subjectName = child.name;
+    const subjectName = person.name;
     const title = getCalendarExportTitle(subjectName, typeLabel);
     const url = getGoogleCalendarAddEventUrl({
       title,
@@ -72,7 +72,7 @@ function VisitDetailPage() {
   if (!visit) {
     return <ErrorMessage message="Visit not found" />;
   }
-  if (!child) {
+  if (!person) {
     return <ErrorMessage message="Visit not found" />;
   }
 
@@ -94,10 +94,10 @@ function VisitDetailPage() {
           {/* Header with Back button and Actions */}
           <div className={layoutStyles.detailHeader}>
             <Link
-              to={`/people/${visit.child_id}`}
+              to={`/people/${visit.person_id}`}
               className={pageLayout.breadcrumb}
             >
-              ← Back to {child.name}
+              ← Back to {person.name}
             </Link>
             <div className={styles.iconActions}>
               <button
@@ -112,7 +112,7 @@ function VisitDetailPage() {
               {canEdit && (
                 <Link
                   to={`/visits/${visit.id}/edit`}
-                  state={{ childId: visit.child_id, fromChild: (location.state as { fromChild?: boolean })?.fromChild || false }}
+                  state={{ personId: visit.person_id, fromPerson: (location.state as { fromPerson?: boolean })?.fromPerson || false }}
                   className={styles.iconAction}
                   title={isFuture ? 'Edit appointment' : 'Edit visit'}
                   aria-label={isFuture ? 'Edit appointment' : 'Edit visit'}

@@ -2,7 +2,7 @@
  * MobileHomeFeed – primary home screen for mobile (<768px).
  *
  * Composition (top → bottom):
- *  1. Greeting + child chip row          (filter scope for the rest of the feed)
+ *  1. Greeting + person chip row          (filter scope for the rest of the feed)
  *  2. Quick actions row                  (Log Visit / Illness / Measure / Attach)
  *  3. Upcoming visits carousel           (horizontal swipe)
  *  4. Active illnesses (if any)          (compact list)
@@ -16,23 +16,23 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LuX } from 'react-icons/lu';
-import type { Child, Family, Illness, Visit } from '@shared/types/api';
+import type { Person, Family, Illness, Visit } from '@shared/types/api';
 import { useAuth } from '@/contexts/AuthContext';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
 import ErrorMessage from '@shared/components/ErrorMessage';
 import PullToRefresh from '@shared/components/PullToRefresh';
-import { ChildAvatar } from '@features/children';
+import { PersonAvatar } from '@features/people';
 import { useIllnessesData } from '@features/illnesses/hooks/useIllnessesData';
 import { useAllVisits } from '@features/visits/hooks/useAllVisits';
 import { formatDate, isFutureDate } from '@lib/date-utils';
 import { getVisitTypeIcon, getVisitTypeLabel } from '@shared/lib/visit-icons';
-import ChildChipRow from './ChildChipRow';
+import PersonChipRow from './PersonChipRow';
 import QuickActionsRow from './QuickActionsRow';
 import UpcomingVisitsCarousel from './UpcomingVisitsCarousel';
 import styles from './MobileHomeFeed.module.css';
 
 interface MobileHomeFeedProps {
-  children: Child[];
+  people: Person[];
   families: Family[];
   upcomingVisits: Visit[];
   loading: boolean;
@@ -42,7 +42,7 @@ interface MobileHomeFeedProps {
 }
 
 function MobileHomeFeed({
-  children: childrenList,
+  people: peopleList,
   families: _families,
   upcomingVisits,
   loading,
@@ -52,7 +52,7 @@ function MobileHomeFeed({
 }: MobileHomeFeedProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [selectedChildId, setSelectedChildId] = useState<number | null>(null);
+  const [selectedPersonId, setSelectedPersonId] = useState<number | null>(null);
 
   // Recent activity sources (kept inside this component because they are
   // mobile-only; the desktop home doesn't surface them on the Family tab).
@@ -78,25 +78,25 @@ function MobileHomeFeed({
 
   const activeIllnesses = useMemo(() => {
     const filtered = illnesses.filter((i) => !i.end_date);
-    return selectedChildId == null
+    return selectedPersonId == null
       ? filtered
-      : filtered.filter((i) => i.child_id === selectedChildId);
-  }, [illnesses, selectedChildId]);
+      : filtered.filter((i) => i.person_id === selectedPersonId);
+  }, [illnesses, selectedPersonId]);
 
   const recent = useMemo(() => {
     const base = recentVisits.filter((v) => !isFutureDate(v.visit_date));
     const filtered =
-      selectedChildId == null ? base : base.filter((v) => v.child_id === selectedChildId);
+      selectedPersonId == null ? base : base.filter((v) => v.person_id === selectedPersonId);
     return [...filtered]
       .sort((a, b) => new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime())
       .slice(0, 5);
-  }, [recentVisits, selectedChildId]);
+  }, [recentVisits, selectedPersonId]);
 
-  const childById = useMemo(() => {
-    const map = new Map<number, Child>();
-    for (const c of childrenList) map.set(c.id, c);
+  const personById = useMemo(() => {
+    const map = new Map<number, Person>();
+    for (const c of peopleList) map.set(c.id, c);
     return map;
-  }, [childrenList]);
+  }, [peopleList]);
 
   if (loading) {
     return <LoadingSpinner message="Loading family..." />;
@@ -105,12 +105,12 @@ function MobileHomeFeed({
     return <ErrorMessage message={error} onRetry={onRetry} />;
   }
 
-  if (childrenList.length === 0) {
+  if (peopleList.length === 0) {
     // Empty state mirrors desktop: route through onboarding via FamilyTabView.
     return (
       <div className={styles.empty}>
         <h2>Welcome to Trajectory</h2>
-        <p>Add your first child to get started.</p>
+        <p>Add your first person to get started.</p>
         <Link to="/family" className={styles.emptyCta}>
           Go to Family
         </Link>
@@ -126,12 +126,12 @@ function MobileHomeFeed({
             {greeting}
             {greetingName ? `, ${greetingName}` : ''}.
           </p>
-          {selectedChildId != null && (
+          {selectedPersonId != null && (
             <button
               type="button"
               className={styles.clearFilterBtn}
-              onClick={() => setSelectedChildId(null)}
-              aria-label="Clear child filter, show all children"
+              onClick={() => setSelectedPersonId(null)}
+              aria-label="Clear person filter, show all people"
             >
               <LuX aria-hidden="true" />
               <span>Show all</span>
@@ -139,18 +139,18 @@ function MobileHomeFeed({
           )}
         </header>
 
-        <ChildChipRow
-          childrenList={childrenList}
-          selectedId={selectedChildId}
-          onSelect={setSelectedChildId}
+        <PersonChipRow
+          peopleList={peopleList}
+          selectedId={selectedPersonId}
+          onSelect={setSelectedPersonId}
         />
 
-        <QuickActionsRow childId={selectedChildId} />
+        <QuickActionsRow personId={selectedPersonId} />
 
         <UpcomingVisitsCarousel
           upcomingVisits={upcomingVisits}
-          childrenList={childrenList}
-          filterChildId={selectedChildId}
+          peopleList={peopleList}
+          filterPersonId={selectedPersonId}
           loading={loadingUpcoming}
         />
 
@@ -163,7 +163,7 @@ function MobileHomeFeed({
             </div>
             <ul className={styles.list}>
               {activeIllnesses.slice(0, 5).map((illness: Illness) => {
-                const child = childById.get(illness.child_id);
+                const person = personById.get(illness.person_id);
                 const label =
                   illness.illness_types && illness.illness_types.length > 0
                     ? illness.illness_types.join(', ')
@@ -175,7 +175,7 @@ function MobileHomeFeed({
                       <span className={styles.rowBody}>
                         <span className={styles.rowTitle}>{label}</span>
                         <span className={styles.rowMeta}>
-                          {child?.name ?? 'Child'} · since {formatDate(illness.start_date)}
+                          {person?.name ?? 'Person'} · since {formatDate(illness.start_date)}
                         </span>
                       </span>
                       <span className={styles.rowChevron} aria-hidden="true">
@@ -209,17 +209,17 @@ function MobileHomeFeed({
           ) : (
             <ul className={styles.list}>
               {recent.map((v) => {
-                const child = childById.get(v.child_id);
+                const person = personById.get(v.person_id);
                 const overdue =
                   !isFutureDate(v.visit_date) && !v.doctor_name && !v.location;
                 return (
                   <li key={v.id}>
                     <Link to={`/visits/${v.id}`} className={styles.row}>
                       <span className={styles.rowAvatar} aria-hidden="true">
-                        {child ? (
-                          <ChildAvatar
-                            avatar={child.avatar}
-                            gender={child.gender}
+                        {person ? (
+                          <PersonAvatar
+                            avatar={person.avatar}
+                            gender={person.gender}
                             alt=""
                             className={styles.avatarImg}
                           />
@@ -231,7 +231,7 @@ function MobileHomeFeed({
                           {getVisitTypeLabel(v.visit_type)}
                         </span>
                         <span className={styles.rowMeta}>
-                          {child?.name ?? 'Child'} · {formatDate(v.visit_date)}
+                          {person?.name ?? 'Person'} · {formatDate(v.visit_date)}
                           {overdue ? ' · needs outcome' : ''}
                         </span>
                       </span>

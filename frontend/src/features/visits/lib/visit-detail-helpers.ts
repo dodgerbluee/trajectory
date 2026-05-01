@@ -33,11 +33,11 @@ export function getVisitTypeTitle(visitType: string): string {
 
 /**
  * Generates a calendar export title for the visit.
- * Combines child name with visit type for clarity.
+ * Combines person name with visit type for clarity.
  */
-export function getCalendarExportTitle(childName: string | null, visitTypeLabel: string): string {
-  if (childName) {
-    return `${childName}'s ${visitTypeLabel} Appointment`;
+export function getCalendarExportTitle(personName: string | null, visitTypeLabel: string): string {
+  if (personName) {
+    return `${personName}'s ${visitTypeLabel} Appointment`;
   }
   return `${visitTypeLabel} Appointment`;
 }

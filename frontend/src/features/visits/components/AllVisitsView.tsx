@@ -26,12 +26,12 @@ function AllVisitsView() {
 function DesktopAllVisitsView() {
   const {
     visits,
-    children,
+    people,
     loading,
     error,
-    filterChildId,
+    filterPersonId,
     filterVisitType,
-    setFilterChildId,
+    setFilterPersonId,
     setFilterVisitType,
     visitsWithAttachments,
     stats,
@@ -61,9 +61,9 @@ function DesktopAllVisitsView() {
       <div className={visitsLayout.pageLayout}>
         <VisitFilterSidebar
           stats={sidebarStats}
-          childrenList={children}
-          selectedChildId={filterChildId}
-          onSelectChild={(id: number | undefined) => setFilterChildId(id)}
+          peopleList={people}
+          selectedPersonId={filterPersonId}
+          onSelectPerson={(id: number | undefined) => setFilterPersonId(id)}
         />
         <div aria-busy="true" aria-label="Loading visits">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -78,16 +78,16 @@ function DesktopAllVisitsView() {
     <div className={visitsLayout.pageLayout}>
       <VisitFilterSidebar
         stats={sidebarStats}
-        childrenList={children}
-        selectedChildId={filterChildId}
-        onSelectChild={(id: number | undefined) => setFilterChildId(id)}
+        peopleList={people}
+        selectedPersonId={filterPersonId}
+        onSelectPerson={(id: number | undefined) => setFilterPersonId(id)}
       />
 
       <VisitsTimelineView
         visits={visits}
-        children={children}
+        people={people}
         visitsWithAttachments={visitsWithAttachments}
-        showChildName={true}
+        showPersonName={true}
         currentPage={currentPage}
         itemsPerPage={itemsPerPage}
         totalItems={totalFilteredVisits}

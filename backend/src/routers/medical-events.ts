@@ -8,7 +8,7 @@ import { query } from '../db/connection.js';
 import type { MedicalEventRow, CreateMedicalEventInput, EventType } from '../types/database.js';
 import { NotFoundError, ForbiddenError } from '../middleware/error-handler.js';
 import type { AuthRequest } from '../middleware/auth.js';
-import { canEditChild } from '../features/families/service/family-access.js';
+import { canEditPerson } from '../features/families/service/family-access.js';
 import {
   validateRequired,
   validateDate,
@@ -29,19 +29,19 @@ export const medicalEventsRouter = express.Router({ mergeParams: true });
 const EVENT_TYPES = ['doctor_visit', 'illness'] as const;
 
 /**
- * GET /api/children/:childId/medical-events
- * Get all medical events for a child with pagination and date filtering
+ * GET /api/people/:personId/medical-events
+ * Get all medical events for a person with pagination and date filtering
  * Query params: page, limit, start_date, end_date, event_type
  */
 medicalEventsRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const childId = validatePositiveInteger(req.params.childId, 'childId');
+    const personId = validatePositiveInteger(req.params.personId, 'personId');
     const pagination = parsePaginationParams(req.query);
     const dateRange = parseDateRange(req.query);
 
     // Build WHERE clause
-    const conditions = ['child_id = $1'];
-    const values: unknown[] = [childId];
+    const conditions = ['person_id = $1'];
+    const values: unknown[] = [personId];
     let paramIndex = 2;
 
     // Date range filter on start_date
@@ -84,7 +84,7 @@ medicalEventsRouter.get('/', async (req: Request, res: Response, next: NextFunct
     const events = result.rows.map(formatEventForResponse);
 
     res.json(createPaginatedResponse(events, total, pagination, {
-      child_id: childId,
+      person_id: personId,
       ...dateRange,
     }));
   } catch (error) {
@@ -116,18 +116,18 @@ medicalEventsRouter.get('/:id', async (req: Request, res: Response, next: NextFu
 });
 
 /**
- * POST /api/children/:childId/medical-events
+ * POST /api/people/:personId/medical-events
  * Create a new medical event
  */
 medicalEventsRouter.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const childId = validatePositiveInteger(req.params.childId, 'childId');
-    if (!(await canEditChild((req as AuthRequest).userId!, childId))) {
-      throw new ForbiddenError('You do not have permission to add medical events for this child.');
+    const personId = validatePositiveInteger(req.params.personId, 'personId');
+    if (!(await canEditPerson((req as AuthRequest).userId!, personId))) {
+      throw new ForbiddenError('You do not have permission to add medical events for this person.');
     }
 
     const input: CreateMedicalEventInput = {
-      child_id: childId,
+      person_id: personId,
       event_type: validateEnum<EventType>(req.body.event_type, 'event_type', EVENT_TYPES),
       start_date: validateDate(req.body.start_date, 'start_date'),
       end_date: validateOptionalDate(req.body.end_date, 'end_date'),
@@ -139,12 +139,12 @@ medicalEventsRouter.post('/', async (req: Request, res: Response, next: NextFunc
 
     const result = await query<MedicalEventRow>(
       `INSERT INTO medical_events (
-        child_id, event_type, start_date, end_date, description
+        person_id, event_type, start_date, end_date, description
       )
       VALUES ($1, $2, $3, $4, $5)
       RETURNING *`,
       [
-        input.child_id,
+        input.person_id,
         input.event_type,
         input.start_date,
         input.end_date,
@@ -165,14 +165,14 @@ medicalEventsRouter.post('/', async (req: Request, res: Response, next: NextFunc
 medicalEventsRouter.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = validatePositiveInteger(req.params.id, 'id');
-    const existing = await query<{ child_id: number }>(
-      'SELECT child_id FROM medical_events WHERE id = $1',
+    const existing = await query<{ person_id: number }>(
+      'SELECT person_id FROM medical_events WHERE id = $1',
       [id]
     );
     if (existing.rows.length === 0) {
       throw new NotFoundError('Medical event');
     }
-    if (!(await canEditChild((req as AuthRequest).userId!, existing.rows[0].child_id))) {
+    if (!(await canEditPerson((req as AuthRequest).userId!, existing.rows[0].person_id))) {
       throw new ForbiddenError('You do not have permission to edit this medical event.');
     }
 
@@ -232,14 +232,14 @@ medicalEventsRouter.put('/:id', async (req: Request, res: Response, next: NextFu
 medicalEventsRouter.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = validatePositiveInteger(req.params.id, 'id');
-    const existing = await query<{ child_id: number }>(
-      'SELECT child_id FROM medical_events WHERE id = $1',
+    const existing = await query<{ person_id: number }>(
+      'SELECT person_id FROM medical_events WHERE id = $1',
       [id]
     );
     if (existing.rows.length === 0) {
       throw new NotFoundError('Medical event');
     }
-    if (!(await canEditChild((req as AuthRequest).userId!, existing.rows[0].child_id))) {
+    if (!(await canEditPerson((req as AuthRequest).userId!, existing.rows[0].person_id))) {
       throw new ForbiddenError('You do not have permission to delete this medical event.');
     }
 
@@ -265,7 +265,7 @@ medicalEventsRouter.delete('/:id', async (req: Request, res: Response, next: Nex
 function formatEventForResponse(row: MedicalEventRow) {
   return {
     id: row.id,
-    child_id: row.child_id,
+    person_id: row.person_id,
     event_type: row.event_type,
     start_date: row.start_date.toISOString().split('T')[0],
     end_date: row.end_date ? row.end_date.toISOString().split('T')[0] : null,

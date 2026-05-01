@@ -5,18 +5,18 @@ import { IllnessCard } from '@features/illnesses';
 interface TimelineItemProps {
   type: 'visit' | 'illness';
   data: Visit | Illness;
-  childName?: string;
-  childId?: number;
+  personName?: string;
+  personId?: number;
   hasAttachments?: boolean;
 }
 
-function TimelineItem({ type, data, childName, childId, hasAttachments }: TimelineItemProps) {
+function TimelineItem({ type, data, personName, personId, hasAttachments }: TimelineItemProps) {
   if (type === 'visit') {
     return (
       <VisitCard
         visit={data as Visit}
-        childName={childName}
-        childId={childId}
+        personName={personName}
+        personId={personId}
         hasAttachments={hasAttachments}
       />
     );
@@ -25,8 +25,8 @@ function TimelineItem({ type, data, childName, childId, hasAttachments }: Timeli
   return (
     <IllnessCard
       illness={data as Illness}
-      childName={childName}
-      childId={childId}
+      personName={personName}
+      personId={personId}
       hasAttachments={hasAttachments}
     />
   );

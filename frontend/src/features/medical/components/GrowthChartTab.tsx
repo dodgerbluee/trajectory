@@ -1,6 +1,6 @@
 /**
  * Growth Chart Tab Component
- * Displays growth metrics over age for selected children
+ * Displays growth metrics over age for selected people
  */
 
 import LoadingSpinner from '@shared/components/LoadingSpinner';
@@ -11,11 +11,11 @@ import { useGrowthData } from '../hooks';
 import styles from './GrowthChartTab.module.css';
 
 interface GrowthChartTabProps {
-  filterChildId?: number;
+  filterPersonId?: number;
 }
 
-function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
-  const { data: growthData, loading, error, reload } = useGrowthData(filterChildId);
+function GrowthChartTab({ filterPersonId }: GrowthChartTabProps) {
+  const { data: growthData, loading, error, reload } = useGrowthData(filterPersonId);
 
   if (loading) {
     return <LoadingSpinner message="Loading growth data..." />;
@@ -25,7 +25,7 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
     return <ErrorMessage message={error} onRetry={reload} />;
   }
 
-  const isMultiChild = !filterChildId && growthData.length > 0;
+  const isMultiPerson = !filterPersonId && growthData.length > 0;
   const filteredGrowthData = growthData;
 
   return (
@@ -39,31 +39,31 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                 <div className={styles.item}>
                   <h4 className={styles.itemTitle}>Weight Over Time (by Age)</h4>
                   <p className={styles.description}>
-                    {filterChildId
+                    {filterPersonId
                       ? 'Weight plotted by age at time of wellness visit.'
-                      : 'Weight for all children plotted by age. Each child is shown with a different color.'}
+                      : 'Weight for all people plotted by age. Each person is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
                     data={filteredGrowthData}
                     metric="weight"
                     mode="value"
-                    isMultiChild={isMultiChild}
-                    filterChildId={filterChildId}
+                    isMultiPerson={isMultiPerson}
+                    filterPersonId={filterPersonId}
                   />
                 </div>
                 <div className={styles.item}>
                   <h4 className={styles.itemTitle}>Weight Percentiles Over Time (by Age)</h4>
                   <p className={styles.description}>
-                    {filterChildId
+                    {filterPersonId
                       ? 'Weight percentile plotted by age at time of wellness visit.'
-                      : 'Weight percentiles for all children plotted by age. Each child is shown with a different color.'}
+                      : 'Weight percentiles for all people plotted by age. Each person is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
                     data={filteredGrowthData}
                     metric="weight"
                     mode="percentile"
-                    isMultiChild={isMultiChild}
-                    filterChildId={filterChildId}
+                    isMultiPerson={isMultiPerson}
+                    filterPersonId={filterPersonId}
                   />
                 </div>
               </>
@@ -74,31 +74,31 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                 <div className={styles.item}>
                   <h4 className={styles.itemTitle}>Height Over Time (by Age)</h4>
                   <p className={styles.description}>
-                    {filterChildId
+                    {filterPersonId
                       ? 'Height plotted by age at time of wellness visit.'
-                      : 'Height for all children plotted by age. Each child is shown with a different color.'}
+                      : 'Height for all people plotted by age. Each person is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
                     data={filteredGrowthData}
                     metric="height"
                     mode="value"
-                    isMultiChild={isMultiChild}
-                    filterChildId={filterChildId}
+                    isMultiPerson={isMultiPerson}
+                    filterPersonId={filterPersonId}
                   />
                 </div>
                 <div className={styles.item}>
                   <h4 className={styles.itemTitle}>Height Percentiles Over Time (by Age)</h4>
                   <p className={styles.description}>
-                    {filterChildId
+                    {filterPersonId
                       ? 'Height percentile plotted by age at time of wellness visit.'
-                      : 'Height percentiles for all children plotted by age. Each child is shown with a different color.'}
+                      : 'Height percentiles for all people plotted by age. Each person is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
                     data={filteredGrowthData}
                     metric="height"
                     mode="percentile"
-                    isMultiChild={isMultiChild}
-                    filterChildId={filterChildId}
+                    isMultiPerson={isMultiPerson}
+                    filterPersonId={filterPersonId}
                   />
                 </div>
               </>
@@ -109,31 +109,31 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                 <div className={styles.item}>
                   <h4 className={styles.itemTitle}>Head Circumference Over Time (by Age)</h4>
                   <p className={styles.description}>
-                    {filterChildId
+                    {filterPersonId
                       ? 'Head circumference plotted by age at time of wellness visit.'
-                      : 'Head circumference for all children plotted by age. Each child is shown with a different color.'}
+                      : 'Head circumference for all people plotted by age. Each person is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
                     data={filteredGrowthData}
                     metric="head_circumference"
                     mode="value"
-                    isMultiChild={isMultiChild}
-                    filterChildId={filterChildId}
+                    isMultiPerson={isMultiPerson}
+                    filterPersonId={filterPersonId}
                   />
                 </div>
                 <div className={styles.item}>
                   <h4 className={styles.itemTitle}>Head Circumference Percentiles Over Time (by Age)</h4>
                   <p className={styles.description}>
-                    {filterChildId
+                    {filterPersonId
                       ? 'Head circumference percentile plotted by age at time of wellness visit.'
-                      : 'Head circumference percentiles for all children plotted by age. Each child is shown with a different color.'}
+                      : 'Head circumference percentiles for all people plotted by age. Each person is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
                     data={filteredGrowthData}
                     metric="head_circumference"
                     mode="percentile"
-                    isMultiChild={isMultiChild}
-                    filterChildId={filterChildId}
+                    isMultiPerson={isMultiPerson}
+                    filterPersonId={filterPersonId}
                   />
                 </div>
               </>
@@ -144,31 +144,31 @@ function GrowthChartTab({ filterChildId }: GrowthChartTabProps) {
                 <div className={styles.item}>
                   <h4 className={styles.itemTitle}>BMI Over Time (by Age)</h4>
                   <p className={styles.description}>
-                    {filterChildId
+                    {filterPersonId
                       ? 'BMI plotted by age at time of wellness visit.'
-                      : 'BMI for all children plotted by age. Each child is shown with a different color.'}
+                      : 'BMI for all people plotted by age. Each person is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
                     data={filteredGrowthData}
                     metric="bmi"
                     mode="value"
-                    isMultiChild={isMultiChild}
-                    filterChildId={filterChildId}
+                    isMultiPerson={isMultiPerson}
+                    filterPersonId={filterPersonId}
                   />
                 </div>
                 <div className={styles.item}>
                   <h4 className={styles.itemTitle}>BMI Percentiles Over Time (by Age)</h4>
                   <p className={styles.description}>
-                    {filterChildId
+                    {filterPersonId
                       ? 'BMI percentile plotted by age at time of wellness visit.'
-                      : 'BMI percentiles for all children plotted by age. Each child is shown with a different color.'}
+                      : 'BMI percentiles for all people plotted by age. Each person is shown with a different color.'}
                   </p>
                   <SingleMetricGrowthChart
                     data={filteredGrowthData}
                     metric="bmi"
                     mode="percentile"
-                    isMultiChild={isMultiChild}
-                    filterChildId={filterChildId}
+                    isMultiPerson={isMultiPerson}
+                    filterPersonId={filterPersonId}
                   />
                 </div>
               </>

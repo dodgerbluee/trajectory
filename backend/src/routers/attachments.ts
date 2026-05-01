@@ -10,11 +10,11 @@ import path from 'path';
 import fs from 'fs/promises';
 import { randomUUID } from 'crypto';
 import { query } from '../db/connection.js';
-import type { MeasurementAttachmentRow, VisitAttachmentRow, ChildAttachmentRow } from '../types/database.js';
+import type { MeasurementAttachmentRow, VisitAttachmentRow, PersonAttachmentRow } from '../types/database.js';
 import { createResponse } from '../types/api.js';
 import { recordAuditEvent } from '../features/shared/service/audit.js';
 import { authenticate, authenticateHeaderOrQuery, type AuthRequest } from '../middleware/auth.js';
-import { canAccessChild, canEditChild } from '../features/families/service/family-access.js';
+import { canAccessPerson, canEditPerson } from '../features/families/service/family-access.js';
 import { ForbiddenError } from '../middleware/error-handler.js';
 
 // Extend Express Request type to include file (module augmentation; avoids namespaces)
@@ -27,20 +27,20 @@ declare module 'express-serve-static-core' {
 const router = Router();
 // Note: Authentication is applied per-route to allow authenticateHeaderOrQuery for GET /attachments/:id
 
-/** Resolve attachment id (any table) to child_id for access check. */
-async function getChildIdForAttachment(attachmentId: number): Promise<number | null> {
-  const child = await query<{ child_id: number }>('SELECT child_id FROM child_attachments WHERE id = $1', [attachmentId]);
-  if (child.rows.length > 0) return child.rows[0].child_id;
-  const visit = await query<{ child_id: number }>(
-    'SELECT v.child_id FROM visit_attachments va INNER JOIN visits v ON v.id = va.visit_id WHERE va.id = $1',
+/** Resolve attachment id (any table) to person_id for access check. */
+async function getPersonIdForAttachment(attachmentId: number): Promise<number | null> {
+  const person = await query<{ person_id: number }>('SELECT person_id FROM person_attachments WHERE id = $1', [attachmentId]);
+  if (person.rows.length > 0) return person.rows[0].person_id;
+  const visit = await query<{ person_id: number }>(
+    'SELECT v.person_id FROM visit_attachments va INNER JOIN visits v ON v.id = va.visit_id WHERE va.id = $1',
     [attachmentId]
   );
-  if (visit.rows.length > 0) return visit.rows[0].child_id;
-  const meas = await query<{ child_id: number }>(
-    'SELECT m.child_id FROM measurement_attachments ma INNER JOIN measurements m ON m.id = ma.measurement_id WHERE ma.id = $1',
+  if (visit.rows.length > 0) return visit.rows[0].person_id;
+  const meas = await query<{ person_id: number }>(
+    'SELECT m.person_id FROM measurement_attachments ma INNER JOIN measurements m ON m.id = ma.measurement_id WHERE ma.id = $1',
     [attachmentId]
   );
-  if (meas.rows.length > 0) return meas.rows[0].child_id;
+  if (meas.rows.length > 0) return meas.rows[0].person_id;
   return null;
 }
 
@@ -71,7 +71,7 @@ async function ensureUploadDir() {
  */
 async function checkStoredFilenameExists(storedFilename: string): Promise<boolean> {
   // Check all three tables in parallel
-  const [measurementResult, visitResult, childResult] = await Promise.all([
+  const [measurementResult, visitResult, personResult] = await Promise.all([
     query<{ exists: boolean }>(
       'SELECT EXISTS(SELECT 1 FROM measurement_attachments WHERE stored_filename = $1) as exists',
       [storedFilename]
@@ -81,7 +81,7 @@ async function checkStoredFilenameExists(storedFilename: string): Promise<boolea
       [storedFilename]
     ),
     query<{ exists: boolean }>(
-      'SELECT EXISTS(SELECT 1 FROM child_attachments WHERE stored_filename = $1) as exists',
+      'SELECT EXISTS(SELECT 1 FROM person_attachments WHERE stored_filename = $1) as exists',
       [storedFilename]
     ),
   ]);
@@ -89,7 +89,7 @@ async function checkStoredFilenameExists(storedFilename: string): Promise<boolea
   return (
     measurementResult.rows[0].exists ||
     visitResult.rows[0].exists ||
-    childResult.rows[0].exists
+    personResult.rows[0].exists
   );
 }
 
@@ -112,7 +112,7 @@ async function checkFileExistsOnDisk(filePath: string): Promise<boolean> {
 async function verifyStoredFilenameUniqueAfterInsert(
   storedFilename: string,
   insertedId: number,
-  tableType: 'measurement' | 'visit' | 'child'
+  tableType: 'measurement' | 'visit' | 'person'
 ): Promise<boolean> {
   const checks = await Promise.all([
     tableType === 'measurement'
@@ -133,13 +133,13 @@ async function verifyStoredFilenameUniqueAfterInsert(
           'SELECT COUNT(*) as count FROM visit_attachments WHERE stored_filename = $1',
           [storedFilename]
         ),
-    tableType === 'child'
+    tableType === 'person'
       ? query<{ count: number }>(
-          'SELECT COUNT(*) as count FROM child_attachments WHERE stored_filename = $1 AND id != $2',
+          'SELECT COUNT(*) as count FROM person_attachments WHERE stored_filename = $1 AND id != $2',
           [storedFilename, insertedId]
         )
       : query<{ count: number }>(
-          'SELECT COUNT(*) as count FROM child_attachments WHERE stored_filename = $1',
+          'SELECT COUNT(*) as count FROM person_attachments WHERE stored_filename = $1',
           [storedFilename]
         ),
   ]);
@@ -277,11 +277,11 @@ router.post(
         return;
       }
 
-      const measurementCheck = await query<{ child_id: number }>(
-        'SELECT child_id FROM measurements WHERE id = $1',
+      const measurementCheck = await query<{ person_id: number }>(
+        'SELECT person_id FROM measurements WHERE id = $1',
         [measurementId]
       );
-      if (measurementCheck.rows.length === 0 || !(await canAccessChild(req.userId!, measurementCheck.rows[0].child_id))) {
+      if (measurementCheck.rows.length === 0 || !(await canAccessPerson(req.userId!, measurementCheck.rows[0].person_id))) {
         await fs.unlink(finalFilePath);
         res.status(404).json({
           error: {
@@ -405,8 +405,8 @@ router.get(
         return;
       }
 
-      const meas = await query<{ child_id: number }>('SELECT child_id FROM measurements WHERE id = $1', [measurementId]);
-      if (meas.rows.length === 0 || !(await canAccessChild(req.userId!, meas.rows[0].child_id))) {
+      const meas = await query<{ person_id: number }>('SELECT person_id FROM measurements WHERE id = $1', [measurementId]);
+      if (meas.rows.length === 0 || !(await canAccessPerson(req.userId!, meas.rows[0].person_id))) {
         res.status(404).json({
           error: {
             message: 'Measurement not found',
@@ -464,17 +464,17 @@ router.get(
       }
 
       // Check all three attachment tables
-      // Priority order: child_attachments first (for vaccine documents), then visit_attachments, then measurement_attachments
-      // This ensures child attachments are found even if IDs overlap across tables
-      let attachment: MeasurementAttachmentRow | VisitAttachmentRow | ChildAttachmentRow | null = null;
+      // Priority order: person_attachments first (for vaccine documents), then visit_attachments, then measurement_attachments
+      // This ensures person attachments are found even if IDs overlap across tables
+      let attachment: MeasurementAttachmentRow | VisitAttachmentRow | PersonAttachmentRow | null = null;
 
-      // Check child_attachments first (highest priority)
-      const childResult = await query<ChildAttachmentRow>(
-        'SELECT * FROM child_attachments WHERE id = $1',
+      // Check person_attachments first (highest priority)
+      const personResult = await query<PersonAttachmentRow>(
+        'SELECT * FROM person_attachments WHERE id = $1',
         [id]
       );
-      if (childResult.rows.length > 0) {
-        attachment = childResult.rows[0];
+      if (personResult.rows.length > 0) {
+        attachment = personResult.rows[0];
       } else {
         // Check visit_attachments
         const visitResult = await query<VisitAttachmentRow>(
@@ -506,8 +506,8 @@ router.get(
         return;
       }
 
-      const childIdForAttachment = await getChildIdForAttachment(id);
-      if (childIdForAttachment === null || !(await canAccessChild(req.userId!, childIdForAttachment))) {
+      const personIdForAttachment = await getPersonIdForAttachment(id);
+      if (personIdForAttachment === null || !(await canAccessPerson(req.userId!, personIdForAttachment))) {
         res.status(404).json({
           error: {
             message: 'Attachment not found',
@@ -571,8 +571,8 @@ router.delete(
         return;
       }
 
-      const childIdForAttachment = await getChildIdForAttachment(id);
-      if (childIdForAttachment === null || !(await canAccessChild(req.userId!, childIdForAttachment))) {
+      const personIdForAttachment = await getPersonIdForAttachment(id);
+      if (personIdForAttachment === null || !(await canAccessPerson(req.userId!, personIdForAttachment))) {
         res.status(404).json({
           error: {
             message: 'Attachment not found',
@@ -582,7 +582,7 @@ router.delete(
         });
         return;
       }
-      if (!(await canEditChild(req.userId!, childIdForAttachment))) {
+      if (!(await canEditPerson(req.userId!, personIdForAttachment))) {
         throw new ForbiddenError('You do not have permission to delete this attachment.');
       }
 
@@ -592,8 +592,8 @@ router.delete(
         [id]
       );
 
-      let attachment: MeasurementAttachmentRow | VisitAttachmentRow | ChildAttachmentRow | null = null;
-      let attachmentType: 'measurement' | 'visit' | 'child' = 'measurement';
+      let attachment: MeasurementAttachmentRow | VisitAttachmentRow | PersonAttachmentRow | null = null;
+      let attachmentType: 'measurement' | 'visit' | 'person' = 'measurement';
 
       if (result.rows.length > 0) {
         attachment = result.rows[0];
@@ -607,14 +607,14 @@ router.delete(
           attachment = visitResult.rows[0];
           attachmentType = 'visit';
         } else {
-          // Check child_attachments
-          const childResult = await query<ChildAttachmentRow>(
-            'SELECT * FROM child_attachments WHERE id = $1',
+          // Check person_attachments
+          const personResult = await query<PersonAttachmentRow>(
+            'SELECT * FROM person_attachments WHERE id = $1',
             [id]
           );
-          if (childResult.rows.length > 0) {
-            attachment = childResult.rows[0];
-            attachmentType = 'child';
+          if (personResult.rows.length > 0) {
+            attachment = personResult.rows[0];
+            attachmentType = 'person';
           }
         }
       }
@@ -636,7 +636,7 @@ router.delete(
       } else if (attachmentType === 'visit') {
         await query('DELETE FROM visit_attachments WHERE id = $1', [id]);
       } else {
-        await query('DELETE FROM child_attachments WHERE id = $1', [id]);
+        await query('DELETE FROM person_attachments WHERE id = $1', [id]);
       }
 
       // Delete file from disk
@@ -752,11 +752,11 @@ router.post(
         return;
       }
 
-      const visitCheck = await query<{ child_id: number }>(
-        'SELECT child_id FROM visits WHERE id = $1',
+      const visitCheck = await query<{ person_id: number }>(
+        'SELECT person_id FROM visits WHERE id = $1',
         [visitId]
       );
-      if (visitCheck.rows.length === 0 || !(await canAccessChild(req.userId!, visitCheck.rows[0].child_id))) {
+      if (visitCheck.rows.length === 0 || !(await canAccessPerson(req.userId!, visitCheck.rows[0].person_id))) {
         await fs.unlink(finalFilePath);
         res.status(404).json({
           error: {
@@ -767,7 +767,7 @@ router.post(
         });
         return;
       }
-      if (!(await canEditChild(req.userId!, visitCheck.rows[0].child_id))) {
+      if (!(await canEditPerson(req.userId!, visitCheck.rows[0].person_id))) {
         await fs.unlink(finalFilePath);
         throw new ForbiddenError('You do not have permission to add attachments to this visit.');
       }
@@ -894,8 +894,8 @@ router.get(
         return;
       }
 
-      const visitRow = await query<{ child_id: number }>('SELECT child_id FROM visits WHERE id = $1', [visitId]);
-      if (visitRow.rows.length === 0 || !(await canAccessChild(req.userId!, visitRow.rows[0].child_id))) {
+      const visitRow = await query<{ person_id: number }>('SELECT person_id FROM visits WHERE id = $1', [visitId]);
+      if (visitRow.rows.length === 0 || !(await canAccessPerson(req.userId!, visitRow.rows[0].person_id))) {
         res.status(404).json({
           error: {
             message: 'Visit not found',
@@ -951,8 +951,8 @@ router.put('/attachments/:id', authenticate, async (req: AuthRequest, res: Respo
       return;
     }
 
-    const childIdForAttachment = await getChildIdForAttachment(attachmentId);
-    if (childIdForAttachment === null || !(await canAccessChild(req.userId!, childIdForAttachment))) {
+    const personIdForAttachment = await getPersonIdForAttachment(attachmentId);
+    if (personIdForAttachment === null || !(await canAccessPerson(req.userId!, personIdForAttachment))) {
       res.status(404).json({
         error: {
           message: 'Attachment not found',
@@ -962,7 +962,7 @@ router.put('/attachments/:id', authenticate, async (req: AuthRequest, res: Respo
       });
       return;
     }
-    if (!(await canEditChild(req.userId!, childIdForAttachment))) {
+    if (!(await canEditPerson(req.userId!, personIdForAttachment))) {
       throw new ForbiddenError('You do not have permission to update this attachment.');
     }
 
@@ -977,9 +977,9 @@ router.put('/attachments/:id', authenticate, async (req: AuthRequest, res: Respo
       return;
     }
 
-    // Try child_attachments first, then measurement_attachments, then visit_attachments
+    // Try person_attachments first, then measurement_attachments, then visit_attachments
     let result = await query(
-      'UPDATE child_attachments SET original_filename = $1 WHERE id = $2 RETURNING id',
+      'UPDATE person_attachments SET original_filename = $1 WHERE id = $2 RETURNING id',
       [original_filename.trim(), attachmentId]
     );
     if (result.rows.length === 0) {
@@ -1013,38 +1013,38 @@ router.put('/attachments/:id', authenticate, async (req: AuthRequest, res: Respo
 });
 
 // ============================================================================
-// Child Attachments - Upload vaccine report or other child-level documents
+// Person Attachments - Upload vaccine report or other person-level documents
 // ============================================================================
 
 router.post(
-  '/children/:childId/attachments',
+  '/people/:personId/attachments',
   authenticate,
   upload.single('file'),
   async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const childId = parseInt(req.params.childId);
-      if (isNaN(childId)) {
+      const personId = parseInt(req.params.personId);
+      if (isNaN(personId)) {
         res.status(400).json({
           error: {
-            message: 'Invalid child ID',
+            message: 'Invalid person ID',
             type: 'ValidationError',
             statusCode: 400,
           },
         });
         return;
       }
-      if (!(await canAccessChild(req.userId!, childId))) {
+      if (!(await canAccessPerson(req.userId!, personId))) {
         res.status(404).json({
           error: {
-            message: 'Child not found',
+            message: 'Person not found',
             type: 'NotFoundError',
             statusCode: 404,
           },
         });
         return;
       }
-      if (!(await canEditChild(req.userId!, childId))) {
-        throw new ForbiddenError('You do not have permission to add attachments to this child.');
+      if (!(await canEditPerson(req.userId!, personId))) {
+        throw new ForbiddenError('You do not have permission to add attachments to this person.');
       }
 
       if (!req.file) {
@@ -1124,13 +1124,13 @@ router.post(
       const documentType = req.body.document_type || 'vaccine_report';
 
       // Save attachment record to database with verified unique filename
-      const result = await query<ChildAttachmentRow>(
-        `INSERT INTO child_attachments 
-         (child_id, document_type, original_filename, stored_filename, file_type, file_size)
+      const result = await query<PersonAttachmentRow>(
+        `INSERT INTO person_attachments 
+         (person_id, document_type, original_filename, stored_filename, file_type, file_size)
          VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING *`,
         [
-          childId,
+          personId,
           documentType,
           req.file.originalname,
           finalStoredFilename, // Use verified unique filename
@@ -1143,7 +1143,7 @@ router.post(
       const fileStillExists = await checkFileExistsOnDisk(finalFilePath);
       if (!fileStillExists) {
         // Rollback: delete database record if file disappeared
-        await query('DELETE FROM child_attachments WHERE id = $1', [result.rows[0].id]);
+        await query('DELETE FROM person_attachments WHERE id = $1', [result.rows[0].id]);
         res.status(500).json({
           error: {
             message: 'File verification failed: file was lost after database insert',
@@ -1157,7 +1157,7 @@ router.post(
       // CRITICAL: Verify the database record matches what we inserted
       if (result.rows[0].stored_filename !== finalStoredFilename) {
         // Database record doesn't match - rollback
-        await query('DELETE FROM child_attachments WHERE id = $1', [result.rows[0].id]);
+        await query('DELETE FROM person_attachments WHERE id = $1', [result.rows[0].id]);
         await fs.unlink(finalFilePath);
         res.status(500).json({
           error: {
@@ -1173,11 +1173,11 @@ router.post(
       const isUnique = await verifyStoredFilenameUniqueAfterInsert(
         finalStoredFilename,
         result.rows[0].id,
-        'child'
+        'person'
       );
       if (!isUnique) {
         // Another record has this filename - rollback
-        await query('DELETE FROM child_attachments WHERE id = $1', [result.rows[0].id]);
+        await query('DELETE FROM person_attachments WHERE id = $1', [result.rows[0].id]);
         await fs.unlink(finalFilePath);
         res.status(500).json({
           error: {
@@ -1191,14 +1191,14 @@ router.post(
 
       const attachment = {
         id: result.rows[0].id,
-        child_id: result.rows[0].child_id,
+        person_id: result.rows[0].person_id,
         document_type: result.rows[0].document_type,
         original_filename: result.rows[0].original_filename,
         stored_filename: result.rows[0].stored_filename,
         file_type: result.rows[0].file_type,
         file_size: result.rows[0].file_size,
         created_at: result.rows[0].created_at.toISOString(),
-        updated_at: result.rows[0].created_at.toISOString(), // child_attachments doesn't have updated_at, use created_at
+        updated_at: result.rows[0].created_at.toISOString(), // person_attachments doesn't have updated_at, use created_at
       };
 
       res.status(201).json(createResponse(attachment));
@@ -1208,27 +1208,27 @@ router.post(
   }
 );
 
-// Get all attachments for a child
+// Get all attachments for a person
 router.get(
-  '/children/:childId/attachments',
+  '/people/:personId/attachments',
   authenticate,
   async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const childId = parseInt(req.params.childId);
-      if (isNaN(childId)) {
+      const personId = parseInt(req.params.personId);
+      if (isNaN(personId)) {
         res.status(400).json({
           error: {
-            message: 'Invalid child ID',
+            message: 'Invalid person ID',
             type: 'ValidationError',
             statusCode: 400,
           },
         });
         return;
       }
-      if (!(await canAccessChild(req.userId!, childId))) {
+      if (!(await canAccessPerson(req.userId!, personId))) {
         res.status(404).json({
           error: {
-            message: 'Child not found',
+            message: 'Person not found',
             type: 'NotFoundError',
             statusCode: 404,
           },
@@ -1236,23 +1236,23 @@ router.get(
         return;
       }
 
-      const result = await query<ChildAttachmentRow>(
-        `SELECT * FROM child_attachments 
-         WHERE child_id = $1 
+      const result = await query<PersonAttachmentRow>(
+        `SELECT * FROM person_attachments 
+         WHERE person_id = $1 
          ORDER BY created_at DESC`,
-        [childId]
+        [personId]
       );
 
       const attachments = result.rows.map((row) => ({
         id: row.id,
-        child_id: row.child_id,
+        person_id: row.person_id,
         document_type: row.document_type,
         original_filename: row.original_filename,
         stored_filename: row.stored_filename,
         file_type: row.file_type,
         file_size: row.file_size,
         created_at: row.created_at.toISOString(),
-        updated_at: row.created_at.toISOString(), // child_attachments doesn't have updated_at, use created_at
+        updated_at: row.created_at.toISOString(), // person_attachments doesn't have updated_at, use created_at
       }));
 
       res.json(createResponse(attachments));

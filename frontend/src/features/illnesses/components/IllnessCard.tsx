@@ -7,14 +7,14 @@ import vi from '@shared/styles/VisitIcons.module.css';
 
 interface IllnessCardProps {
   illness: Illness;
-  childName?: string;
-  childId?: number;
+  personName?: string;
+  personId?: number;
   hasAttachments?: boolean;
 }
 
-function IllnessCard({ illness, childName, childId, hasAttachments }: IllnessCardProps) {
+function IllnessCard({ illness, personName, personId, hasAttachments }: IllnessCardProps) {
   const url = `/illnesses/${illness.id}`;
-  const linkState = { childId: illness.child_id, fromChild: true } as const;
+  const linkState = { personId: illness.person_id, fromPerson: true } as const;
 
   const label = 'Illness';
 
@@ -46,9 +46,9 @@ function IllnessCard({ illness, childName, childId, hasAttachments }: IllnessCar
               <div className={`${t.labelRow} ${t.wellnessSingleLine}`}>
                 <span className={t.labelCompact}>{label}</span>
                 <div className={t.badgesGroup}>
-                  {childName && (
-                    <Link to={childId ? `/people/${childId}` : '#'} className={t.childNameBadge} onClick={(e) => { if (!childId) e.preventDefault(); else e.stopPropagation(); }}>
-                      {childName}
+                  {personName && (
+                    <Link to={personId ? `/people/${personId}` : '#'} className={t.personNameBadge} onClick={(e) => { if (!personId) e.preventDefault(); else e.stopPropagation(); }}>
+                      {personName}
                     </Link>
                   )}
                   {headerBadges.map((b, i) => <span key={i} className={t.badge}>{b}</span>)}

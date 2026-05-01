@@ -3,7 +3,7 @@ import { visitsApi, ApiClientError } from '@lib/api-client';
 import type { Visit, VisitType } from '@shared/types/api';
 
 interface UseVisitsDataOptions {
-  childId?: number;
+  personId?: number;
   visitType?: VisitType;
   limit?: number;
 }
@@ -17,7 +17,7 @@ interface UseVisitsDataResult {
 }
 
 export function useVisitsData(options: UseVisitsDataOptions = {}): UseVisitsDataResult {
-  const { childId, visitType, limit = 500 } = options;
+  const { personId, visitType, limit = 500 } = options;
   const [allVisits, setAllVisits] = useState<Visit[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +27,7 @@ export function useVisitsData(options: UseVisitsDataOptions = {}): UseVisitsData
       setLoading(true);
       setError(null);
       const response = await visitsApi.getAll({
-        child_id: childId,
+        person_id: personId,
         limit,
       });
       setAllVisits(response.data);
@@ -40,7 +40,7 @@ export function useVisitsData(options: UseVisitsDataOptions = {}): UseVisitsData
     } finally {
       setLoading(false);
     }
-  }, [childId, limit]);
+  }, [personId, limit]);
 
   useEffect(() => {
     reload();

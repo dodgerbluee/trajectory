@@ -28,7 +28,7 @@ All HTTP route handlers are centralized in the `/routers` folder with unique, de
 
 - `auth.ts` - Login, logout, registration
 - `admin.ts` - Admin configuration endpoints
-- `children.ts` - Child CRUD operations
+- `people.ts` - Person CRUD operations
 - `families.ts` - Family management
 - `users.ts` - User preferences
 - `measurements.ts` - Growth tracking
@@ -50,7 +50,7 @@ All HTTP route handlers are centralized in the `/routers` folder with unique, de
 ```typescript
 import { query } from '../db/connection.js';
 import { authenticate } from '../middleware/auth.js';
-import { canAccessChild } from '../features/families/service/family-access.js';
+import { canAccessPerson } from '../features/families/service/family-access.js';
 ```
 
 ### 2. Features (Domain Layer)
@@ -68,7 +68,7 @@ Domain-specific business logic is organized by feature area:
 - `instance-admin.ts` - Instance admin user management
 
 #### `families/service/`
-- `family-access.ts` - Family-based authorization (canAccessChild, canEditChild, etc.)
+- `family-access.ts` - Family-based authorization (canAccessPerson, canEditPerson, etc.)
 
 #### `shared/service/`
 - `audit.ts` - Audit event persistence for visits/illnesses
@@ -120,7 +120,7 @@ TypeScript type definitions:
 ## Conventions
 
 ### File Naming
-- **Routers:** Plural noun matching resource (e.g., `children.ts`, `visits.ts`)
+- **Routers:** Plural noun matching resource (e.g., `people.ts`, `visits.ts`)
 - **Services:** Descriptive name reflecting purpose (e.g., `family-access.ts`, `audit.ts`)
 - **NO duplicate filenames** - every file has a unique name
 
@@ -131,7 +131,7 @@ TypeScript type definitions:
 - Services use `../../../` to reach db/middleware
 
 ### Router Exports
-- Named export for the router: `export const childrenRouter = Router();`
+- Named export for the router: `export const peopleRouter = Router();`
 - Or default export: `export default router;`
 
 ### Service Exports

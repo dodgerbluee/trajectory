@@ -1,4 +1,4 @@
-/* Timeline list container – used by AllVisitsView, AllIllnessesView, ChildDetailPage. */
+/* Timeline list container – used by AllVisitsView, AllIllnessesView, PersonDetailPage. */
 
 .list {
   display: flex;

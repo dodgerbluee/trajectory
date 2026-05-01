@@ -10,14 +10,14 @@ import vi from '../styles/VisitIcons.module.css';
 
 interface VisitCardProps {
     visit: Visit;
-    childName?: string;
-    childId?: number;
+    personName?: string;
+    personId?: number;
     hasAttachments?: boolean;
 }
 
-function VisitCard({ visit, childName, childId, hasAttachments }: VisitCardProps) {
+function VisitCard({ visit, personName, personId, hasAttachments }: VisitCardProps) {
     const url = `/visits/${visit.id}`;
-    const linkState = { childId: visit.child_id, fromChild: true } as const;
+    const linkState = { personId: visit.person_id, fromPerson: true } as const;
 
     const label = (() => {
         switch (visit.visit_type) {
@@ -108,9 +108,9 @@ function VisitCard({ visit, childName, childId, hasAttachments }: VisitCardProps
                             <div className={t.labelRow}>
                                 <span className={t.labelCompact}>{label}</span>
                                 <div className={t.badgesGroup}>
-                                    {childName && (
-                                        <Link to={childId ? `/people/${childId}` : '#'} className={t.childNameBadge} onClick={(e) => { if (!childId) e.preventDefault(); else e.stopPropagation(); }}>
-                                            {childName}
+                                    {personName && (
+                                        <Link to={personId ? `/people/${personId}` : '#'} className={t.personNameBadge} onClick={(e) => { if (!personId) e.preventDefault(); else e.stopPropagation(); }}>
+                                            {personName}
                                         </Link>
                                     )}
                                     {badges.map(b => (

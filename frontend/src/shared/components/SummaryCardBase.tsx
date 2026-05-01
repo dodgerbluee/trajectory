@@ -8,11 +8,11 @@ interface StatItem {
 interface Props {
   title?: string;
   stats: StatItem[];
-  children?: React.ReactNode;
+  people?: React.ReactNode;
   className?: string;
 }
 
-function SummaryCardBase({ title, stats, children, className = '' }: Props) {
+function SummaryCardBase({ title, stats, people, className = '' }: Props) {
   return (
     <div className={[styles.root, className].filter(Boolean).join(' ')}>
       <div className={styles.content}>
@@ -28,7 +28,7 @@ function SummaryCardBase({ title, stats, children, className = '' }: Props) {
         </div>
       </div>
 
-      {children && <div className={styles.children} data-summary-children>{children}</div>}
+      {people && <div className={styles.people} data-summary-people>{people}</div>}
     </div>
   );
 }

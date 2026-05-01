@@ -3,7 +3,7 @@ import { illnessesApi, ApiClientError } from '@lib/api-client';
 import type { Illness } from '@shared/types/api';
 
 interface UseIllnessesDataOptions {
-  childId?: number;
+  personId?: number;
   limit?: number;
 }
 
@@ -15,7 +15,7 @@ interface UseIllnessesDataResult {
 }
 
 export function useIllnessesData(options: UseIllnessesDataOptions = {}): UseIllnessesDataResult {
-  const { childId, limit = 500 } = options;
+  const { personId, limit = 500 } = options;
   const [illnesses, setIllnesses] = useState<Illness[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +25,7 @@ export function useIllnessesData(options: UseIllnessesDataOptions = {}): UseIlln
       setLoading(true);
       setError(null);
       const response = await illnessesApi.getAll({
-        child_id: childId,
+        person_id: personId,
         limit,
       });
       setIllnesses(response.data);
@@ -38,7 +38,7 @@ export function useIllnessesData(options: UseIllnessesDataOptions = {}): UseIlln
     } finally {
       setLoading(false);
     }
-  }, [childId, limit]);
+  }, [personId, limit]);
 
   useEffect(() => {
     reload();

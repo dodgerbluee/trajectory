@@ -62,20 +62,21 @@ CREATE INDEX IF NOT EXISTS idx_family_invites_family ON family_invites(family_id
 CREATE INDEX IF NOT EXISTS idx_family_invites_token ON family_invites(token_hash);
 CREATE INDEX IF NOT EXISTS idx_family_invites_expires ON family_invites(expires_at);
 
--- Children (belong to a family)
--- children represents both kids and the account holder themselves. When
--- user_id is non-null the row is the self-record for that user (linked
--- back to users.id). Adult-only features (e.g. privacy) can later branch
--- on user_id IS NOT NULL.
+-- People (belong to a family)
+-- The `people` table represents every individual tracked in the app:
+-- both children and the adult account holders themselves. When user_id
+-- is non-null the row is the self-record for that user (linked back to
+-- users.id). Adult-only features (e.g. privacy) can branch on
+-- user_id IS NOT NULL or on date_of_birth.
 --
 -- ON DELETE CASCADE on user_id is intentional: deleting a user account
 -- purges that user's self-row and all linked medical history (visits,
--- illnesses, measurements, attachments). Child rows (user_id IS NULL)
+-- illnesses, measurements, attachments). Rows where user_id IS NULL
 -- belong to the family, not the deleting user, and are preserved.
-CREATE TABLE IF NOT EXISTS children (
+CREATE TABLE IF NOT EXISTS people (
     id SERIAL PRIMARY KEY,
     family_id INTEGER NOT NULL REFERENCES families(id) ON DELETE RESTRICT,
-    user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     date_of_birth DATE NOT NULL,
     gender VARCHAR(20) NOT NULL CHECK (gender IN ('male', 'female')),
@@ -87,15 +88,16 @@ CREATE TABLE IF NOT EXISTS children (
     birth_height DECIMAL(6,2),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    CONSTRAINT people_user_id_unique UNIQUE (user_id),
     CONSTRAINT check_birth_weight_ounces CHECK (birth_weight_ounces IS NULL OR (birth_weight_ounces >= 0 AND birth_weight_ounces < 16))
 );
-CREATE INDEX IF NOT EXISTS idx_children_family ON children(family_id);
-CREATE INDEX IF NOT EXISTS idx_children_user_id ON children(user_id) WHERE user_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_people_family ON people(family_id);
+CREATE INDEX IF NOT EXISTS idx_people_user_id ON people(user_id) WHERE user_id IS NOT NULL;
 
 -- Measurements
 CREATE TABLE IF NOT EXISTS measurements (
     id SERIAL PRIMARY KEY,
-    child_id INTEGER NOT NULL REFERENCES children(id) ON DELETE CASCADE,
+    person_id INTEGER NOT NULL REFERENCES people(id) ON DELETE CASCADE,
     measurement_date DATE NOT NULL,
     label VARCHAR(255),
     weight_value DECIMAL(5,2),
@@ -121,7 +123,7 @@ CREATE TABLE IF NOT EXISTS measurements (
 -- Medical events
 CREATE TABLE IF NOT EXISTS medical_events (
     id SERIAL PRIMARY KEY,
-    child_id INTEGER NOT NULL REFERENCES children(id) ON DELETE CASCADE,
+    person_id INTEGER NOT NULL REFERENCES people(id) ON DELETE CASCADE,
     event_type VARCHAR(50) NOT NULL CHECK (event_type IN ('doctor_visit', 'illness')),
     start_date DATE NOT NULL,
     end_date DATE,
@@ -134,7 +136,7 @@ CREATE TABLE IF NOT EXISTS medical_events (
 -- Visits (wellness, sick, injury, vision, dental; no next_appointment_date)
 CREATE TABLE IF NOT EXISTS visits (
     id SERIAL PRIMARY KEY,
-    child_id INTEGER NOT NULL REFERENCES children(id) ON DELETE CASCADE,
+    person_id INTEGER NOT NULL REFERENCES people(id) ON DELETE CASCADE,
     visit_date DATE NOT NULL,
     visit_time TIME,
     visit_type VARCHAR(50) NOT NULL CHECK (visit_type IN ('wellness', 'sick', 'injury', 'vision', 'dental')),
@@ -207,7 +209,7 @@ CREATE TABLE IF NOT EXISTS visit_illnesses (
 -- Illnesses (standalone; types in illness_illness_types)
 CREATE TABLE IF NOT EXISTS illnesses (
     id SERIAL PRIMARY KEY,
-    child_id INTEGER NOT NULL REFERENCES children(id) ON DELETE CASCADE,
+    person_id INTEGER NOT NULL REFERENCES people(id) ON DELETE CASCADE,
     start_date DATE NOT NULL,
     end_date DATE,
     symptoms TEXT,
@@ -254,9 +256,9 @@ CREATE TABLE IF NOT EXISTS visit_attachments (
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS child_attachments (
+CREATE TABLE IF NOT EXISTS person_attachments (
     id INTEGER PRIMARY KEY DEFAULT nextval('attachment_id_seq'),
-    child_id INTEGER NOT NULL REFERENCES children(id) ON DELETE CASCADE,
+    person_id INTEGER NOT NULL REFERENCES people(id) ON DELETE CASCADE,
     document_type VARCHAR(50) NOT NULL DEFAULT 'vaccine_report',
     original_filename VARCHAR(255) NOT NULL,
     stored_filename VARCHAR(255) NOT NULL UNIQUE,
@@ -316,18 +318,18 @@ CREATE TABLE IF NOT EXISTS audit_events (
 );
 
 -- Indexes
-CREATE INDEX IF NOT EXISTS idx_measurements_child_date ON measurements(child_id, measurement_date DESC);
-CREATE INDEX IF NOT EXISTS idx_medical_events_child_date ON medical_events(child_id, start_date DESC);
-CREATE INDEX IF NOT EXISTS idx_visits_child_date ON visits(child_id, visit_date DESC);
+CREATE INDEX IF NOT EXISTS idx_measurements_person_date ON measurements(person_id, measurement_date DESC);
+CREATE INDEX IF NOT EXISTS idx_medical_events_person_date ON medical_events(person_id, start_date DESC);
+CREATE INDEX IF NOT EXISTS idx_visits_person_date ON visits(person_id, visit_date DESC);
 CREATE INDEX IF NOT EXISTS idx_visits_type ON visits(visit_type);
 CREATE INDEX IF NOT EXISTS idx_visits_injury_type ON visits(injury_type) WHERE injury_type IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_visit_illnesses_visit ON visit_illnesses(visit_id);
 CREATE INDEX IF NOT EXISTS idx_visit_illnesses_type ON visit_illnesses(illness_type);
-CREATE INDEX IF NOT EXISTS idx_illnesses_child_date ON illnesses(child_id, start_date DESC);
+CREATE INDEX IF NOT EXISTS idx_illnesses_person_date ON illnesses(person_id, start_date DESC);
 CREATE INDEX IF NOT EXISTS idx_illnesses_severity ON illnesses(severity) WHERE severity IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_measurement_attachments_measurement ON measurement_attachments(measurement_id);
 CREATE INDEX IF NOT EXISTS idx_visit_attachments_visit ON visit_attachments(visit_id);
-CREATE INDEX IF NOT EXISTS idx_child_attachments_child ON child_attachments(child_id);
+CREATE INDEX IF NOT EXISTS idx_person_attachments_person ON person_attachments(person_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON user_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_token ON user_sessions(token_hash);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires ON user_sessions(expires_at);
@@ -343,8 +345,8 @@ CREATE INDEX IF NOT EXISTS idx_audit_events_changes_gin ON audit_events USING GI
 -- Triggers (idempotent)
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_children_updated_at') THEN
-        CREATE TRIGGER update_children_updated_at BEFORE UPDATE ON children
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_people_updated_at') THEN
+        CREATE TRIGGER update_people_updated_at BEFORE UPDATE ON people
             FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
     END IF;
 END $$;
