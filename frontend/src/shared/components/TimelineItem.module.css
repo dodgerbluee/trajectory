@@ -206,7 +206,7 @@
   fill: none;
 }
 
-.childNameBadge {
+.personNameBadge {
   display: inline-flex;
   align-items: center;
   padding: var(--spacing-2) var(--spacing-xs);
@@ -223,20 +223,20 @@
   margin-left: var(--spacing-xs);
 }
 
-.childNameBadge:hover {
+.personNameBadge:hover {
   background: var(--color-primary);
   color: var(--color-text-inverse);
   transform: translateY(calc(-1 * var(--spacing-2, 2px)));
   box-shadow: var(--shadow-sm);
 }
 
-:global([data-theme="dark"]) .childNameBadge {
+:global([data-theme="dark"]) .personNameBadge {
   background: var(--color-primary-light);
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
 
-:global([data-theme="dark"]) .childNameBadge:hover {
+:global([data-theme="dark"]) .personNameBadge:hover {
   background: var(--color-primary);
   color: var(--color-text-inverse, #ffffff);
 }
@@ -269,7 +269,7 @@
    * The simplified meta line below provides the essential context. */
   .badgesGroup,
   .attachmentIndicator,
-  .childNameBadge {
+  .personNameBadge {
     display: none !important;
   }
 
