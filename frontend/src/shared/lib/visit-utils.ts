@@ -23,6 +23,12 @@ export function visitHasOutcomeData(visit: Visit): boolean {
   if (has('dental_procedure_type') || has('dental_notes') || has('cleaning_type') || has('cavities_found') || has('cavities_filled') || v.xrays_taken === true || v.fluoride_treatment === true || v.sealants_applied === true || has('dental_procedures')) return true;
   if (Array.isArray(v.vaccines_administered) && (v.vaccines_administered as unknown[]).length > 0) return true;
   if (Array.isArray(v.prescriptions) && (v.prescriptions as unknown[]).length > 0) return true;
+  // Generic "this visit happened" signals — notes, location, doctor, title,
+  // tags, or attachments all indicate a completed visit even when no
+  // section-specific outcome data is present.
+  if (has('notes') || has('location') || has('doctor_name') || has('title')) return true;
+  if (Array.isArray(v.tags) && (v.tags as unknown[]).length > 0) return true;
+  if (typeof v.attachment_count === 'number' && v.attachment_count > 0) return true;
 
   return false;
 }
