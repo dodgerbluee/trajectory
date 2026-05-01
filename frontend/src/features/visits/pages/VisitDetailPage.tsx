@@ -242,28 +242,40 @@ function VisitDetailPage() {
                       </div>
                     )}
 
-                    {!isFuture && visit.visit_type === 'vision' && (
+                    {!isFuture && (() => {
+                      const hasRefraction = 'vision_refraction' in visit && !!visit.vision_refraction;
+                      const hasPrescription = !!visit.vision_prescription;
+                      const hasOrderedGlasses = 'ordered_glasses' in visit && !!visit.ordered_glasses;
+                      const hasOrderedContacts = 'ordered_contacts' in visit && !!visit.ordered_contacts;
+                      const hasAnyVision = hasRefraction || hasPrescription || hasOrderedGlasses || hasOrderedContacts;
+                      if (!hasAnyVision) return null;
+                      return (
                       <div className={styles.infoStacked}>
-                        {'vision_refraction' in visit && visit.vision_refraction ? (
+                        {hasRefraction ? (
                           <div className={styles.infoItem}>
                             <VisionRefractionCard value={visit.vision_refraction} onChange={() => {}} readOnly />
                           </div>
-                        ) : visit.vision_prescription ? (
+                        ) : hasPrescription ? (
                           <div className={styles.infoItem}>
                             <span className={styles.infoLabel}>👁️ Prescription:</span>
                             <span className={styles.infoValue}>{visit.vision_prescription}</span>
                           </div>
                         ) : null}
-                        <div className={styles.infoItem}>
-                          <span className={styles.infoLabel}>Ordered Glasses:</span>
-                          <span className={styles.infoValue}>{'ordered_glasses' in visit && visit.ordered_glasses ? 'Yes' : 'No'}</span>
-                        </div>
-                        <div className={styles.infoItem}>
-                          <span className={styles.infoLabel}>Ordered Contacts:</span>
-                          <span className={styles.infoValue}>{'ordered_contacts' in visit && visit.ordered_contacts ? 'Yes' : 'No'}</span>
-                        </div>
+                        {hasOrderedGlasses && (
+                          <div className={styles.infoItem}>
+                            <span className={styles.infoLabel}>Ordered Glasses:</span>
+                            <span className={styles.infoValue}>Yes</span>
+                          </div>
+                        )}
+                        {hasOrderedContacts && (
+                          <div className={styles.infoItem}>
+                            <span className={styles.infoLabel}>Ordered Contacts:</span>
+                            <span className={styles.infoValue}>Yes</span>
+                          </div>
+                        )}
                       </div>
-                    )}
+                      );
+                    })()}
 
                     {!isFuture && visit.visit_type === 'dental' && (
                       <div className={styles.infoStacked}>

@@ -372,6 +372,14 @@ function EditVisitPage() {
             tags: currentVisit.tags,
           }
         : { ...currentVisit };
+      // If the Vision section was removed, clear all vision-owned fields so
+      // they no longer display on the card or detail page after save.
+      if (!useLimitedForm && !activeSections.includes('vision')) {
+        payload.vision_refraction = null;
+        payload.vision_prescription = null;
+        payload.ordered_glasses = null;
+        payload.ordered_contacts = null;
+      }
       if (!useLimitedForm && currentVisit.visit_type === 'sick') {
         const illnessesToSend = currentIllnesses;
         if (illnessesToSend && illnessesToSend.length > 0) {

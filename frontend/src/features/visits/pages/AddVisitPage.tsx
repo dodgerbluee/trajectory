@@ -282,6 +282,14 @@ function AddVisitPage() {
         if (currentVisit.visit_type === 'sick' && currentIllnesses && currentIllnesses.length > 0) {
           payload.illnesses = currentIllnesses;
         }
+        // If the Vision section was removed, clear all vision-owned fields so
+        // they no longer display on the card or detail page after save.
+        if (!activeSections.includes('vision')) {
+          payload.vision_refraction = null;
+          payload.vision_prescription = null;
+          payload.ordered_glasses = null;
+          payload.ordered_contacts = null;
+        }
       }
 
       // Create the visit
