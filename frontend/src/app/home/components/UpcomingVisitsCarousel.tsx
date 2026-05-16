@@ -76,7 +76,8 @@ function UpcomingVisitsCarousel({
         {visits.map((v) => {
           const person = personById.get(v.person_id);
           const overdue = !isFutureDate(v.visit_date);
-          const date = new Date(v.visit_date);
+          const [y, m, d] = v.visit_date.split('T')[0].split('-').map(Number);
+          const date = new Date(y, m - 1, d);
           const day = date.toLocaleDateString(undefined, { day: 'numeric' });
           const month = date.toLocaleDateString(undefined, { month: 'short' });
           return (
