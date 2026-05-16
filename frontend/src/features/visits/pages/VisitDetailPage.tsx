@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useParams, useLocation } from 'react-router-dom';
 import { LuPencil, LuCalendarPlus } from 'react-icons/lu';
 import type { AuditHistoryEvent } from '@shared/types/api';
 import { formatDate, formatTime, safeFormatDateTime } from '@lib/date-utils';
-import { getGoogleCalendarAddEventUrl } from '@lib/calendar-export';
+import { getGoogleCalendarAddEventUrl, buildSingleEventIcs, downloadIcs } from '@lib/calendar-export';
 import { getVisitTypeLabel } from '@shared/lib/visit-labels';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
 import ErrorMessage from '@shared/components/ErrorMessage';
@@ -42,23 +42,40 @@ function VisitDetailPage() {
     }
   }, [attachments.length, activeTab]);
 
-  /**
-   * Handle exporting visit to Google Calendar
-   */
-  const handleExportToCalendar = () => {
-    if (!visit) return;
-    if (!person) return;
+  const [calMenuOpen, setCalMenuOpen] = useState(false);
+  const calMenuRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    if (!calMenuOpen) return;
+    const close = (e: MouseEvent) => {
+      if (calMenuRef.current && !calMenuRef.current.contains(e.target as Node)) {
+        setCalMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [calMenuOpen]);
+
+  const getCalendarEventInfo = useCallback(() => {
+    if (!visit || !person) return null;
     const typeLabel = getVisitTypeLabel(visit.visit_type);
-    const subjectName = person.name;
-    const title = getCalendarExportTitle(subjectName, typeLabel);
-    const url = getGoogleCalendarAddEventUrl({
-      title,
-      date: visit.visit_date,
-      time: visit.visit_time ?? null,
-      location: visit.location ?? null,
-    });
-    window.open(url, '_blank', 'noopener,noreferrer');
+    const title = getCalendarExportTitle(person.name, typeLabel);
+    return { title, date: visit.visit_date, time: visit.visit_time ?? null, location: visit.location ?? null };
+  }, [visit, person]);
+
+  const handleExportGoogle = () => {
+    const info = getCalendarEventInfo();
+    if (!info) return;
+    window.open(getGoogleCalendarAddEventUrl(info), '_blank', 'noopener,noreferrer');
+    setCalMenuOpen(false);
+  };
+
+  const handleExportIcs = () => {
+    const info = getCalendarEventInfo();
+    if (!info || !visit) return;
+    const ics = buildSingleEventIcs({ ...info, uid: `visit-${visit.id}@trajectory` });
+    downloadIcs(ics, `${info.title.replace(/\s+/g, '-')}.ics`);
+    setCalMenuOpen(false);
   };
 
   if (loading) {
@@ -100,15 +117,29 @@ function VisitDetailPage() {
               ← Back to {person.name}
             </Link>
             <div className={styles.iconActions}>
-              <button
-                type="button"
-                className={styles.iconAction}
-                onClick={handleExportToCalendar}
-                title="Export to Calendar"
-                aria-label="Export to Calendar"
-              >
-                <LuCalendarPlus aria-hidden />
-              </button>
+              <div className={styles.calMenuWrap} ref={calMenuRef}>
+                <button
+                  type="button"
+                  className={styles.iconAction}
+                  onClick={() => setCalMenuOpen((o) => !o)}
+                  title="Export to Calendar"
+                  aria-label="Export to Calendar"
+                  aria-haspopup="menu"
+                  aria-expanded={calMenuOpen}
+                >
+                  <LuCalendarPlus aria-hidden />
+                </button>
+                {calMenuOpen && (
+                  <div className={styles.calMenu} role="menu">
+                    <button type="button" className={styles.calMenuItem} role="menuitem" onClick={handleExportIcs}>
+                      Device Calendar
+                    </button>
+                    <button type="button" className={styles.calMenuItem} role="menuitem" onClick={handleExportGoogle}>
+                      Google Calendar
+                    </button>
+                  </div>
+                )}
+              </div>
               {canEdit && (
                 <Link
                   to={`/visits/${visit.id}/edit`}

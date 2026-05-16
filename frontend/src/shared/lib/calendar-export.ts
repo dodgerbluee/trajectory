@@ -70,6 +70,64 @@ export function buildIcsFromEvents(events: CalendarEvent[]): string {
 }
 
 /**
+ * Build iCalendar content for a single event, supporting optional time and location.
+ */
+export function buildSingleEventIcs(event: {
+  title: string;
+  date: string;
+  time?: string | null;
+  location?: string | null;
+  uid: string;
+}): string {
+  const now = new Date();
+  const dtstamp =
+    now.getUTCFullYear() +
+    String(now.getUTCMonth() + 1).padStart(2, '0') +
+    String(now.getUTCDate()).padStart(2, '0') +
+    'T' +
+    String(now.getUTCHours()).padStart(2, '0') +
+    String(now.getUTCMinutes()).padStart(2, '0') +
+    String(now.getUTCSeconds()).padStart(2, '0') +
+    'Z';
+
+  const lines = ['BEGIN:VEVENT', `UID:${escapeIcsText(event.uid)}`, `DTSTAMP:${dtstamp}`];
+
+  if (event.time && /^\d{1,2}:\d{2}$/.test(event.time.trim())) {
+    const [h, m] = event.time.trim().split(':').map((s) => parseInt(s, 10));
+    const datePart = toIcsDate(event.date);
+    const start = `${datePart}T${String(h).padStart(2, '0')}${String(m).padStart(2, '0')}00`;
+    const endH = (h + 1) % 24;
+    const end = `${datePart}T${String(endH).padStart(2, '0')}${String(m).padStart(2, '0')}00`;
+    lines.push(`DTSTART:${start}`, `DTEND:${end}`);
+  } else {
+    const start = toIcsDate(event.date);
+    const endDate = new Date(event.date + 'T12:00:00Z');
+    endDate.setUTCDate(endDate.getUTCDate() + 1);
+    const end =
+      endDate.getUTCFullYear() +
+      String(endDate.getUTCMonth() + 1).padStart(2, '0') +
+      String(endDate.getUTCDate()).padStart(2, '0');
+    lines.push(`DTSTART;VALUE=DATE:${start}`, `DTEND;VALUE=DATE:${end}`);
+  }
+
+  lines.push(`SUMMARY:${escapeIcsText(event.title)}`);
+  if (event.location?.trim()) {
+    lines.push(`LOCATION:${escapeIcsText(event.location.trim())}`);
+  }
+  lines.push('END:VEVENT');
+
+  return [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Trajectory//Visit Export//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    lines.join('\r\n'),
+    'END:VCALENDAR',
+  ].join('\r\n');
+}
+
+/**
  * Build a Google Calendar "add event" URL. Opens in browser with event pre-filled; user clicks Save.
  * - All-day: date in YYYY-MM-DD, no time.
  * - Timed: date + time "HH:MM" (local); end is start + 1 hour.
