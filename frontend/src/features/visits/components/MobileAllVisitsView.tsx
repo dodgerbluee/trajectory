@@ -21,6 +21,7 @@ import { formatDate, formatTime, isFutureDate } from '@lib/date-utils';
 import { getVisitTypeIcon, getVisitTypeLabel } from '@shared/lib/visit-icons';
 import { LuFilter, LuX } from 'react-icons/lu';
 import styles from './MobileAllVisitsView.module.css';
+import toggleStyles from './ViewToggle.module.css';
 
 const VISIT_TYPES: VisitType[] = ['wellness', 'sick', 'injury', 'dental', 'vision'];
 const PAGE_SIZE = 20;
@@ -33,8 +34,10 @@ function MobileAllVisitsView() {
     error,
     filterPersonId,
     filterVisitType,
+    viewMode,
     setFilterPersonId,
     setFilterVisitType,
+    setViewMode,
     reload,
   } = useAllVisits();
 
@@ -53,15 +56,16 @@ function MobileAllVisitsView() {
     let result = allVisits;
     if (filterPersonId != null) result = result.filter((v) => v.person_id === filterPersonId);
     if (filterVisitType) result = result.filter((v) => v.visit_type === filterVisitType);
+    if (viewMode === 'notes') result = result.filter((v) => v.notes || v.dental_notes);
     return [...result].sort(
       (a, b) => new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime(),
     );
-  }, [allVisits, filterPersonId, filterVisitType]);
+  }, [allVisits, filterPersonId, filterVisitType, viewMode]);
 
   // Reset paging when the filter changes.
   useEffect(() => {
     setPageCount(1);
-  }, [filterPersonId, filterVisitType]);
+  }, [filterPersonId, filterVisitType, viewMode]);
 
   const visible = useMemo(() => filtered.slice(0, pageCount * PAGE_SIZE), [filtered, pageCount]);
   const hasMore = visible.length < filtered.length;
@@ -112,21 +116,31 @@ function MobileAllVisitsView() {
     <div className={styles.root}>
       <header className={styles.header}>
         <h1 className={styles.title}>Visits</h1>
-        <button
-          type="button"
-          className={styles.filterButton}
-          onClick={() => setFilterOpen(true)}
-          aria-haspopup="dialog"
-          aria-expanded={filterOpen}
-        >
-          <LuFilter aria-hidden="true" />
-          <span>Filter</span>
-          {activeFilterCount > 0 && (
-            <span className={styles.filterCount} aria-label={`${activeFilterCount} active`}>
-              {activeFilterCount}
-            </span>
-          )}
-        </button>
+        <div className={styles.headerActions}>
+          <div className={toggleStyles.toggle}>
+            <button type="button" className={`${toggleStyles.pill} ${viewMode === 'timeline' ? toggleStyles.pillActive : ''}`} onClick={() => setViewMode('timeline')}>
+              Timeline
+            </button>
+            <button type="button" className={`${toggleStyles.pill} ${viewMode === 'notes' ? toggleStyles.pillActive : ''}`} onClick={() => setViewMode('notes')}>
+              Notes
+            </button>
+          </div>
+          <button
+            type="button"
+            className={styles.filterButton}
+            onClick={() => setFilterOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={filterOpen}
+          >
+            <LuFilter aria-hidden="true" />
+            <span>Filter</span>
+            {activeFilterCount > 0 && (
+              <span className={styles.filterCount} aria-label={`${activeFilterCount} active`}>
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+        </div>
       </header>
 
       {activeFilterCount > 0 && (
@@ -198,6 +212,11 @@ function MobileAllVisitsView() {
                               {v.visit_time ? ` · ${formatTime(v.visit_time)}` : ''}
                               {v.doctor_name ? ` · ${v.doctor_name}` : ''}
                             </span>
+                            {viewMode === 'notes' && (v.notes || v.dental_notes) && (
+                              <span className={styles.notePreview}>
+                                {v.notes || v.dental_notes}
+                              </span>
+                            )}
                           </span>
                           <span className={styles.chevron} aria-hidden="true">
                             ›

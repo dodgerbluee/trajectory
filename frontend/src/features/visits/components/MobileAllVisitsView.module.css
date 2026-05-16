@@ -344,3 +344,25 @@
   border-color: var(--color-primary);
   color: var(--color-text-inverse);
 }
+
+/* Header actions row (toggle + filter button) */
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* Note preview text shown in notes view mode */
+
+.notePreview {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-text-primary);
+  white-space: normal;
+  margin-top: var(--spacing-xs);
+}

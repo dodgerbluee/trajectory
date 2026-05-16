@@ -4,8 +4,10 @@ import { MdOutlinePersonalInjury } from 'react-icons/md';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { DentalToothIcon } from '@hugeicons/core-free-icons';
 import type { Visit } from '@shared/types/api';
-import { VisitFilterSidebar, VisitsTimeline } from '@features/visits';
+import { VisitFilterSidebar, VisitNotesView, VisitsTimeline } from '@features/visits';
+import type { ViewMode } from '@features/visits/hooks/useAllVisits';
 import visitsLayout from '@shared/styles/VisitsLayout.module.css';
+import toggleStyles from '@features/visits/components/ViewToggle.module.css';
 import MobileFilterBar, { type MobileFilterOption } from '@shared/components/MobileFilterBar';
 import { useFamilyPermissions } from '@/contexts/FamilyPermissionsContext';
 
@@ -17,6 +19,8 @@ type Props = {
   visitsWithAttachments: Set<number>;
   visitTypeFilter: VisitTypeFilter;
   onChangeVisitTypeFilter: (filter: VisitTypeFilter) => void;
+  viewMode: ViewMode;
+  onChangeViewMode: (mode: ViewMode) => void;
   onAddVisitClick: () => void;
   currentPage: number;
   itemsPerPage: number;
@@ -31,6 +35,8 @@ export default function VisitsTab({
   visitsWithAttachments,
   visitTypeFilter,
   onChangeVisitTypeFilter,
+  viewMode,
+  onChangeViewMode,
   onAddVisitClick,
   currentPage,
   itemsPerPage,
@@ -102,7 +108,16 @@ export default function VisitsTab({
         title="Filter visits"
         options={filterOptions}
         primaryAction={canEdit ? { label: 'Add Visit', onClick: onAddVisitClick } : undefined}
-      />
+      >
+        <div className={toggleStyles.toggle}>
+          <button type="button" className={`${toggleStyles.pill} ${viewMode === 'timeline' ? toggleStyles.pillActive : ''}`} onClick={() => onChangeViewMode('timeline')}>
+            Timeline
+          </button>
+          <button type="button" className={`${toggleStyles.pill} ${viewMode === 'notes' ? toggleStyles.pillActive : ''}`} onClick={() => onChangeViewMode('notes')}>
+            Notes
+          </button>
+        </div>
+      </MobileFilterBar>
       <VisitFilterSidebar
         stats={[
           {
@@ -159,21 +174,42 @@ export default function VisitsTab({
         onSelectPerson={() => {}}
         hidePersonFilter
         onAddVisitClick={onAddVisitClick}
-      />
+      >
+        <div className={toggleStyles.toggle}>
+          <button type="button" className={`${toggleStyles.pill} ${viewMode === 'timeline' ? toggleStyles.pillActive : ''}`} onClick={() => onChangeViewMode('timeline')}>
+            Timeline
+          </button>
+          <button type="button" className={`${toggleStyles.pill} ${viewMode === 'notes' ? toggleStyles.pillActive : ''}`} onClick={() => onChangeViewMode('notes')}>
+            Notes
+          </button>
+        </div>
+      </VisitFilterSidebar>
 
-      <main className={visitsLayout.main}>
-        <VisitsTimeline
+      {viewMode === 'notes' ? (
+        <VisitNotesView
           visits={visibleVisits}
-          visitsWithAttachments={visitsWithAttachments}
-          showPersonName={false}
-          flat
+          people={[]}
           currentPage={currentPage}
           itemsPerPage={itemsPerPage}
           totalItems={totalItems}
           onPageChange={onPageChange}
           onItemsPerPageChange={onItemsPerPageChange}
         />
-      </main>
+      ) : (
+        <main className={visitsLayout.main}>
+          <VisitsTimeline
+            visits={visibleVisits}
+            visitsWithAttachments={visitsWithAttachments}
+            showPersonName={false}
+            flat
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={totalItems}
+            onPageChange={onPageChange}
+            onItemsPerPageChange={onItemsPerPageChange}
+          />
+        </main>
+      )}
     </div>
   );
 }

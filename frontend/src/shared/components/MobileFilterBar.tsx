@@ -45,9 +45,10 @@ export interface MobileFilterBarProps {
     onClick: () => void;
     icon?: IconType;
   };
+  children?: React.ReactNode;
 }
 
-export default function MobileFilterBar({ title, options, primaryAction }: MobileFilterBarProps) {
+export default function MobileFilterBar({ title, options, primaryAction, children }: MobileFilterBarProps) {
   const [open, setOpen] = useState(false);
 
   const activeOption = options.find((o) => o.active && !o.isDefault);
@@ -59,6 +60,7 @@ export default function MobileFilterBar({ title, options, primaryAction }: Mobil
   return (
     <div className={styles.root}>
       <div className={styles.bar}>
+        {children}
         <button
           type="button"
           className={styles.filterButton}

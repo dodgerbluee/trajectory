@@ -58,6 +58,7 @@ function PersonDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [showVisitTypeModal, setShowVisitTypeModal] = useState(false);
   const [visitTypeFilter, setVisitTypeFilter] = useState<'all' | 'wellness' | 'sick' | 'injury' | 'vision' | 'dental'>('all');
+  const [visitsViewMode, setVisitsViewMode] = useState<'timeline' | 'notes'>('timeline');
   const [filterIllnessStatus, setFilterIllnessStatus] = useState<'ongoing' | 'ended' | undefined>(undefined);
   const [visitsCurrentPage, setVisitsCurrentPage] = useState(0);
   const [visitsItemsPerPage, setVisitsItemsPerPage] = useState(20);
@@ -398,6 +399,7 @@ function PersonDetailPage() {
     // Add visits with visit type filter
     visits.forEach(visit => {
       if (visitTypeFilter === 'all' || visit.visit_type === visitTypeFilter) {
+        if (visitsViewMode === 'notes' && !visit.notes && !visit.dental_notes) return;
         items.push({
           id: `visit-${visit.id}`,
           date: visit.visit_date,
@@ -410,7 +412,7 @@ function PersonDetailPage() {
     items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return items;
-  }, [visits, visitTypeFilter]);
+  }, [visits, visitTypeFilter, visitsViewMode]);
 
   // Filter illnesses by status - MUST be called before early returns (Rules of Hooks)
   const illnessItems = useMemo(() => {
@@ -441,7 +443,7 @@ function PersonDetailPage() {
 
   useEffect(() => {
     setVisitsCurrentPage(0);
-  }, [visitTypeFilter, visits]);
+  }, [visitTypeFilter, visitsViewMode, visits]);
 
   useEffect(() => {
     setIllnessesCurrentPage(0);
@@ -640,6 +642,8 @@ function PersonDetailPage() {
                     visitsWithAttachments={visitsWithAttachments}
                     visitTypeFilter={visitTypeFilter}
                     onChangeVisitTypeFilter={setVisitTypeFilter}
+                    viewMode={visitsViewMode}
+                    onChangeViewMode={setVisitsViewMode}
                     onAddVisitClick={() => setShowVisitTypeModal(true)}
                     currentPage={visitsCurrentPage}
                     itemsPerPage={visitsItemsPerPage}

@@ -8,8 +8,11 @@ import VisitCardSkeleton from './VisitCardSkeleton';
 import { useIsMobile } from '@shared/hooks';
 import visitsLayout from '@shared/styles/VisitsLayout.module.css';
 import { VisitFilterSidebar, VisitsTimelineView } from '.';
+import VisitNotesView from './VisitNotesView';
 import MobileAllVisitsView from './MobileAllVisitsView';
 import { useAllVisits } from '../hooks';
+import type { ViewMode } from '../hooks/useAllVisits';
+import toggleStyles from './ViewToggle.module.css';
 
 /**
  * Mobile branch is rendered before the desktop hook fires so the two
@@ -23,6 +26,19 @@ function AllVisitsView() {
   return <DesktopAllVisitsView />;
 }
 
+function ViewToggle({ viewMode, onChange }: { viewMode: ViewMode; onChange: (m: ViewMode) => void }) {
+  return (
+    <div className={toggleStyles.toggle}>
+      <button type="button" className={`${toggleStyles.pill} ${viewMode === 'timeline' ? toggleStyles.pillActive : ''}`} onClick={() => onChange('timeline')}>
+        Timeline
+      </button>
+      <button type="button" className={`${toggleStyles.pill} ${viewMode === 'notes' ? toggleStyles.pillActive : ''}`} onClick={() => onChange('notes')}>
+        Notes
+      </button>
+    </div>
+  );
+}
+
 function DesktopAllVisitsView() {
   const {
     visits,
@@ -31,8 +47,10 @@ function DesktopAllVisitsView() {
     error,
     filterPersonId,
     filterVisitType,
+    viewMode,
     setFilterPersonId,
     setFilterVisitType,
+    setViewMode,
     visitsWithAttachments,
     stats,
     reload,
@@ -81,19 +99,33 @@ function DesktopAllVisitsView() {
         peopleList={people}
         selectedPersonId={filterPersonId}
         onSelectPerson={(id: number | undefined) => setFilterPersonId(id)}
-      />
+      >
+        <ViewToggle viewMode={viewMode} onChange={setViewMode} />
+      </VisitFilterSidebar>
 
-      <VisitsTimelineView
-        visits={visits}
-        people={people}
-        visitsWithAttachments={visitsWithAttachments}
-        showPersonName={true}
-        currentPage={currentPage}
-        itemsPerPage={itemsPerPage}
-        totalItems={totalFilteredVisits}
-        onPageChange={setCurrentPage}
-        onItemsPerPageChange={setItemsPerPage}
-      />
+      {viewMode === 'notes' ? (
+        <VisitNotesView
+          visits={visits}
+          people={people}
+          currentPage={currentPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={totalFilteredVisits}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
+        />
+      ) : (
+        <VisitsTimelineView
+          visits={visits}
+          people={people}
+          visitsWithAttachments={visitsWithAttachments}
+          showPersonName={true}
+          currentPage={currentPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={totalFilteredVisits}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
+        />
+      )}
     </div>
   );
 }

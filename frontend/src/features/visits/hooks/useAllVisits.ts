@@ -3,6 +3,7 @@ import type { VisitType } from '@shared/types/api';
 import { useVisitsData } from './useVisitsData';
 import { usePeopleData } from '@features/people/hooks';
 
+export type ViewMode = 'timeline' | 'notes';
 const DEFAULT_ITEMS_PER_PAGE = 20;
 
 export function useAllVisits() {
@@ -11,6 +12,7 @@ export function useAllVisits() {
 
   const [filterPersonId, setFilterPersonId] = useState<number | undefined>(undefined);
   const [filterVisitType, setFilterVisitType] = useState<VisitType | undefined>(undefined);
+  const [viewMode, setViewMode] = useState<ViewMode>('timeline');
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_ITEMS_PER_PAGE);
 
@@ -22,13 +24,16 @@ export function useAllVisits() {
     if (filterVisitType) {
       result = result.filter(v => v.visit_type === filterVisitType);
     }
+    if (viewMode === 'notes') {
+      result = result.filter(v => v.notes || v.dental_notes);
+    }
     return result;
-  }, [allVisits, filterPersonId, filterVisitType]);
+  }, [allVisits, filterPersonId, filterVisitType, viewMode]);
 
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(0);
-  }, [filterPersonId, filterVisitType]);
+  }, [filterPersonId, filterVisitType, viewMode]);
 
   // Get only visible visits on current page
   const visibleVisits = useMemo(() => {
@@ -65,8 +70,10 @@ export function useAllVisits() {
     error: errorVisits || errorPeople,
     filterPersonId,
     filterVisitType,
+    viewMode,
     setFilterPersonId,
     setFilterVisitType,
+    setViewMode,
     visitsWithAttachments,
     stats,
     currentPage,

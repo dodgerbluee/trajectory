@@ -3,6 +3,7 @@ export { default as MobileAllVisitsView } from './MobileAllVisitsView';
 export { default as VisitFilterSidebar } from './VisitFilterSidebar';
 export { default as VisitAttachmentsList } from './VisitAttachmentsList';
 export { default as VisitCard } from './VisitCard';
+export { default as VisitNotesView } from './VisitNotesView';
 export { default as VisitStats } from './VisitStats';
 export { default as VisitTypeModal } from './VisitTypeModal';
 export { default as VisitsTimeline } from './VisitsTimeline';

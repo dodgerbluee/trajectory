@@ -1,3 +1,4 @@
+import { type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { HiPlus } from 'react-icons/hi';
 import type { IconType } from 'react-icons';
@@ -25,9 +26,10 @@ interface Props {
     hidePersonFilter?: boolean;
     /** When set, Add Visit opens this modal on the current page instead of navigating away. */
     onAddVisitClick?: () => void;
+    children?: ReactNode;
 }
 
-export default function VisitFilterSidebar({ stats, peopleList, selectedPersonId, onSelectPerson, hidePersonFilter = false, onAddVisitClick }: Props) {
+export default function VisitFilterSidebar({ stats, peopleList, selectedPersonId, onSelectPerson, hidePersonFilter = false, onAddVisitClick, children }: Props) {
     const location = useLocation();
     const { canEdit } = useFamilyPermissions();
     const isHome = location.pathname === '/';
@@ -45,6 +47,12 @@ export default function VisitFilterSidebar({ stats, peopleList, selectedPersonId
                 <nav className={layout.sidebarStats}>
                     <VisitStats stats={stats} vertical />
                 </nav>
+
+                {children && (
+                    <div className={layout.sidebarAction}>
+                        {children}
+                    </div>
+                )}
 
                 {!hidePersonFilter && (
                     <div className={layout.childSidebarSection}>

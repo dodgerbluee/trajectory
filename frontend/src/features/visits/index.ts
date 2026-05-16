@@ -2,6 +2,7 @@ export { default as AllVisitsView } from './components/AllVisitsView';
 export { default as VisitFilterSidebar } from './components/VisitFilterSidebar';
 export { default as VisitAttachmentsList } from './components/VisitAttachmentsList';
 export { default as VisitCard } from './components/VisitCard';
+export { default as VisitNotesView } from './components/VisitNotesView';
 export { default as VisitStats } from './components/VisitStats';
 export { default as VisitTypeModal } from './components/VisitTypeModal';
 export { default as VisitsTimeline } from './components/VisitsTimeline';
