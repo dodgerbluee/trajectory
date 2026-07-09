@@ -13,3 +13,67 @@
     display: none;
   }
 }
+
+/* "Move to another family" menu on person cards in the Members sub-tab. */
+.familyMoveMenuWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.familyMoveMenu {
+  position: absolute;
+  top: calc(100% + var(--spacing-xs));
+  right: 0;
+  min-width: 11rem;
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.12));
+  z-index: 20;
+  padding: var(--spacing-xs) 0;
+  animation: familyMoveMenuIn 120ms ease;
+}
+
+@keyframes familyMoveMenuIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.familyMoveMenuLabel {
+  display: block;
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-secondary);
+}
+
+.familyMoveMenuItem {
+  display: block;
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 100ms ease;
+}
+
+.familyMoveMenuItem:hover {
+  background: var(--color-surface);
+}
+
+.familyMoveMenuItem:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .familyMoveMenu {
+    animation: none;
+  }
+}

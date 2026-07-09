@@ -12,7 +12,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LuUserPlus, LuPencil, LuTrash2, LuUsers, LuSettings } from 'react-icons/lu';
+import { LuUserPlus, LuPencil, LuTrash2, LuUsers, LuSettings, LuArrowLeftRight } from 'react-icons/lu';
 
 import Card from '@shared/components/Card';
 import FormField from '@shared/components/FormField';
@@ -127,6 +127,12 @@ export default function FamilyPage() {
   const [deletingChildId, setDeletingChildId] = useState<number | null>(null);
   const [deleteConfirmChild, setDeleteConfirmChild] = useState<Person | null>(null);
   const [confirmDeleteChildInput, setConfirmDeleteChildInput] = useState('');
+
+  // Move-person-to-another-family state
+  const [moveMenuPersonId, setMoveMenuPersonId] = useState<number | null>(null);
+  const moveMenuRef = useRef<HTMLDivElement | null>(null);
+  const [moveConfirm, setMoveConfirm] = useState<{ person: Person; from: Family; to: Family } | null>(null);
+  const [movingPersonId, setMovingPersonId] = useState<number | null>(null);
 
   const [savingMemberRole, setSavingMemberRole] = useState<{ familyId: number; userId: number } | null>(null);
 
@@ -265,6 +271,42 @@ export default function FamilyPage() {
       });
     } finally {
       setDeletingChildId(null);
+    }
+  };
+
+  // Close the move menu when clicking outside it.
+  useEffect(() => {
+    if (moveMenuPersonId == null) return;
+    const close = (e: MouseEvent) => {
+      if (moveMenuRef.current && !moveMenuRef.current.contains(e.target as Node)) {
+        setMoveMenuPersonId(null);
+      }
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [moveMenuPersonId]);
+
+  // Families the user can move people into (owner/parent). Used to gate the
+  // Move action — it only appears when there's somewhere else to move to.
+  const editableFamilies = useMemo(
+    () => families.filter((f) => f.role === 'owner' || f.role === 'parent'),
+    [families]
+  );
+
+  const handleMovePerson = async (person: Person, to: Family) => {
+    setMovingPersonId(person.id);
+    try {
+      await peopleApi.update(person.id, { family_id: to.id });
+      notify({ message: `${person.name} moved to ${to.name}`, type: 'success' });
+      setMoveConfirm(null);
+      await loadChildren();
+    } catch (err) {
+      notify({
+        message: err instanceof ApiClientError ? err.message || 'Failed to move person' : 'Failed to move person',
+        type: 'error',
+      }, 4000);
+    } finally {
+      setMovingPersonId(null);
     }
   };
 
@@ -513,6 +555,54 @@ export default function FamilyPage() {
                             </div>
                             {canEditFamily && (
                               <div className={`${s.familyActions} ${detailLayout.iconActions}`}>
+                                {(() => {
+                                  // Self-records (linked to a user) draw access from that
+                                  // user's family membership, so they can't be moved yet.
+                                  if (person.user_id != null) return null;
+                                  const moveTargets = editableFamilies.filter((f) => f.id !== family.id);
+                                  if (moveTargets.length === 0) return null;
+                                  const open = moveMenuPersonId === person.id;
+                                  return (
+                                    <div
+                                      className={familyLayout.familyMoveMenuWrap}
+                                      ref={open ? moveMenuRef : undefined}
+                                    >
+                                      <button
+                                        type="button"
+                                        className={detailLayout.iconAction}
+                                        onClick={() =>
+                                          setMoveMenuPersonId(open ? null : person.id)
+                                        }
+                                        title={`Move ${person.name} to another family`}
+                                        aria-label={`Move ${person.name} to another family`}
+                                        aria-haspopup="menu"
+                                        aria-expanded={open}
+                                        disabled={movingPersonId === person.id}
+                                      >
+                                        <LuArrowLeftRight aria-hidden />
+                                      </button>
+                                      {open && (
+                                        <div className={familyLayout.familyMoveMenu} role="menu">
+                                          <span className={familyLayout.familyMoveMenuLabel}>Move to…</span>
+                                          {moveTargets.map((target) => (
+                                            <button
+                                              key={target.id}
+                                              type="button"
+                                              className={familyLayout.familyMoveMenuItem}
+                                              role="menuitem"
+                                              onClick={() => {
+                                                setMoveMenuPersonId(null);
+                                                setMoveConfirm({ person, from: family, to: target });
+                                              }}
+                                            >
+                                              {target.name}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
                                 <Link
                                   to={`/people/${person.id}/edit`}
                                   className={detailLayout.iconAction}
@@ -1044,6 +1134,63 @@ export default function FamilyPage() {
                 onClick={() => handleDeleteChild(deleteConfirmChild)}
               >
                 {deletingChildId === deleteConfirmChild.id ? 'Deleting…' : 'Delete'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {moveConfirm && (
+        <div
+          className={modalStyles.overlay}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="move-person-modal-title"
+          onClick={() => {
+            if (movingPersonId == null) setMoveConfirm(null);
+          }}
+        >
+          <div
+            className={`${modalStyles.content} ${s.deleteFamilyContent}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={modalStyles.header}>
+              <h2 id="move-person-modal-title">Move {moveConfirm.person.name}</h2>
+              <button
+                type="button"
+                className={modalStyles.close}
+                aria-label="Close"
+                disabled={movingPersonId != null}
+                onClick={() => setMoveConfirm(null)}
+              >
+                ×
+              </button>
+            </div>
+            <div className={modalStyles.body}>
+              <p className={s.deleteFamilyInstruction}>
+                Move <strong>{moveConfirm.person.name}</strong> from{' '}
+                <strong>{moveConfirm.from.name}</strong> to <strong>{moveConfirm.to.name}</strong>?
+              </p>
+              <p className={s.deleteFamilyAlert}>
+                🚨 Members of <strong>{moveConfirm.from.name}</strong> will lose access to{' '}
+                {moveConfirm.person.name} and all of their visits and history. Members of{' '}
+                <strong>{moveConfirm.to.name}</strong> will gain access. You can move them back at
+                any time.
+              </p>
+            </div>
+            <div className={modalStyles.footer}>
+              <Button
+                variant="secondary"
+                disabled={movingPersonId != null}
+                onClick={() => setMoveConfirm(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                disabled={movingPersonId != null}
+                onClick={() => handleMovePerson(moveConfirm.person, moveConfirm.to)}
+              >
+                {movingPersonId === moveConfirm.person.id ? 'Moving…' : 'Move'}
               </Button>
             </div>
           </div>
