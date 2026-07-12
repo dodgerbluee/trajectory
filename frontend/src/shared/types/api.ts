@@ -155,6 +155,7 @@ export interface CreatePersonInput {
 }
 
 export interface UpdatePersonInput {
+  family_id?: number; // when set, moves the person to another family the user can edit
   name?: string;
   date_of_birth?: string;
   gender?: Gender;

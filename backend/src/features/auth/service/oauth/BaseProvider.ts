@@ -237,7 +237,7 @@ export abstract class BaseProvider {
 }
 
 export function sanitizeUsername(raw: string): string {
-  let sanitized = raw.replace(/[^a-zA-Z0-9_.\-]/g, '_');
+  let sanitized = raw.replace(/[^a-zA-Z0-9_.-]/g, '_');
   sanitized = sanitized.replace(/_+/g, '_');
   sanitized = sanitized.replace(/^_+|_+$/g, '');
   if (sanitized.length < 3) {

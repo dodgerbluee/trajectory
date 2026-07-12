@@ -176,6 +176,29 @@ peopleRouter.put('/:id', async (req: AuthRequest, res: Response, next: NextFunct
     const values: unknown[] = [];
     let paramCount = 1;
 
+    // Move the person to another family. Requires owner/parent rights in the
+    // destination family (source rights already enforced above). The person's
+    // records travel automatically since they're keyed by person_id, not family.
+    if (req.body.family_id !== undefined && req.body.family_id !== null) {
+      const destFamilyId = validatePositiveInteger(req.body.family_id, 'family_id');
+      if (!(await canEditFamily(req.userId!, destFamilyId))) {
+        throw new ForbiddenError('You do not have permission to move people into this family.');
+      }
+      // A self-record (people.user_id set) draws its access from its owner's
+      // family_members membership, which does not travel with the person row —
+      // moving it would strand the owner from their own data. Disallow for now;
+      // moving one's own self-record between one's families is a follow-up.
+      const selfCheck = await query<{ user_id: number | null }>(
+        'SELECT user_id FROM people WHERE id = $1',
+        [id]
+      );
+      if (selfCheck.rows[0]?.user_id != null) {
+        throw new ValidationError('A personal (self) record cannot be moved to another family.');
+      }
+      updates.push(`family_id = $${paramCount++}`);
+      values.push(destFamilyId);
+    }
+
     if (req.body.name !== undefined) {
       updates.push(`name = $${paramCount++}`);
       values.push(validateRequired(req.body.name, 'name'));
